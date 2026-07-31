@@ -1,0 +1,14 @@
+{
+  "name": "padel-app",
+  "version": "1.0.0",
+  "description": "Padel league app migrated from Netlify Functions/Blobs to Vercel + Vercel Postgres",
+  "type": "module",
+  "scripts": {
+    "migrate": "node scripts/migrate.js",
+    "schema": "node scripts/apply-schema.js"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.10.0"
+  },
+  "devDependencies": {}
+}

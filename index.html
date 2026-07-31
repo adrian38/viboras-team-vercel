@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liga Padel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="/image.png" type="image/png">
+<style>
+:root{
+  --bg:#f5f8ff;
+  --card:#ffffff;
+  --muted:#6b7280;
+  --primary:#2563eb; /* blue */
+  --accent:#06b6d4; /* teal */
+  --success:#10b981;
+}
+*{box-sizing:border-box}
+body{
+  font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+  margin:0;
+  background:linear-gradient(180deg,var(--bg),#eef4ff 60%);
+  color:#0f172a;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding:28px 18px;
+}
+.site{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.block{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+.block-title{font-weight:700;margin-bottom:10px;font-size:1.05rem;color:#0b1530}
+.block-row{display:flex;gap:12px;align-items:center}
+
+.controls{display:flex;gap:12px;flex-wrap:wrap}
+.btn{background:var(--primary);color:#fff;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:700;min-width:140px;box-shadow:0 8px 20px rgba(37,99,235,0.08);transition:transform .12s ease}
+.btn.secondary{background:var(--accent)}
+.btn.secondary-green{background:#14b8a6}
+.btn.warn{background:#fb923c;color:white;box-shadow:0 8px 20px rgba(251,146,60,0.12)}
+.btn.ghost{background:transparent;border:1px solid rgba(15,23,42,0.06);color:var(--primary)}
+.btn:active{transform:translateY(1px)}
+
+.admin-bottom{background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+.admin-desktop{display:inline-block}
+.admin-mobile{display:none}
+@media(max-width:720px){
+  .admin-desktop{display:none}
+  .admin-mobile{display:block;margin:12px auto 18px auto}
+}
+
+.register-input{flex:1;min-width:180px;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
+
+#days{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:8px}
+.day{background:linear-gradient(180deg,#fff,#fbfdff);padding:14px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:600;color:#0b1530;min-height:58px}
+.day.red{background:linear-gradient(180deg,#fff1f0,#fff8f7);border-color:rgba(255,99,99,0.08)}
+.day:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(12,20,40,0.06)}
+
+label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
+
+@media(min-width:900px){.site{gap:20px}.block-row{align-items:center}}
+@media(max-width:720px){body{padding:16px}.btn{min-width:120px;padding:12px 14px}#days{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
+</style>
+</head>
+
+<body>
+
+<div class="site">
+
+  <div class="block">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="block-title">Registro de nombre</div>
+      <button class="admin-bottom admin-desktop" onclick="openAdmin()" style="margin-left:12px">Administración</button>
+    </div>
+
+    <div class="block-row">
+      <div style="flex:1">
+        <label class="small">¿Primera vez? Registra tu nombre</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="fullname" placeholder="Nombre" class="register-input">
+          <button onclick="addName()" class="btn warn">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-title">Resultados</div>
+    <div class="block-row">
+        <div class="controls">
+        <button onclick="window.location='submit-result.html'" class="btn">Introducir resultado</button>
+        <button class="btn secondary" onclick="window.location='history.html'">Ver historial</button>
+        <button class="btn secondary" onclick="downloadCSV()">Descargar historial</button>
+        <button class="btn secondary-green" onclick="window.location='statistics.html'">Estadísticas</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-title">Organización de partidos</div>
+    <div class="block-row">
+      <div style="flex:1">
+        <label class="small">Selecciona día</label>
+        <div id="days"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+
+<!-- Mobile-only admin button (bottom center, shown only on small screens) -->
+<button class="admin-bottom admin-mobile" onclick="openAdmin()" aria-label="Administración móvil">Administración</button>
+
+<script>
+// Administration overlay for managing registered names
+async function openAdmin(){
+  // prompt for admin key before opening admin panel
+  const key = prompt('Clave de administrador:')
+  if(key !== '4F7K9Q2Z'){
+    alert('Clave incorrecta')
+    return
+  }
+  window._adminKey = key
+
+  let overlay = document.getElementById('adminOverlay')
+  if(!overlay){
+    overlay = document.createElement('div')
+    overlay.id = 'adminOverlay'
+    overlay.style.display = 'none'
+    overlay.style.position = 'fixed'
+    overlay.style.inset = '0'
+    overlay.style.background = 'rgba(0,0,0,0.4)'
+    overlay.style.alignItems = 'center'
+    overlay.style.justifyContent = 'center'
+    overlay.style.padding = '24px'
+    overlay.innerHTML = `
+      <div style="background:var(--card);max-width:720px;width:100%;border-radius:12px;padding:16px;box-shadow:0 12px 30px rgba(2,6,23,0.3);color:var(--muted)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-weight:700">Administración de nombres</div>
+            <button class="btn ghost" onclick="closeAdmin()">Cerrar</button>
+          </div>
+          <div id="adminList" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto;padding-right:6px"></div>
+      </div>
+    `
+    document.body.appendChild(overlay)
+  }
+  overlay.style.display = 'flex'
+  await loadAdminNames()
+}
+function closeAdmin(){ const o=document.getElementById('adminOverlay'); if(o) o.style.display='none' }
+
+async function loadAdminNames(){
+  const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
+  try{
+    const res = await fetch('/api/getNames')
+    const db = await res.json()
+    const names = (db && db.names) ? (db.names.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))) : []
+    const container = document.getElementById('adminList')
+    if(!container) return
+    container.innerHTML = ''
+    for(const n of names){
+      const row = document.createElement('div')
+      row.style.display = 'flex'
+      row.style.alignItems = 'center'
+      row.style.justifyContent = 'space-between'
+      row.style.padding = '8px'
+      row.style.borderRadius = '8px'
+      row.style.background = 'linear-gradient(180deg,#fff,#fbfdff)'
+      const span = document.createElement('div')
+      span.style.color = 'var(--muted)'
+      span.innerText = n
+      const btn = document.createElement('button')
+      btn.className = 'btn ghost'
+      btn.style.minWidth = '90px'
+      btn.innerText = 'Eliminar'
+      btn.onclick = (async ()=>{
+        if(!confirm(`Eliminar "${n}"?`)) return
+        try{
+          const endpoint = '/api/deleteName'
+          const r = await fetch(endpoint,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({name:n, adminKey: window._adminKey})
+          })
+          const j = await r.json()
+          if(j && j.ok){
+            await loadAdminNames()
+          } else {
+            alert('No se pudo eliminar')
+          }
+        }catch(e){ console.error(e); alert('Error al eliminar') }
+      })
+      row.appendChild(span)
+      row.appendChild(btn)
+      container.appendChild(row)
+    }
+  }catch(e){ console.error('Could not load names for admin',e) }
+}
+
+async function downloadCSV(){
+  const res = await fetch("/api/getResults")
+  const db = await res.json()
+
+  if(!db.matches || db.matches.length===0){
+    alert("No hay resultados")
+    return
+  }
+
+  function parseDateStr(s){
+    if(!s) return new Date(0)
+    // ISO YYYY-MM-DD
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s)
+    // DD/MM/YYYY
+    const parts = String(s).split('/')
+    if(parts.length===3){
+      const d = parseInt(parts[0],10)||1
+      const m = (parseInt(parts[1],10)||1)-1
+      const y = parseInt(parts[2],10)||0
+      return new Date(y,m,d)
+    }
+    return new Date(s)
+  }
+
+  // sort matches by date (oldest first)
+  const matches = (db.matches || []).slice().sort((a,b)=> parseDateStr(a.date) - parseDateStr(b.date))
+
+  const header = [
+    "fecha",
+    "equipo1_jugA","equipo1_jugB",
+    "equipo2_jugA","equipo2_jugB",
+    "equipo1_set1","equipo2_set1",
+    "equipo1_set2","equipo2_set2",
+    "equipo1_set3","equipo2_set3"
+  ]
+
+  const rows = matches.map(m=>[
+    m.date,
+    m.p1a,m.p1b,
+    m.p2a,m.p2b,
+    m.s11,m.s21,
+    m.s12||"",m.s22||"",
+    m.s13||"",m.s23||""
+  ])
+
+  const csvContent = [header,...rows].map(r=>r.join(";")).join("\n")
+
+  // prepend UTF-8 BOM so Excel recognizes UTF-8 accents correctly
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + csvContent], {type:"text/csv;charset=utf-8"})
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'resultados.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+</script>
+
+</body>
+</html>

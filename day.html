@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disponibilidad</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  padding:20px;
+  text-align:center;
+  background:#fafafa;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(80px, 1fr));
+  gap:10px;
+  justify-items:center;
+  margin:20px 0;
+}
+
+.slot{
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:12px 18px;
+  cursor:pointer;
+  min-width:70px;
+  min-height:50px;
+  transition: transform 0.1s;
+}
+
+.slot:hover{
+  transform: scale(1.05);
+}
+
+.selected{
+  background:#8fd3ff;
+}
+
+input, button{
+  font-size:1rem;
+  padding:8px 12px;
+  margin:5px;
+  border-radius:6px;
+}
+
+.send{
+  background:#4caf50;
+  color:white;
+}
+
+.back{
+  background:#888;
+  color:white;
+}
+
+@media(max-width:600px){
+
+  .grid{
+    grid-template-columns:repeat(auto-fit, minmax(70px, 1fr));
+  }
+
+  .slot{
+    padding:10px 8px;
+    font-size:1rem;
+    min-width:unset;
+    min-height:50px;
+  }
+
+  input, button{
+    font-size:1.1rem;
+    padding:10px 14px;
+  }
+
+}
+</style>
+</head>
+<body>
+
+<h2 id="title"></h2>
+
+<div id="warning" style="margin:10px 0; font-size:0.95rem; color:#d32f2f; display:none;">
+  Atención: si queda menos de 48 horas es posible que no haya pistas disponibles
+</div>
+
+<select id="name"></select>
+
+<div id="info" style="margin:10px 0; font-size:0.95rem; color:#666;">
+  Marca todas las horas en las que puedes jugar
+</div>
+
+<div class="grid" id="slots"></div>
+
+<button class="send" onclick="submitVote()">Enviar</button>
+<button class="view" onclick="viewResults()">Ver votos</button>
+<button class="back" onclick="goBack()">Atrás</button>
+
+<script>
+const params = new URLSearchParams(window.location.search)
+const date = params.get("date")
+
+const selectedDate = new Date(date)
+const today = new Date()
+
+const diffTime = selectedDate - today
+const diffDays = diffTime / (1000 * 60 * 60 * 24)
+
+if(diffDays < 2){
+  document.getElementById("warning").style.display = "block"
+}
+
+const readonly = params.get("readonly") === "1"
+
+const parts = date.split("-")
+const formatted = `${parts[2]}/${parts[1]}/${parts[0]}`
+document.getElementById("title").innerText = formatted
+
+const slotsDiv = document.getElementById("slots")
+const slots = []
+
+for(let h=9; h<=21; h++){
+  const time = `${h}:00`
+  slots.push(time)
+  const div = document.createElement("div")
+  div.className = "slot"
+  div.dataset.time = time
+  div.innerText = time
+  if(!readonly){
+    div.onclick = ()=> div.classList.toggle("selected")
+  }
+  slotsDiv.appendChild(div)
+}
+
+async function loadSlots(){
+  const res = await fetch(`/api/getSlots?date=${date}`)
+  const data = await res.json()
+  document.querySelectorAll(".slot").forEach(el=>{
+    const t = el.dataset.time
+    const count = data[t]?.length || 0
+    if(count===0 && readonly){
+      el.style.display="none"
+    } else {
+      el.innerText = `${t} (${count})`
+    }
+  })
+}
+
+async function submitVote(){
+
+  const name = document.getElementById("name").value
+
+  const selected = [...document.querySelectorAll(".selected")]
+      .map(e=>e.dataset.time)
+
+  await fetch("/api/submitVote",{
+    method:"POST",
+    body:JSON.stringify({
+      date,
+      name,
+      slots:selected
+    })
+  })
+
+  document.querySelectorAll(".slot").forEach(el=>{
+    el.classList.remove("selected")
+  })
+
+  await loadSlots()
+  window.location.reload()
+
+}
+
+function viewResults(){
+  window.location = `results.html?date=${date}`
+}
+
+function goBack(){
+  window.location = "/"
+}
+
+loadSlots()
+
+// populate name select from registered names
+async function loadNames(){
+  const isLocal = location.hostname==="localhost" || location.hostname==="127.0.0.1"
+  try{
+    const res = await fetch("/api/getNames")
+    const db = await res.json()
+    const names = (db && db.names) ? db.names : []
+    const sel = document.getElementById('name')
+    sel.innerHTML = ''
+    const empty = document.createElement('option')
+    empty.value = ''
+    empty.innerText = '-- Selecciona tu nombre --'
+    sel.appendChild(empty)
+    for(const n of names){
+      const o = document.createElement('option')
+      o.value = n
+      o.innerText = n
+      sel.appendChild(o)
+    }
+  }catch(e){
+    console.error('Could not load names',e)
+  }
+}
+
+loadNames()
+</script>
+
+</body>
+</html>

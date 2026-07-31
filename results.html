@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Votos del día</title>
+
+<style>
+body{
+  font-family:sans-serif;
+  padding:20px;
+  text-align:center;
+  background:#fafafa;
+}
+
+.hour{
+  margin-bottom:15px;
+  padding:12px 16px;
+  border:1px solid #ddd;
+  border-radius:8px;
+}
+
+.hour-title{
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.names{
+  margin-left:10px;
+}
+
+.name{
+  background:#f2f2f2;
+  display:inline-block;
+  padding:4px 8px;
+  margin:3px;
+  border-radius:4px;
+}
+
+button{
+  margin-top:20px;
+  font-size:1rem;
+  padding:8px 12px;
+  border-radius:6px;
+}
+
+#organizer select{
+  font-size:1.1rem;
+  padding:8px 12px;
+  margin-top:5px;
+  margin-bottom:5px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  min-width:160px;
+  height:36px;
+}
+
+#players select{
+  font-size:1.1rem;
+  padding:10px 14px;
+  height:40px;
+  min-width:200px;
+}
+
+.share-btn{
+  margin-top:12px;
+  font-size:1.1rem;
+  padding:12px 20px;
+  border-radius:8px;
+  border:none;
+  background:#25D366;
+  color:white;
+  cursor:pointer;
+}
+
+.share-btn:hover{
+  background:#1ebe5d;
+}
+
+.organize-btn{
+  background:#2F80ED;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  font-size:1.1rem;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.organize-btn:hover{
+  background:#1c63c7;
+}
+
+@media(max-width:600px){
+
+  .hour{
+    font-size:1.1rem;
+    padding:14px 18px;
+  }
+
+  .name{
+    font-size:1rem;
+    padding:5px 10px;
+  }
+
+  button{
+    font-size:1.1rem;
+    padding:10px 14px;
+  }
+
+  #organizer select{
+    font-size:1.1rem;
+    height:42px;
+    min-width:210px;
+  }
+
+  #players select{
+    font-size:1.2rem;
+    height:46px;
+    min-width:220px;
+  }
+
+}
+</style>
+</head>
+<body>
+
+<h2 id="title"></h2>
+
+<div id="results"></div>
+
+<button class="organize-btn" onclick="toggleOrganizer()">Organizar partido</button>
+<div id="organizer" style="display:none;margin-top:20px"></div>
+
+<button onclick="goBack()">Atrás</button>
+
+<script>
+
+const params = new URLSearchParams(window.location.search)
+const date = params.get("date")
+const readonly = params.get("readonly")==="1"
+
+const parts = date.split("-")
+const formatted = `${parts[2]}/${parts[1]}/${parts[0]}`
+
+document.getElementById("title").innerText = `Disponibilidad ${formatted}`
+
+const container = document.getElementById("results")
+
+let slotsData = {}
+
+async function load(){
+
+  const res = await fetch(`/api/getSlots?date=${date}`)
+  const data = await res.json()
+
+  slotsData = data
+
+  for(let h=9; h<=21; h++){
+
+    const time = `${h}:00`
+    const names = data[time] || []
+
+    if(names.length===0) continue
+
+    const div = document.createElement("div")
+    div.className = "hour"
+
+    const title = document.createElement("div")
+    title.className = "hour-title"
+    title.innerText = `${time} (${names.length})`
+
+    div.appendChild(title)
+
+    const list = document.createElement("div")
+    list.className = "names"
+
+    names.forEach(n=>{
+      const span = document.createElement("span")
+      span.className = "name"
+      span.innerText = n
+      list.appendChild(span)
+    })
+
+    div.appendChild(list)
+
+    container.appendChild(div)
+  }
+}
+
+function goBack(){
+
+  if(readonly){
+    window.location="/"
+  }else{
+    window.location=`day.html?date=${date}`
+  }
+}
+
+function toggleOrganizer(){
+
+  const div = document.getElementById("organizer")
+
+  if(div.style.display==="none"){
+
+    div.style.display="block"
+
+    div.innerHTML = `
+      <div style="margin-bottom:10px">
+        <label>Polideportivo</label><br>
+        <select id="venue">
+          <option>Polideportivo San Ignacio</option>
+          <option>Polideportivo Zorroza</option>
+          <option>Polideportivo Artxanda</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label>Hora inicio</label><br>
+        <select id="start" onchange="updatePlayers()"></select>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label>Hora fin</label><br>
+        <select id="end" onchange="updatePlayers()"></select>
+      </div>
+
+      <div id="players" style="margin-top:15px"></div>
+
+      <button class="share-btn" onclick="shareMatch()">Compartir partido</button>
+    `
+
+    fillHours()
+
+  }else{
+
+    div.style.display="none"
+
+  }
+}
+
+function fillHours(){
+
+  const start = document.getElementById("start")
+  const end = document.getElementById("end")
+
+  for(let h=9; h<=21; h++){
+
+    const label = String(h).padStart(2,"0")+":00"
+
+    start.innerHTML += `<option value="${h}">${label}</option>`
+    end.innerHTML += `<option value="${h}">${label}</option>`
+
+  }
+
+}
+
+function playersAvailable(start,end){
+
+  let common=null
+
+  for(let h=start; h<end; h++){
+
+    const key=`${h}:00`
+
+    const names = slotsData[key] || []
+
+    if(common===null){
+      common=[...names]
+    }else{
+      common=common.filter(n=>names.includes(n))
+    }
+
+  }
+
+  return common || []
+
+}
+
+function updatePlayers(){
+
+  const start=parseInt(document.getElementById("start").value)
+  const end=parseInt(document.getElementById("end").value)
+
+  if(end<=start) return
+
+  const players=playersAvailable(start,end)
+
+  const container=document.getElementById("players")
+
+  container.innerHTML=""
+
+  if(players.length<4){
+
+    container.innerHTML = `
+      <div style="margin-bottom:10px; color:#c0392b;">
+        Atención: no hay suficientes jugadores en esta franja horaria para generar un partido completo
+      </div>
+    `
+
+  }
+
+  for(let i=1;i<=4;i++){
+
+    const select=document.createElement("select")
+
+    select.id="j"+i
+
+    select.innerHTML=`<option value="">Jugador ${i}</option>`
+
+    players.forEach(p=>{
+      select.innerHTML+=`<option value="${p}">${p}</option>`
+    })
+
+    select.addEventListener("change",updateDropdowns)
+
+    container.appendChild(select)
+
+    container.appendChild(document.createElement("br"))
+
+  }
+
+}
+
+function updateDropdowns(){
+
+  const selected=[]
+
+  for(let i=1;i<=4;i++){
+
+    const val=document.getElementById("j"+i).value
+
+    if(val) selected.push(val)
+
+  }
+
+  for(let i=1;i<=4;i++){
+
+    const select=document.getElementById("j"+i)
+
+    const current=select.value
+
+    const options=[...select.options]
+
+    options.forEach(o=>{
+
+      if(o.value==="" || o.value===current){
+
+        o.hidden=false
+
+      }else if(selected.includes(o.value)){
+
+        o.hidden=true
+
+      }else{
+
+        o.hidden=false
+
+      }
+
+    })
+
+  }
+
+}
+
+function shareMatch(){
+
+  const start=parseInt(document.getElementById("start").value)
+  const end=parseInt(document.getElementById("end").value)
+
+  if(end<=start){
+    alert("La hora fin debe ser mayor")
+    return
+  }
+
+  const players=[j1.value,j2.value,j3.value,j4.value]
+
+  const filled = players.filter(p => p !== "")
+  const unique = new Set(filled)
+
+  if(unique.size !== filled.length){
+    alert("Los jugadores deben ser distintos")
+    return
+  }
+
+  const venue=document.getElementById("venue").value
+
+  const d=new Date(date)
+
+  const weekday=d.toLocaleDateString("es-ES",{weekday:"long"})
+  const day=d.getDate()
+  const month=d.toLocaleDateString("es-ES",{month:"long"})
+
+  const startStr=String(start).padStart(2,"0")+":00"
+  const endStr=String(end).padStart(2,"0")+":00"
+
+  const msg=
+`🗓️${weekday} ${day} de ${month}
+🕋${venue}
+⏰Hora ${startStr} a ${endStr}
+🎾${players[0] || ""}
+🎾${players[1] || ""}
+🎾${players[2] || ""}
+🎾${players[3] || ""}`
+
+  const url="https://wa.me/?text="+encodeURIComponent(msg)
+
+  window.open(url,"_blank")
+
+}
+
+load()
+
+</script>
+
+</body>
+</html>

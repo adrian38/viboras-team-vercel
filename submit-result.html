@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enviar resultado</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="/image.png" type="image/png">
+
+<style>
+:root{
+  --bg:#f5f8ff;
+  --card:#ffffff;
+  --muted:#6b7280;
+  --primary:#2563eb;
+  --accent:#06b6d4;
+  --warn:#fb923c;
+}
+*{box-sizing:border-box}
+body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px}
+.site{max-width:920px;margin:0 auto}
+.block{background:var(--card);border-radius:12px;padding:18px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+.block-title{font-weight:700;margin-bottom:8px;font-size:1.05rem}
+.form-row{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.label{font-weight:600;color:var(--muted);display:block;margin-bottom:6px}
+.label-inline{width:110px;font-weight:700;color:var(--muted)}
+.input, select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);font-size:1rem}
+.teams{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.team-card{background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:10px;border:1px solid rgba(15,23,42,0.04)}
+.team-card.team-1{background:linear-gradient(180deg,#f8fffe,#f0fdfa);border-color:rgba(6,182,212,0.08)}
+.team-card.team-2{background:linear-gradient(180deg,#f6fbff,#eef7ff);border-color:rgba(37,99,235,0.08)}
+.team-card.team-3{background:linear-gradient(180deg,#fff8f1,#fff6ee);border-color:rgba(251,146,60,0.08)}
+.team-title{font-weight:700;margin-bottom:10px}
+.players{display:flex;flex-direction:column;gap:8px}
+.sets{margin-top:12px}
+.set-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.set-row label{width:56px;text-align:left}
+.score{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);text-align:center}
+.score-grid input.score{width:100%;box-sizing:border-box}
+.score-label{display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted);padding:8px;border-radius:8px}
+.controls{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.admin-bottom{background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+.btn{background:var(--primary);color:#fff;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:700;min-width:120px}
+.btn.ghost{background:transparent;border:1px solid rgba(15,23,42,0.06);color:var(--primary)}
+.btn.warn{background:var(--warn)}
+
+@media(min-width:820px){
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .teams .team-card:nth-child(3){grid-column:1 / -1}
+}
+@media(max-width:820px){
+  .teams{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="site">
+  <div class="block">
+    <div class="form-row">
+      <div class="label-inline">Fecha</div>
+      <input id="date" class="input" type="date">
+    </div>
+
+    <div class="teams">
+
+      <div class="team-card team-1">
+        <div class="team-title">Equipo 1</div>
+        <div class="players">
+          <select id="p1a" class="input"></select>
+          <select id="p1b" class="input"></select>
+        </div>
+      </div>
+
+      <div class="team-card team-2">
+        <div class="team-title">Equipo 2</div>
+        <div class="players">
+          <select id="p2a" class="input"></select>
+          <select id="p2b" class="input"></select>
+        </div>
+      </div>
+
+      <div class="team-card team-3" style="padding-bottom:16px">
+        <div class="team-title">Marcador</div>
+        <div style="margin-bottom:10px;color:var(--muted);font-weight:600;display:grid;grid-template-columns:110px repeat(3,1fr);gap:8px;align-items:center">
+          <div></div>
+          <div style="text-align:center">Set 1</div>
+          <div style="text-align:center">Set 2</div>
+          <div style="text-align:center">Set 3</div>
+        </div>
+
+        <div class="score-grid" style="display:grid;grid-template-columns:110px repeat(3,1fr);gap:8px;margin-bottom:8px;align-items:center">
+          <div class="score-label">Equipo 1</div>
+          <input id="s11" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+          <input id="s12" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+          <input id="s13" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+        </div>
+
+        <div class="score-grid" style="display:grid;grid-template-columns:110px repeat(3,1fr);gap:8px;align-items:center">
+          <div class="score-label">Equipo 2</div>
+          <input id="s21" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+          <input id="s22" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+          <input id="s23" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+        </div>
+      </div>
+
+    </div>
+
+    <div class="controls">
+      <button class="btn ghost" onclick="window.location='/'">Atrás</button>
+      <button class="btn warn" onclick="submitResult()">Guardar resultado</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function formatToday(){
+  const d=new Date();
+  const day=String(d.getDate()).padStart(2,'0');
+  const month=String(d.getMonth()+1).padStart(2,'0');
+  const year=d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+function isoToday(){
+  const d=new Date();
+  const day=String(d.getDate()).padStart(2,'0');
+  const month=String(d.getMonth()+1).padStart(2,'0');
+  const year=d.getFullYear();
+  return `${year}-${month}-${day}`;
+}
+// set native date input to today (ISO format) so browsers show calendar picker
+document.getElementById('date').value = isoToday();
+
+// normalize value from date input (YYYY-MM-DD) to DD/MM/YYYY for validation/payload
+function normalizeDateInput(val){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(val)){
+    const [y,m,d] = val.split('-')
+    return `${d}/${m}/${y}`
+  }
+  return val
+}
+
+function isNonNegativeIntegerString(s){ return /^\d+$/.test(String(s).trim()) }
+function isValidDateDDMMYYYY(str){ if(!/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return false; const parts=str.split('/'); const d=new Date(parseInt(parts[2],10), parseInt(parts[1],10)-1, parseInt(parts[0],10)); return d && d.getFullYear()==parseInt(parts[2],10) && d.getMonth()==parseInt(parts[1],10)-1 && d.getDate()==parseInt(parts[0],10) }
+
+let submitInFlight = false
+
+async function submitResult(){
+  if (submitInFlight) return
+
+  // basic required
+  const required = ['p1a','p1b','p2a','p2b','s11','s21']
+  for(const id of required){ const el=document.getElementById(id); if(!el || !el.value.trim()){ alert('Completa todos los campos obligatorios'); el && el.focus(); return } }
+
+  const rawDate = document.getElementById('date').value.trim();
+  const dateVal = normalizeDateInput(rawDate)
+  if(!isValidDateDDMMYYYY(dateVal)){ alert('Formato de fecha inválido. Usa DD/MM/YYYY'); return }
+
+  const setIds = ['s11','s12','s13','s21','s22','s23']
+  for(const id of setIds){ const v=document.getElementById(id).value.trim(); if(v!=='' && !isNonNegativeIntegerString(v)){ alert('Los sets deben ser números enteros no negativos'); document.getElementById(id).focus(); return } }
+
+  // ensure names unique across both teams
+  const names = ['p1a','p1b','p2a','p2b'].map(id=>document.getElementById(id).value.trim())
+  const set = new Set(); for(const n of names){ if(set.has(n)){ alert('Los nombres no pueden repetirse entre los equipos'); return } set.add(n) }
+
+  const payload = {
+    date: dateVal,
+    p1a: names[0], p1b: names[1], p2a: names[2], p2b: names[3],
+    s11: document.getElementById('s11').value.trim(), s12: document.getElementById('s12').value.trim(), s13: document.getElementById('s13').value.trim(),
+    s21: document.getElementById('s21').value.trim(), s22: document.getElementById('s22').value.trim(), s23: document.getElementById('s23').value.trim()
+  }
+
+  const saveButton = document.querySelector('.btn.warn')
+  if (saveButton) {
+    saveButton.disabled = true
+    saveButton.textContent = 'Guardando...'
+  }
+
+  submitInFlight = true
+
+  try{
+    const res = await fetch('/api/submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    const json = await res.json().catch(() => ({}))
+    if(!res.ok || !json.ok){ throw new Error('save_failed') }
+    alert('Resultado guardado')
+    window.location='/'
+  }catch(e){ console.error(e); alert('Error al guardar resultado') } finally {
+    submitInFlight = false
+    if(saveButton){
+      saveButton.disabled = false
+      saveButton.textContent = 'Guardar resultado'
+    }
+  }
+}
+
+// load names into selects
+async function loadNamesIntoSelects(){
+  const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
+  try{
+    const res = await fetch('/api/getNames')
+    const db = await res.json()
+    const names = (db && db.names) ? (db.names.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))) : []
+    const ids = ['p1a','p1b','p2a','p2b']
+    for(const id of ids){ const sel=document.getElementById(id); if(!sel) continue; sel.innerHTML=''; const empty=document.createElement('option'); empty.value=''; empty.innerText='-- Nombre --'; sel.appendChild(empty); for(const n of names){ const opt=document.createElement('option'); opt.value=n; opt.innerText=n; sel.appendChild(opt) } }
+  }catch(e){ console.error('Could not load names',e) }
+}
+loadNamesIntoSelects()
+
+</script>
+
+</body>
+</html>

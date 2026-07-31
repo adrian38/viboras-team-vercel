@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estadísticas</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb;--accent:#06b6d4;--success:#10b981}
+*{box-sizing:border-box}
+body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px}
+.site{max-width:980px;margin:0 auto}
+.block{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+.block-title{font-weight:700;margin-bottom:10px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.search{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
+th{cursor:pointer;user-select:none}
+.muted{color:var(--muted)}
+.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
+.view-toggle{display:flex;gap:8px;flex-wrap:wrap}
+.view-btn{background:#fff;color:var(--muted);border:1px solid rgba(15,23,42,0.08);padding:8px 12px;border-radius:999px;cursor:pointer}
+.view-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.sortable-ind{font-weight:700;margin-left:6px;color:#94a3b8}
+/* metric cell visuals and layout */
+.metric-col{min-width:120px;padding-right:12px}
+.name-col{max-width:280px}
+.td-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.center{text-align:center}
+.metric-cell{position:relative;padding:6px 12px}
+.metric-cell .bar{position:absolute;left:0;top:0;bottom:0;right:8px;z-index:0;border-radius:8px;opacity:0.32}
+.metric-cell .label{position:relative;z-index:1;font-weight:700}
+.metric-cell.empty{color:var(--muted);font-weight:600}
+@media(max-width:720px){body{padding:16px}}
+</style>
+</head>
+<body>
+
+<div class="site">
+  <div class="block">
+
+    <div class="controls">
+      <div class="view-toggle" role="tablist" aria-label="Vista de estadísticas">
+        <button type="button" class="view-btn active" data-view="players">Individual</button>
+        <button type="button" class="view-btn" data-view="teams">Por parejas</button>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+
+    <div id="tableContainer"></div>
+
+    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+      <div></div>
+      <div style="text-align:right">
+        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function parseDateStr(s){ if(!s) return new Date(0); if(/^-?\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s); const parts=String(s).split('/'); if(parts.length===3){ const d=parseInt(parts[0],10)||1; const m=(parseInt(parts[1],10)||1)-1; const y=parseInt(parts[2],10)||0; return new Date(y,m,d) } return new Date(s) }
+
+function isCompletedSet(aRaw,bRaw){ const a = (aRaw!==undefined && aRaw!=='') ? parseInt(aRaw,10) : NaN; const b = (bRaw!==undefined && bRaw!=='') ? parseInt(bRaw,10) : NaN; if(isNaN(a) || isNaN(b)) return false; const max = Math.max(a,b); const diff = Math.abs(a-b); // valid when winner has two-game margin (>=6) or a tiebreak set decided 7-6
+  if(max>=6 && (diff>=2 || max===7)) return true; return false }
+
+function loadData(){
+  const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
+  const url = `/api/getResults?ts=${Date.now()}`
+  return fetch(url)
+    .then(r=>{
+      if(!r.ok) throw new Error('HTTP '+r.status)
+      return r.json()
+    })
+    .then(db=>{ return (db && db.matches) ? db.matches : [] })
+    .catch(e=>{ console.error('Could not load results', e); return [] })
+}
+
+function loadNames(){
+  const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
+  const url = '/api/getNames'
+  return fetch(url).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json() }).then(db=>{ return (db && db.names) ? db.names : [] }).catch(e=>{ return [] })
+}
+
+function normalizeTeamNames(names){
+  const cleaned = (names||[]).map(n=>String(n||'').trim()).filter(Boolean)
+  return cleaned.slice().sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base',numeric:true}))
+}
+
+function computeStats(matches, mode){
+  const stats = new Map()
+  const registered = (window._registeredNames && window._registeredNames.size>0) ? window._registeredNames : null
+
+  function ensure(key, displayName){ if(!stats.has(key)) stats.set(key,{name:displayName,played:0,wins:0,losses:0,draws:0,setsWon:0,setsTotal:0,gamesWon:0,gamesTotal:0}) }
+  function isRegisteredName(name){ if(!name) return false; return !registered || registered.has(name) }
+
+  function addSetStatsForPlayer(names, gamesWon, gamesTotal, setWon){
+    if(mode !== 'players') return
+    for(const name of names){
+      if(!name || !isRegisteredName(name)) continue
+      ensure(name, name)
+      const ent = stats.get(name)
+      if(ent){ ent.gamesWon += gamesWon; ent.gamesTotal += gamesTotal; ent.setsTotal += 1; if(setWon) ent.setsWon += 1 }
+    }
+  }
+
+  function addSetStatsForTeam(names, gamesWon, gamesTotal, setWon){
+    if(mode !== 'teams') return
+    const normalized = normalizeTeamNames(names)
+    if(normalized.length < 2) return
+    if(registered && normalized.some(name=>!registered.has(name))) return
+    const key = normalized.join(' / ')
+    ensure(key, key)
+    const ent = stats.get(key)
+    if(ent){ ent.gamesWon += gamesWon; ent.gamesTotal += gamesTotal; ent.setsTotal += 1; if(setWon) ent.setsWon += 1 }
+  }
+
+  function addPlayed(names){
+    if(mode === 'teams'){
+      const normalized = normalizeTeamNames(names)
+      if(normalized.length < 2) return
+      if(registered && normalized.some(name=>!registered.has(name))) return
+      const key = normalized.join(' / ')
+      ensure(key, key)
+      const ent = stats.get(key)
+      if(ent) ent.played++
+      return
+    }
+    for(const name of names){
+      if(!name || !isRegisteredName(name)) continue
+      ensure(name, name)
+      const ent = stats.get(name)
+      if(ent) ent.played++
+    }
+  }
+
+  function addOutcome(names, result){
+    if(mode === 'teams'){
+      const normalized = normalizeTeamNames(names)
+      if(normalized.length < 2) return
+      if(registered && normalized.some(name=>!registered.has(name))) return
+      const key = normalized.join(' / ')
+      ensure(key, key)
+      const ent = stats.get(key)
+      if(!ent) return
+      if(result==='win') ent.wins++
+      else if(result==='loss') ent.losses++
+      else ent.draws++
+      return
+    }
+    for(const name of names){
+      if(!name || !isRegisteredName(name)) continue
+      ensure(name, name)
+      const ent = stats.get(name)
+      if(!ent) continue
+      if(result==='win') ent.wins++
+      else if(result==='loss') ent.losses++
+      else ent.draws++
+    }
+  }
+
+  function toIntStrict(v){ if(v===undefined || v===null) return null; const s=String(v).trim(); if(!/^[0-9]+$/.test(s)) return null; return parseInt(s,10) }
+
+  for(const m of matches){
+    const p1a = (m.p1a||'').trim()
+    const p1b = (m.p1b||'').trim()
+    const p2a = (m.p2a||'').trim()
+    const p2b = (m.p2b||'').trim()
+
+    const team1Names = [p1a,p1b].filter(Boolean)
+    const team2Names = [p2a,p2b].filter(Boolean)
+
+    let team1Sets = 0, team2Sets = 0
+    for(let i=1;i<=3;i++){
+      const aRaw = m['s1'+i]
+      const bRaw = m['s2'+i]
+      const a = toIntStrict(aRaw)
+      const b = toIntStrict(bRaw)
+      if(a===null || b===null) continue
+      if(isCompletedSet(aRaw,bRaw)){
+        if(a>b) team1Sets++
+        else if(b>a) team2Sets++
+
+        if(mode === 'players'){
+          addSetStatsForPlayer(team1Names, a, a+b, a>b)
+          addSetStatsForPlayer(team2Names, b, a+b, b>a)
+        } else {
+          addSetStatsForTeam(team1Names, a, a+b, a>b)
+          addSetStatsForTeam(team2Names, b, a+b, b>a)
+        }
+      }
+    }
+
+    const totalCompletedSets = team1Sets + team2Sets
+    if(totalCompletedSets >= 2){
+      if(mode === 'players'){
+        for(const name of [p1a,p1b,p2a,p2b].filter(Boolean)){
+          addPlayed([name])
+        }
+        if(team1Sets>team2Sets){
+          addOutcome([p1a,p1b], 'win')
+          addOutcome([p2a,p2b], 'loss')
+        } else if(team2Sets>team1Sets){
+          addOutcome([p2a,p2b], 'win')
+          addOutcome([p1a,p1b], 'loss')
+        } else {
+          addOutcome([p1a,p1b], 'draw')
+          addOutcome([p2a,p2b], 'draw')
+        }
+      } else {
+        addPlayed(team1Names)
+        addPlayed(team2Names)
+        if(team1Sets>team2Sets){
+          addOutcome(team1Names, 'win')
+          addOutcome(team2Names, 'loss')
+        } else if(team2Sets>team1Sets){
+          addOutcome(team2Names, 'win')
+          addOutcome(team1Names, 'loss')
+        } else {
+          addOutcome(team1Names, 'draw')
+          addOutcome(team2Names, 'draw')
+        }
+      }
+    }
+  }
+
+  const out = Array.from(stats.values()).filter(s=>s.played>0)
+  out.forEach(s=>{
+    s.record = `${s.wins}-${s.losses}-${s.draws||0}`
+    const denom = (s.wins||0) + (s.losses||0)
+    s.winPct = denom>0 ? (s.wins/denom) : null
+    s.setsPct = s.setsTotal>0 ? (s.setsWon/s.setsTotal) : null
+    s.gamesPct = s.gamesTotal>0 ? (s.gamesWon/s.gamesTotal) : null
+  })
+
+  return out
+}
+
+// sorting/filter state
+let currentView = 'players'
+let statsCache = {players:[], teams:[]}
+let sortState = {players:{key:'played',dir:-1}, teams:{key:'played',dir:-1}}
+function getCurrentSort(){ return sortState[currentView] }
+function sortStats(arr){
+  const currentSort = getCurrentSort()
+  arr.sort((a,b)=>{
+    const k = currentSort.key
+    if(k==='name'){
+      const va = a.name || ''
+      const vb = b.name || ''
+      const cmp = va.localeCompare(vb, 'es', {sensitivity:'base', numeric:true})
+      return cmp * currentSort.dir
+    }
+    if(k==='winPct'){
+      const va = (a.winPct===null || a.winPct===undefined) ? -Infinity : a.winPct
+      const vb = (b.winPct===null || b.winPct===undefined) ? -Infinity : b.winPct
+      if(va < vb) return -1*currentSort.dir
+      if(va > vb) return 1*currentSort.dir
+      const wa = a.wins||0
+      const wb = b.wins||0
+      if(wa < wb) return -1*currentSort.dir
+      if(wa > wb) return 1*currentSort.dir
+      return 0
+    }
+    if(k==='setsPct'){
+      const va = (a.setsPct===null || a.setsPct===undefined) ? -Infinity : a.setsPct
+      const vb = (b.setsPct===null || b.setsPct===undefined) ? -Infinity : b.setsPct
+      if(va < vb) return -1*currentSort.dir
+      if(va > vb) return 1*currentSort.dir
+      const sa = a.setsWon||0
+      const sb = b.setsWon||0
+      if(sa < sb) return -1*currentSort.dir
+      if(sa > sb) return 1*currentSort.dir
+      return 0
+    }
+    if(k==='gamesPct'){
+      const va = (a.gamesPct===null || a.gamesPct===undefined) ? -Infinity : a.gamesPct
+      const vb = (b.gamesPct===null || b.gamesPct===undefined) ? -Infinity : b.gamesPct
+      if(va < vb) return -1*currentSort.dir
+      if(va > vb) return 1*currentSort.dir
+      const ga = a.gamesWon||0
+      const gb = b.gamesWon||0
+      if(ga < gb) return -1*currentSort.dir
+      if(ga > gb) return 1*currentSort.dir
+      return 0
+    }
+    let va = a[k]
+    let vb = b[k]
+    if(va===null || va===undefined) va = -Infinity
+    if(vb===null || vb===undefined) vb = -Infinity
+    if(va < vb) return -1*currentSort.dir
+    if(va > vb) return 1*currentSort.dir
+    return 0
+  })
+}
+
+function renderTable(statsArr){
+  const container = document.getElementById('tableContainer')
+  if(!statsArr || statsArr.length===0){
+    const emptyMessage = currentView === 'teams' ? 'No hay parejas con partidos registrados' : 'No hay jugadores con partidos registrados'
+    container.innerHTML = `<div class="muted">${emptyMessage}</div>`
+    return
+  }
+
+  sortStats(statsArr)
+
+  const table = document.createElement('table')
+  const thead = document.createElement('thead')
+  const nameLabel = currentView === 'teams' ? 'Pareja' : 'Jugador'
+  thead.innerHTML = '<tr>'+
+    `<th class="name-col" data-key="name">${nameLabel}<span class="sortable-ind">⇅</span></th>`+
+    '<th class="center" data-key="played">Partidos<span class="sortable-ind">⇅</span></th>'+
+    '<th class="metric-col" data-key="winPct">Victorias (%)<span class="sortable-ind">⇅</span></th>'+
+    '<th class="metric-col" data-key="setsPct">Sets (%)<span class="sortable-ind">⇅</span></th>'+
+    '<th class="metric-col" data-key="gamesPct">Juegos (%)<span class="sortable-ind">⇅</span></th>'+
+    '</tr>'
+  table.appendChild(thead)
+
+  const tbody = document.createElement('tbody')
+  function createMetricCell(wins, losses, draws, pct, showDraw){
+    const td = document.createElement('td')
+    td.className = 'metric-cell'
+    if(pct===null || pct===undefined || isNaN(pct)){
+      if(showDraw && draws && draws>0){
+        const drawPart = `-${draws}`
+        td.classList.remove('empty')
+        td.innerText = `${wins}-${losses}${drawPart}`
+        return td
+      }
+      td.classList.add('empty')
+      td.innerText = '-'
+      return td
+    }
+    const percent = Math.round(pct*100)
+    const bar = document.createElement('div')
+    bar.className = 'bar'
+    const hue = Math.round((pct||0)*120)
+    bar.style.width = Math.max(4, percent) + '%'
+    bar.style.background = `hsl(${hue},70%,60%)`
+
+    td.appendChild(bar)
+    const lblWrap = document.createElement('div')
+    lblWrap.className = 'label'
+    lblWrap.style.position = 'relative'
+    lblWrap.style.zIndex = '1'
+    const drawPart = showDraw ? `-${draws||0}` : ''
+    lblWrap.innerText = `${wins}-${losses}${drawPart} (${percent}%)`
+    td.appendChild(lblWrap)
+    return td
+  }
+
+  statsArr.forEach(s=>{
+    const tr = document.createElement('tr')
+    const tdName = document.createElement('td')
+    tdName.className = 'td-name'
+    tdName.title = s.name
+    tdName.innerText = s.name
+
+    const tdPlayed = document.createElement('td')
+    tdPlayed.innerText = String(s.played)
+    tdPlayed.style.textAlign = 'center'
+
+    const matchesWins = s.wins||0
+    const matchesLosses = s.losses||0
+    const matchesPct = s.winPct
+    const matchesDraws = s.draws||0
+    const tdMatches = createMetricCell(matchesWins, matchesLosses, matchesDraws, matchesPct, true)
+
+    const setsWins = s.setsWon||0
+    const setsLosses = (s.setsTotal||0) - setsWins
+    const setsPct = (s.setsTotal>0) ? (s.setsWon/s.setsTotal) : null
+    const tdSets = createMetricCell(setsWins, setsLosses, 0, setsPct, false)
+
+    const gamesWins = Math.round(s.gamesWon||0)
+    const gamesLosses = Math.round((s.gamesTotal||0) - (s.gamesWon||0))
+    const gamesPct = (s.gamesTotal>0) ? (s.gamesWon/s.gamesTotal) : null
+    const tdGames = createMetricCell(gamesWins, gamesLosses, 0, gamesPct, false)
+
+    tr.appendChild(tdName)
+    tr.appendChild(tdPlayed)
+    tr.appendChild(tdMatches)
+    tr.appendChild(tdSets)
+    tr.appendChild(tdGames)
+    tbody.appendChild(tr)
+  })
+
+  table.appendChild(tbody)
+  const panel = document.createElement('div')
+  panel.style.overflow = 'auto'
+  panel.style.borderRadius = '12px'
+  panel.style.background = 'var(--card)'
+  panel.style.padding = '8px'
+  panel.style.border = '1px solid rgba(15,23,42,0.04)'
+  panel.style.boxShadow = '0 8px 30px rgba(16,24,40,0.04)'
+  panel.appendChild(table)
+  container.innerHTML = ''
+  container.appendChild(panel)
+
+  Array.from(thead.querySelectorAll('th')).forEach(th=>{
+    th.onclick = ()=>{
+      const key = th.getAttribute('data-key') || 'name'
+      const currentSort = getCurrentSort()
+      if(currentSort.key===key) currentSort.dir = -currentSort.dir
+        else { currentSort.key = key; currentSort.dir = (key==='name') ? 1 : -1 }
+      if(key==='record'){ currentSort.key='wins' }
+      if(key==='winPct'){ currentSort.key='winPct' }
+      if(key==='setsPct'){ currentSort.key='setsPct' }
+      if(key==='gamesPct'){ currentSort.key='gamesPct' }
+      renderTable(statsArr)
+    }
+  })
+}
+
+function switchView(view){
+  currentView = view
+  document.querySelectorAll('.view-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.getAttribute('data-view') === view)
+  })
+  renderTable(statsCache[view] || [])
+}
+
+async function refresh(){
+  try{
+    const raw = await loadData()
+    if(!Array.isArray(raw)){
+      console.error('Unexpected loadData result (not an array):', raw)
+    }
+    const names = await loadNames()
+    window._registeredNames = new Set((names||[]).map(n=>String(n).trim()).filter(x=>x))
+    const parsed = (Array.isArray(raw) ? raw : []).map(m=>Object.assign({},m,{__date:parseDateStr(m.date)}))
+    const playersStats = computeStats(parsed, 'players')
+    const teamsStats = computeStats(parsed, 'teams')
+    statsCache = {players:playersStats, teams:teamsStats}
+    renderTable(statsCache[currentView] || [])
+  }catch(err){
+    console.error('Error in refresh():', err)
+    const container = document.getElementById('tableContainer')
+    container.innerHTML = '<div class="muted">Error cargando estadísticas. Mira la consola.</div>'
+  }
+}
+
+document.querySelectorAll('.view-btn').forEach(btn=>{
+  btn.onclick = ()=> switchView(btn.getAttribute('data-view'))
+})
+
+refresh()
+</script>
+
+</body>
+</html>
