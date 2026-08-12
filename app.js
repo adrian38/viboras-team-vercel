@@ -33,7 +33,7 @@ for(let i=0; i<7; i++){
   }
 
   div.onclick = () => {
-    window.location = `day.html?date=${dateStr}`
+    window.location = `/day?date=${dateStr}`
   }
 
   container.appendChild(div)

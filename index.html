@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Liga Padel</title>
+<title>Pirate Padel Team</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="/image.png" type="image/png">
@@ -35,9 +35,9 @@ body{
 .btn{background:var(--primary);color:#fff;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:700;min-width:140px;box-shadow:0 8px 20px rgba(37,99,235,0.08);transition:transform .12s ease}
 .btn.secondary{background:var(--accent)}
 .btn.secondary-green{background:#14b8a6}
+.btn.purple{background:#8b5cf6;box-shadow:0 8px 20px rgba(139,92,246,0.12)}
+.btn.red{background:#ef4444;color:white;box-shadow:0 8px 20px rgba(239,68,68,0.12)}
 .btn.warn{background:#fb923c;color:white;box-shadow:0 8px 20px rgba(251,146,60,0.12)}
-.btn.ghost{background:transparent;border:1px solid rgba(15,23,42,0.06);color:var(--primary)}
-.btn:active{transform:translateY(1px)}
 
 .admin-bottom{background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
 .admin-desktop{display:inline-block}
@@ -66,30 +66,30 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
 <div class="site">
 
   <div class="block">
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <div class="block-title">Registro de nombre</div>
-      <button class="admin-bottom admin-desktop" onclick="openAdmin()" style="margin-left:12px">Administración</button>
-    </div>
-
-    <div class="block-row">
-      <div style="flex:1">
-        <label class="small">¿Primera vez? Registra tu nombre</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="fullname" placeholder="Nombre" class="register-input">
-          <button onclick="addName()" class="btn warn">Guardar</button>
+    <div class="block-title">Resultados</div>
+      <div class="block-row">
+        <div style="flex:1">
+          <label class="small">Sube los resultados de tus partidos</label>
+          <div class="controls">
+            <button onclick="window.location='submit-result.html'" class="btn">Partidos</button>
+            <button class="btn secondary-green">Ligas</button>
+            <button class="btn warn">Torneos</button>
+          </div>
         </div>
       </div>
-    </div>
   </div>
 
   <div class="block">
-    <div class="block-title">Resultados</div>
+    <div class="block-title">Rendimiento</div>
     <div class="block-row">
+      <div style="flex:1">
+        <label class="small">Analiza tu rendimiento de juego y el del grupo</label>
         <div class="controls">
-        <button onclick="window.location='submit-result.html'" class="btn">Introducir resultado</button>
-        <button class="btn secondary" onclick="window.location='history.html'">Ver historial</button>
-        <button class="btn secondary" onclick="downloadCSV()">Descargar historial</button>
-        <button class="btn secondary-green" onclick="window.location='statistics.html'">Estadísticas</button>
+          <button class="btn secondary" onclick="window.location='history.html'">Ver historial</button>
+          <button class="btn secondary" onclick="downloadCSV()">Descargar historial</button>
+          <button class="btn red">Ranking</button>
+          <button class="btn purple" onclick="window.location='statistics.html'">Estadísticas</button>
+        </div>
       </div>
     </div>
   </div>
@@ -98,7 +98,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
     <div class="block-title">Organización de partidos</div>
     <div class="block-row">
       <div style="flex:1">
-        <label class="small">Selecciona día</label>
+        <label class="small">Selecciona un día para indicar tu disponibilidad</label>
         <div id="days"></div>
       </div>
     </div>
