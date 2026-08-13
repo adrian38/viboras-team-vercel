@@ -40,7 +40,7 @@ body{
 .btn.warn{background:#fb923c;color:white;box-shadow:0 8px 20px rgba(251,146,60,0.12)}
 
 .admin-bottom{background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-.admin-desktop{display:inline-block}
+.admin-desktop{display:block;background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;margin:12px auto 18px auto;min-width:160px;text-align:center}
 .admin-mobile{display:none}
 @media(max-width:720px){
   .admin-desktop{display:none}
@@ -85,8 +85,8 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
       <div style="flex:1">
         <label class="small">Analiza tu rendimiento de juego y el del grupo</label>
         <div class="controls">
-          <button class="btn secondary" onclick="window.location='history.html'">Ver historial</button>
-          <button class="btn secondary" onclick="downloadCSV()">Descargar historial</button>
+          <button class="btn secondary" onclick="window.location='history.html'">Ver resultados</button>
+          <button class="btn secondary" onclick="downloadCSV()">Descargar resultados</button>
           <button class="btn red">Ranking</button>
           <button class="btn purple" onclick="window.location='statistics.html'">Estadísticas</button>
         </div>
@@ -107,6 +107,9 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
 </div>
 
 <script src="app.js"></script>
+
+<!-- Desktop admin button (visible on larger screens) -->
+<button class="btn admin-desktop" onclick="openAdmin()" aria-label="Administración">Administración</button>
 
 <!-- Mobile-only admin button (bottom center, shown only on small screens) -->
 <button class="admin-bottom admin-mobile" onclick="openAdmin()" aria-label="Administración móvil">Administración</button>
@@ -134,18 +137,74 @@ async function openAdmin(){
     overlay.style.justifyContent = 'center'
     overlay.style.padding = '24px'
     overlay.innerHTML = `
-      <div style="background:var(--card);max-width:720px;width:100%;border-radius:12px;padding:16px;box-shadow:0 12px 30px rgba(2,6,23,0.3);color:var(--muted)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div style="font-weight:700">Administración de nombres</div>
-            <button class="btn ghost" onclick="closeAdmin()">Cerrar</button>
+      <div style="background:var(--card);max-width:640px;width:100%;border-radius:12px;padding:12px;box-shadow:0 12px 30px rgba(2,6,23,0.3);color:var(--muted);display:flex;gap:12px;justify-content:center;align-items:flex-start">
+        <div id="adminMenuColumn" style="flex:0 0 260px;display:flex;flex-direction:column;gap:8px;align-items:stretch">
+          <div style="font-weight:700;text-align:center;padding:8px 0">Administración</div>
+          <button class="btn" style="width:100%;text-align:left" onclick="showPlayerPanel()">Nuevo jugador</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nueva liga</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo grupo de liga</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo torneo Doble KO</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo torneo Pozo</button>
+          <button class="btn red" style="width:100%;text-align:left" onclick="closeAdmin()">Cerrar</button>
+        </div>
+        <div id="adminMain" style="flex:1;display:none;flex-direction:column;gap:8px;max-width:520px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div id="adminHeaderTitle" style="font-weight:700">Jugadores</div>
+            <button id="adminHeaderButton" class="btn ghost" onclick="showAdminMenu()">Atrás</button>
           </div>
-          <div id="adminList" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto;padding-right:6px"></div>
+          <div id="adminContent" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding-right:6px">
+            <!-- Dynamic content: registration form + list -->
+            <div id="playerForm" style="display:flex;gap:8px;align-items:center">
+              <input id="playerNameInput" class="register-input" placeholder="Nombre completo" />
+              <button class="btn secondary-green" onclick="registerPlayer()">Registrar jugador</button>
+            </div>
+            <div id="adminList" style="display:flex;flex-direction:column;gap:8px;overflow:auto"></div>
+          </div>
+        </div>
       </div>
     `
     document.body.appendChild(overlay)
   }
   overlay.style.display = 'flex'
-  await loadAdminNames()
+  showAdminMenu()
+}
+
+// switch panel in admin overlay
+function showAdminMenu(){
+  const menu = document.getElementById('adminMenuColumn')
+  const content = document.getElementById('adminContent')
+  const adminMain = document.getElementById('adminMain')
+  if(menu) menu.style.display = 'flex'
+  if(content) content.style.display = 'none'
+  if(adminMain) adminMain.style.display = 'none'
+}
+
+function showPlayerPanel(){
+  const menu = document.getElementById('adminMenuColumn')
+  const content = document.getElementById('adminContent')
+  const adminMain = document.getElementById('adminMain')
+  if(menu) menu.style.display = 'none'
+  if(adminMain) adminMain.style.display = 'flex'
+  if(content) content.style.display = 'flex'
+  loadAdminNames()
+}
+
+async function registerPlayer(){
+  const el = document.getElementById('playerNameInput')
+  if(!el) return
+  const name = el.value.trim()
+  if(!name){ alert('Introduce un nombre completo'); return }
+  try{
+    const res = await fetch('/api/submitName',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})})
+    const j = await res.json()
+    if(j && j.ok){
+      if(j.added){ alert('Jugador guardado'); el.value = '' }
+      else alert('Nombre ya registrado')
+      await loadAdminNames()
+    } else {
+      alert('Error al guardar')
+    }
+  }catch(e){ console.error(e); alert('Error al guardar') }
 }
 function closeAdmin(){ const o=document.getElementById('adminOverlay'); if(o) o.style.display='none' }
 
