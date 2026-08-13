@@ -188,7 +188,9 @@ async function loadNames(){
   try{
     const res = await fetch("/api/getNames")
     const db = await res.json()
-    const names = (db && db.names) ? db.names : []
+    const names = (db && db.names)
+      ? db.names.slice().sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+      : []
     const sel = document.getElementById('name')
     sel.innerHTML = ''
     const empty = document.createElement('option')
