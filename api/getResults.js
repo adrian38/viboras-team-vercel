@@ -8,6 +8,9 @@ export default async function handler(req, res) {
       SELECT
         m.id,
         m.date,
+        m.format,
+        m.event_id,
+        m.round,
         p1a.name AS p1a, p1b.name AS p1b,
         p2a.name AS p2a, p2b.name AS p2b,
         m.set1_team1, m.set1_team2,
@@ -20,6 +23,9 @@ export default async function handler(req, res) {
       LEFT JOIN players p2b ON m.player2b_id = p2b.id
       ORDER BY m.id`;
     const matches = rows.map((r) => ({
+      format: r.format || 'bo3_regular',
+      event_id: r.event_id || null,
+      round: r.round || null,
       date: r.date,
       p1a: r.p1a || '',
       p1b: r.p1b || '',

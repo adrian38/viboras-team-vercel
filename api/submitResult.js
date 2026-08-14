@@ -70,10 +70,12 @@ export default async function handler(req, res) {
     await sql`
       INSERT INTO matches (
         date, player1a_id, player1b_id, player2a_id, player2b_id,
-        set1_team1, set1_team2, set2_team1, set2_team2, set3_team1, set3_team2
+        set1_team1, set1_team2, set2_team1, set2_team2, set3_team1, set3_team2,
+        format, event_id, round
       ) VALUES (
         ${date}, ${p1a_id}, ${p1b_id}, ${p2a_id}, ${p2b_id},
-        ${s11}, ${s21}, ${s12}, ${s22}, ${s13}, ${s23}
+        ${s11}, ${s21}, ${s12}, ${s22}, ${s13}, ${s23},
+        'bo3_regular', 1, NULL
       )`;
     res.status(200).json({ ok: true });
   } catch (err) {

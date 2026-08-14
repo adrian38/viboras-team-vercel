@@ -70,13 +70,15 @@ async function migrateMatches() {
     await sql`
       INSERT INTO matches (
         date, player1a_id, player1b_id, player2a_id, player2b_id,
-        set1_team1, set1_team2, set2_team1, set2_team2, set3_team1, set3_team2
+        set1_team1, set1_team2, set2_team1, set2_team2, set3_team1, set3_team2,
+        format, event_id, round
       ) VALUES (
         ${String(m.date || '').trim()},
         ${p1a}, ${p1b}, ${p2a}, ${p2b},
         ${toInt(m.s11)}, ${toInt(m.s21)},
         ${toInt(m.s12)}, ${toInt(m.s22)},
-        ${toInt(m.s13)}, ${toInt(m.s23)}
+        ${toInt(m.s13)}, ${toInt(m.s23)},
+        'bo3_regular', 1, NULL
       )`;
     inserted++;
   }

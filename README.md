@@ -54,6 +54,15 @@ CREATE TABLE availability (
 CREATE TABLE matches (
   id           SERIAL PRIMARY KEY,
   date         TEXT NOT NULL,     -- DD/MM/YYYY (from submit-result.html)
+
+  format       TEXT NOT NULL CHECK (
+    format IN ('bo3_regular','bo3_stb','bo1_regular','timed_games')
+  ),
+
+  event_id     INTEGER NOT NULL REFERENCES events(id) ON DELETE RESTRICT,
+
+  round        TEXT,
+
   player1a_id  INTEGER REFERENCES players(id) ON DELETE RESTRICT,
   player1b_id  INTEGER REFERENCES players(id) ON DELETE RESTRICT,
   player2a_id  INTEGER REFERENCES players(id) ON DELETE RESTRICT,
@@ -61,6 +70,22 @@ CREATE TABLE matches (
   set1_team1 INTEGER, set1_team2 INTEGER,
   set2_team1 INTEGER, set2_team2 INTEGER,
   set3_team1 INTEGER, set3_team2 INTEGER
+);
+
+CREATE TABLE events (
+  id SERIAL PRIMARY KEY,
+  type TEXT NOT NULL,
+  name TEXT NOT NULL UNIQUE,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  league_id INTEGER REFERENCES leagues(id) ON DELETE SET NULL
+);
+
+CREATE TABLE leagues (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL
 );
 ```
 
