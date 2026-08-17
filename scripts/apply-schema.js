@@ -42,7 +42,13 @@ async function main() {
 
   await sql`
     INSERT INTO events (id, type, name, start_date, end_date, league_id)
-    VALUES (1, 'unranked', 'Default', '2000-01-01', '2099-12-31', NULL)
+    VALUES (1, 'ranked', 'Partidos Competitivos', '01/01/2000', '31/12/2099', NULL)
+    ON CONFLICT (id) DO NOTHING
+  `;
+
+  await sql`
+    INSERT INTO events (id, type, name, start_date, end_date, league_id)
+    VALUES (2, 'unranked', 'Partidos Amistosos', '01/01/2000', '31/12/2099', NULL)
     ON CONFLICT (id) DO NOTHING
   `;
 

@@ -436,7 +436,8 @@ async function downloadCSV(){
     "equipo2_jugA","equipo2_jugB",
     "equipo1_set1","equipo2_set1",
     "equipo1_set2","equipo2_set2",
-    "equipo1_set3","equipo2_set3"
+    "equipo1_set3","equipo2_set3",
+    "formato"
   ]
 
   const rows = matches.map(m=>[
@@ -446,9 +447,21 @@ async function downloadCSV(){
     m.s11,m.s21,
     m.s12||"",m.s22||"",
     m.s13||"",m.s23||""
+  ].map(r => r)
+  )
+
+  // append formato column value per match
+  const rowsWithFormat = matches.map(m=>[
+    m.date,
+    m.p1a,m.p1b,
+    m.p2a,m.p2b,
+    m.s11,m.s21,
+    m.s12||"",m.s22||"",
+    m.s13||"",m.s23||"",
+    m.format || ''
   ])
 
-  const csvContent = [header,...rows].map(r=>r.join(";")).join("\n")
+  const csvContent = [header,...rowsWithFormat].map(r=>r.join(";")).join("\n")
 
   const bom = '\uFEFF'
   const blob = new Blob([bom + csvContent], {type:"text/csv;charset=utf-8"})

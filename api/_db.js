@@ -145,8 +145,8 @@ export async function ensureSchema() {
   //     VALUES (
   //       'ranked',
   //       'Ranked',
-  //       '2000-01-01',
-  //       '2099-12-31'
+  //       '01/01/2000',
+  //       '31/12/2099'
   //     )
   //     ON CONFLICT (name) DO NOTHING
   //   `;
@@ -161,8 +161,8 @@ export async function ensureSchema() {
   //     VALUES (
   //       'unranked',
   //       'Unranked',
-  //       '2000-01-01',
-  //       '2099-12-31'
+  //       '01/01/2000',
+  //       '31/12/2099'
   //     )
   //     ON CONFLICT (name) DO NOTHING
   //   `;

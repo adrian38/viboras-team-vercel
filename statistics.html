@@ -107,6 +107,16 @@ function computeStats(matches, mode){
     }
   }
 
+  function addGamesOnlyForPlayer(names, gamesWon, gamesTotal){
+    if(mode !== 'players') return
+    for(const name of names){
+      if(!name || !isRegisteredName(name)) continue
+      ensure(name, name)
+      const ent = stats.get(name)
+      if(ent){ ent.gamesWon += gamesWon; ent.gamesTotal += gamesTotal }
+    }
+  }
+
   function addSetStatsForTeam(names, gamesWon, gamesTotal, setWon){
     if(mode !== 'teams') return
     const normalized = normalizeTeamNames(names)
@@ -116,6 +126,17 @@ function computeStats(matches, mode){
     ensure(key, key)
     const ent = stats.get(key)
     if(ent){ ent.gamesWon += gamesWon; ent.gamesTotal += gamesTotal; ent.setsTotal += 1; if(setWon) ent.setsWon += 1 }
+  }
+
+  function addGamesOnlyForTeam(names, gamesWon, gamesTotal){
+    if(mode !== 'teams') return
+    const normalized = normalizeTeamNames(names)
+    if(normalized.length < 2) return
+    if(registered && normalized.some(name=>!registered.has(name))) return
+    const key = normalized.join(' / ')
+    ensure(key, key)
+    const ent = stats.get(key)
+    if(ent){ ent.gamesWon += gamesWon; ent.gamesTotal += gamesTotal }
   }
 
   function addPlayed(names){
@@ -181,15 +202,41 @@ function computeStats(matches, mode){
       const b = toIntStrict(bRaw)
       if(a===null || b===null) continue
       if(isCompletedSet(aRaw,bRaw)){
+        // always count the set for match outcome
         if(a>b) team1Sets++
         else if(b>a) team2Sets++
 
-        if(mode === 'players'){
-          addSetStatsForPlayer(team1Names, a, a+b, a>b)
-          addSetStatsForPlayer(team2Names, b, a+b, b>a)
+        // If this is a bo3 super-tiebreak (format 'bo3_stb') and this is set 3,
+        // count only as 1 game won (and 1 game total) for the winner, but do not
+        // increment setsTotal/setsWon.
+        const isSTBFormat = String(m.format || '').trim() === 'bo3_stb'
+        if(isSTBFormat && i===3){
+          // winner gets +1 gamesWon and +1 gamesTotal; loser gets +0 gamesWon and +1 gamesTotal
+          if(mode === 'players'){
+            if(a>b){
+              addGamesOnlyForPlayer(team1Names, 1, 1)
+              addGamesOnlyForPlayer(team2Names, 0, 1)
+            } else if(b>a){
+              addGamesOnlyForPlayer(team2Names, 1, 1)
+              addGamesOnlyForPlayer(team1Names, 0, 1)
+            }
+          } else {
+            if(a>b){
+              addGamesOnlyForTeam(team1Names, 1, 1)
+              addGamesOnlyForTeam(team2Names, 0, 1)
+            } else if(b>a){
+              addGamesOnlyForTeam(team2Names, 1, 1)
+              addGamesOnlyForTeam(team1Names, 0, 1)
+            }
+          }
         } else {
-          addSetStatsForTeam(team1Names, a, a+b, a>b)
-          addSetStatsForTeam(team2Names, b, a+b, b>a)
+          if(mode === 'players'){
+            addSetStatsForPlayer(team1Names, a, a+b, a>b)
+            addSetStatsForPlayer(team2Names, b, a+b, b>a)
+          } else {
+            addSetStatsForTeam(team1Names, a, a+b, a>b)
+            addSetStatsForTeam(team2Names, b, a+b, b>a)
+          }
         }
       }
     }

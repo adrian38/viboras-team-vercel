@@ -156,7 +156,7 @@ async function openAdmin(){
           <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nueva liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo grupo de liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo torneo Doble KO</button>
-          <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo torneo Pozo</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="showPozoPanel()">Nuevo torneo Pozo</button>
           <button class="btn red" style="width:100%;text-align:left" onclick="closeAdmin()">Cerrar</button>
         </div>
         <div id="adminMain" style="flex:1;display:none;flex-direction:column;gap:8px;max-width:520px">
@@ -186,19 +186,114 @@ function showAdminMenu(){
   const menu = document.getElementById('adminMenuColumn')
   const content = document.getElementById('adminContent')
   const adminMain = document.getElementById('adminMain')
+  const header = document.getElementById('adminHeaderTitle')
   if(menu) menu.style.display = 'flex'
   if(content) content.style.display = 'none'
   if(adminMain) adminMain.style.display = 'none'
+  if(header) header.innerText = 'Jugadores'
+}
+
+function normalizeDateInput(val){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(val||''))){
+    const [y,m,d] = String(val).split('-')
+    return `${d}/${m}/${y}`
+  }
+  return String(val || '')
 }
 
 function showPlayerPanel(){
   const menu = document.getElementById('adminMenuColumn')
   const content = document.getElementById('adminContent')
   const adminMain = document.getElementById('adminMain')
+  const header = document.getElementById('adminHeaderTitle')
   if(menu) menu.style.display = 'none'
   if(adminMain) adminMain.style.display = 'flex'
   if(content) content.style.display = 'flex'
+  if(header) header.innerText = 'Jugadores'
+  content.innerHTML = `
+    <div id="playerForm" style="display:flex;gap:8px;align-items:center">
+      <input id="playerNameInput" class="register-input" placeholder="Nombre completo" />
+      <button class="btn secondary-green" onclick="registerPlayer()">Registrar jugador</button>
+    </div>
+    <div id="adminList" style="display:flex;flex-direction:column;gap:8px;overflow:auto"></div>
+  `
   loadAdminNames()
+}
+
+function showPozoPanel(){
+  const menu = document.getElementById('adminMenuColumn')
+  const content = document.getElementById('adminContent')
+  const adminMain = document.getElementById('adminMain')
+  const header = document.getElementById('adminHeaderTitle')
+  if(menu) menu.style.display = 'none'
+  if(adminMain) adminMain.style.display = 'flex'
+  if(content) content.style.display = 'flex'
+  if(header) header.innerText = 'Nuevo torneo Pozo'
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        Nombre del torneo
+        <input id="pozoName" class="register-input" placeholder="Ej: Pozo DD/MM/AAAA" />
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Fecha inicio
+          <input id="pozoStartDate" type="date" class="register-input" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Fecha fin
+          <input id="pozoEndDate" type="date" class="register-input" />
+        </label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        CSV del torneo
+        <input id="pozoCsvFile" type="file" accept=".csv,text/csv" />
+      </label>
+      <div style="color:var(--muted);font-size:0.9rem;line-height:1.4">
+        Formato del fichero CSV esperado (sin cabecera): jugador1;jugador2;jugador3;jugador4;juegos_pareja1;juegos_pareja2
+      </div>
+      <button class="btn secondary-green" onclick="submitPozoTournament()">Guardar torneo</button>
+    </div>
+  `
+}
+
+async function submitPozoTournament(){
+  const name = document.getElementById('pozoName')?.value.trim() || ''
+  const startInput = document.getElementById('pozoStartDate')?.value || ''
+  const endInput = document.getElementById('pozoEndDate')?.value || ''
+  const fileEl = document.getElementById('pozoCsvFile')
+  const file = fileEl && fileEl.files ? fileEl.files[0] : null
+
+  if(!name){ alert('Introduce el nombre del torneo'); return }
+  if(!startInput || !endInput){ alert('Selecciona la fecha de inicio y la de fin'); return }
+  if(!file){ alert('Sube un fichero CSV'); return }
+
+  try{
+    const csvText = await file.text()
+    const payload = {
+      name,
+      start_date: normalizeDateInput(startInput),
+      end_date: normalizeDateInput(endInput),
+      csv: csvText
+    }
+
+    const res = await fetch('/api/createPozoTournament', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    const json = await res.json().catch(() => ({}))
+    if(!res.ok || !json.ok){
+      throw new Error(json && json.error ? json.error : 'Error al guardar el torneo')
+    }
+
+    alert('Torneo Pozo guardado')
+    closeAdmin()
+  }catch(e){
+    console.error(e)
+    alert(e && e.message ? e.message : 'Error al guardar el torneo')
+  }
 }
 
 async function registerPlayer(){

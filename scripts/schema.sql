@@ -39,9 +39,13 @@ CREATE TABLE IF NOT EXISTS events (
   league_id INTEGER REFERENCES leagues(id) ON DELETE SET NULL
 );
 
--- Ensure a default event with id = 1 exists for migrated/submitted matches
+-- Ensure default events with id 1 and 2 exist for migrated/submitted matches
 INSERT INTO events (id, type, name, start_date, end_date, league_id)
-VALUES (1, 'unranked', 'Default', '2000-01-01', '2099-12-31', NULL)
+VALUES (1, 'ranked', 'Partidos Competitivos', '01/01/2000', '31/12/2099', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO events (id, type, name, start_date, end_date, league_id)
+VALUES (2, 'unranked', 'Partidos Amistosos', '01/01/2000', '31/12/2099', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS matches (

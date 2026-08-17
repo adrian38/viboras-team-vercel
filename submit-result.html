@@ -179,6 +179,10 @@ async function submitResult(){
     s21: document.getElementById('s21').value.trim(), s22: document.getElementById('s22').value.trim(), s23: document.getElementById('s23').value.trim()
   }
 
+  // include format when set 3 is a super tie-break
+  const stbEl = document.getElementById('stb')
+  if(stbEl && stbEl.checked){ payload.format = 'bo3_stb' }
+
   const saveButton = document.querySelector('.btn.warn')
   if (saveButton) {
     saveButton.disabled = true
