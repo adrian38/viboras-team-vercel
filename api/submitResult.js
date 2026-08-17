@@ -22,6 +22,7 @@ export default async function handler(req, res) {
     const s12 = toInt(data.s12), s22 = toInt(data.s22);
     const s13 = toInt(data.s13), s23 = toInt(data.s23);
     const date = String(data.date || '').trim();
+    const format = (String(data.format || '').trim() === 'bo3_stb') ? 'bo3_stb' : 'bo3_regular';
 
     if (original && typeof original === 'object') {
       const o_p1a = await getPlayerId(original.p1a);
@@ -33,6 +34,7 @@ export default async function handler(req, res) {
       const upd = await sql`
         UPDATE matches SET
           date = ${date},
+          format = ${format}, event_id = 1, round = NULL,
           player1a_id = ${p1a_id}, player1b_id = ${p1b_id},
           player2a_id = ${p2a_id}, player2b_id = ${p2b_id},
           set1_team1 = ${s11}, set1_team2 = ${s21},
@@ -54,7 +56,8 @@ export default async function handler(req, res) {
         UPDATE matches SET
           set1_team1 = ${s11}, set1_team2 = ${s21},
           set2_team1 = ${s12}, set2_team2 = ${s22},
-          set3_team1 = ${s13}, set3_team2 = ${s23}
+          set3_team1 = ${s13}, set3_team2 = ${s23},
+          format = ${format}, event_id = 1, round = NULL
         WHERE date = ${date}
           AND player1a_id IS NOT DISTINCT FROM ${p1a_id}
           AND player1b_id IS NOT DISTINCT FROM ${p1b_id}
@@ -75,7 +78,7 @@ export default async function handler(req, res) {
       ) VALUES (
         ${date}, ${p1a_id}, ${p1b_id}, ${p2a_id}, ${p2b_id},
         ${s11}, ${s21}, ${s12}, ${s22}, ${s13}, ${s23},
-        'bo3_regular', 1, NULL
+          ${format}, 1, NULL
       )`;
     res.status(200).json({ ok: true });
   } catch (err) {

@@ -121,11 +121,14 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 
     <div id="tableContainer"></div>
 
-    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
-      <div style="text-align:left">
+    <div style="margin-top:14px;display:flex;align-items:center">
+      <div style="flex:0 0 auto;text-align:left">
         <button class="admin-bottom" id="adminBtn">Administración</button>
       </div>
-      <div style="text-align:right">
+      <div style="flex:1;text-align:center">
+        <button class="btn" id="downloadBtn">Descargar resultados</button>
+      </div>
+      <div style="flex:0 0 auto;text-align:right">
         <button class="back-btn" onclick="window.location='/'">Atrás</button>
       </div>
     </div>
@@ -397,6 +400,67 @@ async function deleteMatch(m){
     loadData()
   }catch(e){ console.error(e); alert('Error al eliminar') }
 }
+
+// Descargar CSV de resultados (botón central)
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  downloadCSV()
+})
+
+async function downloadCSV(){
+  const res = await fetch("/api/getResults")
+  const db = await res.json()
+
+  if(!db.matches || db.matches.length===0){
+    alert("No hay resultados")
+    return
+  }
+
+  function parseDateStr(s){
+    if(!s) return new Date(0)
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s)
+    const parts = String(s).split('/')
+    if(parts.length===3){
+      const d = parseInt(parts[0],10)||1
+      const m = (parseInt(parts[1],10)||1)-1
+      const y = parseInt(parts[2],10)||0
+      return new Date(y,m,d)
+    }
+    return new Date(s)
+  }
+
+  const matches = (db.matches || []).slice().sort((a,b)=> parseDateStr(a.date) - parseDateStr(b.date))
+
+  const header = [
+    "fecha",
+    "equipo1_jugA","equipo1_jugB",
+    "equipo2_jugA","equipo2_jugB",
+    "equipo1_set1","equipo2_set1",
+    "equipo1_set2","equipo2_set2",
+    "equipo1_set3","equipo2_set3"
+  ]
+
+  const rows = matches.map(m=>[
+    m.date,
+    m.p1a,m.p1b,
+    m.p2a,m.p2b,
+    m.s11,m.s21,
+    m.s12||"",m.s22||"",
+    m.s13||"",m.s23||""
+  ])
+
+  const csvContent = [header,...rows].map(r=>r.join(";")).join("\n")
+
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + csvContent], {type:"text/csv;charset=utf-8"})
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'resultados.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 
 function startEditRow(tr,m){
   // replace row with editable inputs
