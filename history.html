@@ -22,11 +22,15 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 .muted{color:#6b7280}
 .btn{background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
 .back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
+.admin-match-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.admin-match-grid > input{width:100%;min-width:0;box-sizing:border-box}
+.admin-format-option{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 8px;border-radius:8px;background:#f8fafc;border:1px solid rgba(15,23,42,0.04);font-size:0.92rem;color:#1f2937}
+.admin-format-option input{margin:0}
 .tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff;border:1px solid #eee;margin-right:6px;font-weight:600}
 .tag.win{background:#dcfce7;color:#065f46;border-color:rgba(16,185,129,0.12)}
 .tag.lose{background:#fff5f5;color:#7f1d1d;border-color:rgba(239,68,68,0.08)}
 .tag.tie{background:#ffffff;color:#374151;border-color:#e5e7eb}
-@media(max-width:720px){body{padding:16px}}
+@media(max-width:720px){body{padding:16px}.admin-match-grid{grid-template-columns:1fr}.admin-format-option{font-size:0.85rem}}
 .set-list{display:flex;gap:6px;flex-wrap:wrap}
 .set-item{display:inline-block}
 .set-item:not(:last-child)::after{content:", "}
@@ -101,7 +105,7 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 
     <div id="adminPanel" style="display:none;margin-top:12px;padding:10px;border-radius:8px;border:1px dashed rgba(15,23,42,0.06);background:#fff">
       <div style="font-weight:700;margin-bottom:8px">Administración</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div class="admin-match-grid">
         <input id="a_date" class="select" placeholder="DD/MM/YYYY" />
         <input id="a_p1a" class="select" placeholder="P1A" />
         <input id="a_p1b" class="select" placeholder="P1B" />
@@ -114,9 +118,13 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
         <input id="a_s13" class="select" placeholder="s13" />
         <input id="a_s23" class="select" placeholder="s23" />
       </div>
-        <div style="margin-top:8px">
-          <button class="btn" id="adminAddBtn">Agregar partido</button>
-        </div>
+      <label class="admin-format-option" for="a_stb">
+        <input id="a_stb" type="checkbox" />
+        <span>stb en 3er set</span>
+      </label>
+      <div style="margin-top:8px">
+        <button class="btn" id="adminAddBtn">Agregar partido</button>
+      </div>
     </div>
 
     <div id="tableContainer"></div>
@@ -350,6 +358,15 @@ document.getElementById('player').addEventListener('input', applyFilter)
 
 loadData()
 
+function toggleAdmin(on){
+  isAdmin = !!on
+  const panel = document.getElementById('adminPanel')
+  if(panel) panel.style.display = isAdmin ? 'block' : 'none'
+  const btn = document.getElementById('adminBtn')
+  if(btn) btn.innerText = isAdmin ? 'Salir admin' : 'Administración'
+  renderTable(lastFiltered)
+}
+
 // Admin handling
 document.getElementById('adminBtn').addEventListener('click', ()=>{
   if(isAdmin){
@@ -379,19 +396,22 @@ document.getElementById('adminAddBtn').addEventListener('click', async ()=>{
     s23: document.getElementById('a_s23').value.trim()
   }
 
-    try{
-    await fetch('/api/submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  if (document.getElementById('a_stb')?.checked) {
+    payload.format = 'bo3_stb'
+  }
+
+  try {
+    await fetch('/api/submitResult', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
     loadData()
-  }catch(e){ console.error(e); alert('Error al agregar') }
-
+  } catch (e) {
+    console.error(e)
+    alert('Error al agregar')
+  }
 })
-
-function toggleAdmin(on){
-  isAdmin = !!on
-  document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none'
-  document.getElementById('adminBtn').innerText = isAdmin ? 'Salir admin' : 'Administración'
-  renderTable(lastFiltered)
-}
 
 async function deleteMatch(m){
   if(!confirm('¿Eliminar este partido?')) return

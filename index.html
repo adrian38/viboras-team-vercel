@@ -57,7 +57,7 @@ body{
 label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
 
 @media(min-width:900px){.site{gap:20px}.block-row{align-items:center}}
-@media(max-width:720px){body{padding:16px}.btn{min-width:120px;padding:12px 14px}#days{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
+@media(max-width:720px){body{padding:16px}.btn{min-width:120px;padding:12px 14px}#days{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.register-input{min-width:0;width:100%}#adminOverlay > div{flex-direction:column}#adminOverlay > div > #adminMenuColumn{flex-basis:auto;width:100%}#adminOverlay > div > #adminMain{width:100%;max-width:100%}.pozo-form-grid{grid-template-columns:1fr !important}}
 </style>
 </head>
 
@@ -235,7 +235,7 @@ function showPozoPanel(){
         Nombre del torneo
         <input id="pozoName" class="register-input" placeholder="Ej: Pozo DD/MM/AAAA" />
       </label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="pozo-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
           Fecha inicio
           <input id="pozoStartDate" type="date" class="register-input" />

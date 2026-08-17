@@ -11,16 +11,19 @@ export default async function handler(req, res) {
         m.format,
         m.event_id,
         m.round,
+        e.type AS event_type,
         p1a.name AS p1a, p1b.name AS p1b,
         p2a.name AS p2a, p2b.name AS p2b,
         m.set1_team1, m.set1_team2,
         m.set2_team1, m.set2_team2,
         m.set3_team1, m.set3_team2
       FROM matches m
+      LEFT JOIN events e ON e.id = m.event_id
       LEFT JOIN players p1a ON m.player1a_id = p1a.id
       LEFT JOIN players p1b ON m.player1b_id = p1b.id
       LEFT JOIN players p2a ON m.player2a_id = p2a.id
       LEFT JOIN players p2b ON m.player2b_id = p2b.id
+      WHERE e.type = 'ranked'
       ORDER BY m.id`;
     const matches = rows.map((r) => ({
       format: r.format || 'bo3_regular',
