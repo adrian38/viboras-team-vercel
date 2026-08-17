@@ -23,6 +23,10 @@ th{cursor:pointer;user-select:none}
 .view-toggle{display:flex;gap:8px;flex-wrap:wrap}
 .view-btn{background:#fff;color:var(--muted);border:1px solid rgba(15,23,42,0.08);padding:8px 12px;border-radius:999px;cursor:pointer}
 .view-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.event-type-filter{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:10px 0 4px}
+.event-checkbox{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(15,23,42,0.08);border-radius:999px;background:#f8fafc;color:#0f172a;font-size:0.92rem}
+.event-checkbox input{margin:0}
+.update-btn{background:var(--primary);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;min-width:120px}
 .sortable-ind{font-weight:700;margin-left:6px;color:#94a3b8}
 /* metric cell visuals and layout */
 .metric-col{min-width:120px;padding-right:12px}
@@ -49,6 +53,14 @@ th{cursor:pointer;user-select:none}
       <div style="flex:1"></div>
     </div>
 
+    <div class="event-type-filter" aria-label="Tipos de partidos incluidos">
+      <label class="event-checkbox"><input type="checkbox" value="ranked" checked> Partidos competitivos</label>
+      <label class="event-checkbox"><input type="checkbox" value="unranked" checked> Partidos amistosos</label>
+      <label class="event-checkbox"><input type="checkbox" value="grupo_liga" checked> Ligas</label>
+      <label class="event-checkbox"><input type="checkbox" value="pozo,doble_ko" checked> Torneos</label>
+      <button type="button" class="update-btn" id="refreshStatsBtn">Aplicar</button>
+    </div>
+
     <div id="tableContainer"></div>
 
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
@@ -62,20 +74,43 @@ th{cursor:pointer;user-select:none}
 </div>
 
 <script>
+const EVENT_FILTER_DEFS = [
+  { id: 'ranked', label: 'Partidos competitivos', values: ['ranked'] },
+  { id: 'unranked', label: 'Partidos amistosos', values: ['unranked'] },
+  { id: 'grupo_liga', label: 'Ligas', values: ['grupo_liga'] },
+  { id: 'tournaments', label: 'Torneos', values: ['pozo', 'doble_ko'] }
+]
+
 function parseDateStr(s){ if(!s) return new Date(0); if(/^-?\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s); const parts=String(s).split('/'); if(parts.length===3){ const d=parseInt(parts[0],10)||1; const m=(parseInt(parts[1],10)||1)-1; const y=parseInt(parts[2],10)||0; return new Date(y,m,d) } return new Date(s) }
 
-function isCompletedSet(aRaw,bRaw){ const a = (aRaw!==undefined && aRaw!=='') ? parseInt(aRaw,10) : NaN; const b = (bRaw!==undefined && bRaw!=='') ? parseInt(bRaw,10) : NaN; if(isNaN(a) || isNaN(b)) return false; const max = Math.max(a,b); const diff = Math.abs(a-b); // valid when winner has two-game margin (>=6) or a tiebreak set decided 7-6
-  if(max>=6 && (diff>=2 || max===7)) return true; return false }
+function getSelectedEventTypes(){
+  const selected = []
+  document.querySelectorAll('.event-checkbox input[type="checkbox"]').forEach((input) => {
+    if (!input.checked) return
+    const values = String(input.value || '').split(',').map((v) => String(v).trim().toLowerCase()).filter(Boolean)
+    selected.push(...values)
+  })
+  return [...new Set(selected)]
+}
+
+function isMatchIncludedByEventType(match){
+  const selected = getSelectedEventTypes()
+  if (!selected.length) return false
+  const type = String(match && match.event_type ? match.event_type : '').trim().toLowerCase()
+  return selected.includes(type)
+}
 
 function loadData(){
-  const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
-  const url = `/api/getResults?ts=${Date.now()}`
+  const url = `/api/getResults?eventType=ranked,unranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`
   return fetch(url)
     .then(r=>{
       if(!r.ok) throw new Error('HTTP '+r.status)
       return r.json()
     })
-    .then(db=>{ return (db && db.matches) ? db.matches : [] })
+    .then(db => {
+      const matches = (db && db.matches) ? db.matches : []
+      return matches.filter((match) => isMatchIncludedByEventType(match))
+    })
     .catch(e=>{ console.error('Could not load results', e); return [] })
 }
 
@@ -89,6 +124,8 @@ function normalizeTeamNames(names){
   const cleaned = (names||[]).map(n=>String(n||'').trim()).filter(Boolean)
   return cleaned.slice().sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base',numeric:true}))
 }
+
+function toIntStrict(v){ if(v===undefined || v===null) return null; const s=String(v).trim(); if(!/^[0-9]+$/.test(s)) return null; return parseInt(s,10) }
 
 function computeStats(matches, mode){
   const stats = new Map()
@@ -183,8 +220,6 @@ function computeStats(matches, mode){
     }
   }
 
-  function toIntStrict(v){ if(v===undefined || v===null) return null; const s=String(v).trim(); if(!/^[0-9]+$/.test(s)) return null; return parseInt(s,10) }
-
   for(const m of matches){
     const p1a = (m.p1a||'').trim()
     const p1b = (m.p1b||'').trim()
@@ -194,83 +229,81 @@ function computeStats(matches, mode){
     const team1Names = [p1a,p1b].filter(Boolean)
     const team2Names = [p2a,p2b].filter(Boolean)
 
-    let team1Sets = 0, team2Sets = 0
-    for(let i=1;i<=3;i++){
-      const aRaw = m['s1'+i]
-      const bRaw = m['s2'+i]
-      const a = toIntStrict(aRaw)
-      const b = toIntStrict(bRaw)
-      if(a===null || b===null) continue
-      if(isCompletedSet(aRaw,bRaw)){
-        // always count the set for match outcome
-        if(a>b) team1Sets++
-        else if(b>a) team2Sets++
+    const format = String(m.format || '').trim()
+    if(format === 'timed_games'){
+      const team1Games = toIntStrict(m.s11)
+      const team2Games = toIntStrict(m.s21)
+      if(team1Games === null || team2Games === null) continue
 
-        // If this is a bo3 super-tiebreak (format 'bo3_stb') and this is set 3,
-        // count only as 1 game won (and 1 game total) for the winner, but do not
-        // increment setsTotal/setsWon.
-        const isSTBFormat = String(m.format || '').trim() === 'bo3_stb'
-        if(isSTBFormat && i===3){
-          // winner gets +1 gamesWon and +1 gamesTotal; loser gets +0 gamesWon and +1 gamesTotal
-          if(mode === 'players'){
-            if(a>b){
-              addGamesOnlyForPlayer(team1Names, 1, 1)
-              addGamesOnlyForPlayer(team2Names, 0, 1)
-            } else if(b>a){
-              addGamesOnlyForPlayer(team2Names, 1, 1)
-              addGamesOnlyForPlayer(team1Names, 0, 1)
-            }
-          } else {
-            if(a>b){
-              addGamesOnlyForTeam(team1Names, 1, 1)
-              addGamesOnlyForTeam(team2Names, 0, 1)
-            } else if(b>a){
-              addGamesOnlyForTeam(team2Names, 1, 1)
-              addGamesOnlyForTeam(team1Names, 0, 1)
-            }
-          }
-        } else {
-          if(mode === 'players'){
-            addSetStatsForPlayer(team1Names, a, a+b, a>b)
-            addSetStatsForPlayer(team2Names, b, a+b, b>a)
-          } else {
-            addSetStatsForTeam(team1Names, a, a+b, a>b)
-            addSetStatsForTeam(team2Names, b, a+b, b>a)
-          }
+      if(mode === 'players'){
+        if(team1Games > team2Games){
+          addGamesOnlyForPlayer(team1Names, team1Games, team1Games + team2Games)
+          addGamesOnlyForPlayer(team2Names, team2Games, team1Games + team2Games)
+          addPlayed(team1Names)
+          addPlayed(team2Names)
+          addOutcome(team1Names, 'win')
+          addOutcome(team2Names, 'loss')
+        } else if(team2Games > team1Games){
+          addGamesOnlyForPlayer(team2Names, team2Games, team1Games + team2Games)
+          addGamesOnlyForPlayer(team1Names, team1Games, team1Games + team2Games)
+          addPlayed(team1Names)
+          addPlayed(team2Names)
+          addOutcome(team2Names, 'win')
+          addOutcome(team1Names, 'loss')
         }
+      } else {
+        if(team1Games > team2Games){
+          addGamesOnlyForTeam(team1Names, team1Games, team1Games + team2Games)
+          addGamesOnlyForTeam(team2Names, team2Games, team1Games + team2Games)
+          addPlayed(team1Names)
+          addPlayed(team2Names)
+          addOutcome(team1Names, 'win')
+          addOutcome(team2Names, 'loss')
+        } else if(team2Games > team1Games){
+          addGamesOnlyForTeam(team2Names, team2Games, team1Games + team2Games)
+          addGamesOnlyForTeam(team1Names, team1Games, team1Games + team2Games)
+          addPlayed(team1Names)
+          addPlayed(team2Names)
+          addOutcome(team2Names, 'win')
+          addOutcome(team1Names, 'loss')
+        }
+      }
+      continue
+    }
+
+    let team1Sets = 0
+    let team2Sets = 0
+    for(let i=1;i<=3;i++){
+      const a = toIntStrict(m['s1'+i])
+      const b = toIntStrict(m['s2'+i])
+      if(a === null || b === null) continue
+
+      if(a > b) team1Sets++
+      else if(b > a) team2Sets++
+
+      if(mode === 'players'){
+        addSetStatsForPlayer(team1Names, a, a + b, a > b)
+        addSetStatsForPlayer(team2Names, b, a + b, b > a)
+      } else {
+        addSetStatsForTeam(team1Names, a, a + b, a > b)
+        addSetStatsForTeam(team2Names, b, a + b, b > a)
       }
     }
 
-    const totalCompletedSets = team1Sets + team2Sets
-    if(totalCompletedSets >= 2){
-      if(mode === 'players'){
-        for(const name of [p1a,p1b,p2a,p2b].filter(Boolean)){
-          addPlayed([name])
-        }
-        if(team1Sets>team2Sets){
-          addOutcome([p1a,p1b], 'win')
-          addOutcome([p2a,p2b], 'loss')
-        } else if(team2Sets>team1Sets){
-          addOutcome([p2a,p2b], 'win')
-          addOutcome([p1a,p1b], 'loss')
-        } else {
-          addOutcome([p1a,p1b], 'draw')
-          addOutcome([p2a,p2b], 'draw')
-        }
-      } else {
-        addPlayed(team1Names)
-        addPlayed(team2Names)
-        if(team1Sets>team2Sets){
-          addOutcome(team1Names, 'win')
-          addOutcome(team2Names, 'loss')
-        } else if(team2Sets>team1Sets){
-          addOutcome(team2Names, 'win')
-          addOutcome(team1Names, 'loss')
-        } else {
-          addOutcome(team1Names, 'draw')
-          addOutcome(team2Names, 'draw')
-        }
-      }
+    if(team1Sets === 0 && team2Sets === 0) continue
+
+    addPlayed(team1Names)
+    addPlayed(team2Names)
+
+    if(team1Sets > team2Sets){
+      addOutcome(team1Names, 'win')
+      addOutcome(team2Names, 'loss')
+    } else if(team2Sets > team1Sets){
+      addOutcome(team2Names, 'win')
+      addOutcome(team1Names, 'loss')
+    } else {
+      addOutcome(team1Names, 'draw')
+      addOutcome(team2Names, 'draw')
     }
   }
 
@@ -492,6 +525,8 @@ async function refresh(){
 document.querySelectorAll('.view-btn').forEach(btn=>{
   btn.onclick = ()=> switchView(btn.getAttribute('data-view'))
 })
+
+document.getElementById('refreshStatsBtn').addEventListener('click', refresh)
 
 refresh()
 </script>
