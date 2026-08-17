@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados de torneos</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;padding:28px 18px;background:linear-gradient(180deg,#f5f8ff,#eef4ff 60%);color:#0b1530}
+.site{max-width:980px;margin:0 auto}
+.block{background:#fff;border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+.block-title{font-weight:700;margin-bottom:10px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.filter-box{background:linear-gradient(180deg,#eaf4ff,#e1f0ff);padding:12px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);margin-bottom:12px}
+.select{padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
+.small-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 8px;border-radius:6px;cursor:pointer}
+.btn{background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
+.muted{color:#6b7280}
+.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff;border:1px solid #eee;margin-right:6px;font-weight:600}
+.tag.win{background:#dcfce7;color:#065f46;border-color:rgba(16,185,129,0.12)}
+.tag.lose{background:#fff5f5;color:#7f1d1d;border-color:rgba(239,68,68,0.08)}
+.tag.tie{background:#ffffff;color:#374151;border-color:#e5e7eb}
+.set-list{display:flex;gap:6px;flex-wrap:wrap}
+.set-item{display:inline-block}
+.set-item:not(:last-child)::after{content:", "}
+.date-day{display:none}
+.date-full{display:inline}
+.th-day{display:none}
+.th-full{display:inline}
+@media(max-width:720px){body{padding:16px}.table-wrap{overflow-x:auto}.set-list{display:block}.set-item{display:block;margin-bottom:6px}.set-item:not(:last-child)::after{content:""}.date-day{display:inline}.date-full{display:none}.th-day{display:inline}.th-full{display:none}.tag{font-weight:400;font-size:0.75rem}.team-break{display:none}.th-res{display:inline}.th-full-res{display:none}}
+.desktop-only{display:inline}
+.mobile-only{display:none}
+@media(max-width:720px){.desktop-only{display:none}.mobile-only{display:inline-block;margin-right:8px}}
+@media(max-width:720px){.set-list{display:inline;font-size:calc(1rem - 3pt)}.set-item{display:inline;margin-right:8px}.team-break{display:block}.th-res{display:none}.th-full-res{display:inline}}
+@media(max-width:720px){.team-break{display:block}}
+</style>
+</head>
+<body>
+
+<div class="site">
+  <div class="block">
+    <div class="filter-box">
+      <div class="controls" role="toolbar" aria-label="Filtros">
+        <label style="display:flex;flex-direction:column;min-width:220px;flex:1">
+          Torneo
+          <select id="eventSelect" class="select"></select>
+        </label>
+
+        <label style="display:flex;flex-direction:column;flex:1;min-width:220px">
+          Jugador
+          <input id="player" class="select" placeholder="Nombre (parte del nombre)" />
+        </label>
+
+        <div style="display:flex;align-items:end;gap:8px">
+          <button class="btn" id="filterBtn">Filtrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="summary" class="muted"></div>
+    <div id="tableContainer" class="table-wrap"></div>
+
+    <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="flex:1;text-align:left">
+        <button class="btn" id="downloadBtn">Descargar resultados</button>
+      </div>
+      <div style="flex:0 0 auto;text-align:right">
+        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let parsedMatches = []
+let lastFiltered = []
+
+function parseMatches(raw){
+  return (raw || []).map(m => {
+    const parts = (m.date || '').split('/')
+    const d = new Date(parseInt(parts[2] || 0, 10), (parseInt(parts[1] || 0, 10) - 1), parseInt(parts[0] || 0, 10))
+    return Object.assign({}, m, { __date: d, event_id: m.event_id != null ? String(m.event_id) : '' })
+  }).filter(x => x.__date && !isNaN(x.__date.getTime()))
+}
+
+function buildEventOption(value, label){
+  const opt = document.createElement('option')
+  opt.value = value
+  opt.textContent = label
+  return opt
+}
+
+function setupEventSelector(events, matches){
+  const select = document.getElementById('eventSelect')
+  const uniqueEvents = []
+  const seen = new Set()
+
+  const eventMap = new Map((events || []).map((event) => [String(event.id || event.event_id), event]))
+
+  ;(matches || []).forEach((m) => {
+    if (m.event_id && !seen.has(String(m.event_id))) {
+      seen.add(String(m.event_id))
+      uniqueEvents.push({
+        id: String(m.event_id),
+        name: m.event_name || `Evento ${m.event_id}`,
+        type: m.event_type || 'pozo'
+      })
+    }
+  })
+
+  uniqueEvents.forEach((event) => {
+    if (!eventMap.has(event.id)) {
+      eventMap.set(event.id, event)
+    }
+  })
+
+  const sortedEvents = [...eventMap.values()].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }))
+
+  select.innerHTML = ''
+  select.appendChild(buildEventOption('all', 'Todos los torneos'))
+
+  sortedEvents.forEach((event) => {
+    select.appendChild(buildEventOption(String(event.id), event.name))
+  })
+
+  if (sortedEvents.length > 0) {
+    select.value = 'all'
+  }
+}
+
+async function loadData(){
+  try {
+    const url = `/api/getResults?eventType=pozo,doble_ko&ts=${Date.now()}`
+    const res = await fetch(url)
+    const db = await res.json()
+
+    parsedMatches = parseMatches(db.matches || [])
+    setupEventSelector(db.events || [], parsedMatches)
+    applyFilter()
+  } catch (e) {
+    console.error('Could not load tournament results', e)
+    document.getElementById('summary').innerText = 'No se pudieron cargar los resultados del torneo.'
+    document.getElementById('tableContainer').innerHTML = '<div class="muted">No hay resultados para mostrar.</div>'
+  }
+}
+
+function applyFilter(){
+  const selectedEvent = document.getElementById('eventSelect').value
+  const player = (document.getElementById('player').value || '').trim().toLowerCase()
+
+  let filtered = parsedMatches.slice()
+
+  if (selectedEvent && selectedEvent !== 'all') {
+    filtered = filtered.filter(x => String(x.event_id) === String(selectedEvent))
+  }
+
+  if (player) {
+    filtered = filtered.filter(x => {
+      return [x.p1a, x.p1b, x.p2a, x.p2b].some(n => (n || '').toLowerCase().includes(player))
+    })
+  }
+
+  filtered = filtered.sort((a, b) => a.__date - b.__date)
+
+  const summary = document.getElementById('summary')
+  summary.innerText = `Resultados: ${filtered.length}`
+
+  lastFiltered = filtered
+  renderTable(filtered)
+}
+
+function renderTable(matches){
+  const container = document.getElementById('tableContainer')
+  if (!matches.length) {
+    container.innerHTML = '<div class="muted">No hay resultados para los filtros introducidos</div>'
+    return
+  }
+
+  const table = document.createElement('table')
+  const thead = document.createElement('thead')
+  thead.innerHTML = '<tr><th><span class="th-full">Fecha</span><span class="th-day">Día</span></th><th>Jugadores</th><th><span class="th-full-res">Marcador</span></th></tr>'
+  table.appendChild(thead)
+
+  const tbody = document.createElement('tbody')
+
+  matches.forEach(m => {
+    const tr = document.createElement('tr')
+
+    const tdDate = document.createElement('td')
+    const spanFull = document.createElement('span')
+    spanFull.className = 'date-full'
+    spanFull.innerText = m.date
+    const spanDay = document.createElement('span')
+    spanDay.className = 'date-day'
+    spanDay.innerText = (m.__date && !isNaN(m.__date.getTime())) ? String(m.__date.getDate()) : m.date
+    tdDate.appendChild(spanFull)
+    tdDate.appendChild(spanDay)
+
+    const tdPlayers = document.createElement('td')
+    let team1Sets = 0
+    let team2Sets = 0
+
+    for (let i = 1; i <= 3; i++) {
+      const aRaw = m['s1' + i]
+      const bRaw = m['s2' + i]
+      const a = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw, 10) : NaN
+      const b = (bRaw !== undefined && bRaw !== '') ? parseInt(bRaw, 10) : NaN
+      if (!isNaN(a) && !isNaN(b)) {
+        if (a > b) team1Sets++
+        else if (b > a) team2Sets++
+      }
+    }
+
+    let resultType = 'tie'
+    if (team1Sets > team2Sets) resultType = 'team1'
+    else if (team2Sets > team1Sets) resultType = 'team2'
+
+    function makeTag(name, team){
+      const span = document.createElement('span')
+      span.className = 'tag'
+      if (resultType === 'tie') span.classList.add('tie')
+      else if (resultType === 'team1' && team === 1) span.classList.add('win')
+      else if (resultType === 'team2' && team === 2) span.classList.add('win')
+      else span.classList.add('lose')
+      span.innerText = name
+      return span
+    }
+
+    const p1aTag = makeTag(m.p1a || '', 1); p1aTag.classList.add('desktop-only')
+    const p1bTag = makeTag(m.p1b || '', 1); p1bTag.classList.add('desktop-only')
+    const vs = document.createElement('strong'); vs.className = 'desktop-only'; vs.style.margin = '0 8px'; vs.innerText = 'VS'
+    const p2aTag = makeTag(m.p2a || '', 2); p2aTag.classList.add('desktop-only')
+    const p2bTag = makeTag(m.p2b || '', 2); p2bTag.classList.add('desktop-only')
+    tdPlayers.appendChild(p1aTag)
+    tdPlayers.appendChild(p1bTag)
+    tdPlayers.appendChild(vs)
+    tdPlayers.appendChild(p2aTag)
+    tdPlayers.appendChild(p2bTag)
+
+    const mobileTeam1 = document.createElement('span')
+    mobileTeam1.className = 'tag mobile-only'
+    mobileTeam1.innerText = `${(m.p1a || '').trim()} / ${(m.p1b || '').trim()}`
+    const mobileTeam2 = document.createElement('span')
+    mobileTeam2.className = 'tag mobile-only'
+    mobileTeam2.innerText = `${(m.p2a || '').trim()} / ${(m.p2b || '').trim()}`
+
+    if (resultType === 'team1') {
+      mobileTeam1.classList.add('win')
+      mobileTeam2.classList.add('lose')
+    } else if (resultType === 'team2') {
+      mobileTeam1.classList.add('lose')
+      mobileTeam2.classList.add('win')
+    } else {
+      mobileTeam1.classList.add('tie')
+      mobileTeam2.classList.add('tie')
+    }
+    tdPlayers.appendChild(mobileTeam1)
+    tdPlayers.appendChild(mobileTeam2)
+
+    const sets = []
+    for (let i = 1; i <= 3; i++) {
+      const a = m['s1' + i] || ''
+      const b = m['s2' + i] || ''
+      if (a === '' && b === '') continue
+      sets.push(`${a}-${b}`)
+    }
+
+    const tdScore = document.createElement('td')
+    const list = document.createElement('div')
+    list.className = 'set-list'
+    sets.forEach(s => {
+      const it = document.createElement('span')
+      it.className = 'set-item'
+      it.innerText = String(s).replace(/-/g, '\u2011')
+      list.appendChild(it)
+    })
+    tdScore.appendChild(list)
+
+    tr.appendChild(tdDate)
+    tr.appendChild(tdPlayers)
+    tr.appendChild(tdScore)
+    tbody.appendChild(tr)
+  })
+
+  table.appendChild(tbody)
+  container.innerHTML = ''
+  container.appendChild(table)
+}
+
+async function downloadCSV(){
+  const matches = lastFiltered.slice()
+  if (!matches.length) {
+    alert('No hay resultados para descargar')
+    return
+  }
+
+  const header = ['fecha', 'equipo1_jugA', 'equipo1_jugB', 'equipo2_jugA', 'equipo2_jugB', 'equipo1_set1', 'equipo2_set1', 'equipo1_set2', 'equipo2_set2', 'equipo1_set3', 'equipo2_set3']
+  const rows = matches.map(m => [
+    m.date,
+    m.p1a || '', m.p1b || '',
+    m.p2a || '', m.p2b || '',
+    m.s11 || '', m.s21 || '',
+    m.s12 || '', m.s22 || '',
+    m.s13 || '', m.s23 || ''
+  ])
+
+  const csv = [header, ...rows].map(r => r.join(';')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'torneos.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+document.getElementById('filterBtn').addEventListener('click', applyFilter)
+document.getElementById('eventSelect').addEventListener('change', applyFilter)
+document.getElementById('player').addEventListener('input', applyFilter)
+document.getElementById('downloadBtn').addEventListener('click', downloadCSV)
+
+loadData()
+</script>
+</body>
+</html>
