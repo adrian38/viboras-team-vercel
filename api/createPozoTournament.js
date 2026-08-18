@@ -21,12 +21,33 @@ function parseCsvRows(csvText) {
       throw new Error(`Línea ${i + 1}: formato inválido. Debe tener 6 columnas: jugador1;jugador2;jugador3;jugador4;resultado_pareja1;resultado_pareja2`);
     }
 
-    const [player1, player2, player3, player4, result1, result2] = cells;
+    const [player1, player2, player3, player4, result1Raw, result2Raw] = cells;
     if (!player1 || !player2 || !player3 || !player4) {
       throw new Error(`Línea ${i + 1}: faltan nombres de jugadores`);
     }
-    if (!/^\d+$/.test(String(result1)) || !/^\d+$/.test(String(result2))) {
-      throw new Error(`Línea ${i + 1}: los resultados deben ser números enteros`);
+
+    // aceptar un '+' al final para indicar ganador en caso de empate
+    if (!/^\d+\+?$/.test(result1Raw) || !/^\d+\+?$/.test(result2Raw)) {
+      throw new Error(`Línea ${i + 1}: los resultados deben ser números enteros, opcionalmente con '+' para indicar ganador en caso de empate`);
+    }
+
+    const hasPlus1 = result1Raw.endsWith('+');
+    const hasPlus2 = result2Raw.endsWith('+');
+    const result1 = parseInt(result1Raw.replace('+', ''), 10);
+    const result2 = parseInt(result2Raw.replace('+', ''), 10);
+
+    // Si hay empate a juegos en set1, es obligatorio marcar el ganador con '+' en una de las columnas
+    if (result1 === result2) {
+      if (hasPlus1 === hasPlus2) {
+        // ambos true o ambos false -> inválido
+        throw new Error(`Línea ${i + 1}: empate a juegos pero no se ha indicado claramente el ganador con '+'`);
+      }
+    }
+
+    // winnerForSet2: 1 para pareja1, 2 para pareja2, null si no aplica
+    let winnerForSet2 = null;
+    if (result1 === result2) {
+      winnerForSet2 = hasPlus1 ? 1 : 2;
     }
 
     rows.push({
@@ -34,8 +55,9 @@ function parseCsvRows(csvText) {
       player2,
       player3,
       player4,
-      result1: parseInt(result1, 10),
-      result2: parseInt(result2, 10)
+      result1,
+      result2,
+      winnerForSet2
     });
   }
 
@@ -122,8 +144,8 @@ export default async function handler(req, res) {
           ${p2bId},
           ${row.result1},
           ${row.result2},
-          NULL,
-          NULL,
+          ${row.winnerForSet2 === 1 ? 1 : null},
+          ${row.winnerForSet2 === 2 ? 1 : null},
           NULL,
           NULL
         )

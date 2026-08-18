@@ -250,7 +250,10 @@ function showPozoPanel(){
         <input id="pozoCsvFile" type="file" accept=".csv,text/csv" />
       </label>
       <div style="color:var(--muted);font-size:0.9rem;line-height:1.4">
-        Formato del fichero CSV esperado (sin cabecera): jugador1;jugador2;jugador3;jugador4;juegos_pareja1;juegos_pareja2
+        Formato del fichero CSV (sin cabecera): jugador1;jugador2;jugador3;jugador4;juegos_pareja1;juegos_pareja2
+      </div>
+      <div style="color:var(--muted);font-size:0.9rem;line-height:1.4">
+        En caso de empate a juegos, añadir el símbolo '+' a los juegos de la pareja ganadora, por ejemplo J1;J2;J3;J4;4;4+
       </div>
       <button class="btn secondary-green" onclick="submitPozoTournament()">Guardar torneo</button>
     </div>

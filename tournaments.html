@@ -67,8 +67,8 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
       </div>
     </div>
 
-    <div id="summary" class="muted"></div>
     <div id="rankingContainer" class="table-wrap" style="margin-top:6px"></div>
+    <div id="summary" class="muted" style="margin-top:8px"></div>
     <div id="tableContainer" class="table-wrap" style="margin-top:12px"></div>
 
     <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -180,7 +180,7 @@ function applyFilter(){
   filtered = filtered.sort((a, b) => a.__date - b.__date)
 
   const summary = document.getElementById('summary')
-  summary.innerText = `Resultados: ${filtered.length}`
+  summary.innerText = `\nPartidos: ${filtered.length}`
 
   lastFiltered = filtered
   renderTable(filtered)
@@ -198,14 +198,20 @@ function computeRanking(matches){
 
     let team1Sets = 0, team2Sets = 0
     for(let i=1;i<=3;i++){
-      const a = m['s1'+i]
-      const b = m['s2'+i]
-      const ai = (a !== undefined && a !== '') ? parseInt(a,10) : NaN
-      const bi = (b !== undefined && b !== '') ? parseInt(b,10) : NaN
+      const aRaw = m['s1'+i]
+      const bRaw = m['s2'+i]
+
+      // For timed_games (or when set2 contains the winner flag '1'), the second set is a tiebreak flag
+      // and must not be counted as games or as a set for games totals.
+      const isSet2Flag = (i === 2) && (String(m.format) === 'timed_games' || String(aRaw) === '1' || String(bRaw) === '1')
+      if (isSet2Flag) continue
+
+      const ai = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw,10) : NaN
+      const bi = (bRaw !== undefined && bRaw !== '') ? parseInt(bRaw,10) : NaN
       if(!isNaN(ai) && !isNaN(bi)){
         if(ai > bi) team1Sets++
         else if(bi > ai) team2Sets++
-        // add games
+        // add games (do not include set2 flags)
         p1.forEach(n => { if(n){ ensure(n); const ent = stats.get(n); ent.gamesWon += ai; ent.gamesLost += bi } })
         p2.forEach(n => { if(n){ ensure(n); const ent = stats.get(n); ent.gamesWon += bi; ent.gamesLost += ai } })
       }
@@ -213,6 +219,11 @@ function computeRanking(matches){
 
     if(team1Sets > team2Sets){ p1.forEach(n=>{ if(n){ ensure(n); stats.get(n).wins += 1 } }) }
     else if(team2Sets > team1Sets){ p2.forEach(n=>{ if(n){ ensure(n); stats.get(n).wins += 1 } }) }
+    else {
+      // empate a sets: usar la marca de desempate en set2 (s12/s22) para decidir ganador
+      if ((m.s12 || '') === '1') { p1.forEach(n=>{ if(n){ ensure(n); stats.get(n).wins += 1 } }) }
+      else if ((m.s22 || '') === '1') { p2.forEach(n=>{ if(n){ ensure(n); stats.get(n).wins += 1 } }) }
+    }
   })
 
   const out = Array.from(stats.values()).map(s => {
@@ -331,6 +342,11 @@ function renderTable(matches){
     let resultType = 'tie'
     if (team1Sets > team2Sets) resultType = 'team1'
     else if (team2Sets > team1Sets) resultType = 'team2'
+    else {
+      // empate a juegos: comprobar marca de desempate en s12/s22 (set2 flags)
+      if ((m.s12 || '') === '1') resultType = 'team1'
+      else if ((m.s22 || '') === '1') resultType = 'team2'
+    }
 
     function makeTag(name, team){
       const span = document.createElement('span')
@@ -376,9 +392,16 @@ function renderTable(matches){
 
     const sets = []
     for (let i = 1; i <= 3; i++) {
-      const a = m['s1' + i] || ''
-      const b = m['s2' + i] || ''
+      // Do not display set2 when it's used as a timed_games tiebreak flag
+      if (i === 2 && String(m.format) === 'timed_games') continue
+
+      let a = m['s1' + i] || ''
+      let b = m['s2' + i] || ''
       if (a === '' && b === '') continue
+      // Ignore '+' marks in display; set2 flags are not printed
+      if (i === 1 && a !== '' && b !== '' && a === b) {
+        // do nothing: show "5-5" (no '+')
+      }
       sets.push(`${a}-${b}`)
     }
 

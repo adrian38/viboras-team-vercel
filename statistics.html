@@ -235,39 +235,62 @@ function computeStats(matches, mode){
       const team2Games = toIntStrict(m.s21)
       if(team1Games === null || team2Games === null) continue
 
-      if(mode === 'players'){
-        if(team1Games > team2Games){
-          addGamesOnlyForPlayer(team1Names, team1Games, team1Games + team2Games)
-          addGamesOnlyForPlayer(team2Names, team2Games, team1Games + team2Games)
-          addPlayed(team1Names)
-          addPlayed(team2Names)
-          addOutcome(team1Names, 'win')
-          addOutcome(team2Names, 'loss')
-        } else if(team2Games > team1Games){
-          addGamesOnlyForPlayer(team2Names, team2Games, team1Games + team2Games)
-          addGamesOnlyForPlayer(team1Names, team1Games, team1Games + team2Games)
-          addPlayed(team1Names)
-          addPlayed(team2Names)
-          addOutcome(team2Names, 'win')
-          addOutcome(team1Names, 'loss')
+      // normal case: one team has more games
+      if(team1Games > team2Games || team2Games > team1Games){
+        if(mode === 'players'){
+          if(team1Games > team2Games){
+            addGamesOnlyForPlayer(team1Names, team1Games, team1Games + team2Games)
+            addGamesOnlyForPlayer(team2Names, team2Games, team1Games + team2Games)
+            addPlayed(team1Names)
+            addPlayed(team2Names)
+            addOutcome(team1Names, 'win')
+            addOutcome(team2Names, 'loss')
+          } else {
+            addGamesOnlyForPlayer(team2Names, team2Games, team1Games + team2Games)
+            addGamesOnlyForPlayer(team1Names, team1Games, team1Games + team2Games)
+            addPlayed(team1Names)
+            addPlayed(team2Names)
+            addOutcome(team2Names, 'win')
+            addOutcome(team1Names, 'loss')
+          }
+        } else {
+          if(team1Games > team2Games){
+            addGamesOnlyForTeam(team1Names, team1Games, team1Games + team2Games)
+            addGamesOnlyForTeam(team2Names, team2Games, team1Games + team2Games)
+            addPlayed(team1Names)
+            addPlayed(team2Names)
+            addOutcome(team1Names, 'win')
+            addOutcome(team2Names, 'loss')
+          } else {
+            addGamesOnlyForTeam(team2Names, team2Games, team1Games + team2Games)
+            addGamesOnlyForTeam(team1Names, team1Games, team1Games + team2Games)
+            addPlayed(team1Names)
+            addPlayed(team2Names)
+            addOutcome(team2Names, 'win')
+            addOutcome(team1Names, 'loss')
+          }
         }
-      } else {
-        if(team1Games > team2Games){
-          addGamesOnlyForTeam(team1Names, team1Games, team1Games + team2Games)
-          addGamesOnlyForTeam(team2Names, team2Games, team1Games + team2Games)
+        continue
+      }
+
+      // empate a juegos: comprobar marca de desempate en s12/s22
+      const s12 = String(m.s12 || '').trim()
+      const s22 = String(m.s22 || '').trim()
+      if(s12 === '1' || s22 === '1'){
+        if(s12 === '1'){
           addPlayed(team1Names)
           addPlayed(team2Names)
           addOutcome(team1Names, 'win')
           addOutcome(team2Names, 'loss')
-        } else if(team2Games > team1Games){
-          addGamesOnlyForTeam(team2Names, team2Games, team1Games + team2Games)
-          addGamesOnlyForTeam(team1Names, team1Games, team1Games + team2Games)
+        } else {
           addPlayed(team1Names)
           addPlayed(team2Names)
           addOutcome(team2Names, 'win')
           addOutcome(team1Names, 'loss')
         }
       }
+
+      // otherwise (no tiebreak flag) do not count this match
       continue
     }
 
