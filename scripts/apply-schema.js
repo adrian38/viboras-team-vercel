@@ -32,7 +32,7 @@ async function main() {
     id SERIAL PRIMARY KEY,
     type TEXT NOT NULL CHECK (
       type IN (
-        'pozo', 'doble_ko', 'grupo_liga', 'ranked', 'unranked'
+        'pozo', 'doble_ko', 'grupo_liga', 'ranked', 'unranked', 'legacy'
       )
     ),
     name TEXT NOT NULL UNIQUE,
@@ -50,6 +50,12 @@ async function main() {
   await sql`
     INSERT INTO events (id, type, name, start_date, end_date, league_id)
     VALUES (2, 'unranked', 'Partidos Amistosos', '01/01/2000', '31/12/2099', NULL)
+    ON CONFLICT (id) DO NOTHING
+  `;
+
+  await sql`
+    INSERT INTO events (id, type, name, start_date, end_date, league_id)
+    VALUES (3, 'legacy', 'Legacy Events', '01/01/2000', '31/12/2099', NULL)
     ON CONFLICT (id) DO NOTHING
   `;
 

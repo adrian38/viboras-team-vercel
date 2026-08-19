@@ -44,7 +44,8 @@ export async function ensureSchema() {
   //           'doble_ko',
   //           'grupo_liga',
   //           'ranked',
-  //           'unranked'
+  //           'unranked',
+  //           'legacy'
   //         )
   //       ),
   //       name TEXT NOT NULL UNIQUE,

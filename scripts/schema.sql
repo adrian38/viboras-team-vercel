@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS events (
       'doble_ko',
       'grupo_liga',
       'ranked',
-      'unranked'
+      'unranked',
+      'legacy'
     )
   ),
   name TEXT NOT NULL UNIQUE,
@@ -47,6 +48,10 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO events (id, type, name, start_date, end_date, league_id)
 VALUES (2, 'unranked', 'Partidos Amistosos', '01/01/2000', '31/12/2099', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO events (id, type, name, start_date, end_date, league_id)
+VALUES (3, 'legacy', 'Legacy Events', '01/01/2000', '31/12/2099', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS matches (
