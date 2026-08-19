@@ -17,13 +17,9 @@ export default async function handler(req, res) {
       res.status(200).json({ ok: false, error: 'empty' });
       return;
     }
-    try {
-      const result = await sql`DELETE FROM players WHERE name = ${name} RETURNING id`;
-      res.status(200).json({ ok: true, deleted: result.rowCount > 0 });
-    } catch (fkErr) {
-      // player is referenced by matches (ON DELETE RESTRICT)
-      res.status(200).json({ ok: false, error: 'has_matches' });
-    }
+    // Mark player as inactive instead of deleting to preserve historical references.
+    const result = await sql`UPDATE players SET active = FALSE WHERE name = ${name} RETURNING id`;
+    res.status(200).json({ ok: true, deleted: result.rowCount > 0 });
   } catch (err) {
     console.error('deleteName error', err);
     res.status(500).json({ ok: false, error: 'server_error' });

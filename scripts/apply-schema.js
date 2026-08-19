@@ -7,7 +7,8 @@ import { sql } from '@vercel/postgres';
 async function main() {
   await sql`CREATE TABLE IF NOT EXISTS players (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE
   )`;
 
   await sql`CREATE TABLE IF NOT EXISTS availability (

@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       SELECT p.name AS name, a.hour AS hour
       FROM availability a
       JOIN players p ON a.player_id = p.id
-      WHERE a.date = ${String(date)}
+      WHERE a.date = ${String(date)} AND p.active = TRUE
       ORDER BY a.id`;
 
     const result = {};

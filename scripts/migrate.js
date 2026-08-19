@@ -33,7 +33,7 @@ function loadJson(filename, fallback) {
 async function getOrCreatePlayerId(name) {
   const trimmed = String(name || '').trim();
   if (!trimmed) return null;
-  await sql`INSERT INTO players (name) VALUES (${trimmed}) ON CONFLICT (name) DO NOTHING`;
+  await sql`INSERT INTO players (name, active) VALUES (${trimmed}, true) ON CONFLICT (name) DO NOTHING`;
   const { rows } = await sql`SELECT id FROM players WHERE name = ${trimmed}`;
   return rows.length ? rows[0].id : null;
 }
@@ -52,7 +52,7 @@ async function migrateNames() {
   for (const raw of names) {
     const name = String(raw || '').trim();
     if (!name) continue;
-    const r = await sql`INSERT INTO players (name) VALUES (${name}) ON CONFLICT (name) DO NOTHING RETURNING id`;
+    const r = await sql`INSERT INTO players (name, active) VALUES (${name}, true) ON CONFLICT (name) DO NOTHING RETURNING id`;
     if (r.rowCount > 0) added++;
   }
   console.log(`players: ${added} new / ${names.length} total in file`);

@@ -128,7 +128,7 @@ function setupEventSelector(events, matches){
   const sortedEvents = [...eventMap.values()].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }))
 
   select.innerHTML = ''
-  select.appendChild(buildEventOption('', '--Torneo--'))
+  select.appendChild(buildEventOption('', '-- Selecciona un torneo --'))
 
   sortedEvents.forEach((event) => {
     select.appendChild(buildEventOption(String(event.id), event.name))

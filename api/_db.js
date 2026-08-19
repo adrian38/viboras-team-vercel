@@ -174,7 +174,7 @@ export async function ensureSchema() {
 export async function getOrCreatePlayerId(name) {
   const trimmed = String(name || '').trim();
   if (!trimmed) return null;
-  await sql`INSERT INTO players (name) VALUES (${trimmed}) ON CONFLICT (name) DO NOTHING`;
+  await sql`INSERT INTO players (name, active) VALUES (${trimmed}, TRUE) ON CONFLICT (name) DO NOTHING`;
   const { rows } = await sql`SELECT id FROM players WHERE name = ${trimmed}`;
   return rows.length ? rows[0].id : null;
 }

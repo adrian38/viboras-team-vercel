@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     const rows = parseCsvRows(csvText);
 
     const existingNames = new Set(
-      (await sql`SELECT name FROM players`).rows.map((r) => r.name)
+      (await sql`SELECT name FROM players WHERE active = TRUE`).rows.map((r) => r.name)
     );
 
     for (const row of rows) {

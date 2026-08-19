@@ -4,7 +4,7 @@ import { ensureSchema } from './_db.js';
 export default async function handler(req, res) {
   try {
     await ensureSchema();
-    const { rows } = await sql`SELECT name FROM players ORDER BY LOWER(name), name`;
+    const { rows } = await sql`SELECT name FROM players WHERE active = TRUE ORDER BY LOWER(name), name`;
     res.setHeader('content-type', 'application/json');
     res.setHeader('cache-control', 'no-store');
     res.status(200).send(JSON.stringify({ names: rows.map((r) => r.name) }));
