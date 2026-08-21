@@ -24,6 +24,8 @@ export default async function handler(req, res) {
         m.round,
         e.type AS event_type,
         e.name AS event_name,
+        e.start_date AS event_start_date,
+        e.end_date AS event_end_date,
         p1a.name AS p1a, p1b.name AS p1b,
         p2a.name AS p2a, p2b.name AS p2b,
         m.set1_team1, m.set1_team2,
@@ -43,6 +45,8 @@ export default async function handler(req, res) {
       event_id: r.event_id || null,
       event_type: r.event_type || null,
       event_name: r.event_name || null,
+      start_date: r.event_start_date || '',
+      end_date: r.event_end_date || '',
       round: r.round || null,
       date: r.date,
       p1a: r.p1a || '',
@@ -64,7 +68,9 @@ export default async function handler(req, res) {
           id: row.event_id,
           event_id: row.event_id,
           name: row.event_name || `Evento ${row.event_id}`,
-          type: row.event_type || ''
+          type: row.event_type || '',
+          start_date: row.start_date || '',
+          end_date: row.end_date || ''
         }])
     ).values()].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
 

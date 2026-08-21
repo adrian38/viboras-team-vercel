@@ -70,13 +70,14 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
       </div>
     </div>
 
+    <div id="summary" class="muted" style="margin-top:8px"></div>
+
     <div id="tournamentViewToggle" class="view-toggle" role="tablist" aria-label="Vista del torneo" style="display:none">
       <button type="button" class="view-btn active" data-view="ranking">Clasificación</button>
       <button type="button" class="view-btn" data-view="results">Resultados</button>
     </div>
 
     <div id="rankingContainer" class="table-wrap" style="margin-top:6px"></div>
-    <div id="summary" class="muted" style="margin-top:8px"></div>
     <div id="tableContainer" class="table-wrap" style="margin-top:12px"></div>
 
     <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -94,6 +95,28 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 let parsedMatches = []
 let lastFiltered = []
 let currentTournamentView = 'ranking'
+let tournamentDateMap = new Map()
+
+function formatEventDates(startDate, endDate){
+  const normalize = (value) => {
+    const text = String(value || '').trim()
+    if (!text) return ''
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) return text
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      const [y, m, d] = text.split('-')
+      return `${d}/${m}/${y}`
+    }
+    return text
+  }
+
+  const start = normalize(startDate)
+  const end = normalize(endDate)
+  if (!start && !end) return ''
+  if (!start) return end
+  if (!end) return start
+  if (start === end) return start
+  return `${start} - ${end}`
+}
 
 function setTournamentView(view){
   const nextView = (view === 'results') ? 'results' : 'ranking'
@@ -172,6 +195,11 @@ async function loadData(){
     const res = await fetch(url)
     const db = await res.json()
 
+    tournamentDateMap = new Map((db.events || []).map((event) => [String(event.id), {
+      start: event.start_date || event.startDate || '',
+      end: event.end_date || event.endDate || ''
+    }]))
+
     parsedMatches = parseMatches(db.matches || [])
     setupEventSelector(db.events || [], parsedMatches)
     document.getElementById('summary').innerText = ''
@@ -215,7 +243,10 @@ function applyFilter(){
   filtered = filtered.sort((a, b) => a.__date - b.__date)
 
   const summary = document.getElementById('summary')
-  summary.innerText = `\nTotal de partidos: ${filtered.length}`
+  const selectedEventDates = tournamentDateMap.get(String(selectedEvent)) || null
+  const eventDateText = selectedEventDates ? formatEventDates(selectedEventDates.start, selectedEventDates.end) : ''
+  const dateLine = eventDateText ? `Fecha: ${eventDateText}` : 'Fecha: -'
+  summary.innerHTML = `<div>${dateLine}</div><div>Total de partidos: ${filtered.length}</div>`
 
   lastFiltered = filtered
   renderTable(filtered)
@@ -342,23 +373,13 @@ function renderTable(matches){
 
   const table = document.createElement('table')
   const thead = document.createElement('thead')
-  thead.innerHTML = '<tr><th><span class="th-full">Fecha</span><span class="th-day">Día</span></th><th>Jugadores</th><th><span class="th-full-res">Marcador</span></th></tr>'
+  thead.innerHTML = '<tr><th>Jugadores</th><th><span class="th-full-res">Marcador</span></th></tr>'
   table.appendChild(thead)
 
   const tbody = document.createElement('tbody')
 
   matches.forEach(m => {
     const tr = document.createElement('tr')
-
-    const tdDate = document.createElement('td')
-    const spanFull = document.createElement('span')
-    spanFull.className = 'date-full'
-    spanFull.innerText = m.date
-    const spanDay = document.createElement('span')
-    spanDay.className = 'date-day'
-    spanDay.innerText = (m.__date && !isNaN(m.__date.getTime())) ? String(m.__date.getDate()) : m.date
-    tdDate.appendChild(spanFull)
-    tdDate.appendChild(spanDay)
 
     const tdPlayers = document.createElement('td')
     let team1Sets = 0
@@ -454,7 +475,6 @@ function renderTable(matches){
     })
     tdScore.appendChild(list)
 
-    tr.appendChild(tdDate)
     tr.appendChild(tdPlayers)
     tr.appendChild(tdScore)
     tbody.appendChild(tr)
