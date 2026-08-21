@@ -12,6 +12,9 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
 .block{background:#fff;border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
 .block-title{font-weight:700;margin-bottom:10px}
 .controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.view-toggle{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
+.view-btn{background:#fff;color:#6b7280;border:1px solid rgba(15,23,42,0.08);padding:8px 12px;border-radius:999px;cursor:pointer}
+.view-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
 .filter-box{background:linear-gradient(180deg,#eaf4ff,#e1f0ff);padding:12px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);margin-bottom:12px}
 .select{padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
 .small-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 8px;border-radius:6px;cursor:pointer}
@@ -67,6 +70,11 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
       </div>
     </div>
 
+    <div id="tournamentViewToggle" class="view-toggle" role="tablist" aria-label="Vista del torneo" style="display:none">
+      <button type="button" class="view-btn active" data-view="ranking">Clasificación</button>
+      <button type="button" class="view-btn" data-view="results">Resultados</button>
+    </div>
+
     <div id="rankingContainer" class="table-wrap" style="margin-top:6px"></div>
     <div id="summary" class="muted" style="margin-top:8px"></div>
     <div id="tableContainer" class="table-wrap" style="margin-top:12px"></div>
@@ -85,6 +93,29 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 <script>
 let parsedMatches = []
 let lastFiltered = []
+let currentTournamentView = 'ranking'
+
+function setTournamentView(view){
+  const nextView = (view === 'results') ? 'results' : 'ranking'
+  currentTournamentView = nextView
+
+  const buttons = document.querySelectorAll('.view-btn[data-view]')
+  buttons.forEach((btn) => {
+    const isActive = btn.getAttribute('data-view') === nextView
+    btn.classList.toggle('active', isActive)
+  })
+
+  const rankingContainer = document.getElementById('rankingContainer')
+  const tableContainer = document.getElementById('tableContainer')
+  if (rankingContainer) rankingContainer.style.display = (nextView === 'ranking') ? 'block' : 'none'
+  if (tableContainer) tableContainer.style.display = (nextView === 'results') ? 'block' : 'none'
+
+  const toggle = document.getElementById('tournamentViewToggle')
+  if (toggle) {
+    const selectedEvent = (document.getElementById('eventSelect').value || '').trim()
+    toggle.style.display = selectedEvent ? 'flex' : 'none'
+  }
+}
 
 function parseMatches(raw){
   return (raw || []).map(m => {
@@ -159,11 +190,15 @@ function applyFilter(){
 
 
   // filter by selected event (this set is used for ranking)
+  const toggle = document.getElementById('tournamentViewToggle')
+  if (toggle) toggle.style.display = selectedEvent ? 'flex' : 'none'
+
   if (!selectedEvent) {
     document.getElementById('summary').innerText = ''
     document.getElementById('tableContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados.</div>'
     document.getElementById('rankingContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver la clasificación.</div>'
     lastFiltered = []
+    setTournamentView('ranking')
     return
   }
 
@@ -180,11 +215,12 @@ function applyFilter(){
   filtered = filtered.sort((a, b) => a.__date - b.__date)
 
   const summary = document.getElementById('summary')
-  summary.innerText = `\nPartidos: ${filtered.length}`
+  summary.innerText = `\nTotal de partidos: ${filtered.length}`
 
   lastFiltered = filtered
   renderTable(filtered)
   renderRanking(eventFiltered)
+  setTournamentView(currentTournamentView)
 }
 
 function computeRanking(matches){
@@ -456,11 +492,16 @@ async function downloadCSV(){
   URL.revokeObjectURL(url)
 }
 
+document.querySelectorAll('.view-btn[data-view]').forEach((btn) => {
+  btn.addEventListener('click', () => setTournamentView(btn.getAttribute('data-view')))
+})
+
 document.getElementById('filterBtn').addEventListener('click', applyFilter)
 document.getElementById('eventSelect').addEventListener('change', applyFilter)
 document.getElementById('player').addEventListener('input', applyFilter)
 document.getElementById('downloadBtn').addEventListener('click', downloadCSV)
 
+setTournamentView('ranking')
 loadData()
 </script>
 </body>
