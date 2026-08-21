@@ -306,7 +306,9 @@ function renderTable(matches){
       const a = m['s1'+i] || ''
       const b = m['s2'+i] || ''
       if(a === '' && b === '') continue
-      sets.push(`${a}-${b}`)
+      const score = String(a) + '-' + String(b)
+      const display = (String(m.format) === 'bo3_stb' && i === 3) ? `[${score}]` : score
+      sets.push(display)
     }
     const tdScore = document.createElement('td')
     const list = document.createElement('div')

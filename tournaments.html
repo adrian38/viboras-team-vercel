@@ -402,7 +402,9 @@ function renderTable(matches){
       if (i === 1 && a !== '' && b !== '' && a === b) {
         // do nothing: show "5-5" (no '+')
       }
-      sets.push(`${a}-${b}`)
+      const score = String(a) + '-' + String(b)
+      const display = (String(m.format) === 'bo3_stb' && i === 3) ? `[${score}]` : score
+      sets.push(display)
     }
 
     const tdScore = document.createElement('td')

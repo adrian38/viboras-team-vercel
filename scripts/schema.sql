@@ -51,7 +51,7 @@ VALUES (2, 'unranked', 'Partidos Amistosos', '01/01/2000', '31/12/2099', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO events (id, type, name, start_date, end_date, league_id)
-VALUES (3, 'legacy', 'Legacy Events', '01/01/2000', '31/12/2099', NULL)
+VALUES (3, 'legacy', 'Partidos Antiguos', '01/01/2026', '31/08/2026', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS matches (
