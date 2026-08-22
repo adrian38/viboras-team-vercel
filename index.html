@@ -63,7 +63,18 @@ body{
 
 label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
 
-@media(min-width:900px){.site{gap:20px}.block-row{align-items:center}}
+@media(min-width:900px){
+  .site{gap:20px}
+  .block-row{align-items:center}
+
+  /* Desktop-only 2-column layout for main blocks */
+  .site{ display:grid; grid-template-columns: 1fr 1fr; grid-template-areas: "leagues upload" "consult performance" "organization organization"; gap:18px }
+  .block--leagues{ grid-area: leagues }
+  .block--upload{ grid-area: upload }
+  .block--consult{ grid-area: consult }
+  .block--performance{ grid-area: performance }
+  .block--organization{ grid-area: organization }
+}
 @media(max-width:720px){body{padding:16px}.btn{min-width:120px;padding:12px 14px}#days{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.register-input{min-width:0;width:100%}#adminOverlay > div{flex-direction:column}#adminOverlay > div > #adminMenuColumn{flex-basis:auto;width:100%}#adminOverlay > div > #adminMain{width:100%;max-width:100%}.pozo-form-grid{grid-template-columns:1fr !important}}
 </style>
 </head>
@@ -72,7 +83,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
 
 <div class="site">
 
-  <div class="block">
+  <div class="block block--leagues">
     <div class="block-title">Ligas</div>
     <div class="block-row">
       <div style="flex:1">
@@ -85,7 +96,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
   </div>
 
 
-  <div class="block">
+  <div class="block block--upload">
     <div class="block-title">Sube resultados</div>
       <div class="block-row">
         <div style="flex:1">
@@ -98,7 +109,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
       </div>
   </div>
 
-  <div class="block">
+  <div class="block block--consult">
     <div class="block-title">Consulta resultados</div>
     <div class="block-row">
       <div style="flex:1">
@@ -111,7 +122,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
     </div>
   </div>
 
-  <div class="block">
+  <div class="block block--performance">
     <div class="block-title">Rendimiento</div>
     <div class="block-row">
       <div style="flex:1">
@@ -124,7 +135,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
     </div>
   </div>
 
-  <div class="block">
+  <div class="block block--organization">
     <div class="block-title">Organización de partidos</div>
     <div class="block-row">
       <div style="flex:1">
