@@ -32,6 +32,13 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 @media(max-width:720px){.desktop-only{display:none}.mobile-only{display:inline-block;margin-right:8px}}
 .set-list{display:flex;gap:6px;flex-wrap:wrap}
 .set-item{display:inline-block}
+.set-item:not(:last-child)::after{content:", "}
+  .edit-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 8px;border-radius:6px;cursor:pointer}
+  /* modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(11,21,48,0.4);display:none;align-items:center;justify-content:center;z-index:1200}
+  .modal{background:#fff;border-radius:12px;padding:16px;max-width:760px;width:100%;box-shadow:0 12px 40px rgba(2,6,23,0.4)}
+  .modal .team-card.team-3{background:linear-gradient(180deg,#fff8f1,#fff6ee);border:1px solid rgba(251,146,60,0.06)}
+  .modal .controls{justify-content:flex-end;margin-top:12px}
 @media(max-width:720px){body{padding:16px}.table-wrap{overflow-x:auto}.set-list{display:block}.set-item{display:block;margin-bottom:6px}.set-item:not(:last-child)::after{content:""}}
 
 /* mobile sizing: match tournaments page */
@@ -193,7 +200,7 @@ function onLeagueChange(){
 
   const gsel = document.getElementById('groupSelect')
   gsel.innerHTML = ''
-  gsel.appendChild(buildOption('all','Todas'))
+  gsel.appendChild(buildOption('all','Todos'))
   Array.from(groups).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'})).forEach(g=> gsel.appendChild(buildOption(g,g)))
 
   const psel = document.getElementById('phaseSelect')
@@ -339,24 +346,15 @@ function renderResults(pending, completed){
       const mobileTeam2 = document.createElement('span'); mobileTeam2.className = 'tag mobile-only'; mobileTeam2.innerText = `${(m.p2a||'').trim()} / ${(m.p2b||'').trim()}`
       tdPlayers.appendChild(mobileTeam1); tdPlayers.appendChild(mobileTeam2)
 
-      // score column: show sets similar to tournaments
-      const sets = []
-      for(let i=1;i<=3;i++){
-        if(i===2 && String(m.format) === 'timed_games') continue
-        const a = m['s1'+i] || ''
-        const b = m['s2'+i] || ''
-        if(a === '' && b === '') continue
-        const score = String(a) + '-' + String(b)
-        const display = (String(m.format) === 'bo3_stb' && i === 3) ? `[${score}]` : score
-        sets.push(display)
-      }
+      // score column: for pending matches show edit button instead of stored 0-0
       const tdScore = document.createElement('td')
-      const list = document.createElement('div'); list.className = 'set-list'
-      sets.forEach(s=>{ const it=document.createElement('span'); it.className='set-item'; it.innerText = String(s).replace(/-/g,'\u2011') ; list.appendChild(it) })
-      // if no sets, show '-' or 0-0
-      if(sets.length === 0){ tdScore.innerText = (m.s11||'') ? `${m.s11}-${m.s21}` : '0-0' }
-      else tdScore.appendChild(list)
-
+      const edit = document.createElement('button')
+      edit.className = 'edit-btn'
+      edit.setAttribute('type','button')
+      edit.title = 'Editar marcador'
+      edit.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0b1530" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0b1530" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      edit.addEventListener('click', ()=> openEditModal(m))
+      tdScore.appendChild(edit)
       tr.appendChild(tdPlayers); tr.appendChild(tdScore)
       tbody.appendChild(tr)
     })
@@ -527,6 +525,121 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   // if a league was auto-selected during loadInitial, trigger the change handler to populate groups/results
   if(leagueSelectEl.value){ onLeagueChange() }
 })
+
+// --- Edit modal creation and handlers ---
+function createEditModal(){
+  if(document.getElementById('editModal')) return
+  const backdrop = document.createElement('div'); backdrop.className='modal-backdrop'; backdrop.id='editBackdrop'
+  const modal = document.createElement('div'); modal.className='modal'; modal.id='editModal'
+
+  modal.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-weight:700">Editar marcador</div>
+      <button id="closeEdit" class="small-btn">Cerrar</button>
+    </div>
+    <div style="margin-top:10px" class="teams">
+      <div class="team-card team-1">
+        <div class="team-title" id="e_team1_title">Equipo 1</div>
+      </div>
+      <div class="team-card team-2">
+        <div class="team-title" id="e_team2_title">Equipo 2</div>
+      </div>
+      <div class="team-card team-3" style="padding-bottom:16px">
+        <div class="team-title">Marcador</div>
+        <div style="margin-bottom:10px;color:#6b7280;font-weight:600;display:grid;grid-template-columns:110px repeat(3,1fr);gap:8px;align-items:center">
+          <div></div>
+          <div style="text-align:center">Set 1</div>
+          <div style="text-align:center">Set 2</div>
+          <div style="text-align:center">Set 3</div>
+        </div>
+        <div class="score-grid" style="display:grid;grid-template-columns:110px repeat(3,1fr);gap:8px;margin-bottom:8px;align-items:center">
+          <div class="score-label">Equipo 1</div>
+          <input id="e_s11" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+          <input id="e_s12" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+          <input id="e_s13" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+        </div>
+        <div class="score-grid" style="display:grid;grid-template-columns:110px repeat(3,1fr);gap:8px;align-items:center">
+          <div class="score-label">Equipo 2</div>
+          <input id="e_s21" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+          <input id="e_s22" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+          <input id="e_s23" class="score" type="text" inputmode="numeric" pattern="\\d*" placeholder="" />
+        </div>
+        <div style="margin-top:10px;padding:8px;border-radius:8px;background:linear-gradient(180deg,#fff8f1,#fff6ee);border:1px solid rgba(251,146,60,0.06);display:flex;align-items:center;gap:10px">
+          <input id="e_stb" type="checkbox" style="width:18px;height:18px;margin:0">
+          <label for="e_stb" style="font-weight:600;color:#6b7280">Set 3 es super tie-break</label>
+        </div>
+      </div>
+    </div>
+    <div class="controls" style="margin-top:12px">
+      <button id="e_cancel" class="btn ghost">Cancelar</button>
+      <button id="e_save" class="btn warn">Enviar</button>
+    </div>
+  `
+
+  backdrop.appendChild(modal)
+  document.body.appendChild(backdrop)
+
+  document.getElementById('closeEdit').addEventListener('click', closeEditModal)
+  document.getElementById('e_cancel').addEventListener('click', closeEditModal)
+  document.getElementById('e_save').addEventListener('click', submitEditResult)
+}
+
+let editTargetMatch = null
+function openEditModal(match){
+  createEditModal()
+  editTargetMatch = match
+  const bd = document.getElementById('editBackdrop')
+  document.getElementById('e_team1_title').innerText = `${(match.p1a||'').trim()} / ${(match.p1b||'').trim()}`;
+  document.getElementById('e_team2_title').innerText = `${(match.p2a||'').trim()} / ${(match.p2b||'').trim()}`;
+  // populate sets
+  ['11','12','13','21','22','23'].forEach(id=>{ const el=document.getElementById('e_s'+id); if(el) el.value = (match['s'+id]||'') })
+  document.getElementById('e_stb').checked = String(match.format) === 'bo3_stb'
+  // show backdrop
+  bd.style.display = 'flex'
+}
+
+function closeEditModal(){
+  const bd = document.getElementById('editBackdrop')
+  if(bd) bd.style.display = 'none'
+  editTargetMatch = null
+}
+
+async function submitEditResult(){
+  if(!editTargetMatch) return
+  const s11 = (document.getElementById('e_s11').value||'').trim()
+  const s21 = (document.getElementById('e_s21').value||'').trim()
+  // basic validation
+  if(!/^\d+$/.test(s11) || !/^\d+$/.test(s21)) { alert('Introduce puntuaciones numéricas para Set 1'); return }
+  const s12 = (document.getElementById('e_s12').value||'').trim()
+  const s22 = (document.getElementById('e_s22').value||'').trim()
+  const s13 = (document.getElementById('e_s13').value||'').trim()
+  const s23 = (document.getElementById('e_s23').value||'').trim()
+  // validate optional sets numeric if present
+  for(const v of [s12,s22,s13,s23]){ if(v!=='' && !/^\d+$/.test(v)){ alert('Los sets deben ser números enteros no negativos'); return } }
+
+  const payload = {
+    date: formatDateText(editTargetMatch.date || ''),
+    p1a: editTargetMatch.p1a, p1b: editTargetMatch.p1b, p2a: editTargetMatch.p2a, p2b: editTargetMatch.p2b,
+    s11: s11, s21: s21, s12: s12, s22: s22, s13: s13, s23: s23
+  }
+  if(document.getElementById('e_stb').checked) payload.format = 'bo3_stb'
+  // include original to target the exact match row
+  payload._original = { date: editTargetMatch.date, p1a: editTargetMatch.p1a, p1b: editTargetMatch.p1b, p2a: editTargetMatch.p2a, p2b: editTargetMatch.p2b, event_id: editTargetMatch.event_id }
+
+  const btn = document.getElementById('e_save')
+  btn.disabled = true; btn.textContent = 'Enviando...'
+  try{
+    const res = await fetch('/api/submitResult',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    const j = await res.json().catch(()=>({}))
+    if(!res.ok || !j.ok){ throw new Error('save_failed') }
+    closeEditModal()
+    // refresh data and reapply filter
+    await loadInitial()
+    onLeagueChange()
+    alert('Marcador guardado')
+  }catch(e){ console.error(e); alert('Error al guardar marcador') }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = 'Enviar' } }
+}
 </script>
 
 </body>

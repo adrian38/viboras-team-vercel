@@ -30,22 +30,43 @@ export default async function handler(req, res) {
       const o_p2a = await getPlayerId(original.p2a);
       const o_p2b = await getPlayerId(original.p2b);
       const o_date = String(original.date || '').trim();
-
-      const upd = await sql`
-        UPDATE matches SET
-          date = ${date},
-          format = ${format}, event_id = 1, round = NULL,
-          player1a_id = ${p1a_id}, player1b_id = ${p1b_id},
-          player2a_id = ${p2a_id}, player2b_id = ${p2b_id},
-          set1_team1 = ${s11}, set1_team2 = ${s21},
-          set2_team1 = ${s12}, set2_team2 = ${s22},
-          set3_team1 = ${s13}, set3_team2 = ${s23}
-        WHERE date = ${o_date}
-          AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
-          AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
-          AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
-          AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
-        RETURNING id`;
+      // If original.event_id provided, include it in the WHERE clause so we update the exact match
+      const o_event = (original && original.event_id) ? toInt(original.event_id) : null;
+      let upd
+      if (o_event !== null) {
+        upd = await sql`
+          UPDATE matches SET
+            date = ${date},
+            format = ${format},
+            player1a_id = ${p1a_id}, player1b_id = ${p1b_id},
+            player2a_id = ${p2a_id}, player2b_id = ${p2b_id},
+            set1_team1 = ${s11}, set1_team2 = ${s21},
+            set2_team1 = ${s12}, set2_team2 = ${s22},
+            set3_team1 = ${s13}, set3_team2 = ${s23}
+          WHERE date = ${o_date}
+            AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
+            AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
+            AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
+            AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
+            AND event_id IS NOT DISTINCT FROM ${o_event}
+          RETURNING id`;
+      } else {
+        upd = await sql`
+          UPDATE matches SET
+            date = ${date},
+            format = ${format},
+            player1a_id = ${p1a_id}, player1b_id = ${p1b_id},
+            player2a_id = ${p2a_id}, player2b_id = ${p2b_id},
+            set1_team1 = ${s11}, set1_team2 = ${s21},
+            set2_team1 = ${s12}, set2_team2 = ${s22},
+            set3_team1 = ${s13}, set3_team2 = ${s23}
+          WHERE date = ${o_date}
+            AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
+            AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
+            AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
+            AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
+          RETURNING id`;
+      }
       if (upd.rowCount > 0) {
         res.status(200).json({ ok: true });
         return;
@@ -57,7 +78,7 @@ export default async function handler(req, res) {
           set1_team1 = ${s11}, set1_team2 = ${s21},
           set2_team1 = ${s12}, set2_team2 = ${s22},
           set3_team1 = ${s13}, set3_team2 = ${s23},
-          format = ${format}, event_id = 1, round = NULL
+          format = ${format}
         WHERE date = ${date}
           AND player1a_id IS NOT DISTINCT FROM ${p1a_id}
           AND player1b_id IS NOT DISTINCT FROM ${p1b_id}
