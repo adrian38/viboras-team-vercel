@@ -33,6 +33,13 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 .set-list{display:flex;gap:6px;flex-wrap:wrap}
 .set-item{display:inline-block}
 @media(max-width:720px){body{padding:16px}.table-wrap{overflow-x:auto}.set-list{display:block}.set-item{display:block;margin-bottom:6px}.set-item:not(:last-child)::after{content:""}}
+
+/* mobile sizing: match tournaments page */
+@media(max-width:720px){
+  .tag{font-weight:400;font-size:0.75rem}
+  .set-list{display:inline;font-size:calc(1rem - 3pt)}
+  .set-item{display:inline;margin-right:8px}
+}
 </style>
 </head>
 <body>
