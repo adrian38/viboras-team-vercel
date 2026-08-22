@@ -40,6 +40,14 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
   .set-list{display:inline;font-size:calc(1rem - 3pt)}
   .set-item{display:inline;margin-right:8px}
 }
+  </style>
+  <style>
+  .pos-badge{display:inline-flex;width:34px;height:34px;border-radius:999px;align-items:center;justify-content:center;background:#fff;border:1px solid #e5e7eb;margin-right:10px;font-weight:700;color:#0b1530}
+  .ranking-name{display:flex;align-items:center}
+  .pos-badge.pos-1{background:#FDE68A;border-color:#F6C84A}
+  .pos-badge.pos-2{background:#E5E7EB;border-color:#BFC6CC}
+  .pos-badge.pos-3{background:#F2C79D;border-color:#D69A6A}
+  </style>
 </style>
 </head>
 <body>
@@ -288,11 +296,11 @@ function renderResults(pending, completed){
   const compC = document.getElementById('completedContainer')
 
   // Pending
-  if(!pending.length) pendC.innerHTML = '<div class="muted">No hay partidos pendientes.</div>'
+  if(!pending.length) pendC.innerHTML = ''
   else{
     const title = document.createElement('div')
     title.className = 'muted'
-    title.innerText = 'Partidos pendientes'
+    title.innerHTML = '<br><strong>Partidos pendientes</strong>'
 
     const t = document.createElement('table')
     const thead = document.createElement('thead')
@@ -345,11 +353,11 @@ function renderResults(pending, completed){
   }
 
   // Completed
-  if(!completed.length) compC.innerHTML = '<div class="muted">No hay partidos completados.</div>'
+  if(!completed.length) compC.innerHTML = '<div class="muted">\nNo hay partidos completados.</div>'
   else{
     const title = document.createElement('div')
     title.className = 'muted'
-    title.innerText = 'Partidos completados'
+    title.innerHTML = '<br><strong>Partidos completados</strong>'
 
     const t = document.createElement('table')
     const thead = document.createElement('thead')
@@ -439,20 +447,60 @@ function applyFilter(){
 
   // classification
   if(currentView==='ranking'){
-    const leagueEndStr = league.end_date || ''
-    const endParts = (leagueEndStr||'').split('/')
-    let showProvisional = false
-    if(endParts.length===3){
-      const endDate = new Date(Date.UTC(Number(endParts[2]), Number(endParts[1])-1, Number(endParts[0])))
-      const check = new Date(endDate); check.setUTCDate(check.getUTCDate()+1)
-      const today = new Date();
-      const tUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
-      const cUTC = Date.UTC(check.getUTCFullYear(), check.getUTCMonth(), check.getUTCDate())
-      if(tUTC < cUTC) showProvisional = true
-    }
-    document.getElementById('provisionalNote').style.display = showProvisional ? 'block' : 'none'
-    renderRanking(completed)
+    // show classifications for ALL groups of the selected league (ignore group dropdown)
+    renderGroupRankings(league)
   }
+}
+
+function renderGroupRankings(league){
+  const container = document.getElementById('rankingContainer')
+  if(!league){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
+
+  // derive groups from events for this league
+  const evForLeague = allEvents.filter(ev => String(ev.name || '').startsWith(`${league.name}_`))
+  const groups = new Set()
+  evForLeague.forEach(ev=>{ const parsed = parseEventNameForLeague(ev.name, league.name); if(parsed) groups.add(parsed.group) })
+  const groupList = Array.from(groups).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}))
+  if(!groupList.length){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
+
+  container.innerHTML = ''
+  groupList.forEach(groupName => {
+    const title = document.createElement('div'); title.className = 'block-title'; title.innerText = `\n\nClasificación del grupo ${groupName}`
+    container.appendChild(title)
+
+    // collect matches for this group across all phases
+    const matches = allMatches.filter(m=>{ const parsed = parseEventNameForLeague(m.event_name||'', league.name); return parsed && parsed.group === groupName })
+    const completedMatches = matches.filter(m=> !isPendingMatch(m))
+    const ranking = computeRanking(completedMatches)
+
+    if(!ranking.length){ const empty = document.createElement('div'); empty.className='muted'; empty.innerText='Sin clasificación para mostrar.'; container.appendChild(empty); return }
+
+    const table = document.createElement('table')
+    const thead = document.createElement('thead'); thead.innerHTML = '<tr><th>Jugador</th><th>Victorias</th><th>Juegos</th></tr>'; table.appendChild(thead)
+    const tbody = document.createElement('tbody')
+
+    ranking.forEach(r=>{
+      const tr = document.createElement('tr')
+      const tdName = document.createElement('td')
+      const nameWrap = document.createElement('div'); nameWrap.className = 'ranking-name'
+      const badge = document.createElement('span'); badge.className = 'pos-badge'
+      if(r.position === 1) badge.classList.add('pos-1')
+      else if(r.position === 2) badge.classList.add('pos-2')
+      else if(r.position === 3) badge.classList.add('pos-3')
+      badge.innerText = String(r.position)
+      const nameSpan = document.createElement('span'); nameSpan.innerText = r.name
+      nameWrap.appendChild(badge); nameWrap.appendChild(nameSpan)
+      tdName.appendChild(nameWrap)
+
+      const tdW = document.createElement('td'); tdW.innerText = String(r.wins||0)
+      const tdG = document.createElement('td'); const gw=Math.round(r.gamesWon||0); const gl=Math.round(r.gamesLost||0); const pct=(r.gamesPct===null)?'-':Math.round((r.gamesPct||0)*100)+'%'; tdG.innerText = `${gw}-${gl} (${pct})`
+
+      tr.appendChild(tdName); tr.appendChild(tdW); tr.appendChild(tdG); tbody.appendChild(tr)
+    })
+
+    table.appendChild(tbody)
+    container.appendChild(table)
+  })
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{
