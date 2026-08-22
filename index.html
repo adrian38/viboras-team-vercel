@@ -73,13 +73,25 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
 <div class="site">
 
   <div class="block">
+    <div class="block-title">Ligas</div>
+    <div class="block-row">
+      <div style="flex:1">
+        <label class="small">Gestiona tus partidos de liga y mira resultados</label>
+        <div class="controls">
+          <button class="btn secondary-green" onclick="window.location='league-results.html'">Ligas</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="block">
     <div class="block-title">Sube resultados</div>
       <div class="block-row">
         <div style="flex:1">
           <label class="small">Publica los resultados de tus partidos</label>
           <div class="controls">
             <button onclick="window.location='submit-result.html'" class="btn">Partidos individuales</button>
-            <button class="btn secondary-green">Ligas</button>
             <button class="btn warn">Torneos</button>
           </div>
         </div>
@@ -90,10 +102,9 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
     <div class="block-title">Consulta resultados</div>
     <div class="block-row">
       <div style="flex:1">
-        <label class="small">Consulta el historial de resultados de partidos y eventos</label>
+        <label class="small">Consulta resultados de partidos y torneos</label>
         <div class="controls">
           <button class="btn" onclick="window.location='history.html'">Partidos individuales</button>
-          <button class="btn secondary-green" onclick="window.location='league-results.html'">Ligas</button>
           <button class="btn warn" onclick="window.location='tournaments.html'">Torneos</button>
         </div>
       </div>
