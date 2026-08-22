@@ -26,6 +26,13 @@ body{
   -moz-osx-font-smoothing:grayscale;
   padding:28px 18px;
 }
+/* number controls for mobile */
+.number-with-controls{display:flex;align-items:center}
+.number-controls{display:none;flex-direction:column;margin-left:8px}
+.number-controls button{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px;border-radius:6px;width:34px;height:28px;font-weight:700;cursor:pointer}
+@media(max-width:720px){
+  .number-controls{display:flex}
+}
 .site{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 .block{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
 .block-title{font-weight:700;margin-bottom:10px;font-size:1.05rem;color:#0b1530}
@@ -154,7 +161,7 @@ async function openAdmin(){
           <div style="font-weight:700;text-align:center;padding:8px 0">Administración</div>
           <button class="btn" style="width:100%;text-align:left" onclick="showPlayerPanel()">Nuevo jugador</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showLeaguePanel()">Nueva liga</button>
-          <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo grupo de liga</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="showBracketPanel()">Nuevo cuadro de liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo torneo Doble KO</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showPozoPanel()">Nuevo torneo Pozo</button>
           <button class="btn red" style="width:100%;text-align:left" onclick="closeAdmin()">Cerrar</button>
@@ -200,6 +207,21 @@ function clampLeagueCount(value, maxValue){
   const parsed = Number.parseInt(String(value ?? ''), 10)
   if(!Number.isFinite(parsed)) return 1
   return Math.min(Math.max(parsed, 1), maxValue)
+}
+
+function changeNumber(id, delta){
+  const el = document.getElementById(id)
+  if(!el) return
+  const min = el.hasAttribute('min') ? Number(el.getAttribute('min')) : null
+  const max = el.hasAttribute('max') ? Number(el.getAttribute('max')) : null
+  let val = Number(el.value) || 0
+  val = val + delta
+  if(min !== null) val = Math.max(val, min)
+  if(max !== null) val = Math.min(val, max)
+  el.value = String(val)
+  // trigger input handlers if any
+  const evt = new Event('input', { bubbles: true })
+  el.dispatchEvent(evt)
 }
 
 function normalizeDateInput(val){
@@ -377,18 +399,30 @@ function showLeaguePanel(){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
           Cantidad de grupos
-          <input id="leagueGroupCount" type="number" min="1" max="20" value="1" class="register-input" />
+          <div class="number-with-controls">
+            <input id="leagueGroupCount" type="number" min="1" max="20" value="1" class="register-input" />
+            <div class="number-controls" style="gap:6px">
+              <button type="button" onclick="changeNumber('leagueGroupCount',1)">+</button>
+              <button type="button" onclick="changeNumber('leagueGroupCount',-1)">−</button>
+            </div>
+          </div>
         </label>
         <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
           Cantidad de fases
-          <input id="leaguePhaseCount" type="number" min="1" max="10" value="1" class="register-input" />
+          <div class="number-with-controls">
+            <input id="leaguePhaseCount" type="number" min="1" max="10" value="1" class="register-input" />
+            <div class="number-controls" style="gap:6px">
+              <button type="button" onclick="changeNumber('leaguePhaseCount',1)">+</button>
+              <button type="button" onclick="changeNumber('leaguePhaseCount',-1)">−</button>
+            </div>
+          </div>
         </label>
       </div>
       <div id="leagueGroupNameContainer"></div>
       <div id="leaguePhaseContainer"></div>
       <button class="btn secondary-green" onclick="submitLeague()">Guardar liga</button>
     </div>
-  `
+  `;
 
   const groupField = document.getElementById('leagueGroupCount')
   const phaseField = document.getElementById('leaguePhaseCount')
@@ -511,6 +545,79 @@ function showPozoPanel(){
       <button class="btn secondary-green" onclick="submitPozoTournament()">Guardar torneo</button>
     </div>
   `
+}
+
+function showBracketPanel(){
+  const menu = document.getElementById('adminMenuColumn')
+  const content = document.getElementById('adminContent')
+  const adminMain = document.getElementById('adminMain')
+  const header = document.getElementById('adminHeaderTitle')
+  if(menu) menu.style.display = 'none'
+  if(adminMain) adminMain.style.display = 'flex'
+  if(content) content.style.display = 'flex'
+  if(header) header.innerText = 'Nuevo cuadro de liga'
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        Liga
+        <select id="bracketLeagueSelect" class="register-input"></select>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        CSV del cuadro
+        <input id="bracketCsvFile" type="file" accept=".csv,text/csv" />
+      </label>
+      <div style="color:var(--muted);font-size:0.9rem;line-height:1.4">
+        Formato del fichero CSV (sin cabecera): nombre_grupo;numero_fase;jugador1;jugador2;jugador3;jugador4
+      </div>
+      <button class="btn secondary-green" onclick="submitLeagueBracket()">Guardar cuadro</button>
+    </div>
+  `;
+
+  // load leagues into select
+  (async ()=>{
+    try{
+      const res = await fetch('/api/getLeagues')
+      const json = await res.json()
+      const sel = document.getElementById('bracketLeagueSelect')
+      if(!sel) return
+      sel.innerHTML = ''
+      if(!Array.isArray(json) || json.length === 0){
+        sel.innerHTML = '<option value="">(sin ligas)</option>'
+        return
+      }
+      for(const l of json){
+        const opt = document.createElement('option')
+        opt.value = String(l.id)
+        opt.innerText = `${l.name}`
+        sel.appendChild(opt)
+      }
+    }catch(e){ console.error('Could not load leagues', e) }
+  })()
+}
+
+async function submitLeagueBracket(){
+  const sel = document.getElementById('bracketLeagueSelect')
+  const fileEl = document.getElementById('bracketCsvFile')
+  const file = fileEl && fileEl.files ? fileEl.files[0] : null
+  const leagueId = sel ? sel.value : ''
+
+  if(!leagueId){ alert('Selecciona una liga'); return }
+  if(!file){ alert('Sube un fichero CSV'); return }
+
+  try{
+    const csvText = await file.text()
+    const payload = { league_id: Number(leagueId), csv: csvText }
+    const res = await fetch('/api/createLeagueBracket',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    })
+    const json = await res.json().catch(()=>({}))
+    if(!res.ok || !json.ok){
+      throw new Error(json && json.error ? json.error : 'Error al guardar el cuadro')
+    }
+
+    alert('Cuadro guardado')
+    closeAdmin()
+  }catch(e){ console.error(e); alert(e && e.message ? e.message : 'Error al guardar el cuadro') }
 }
 
 async function submitPozoTournament(){
