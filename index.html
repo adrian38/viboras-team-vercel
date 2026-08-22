@@ -153,7 +153,7 @@ async function openAdmin(){
         <div id="adminMenuColumn" style="flex:0 0 260px;display:flex;flex-direction:column;gap:8px;align-items:stretch">
           <div style="font-weight:700;text-align:center;padding:8px 0">Administración</div>
           <button class="btn" style="width:100%;text-align:left" onclick="showPlayerPanel()">Nuevo jugador</button>
-          <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nueva liga</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="showLeaguePanel()">Nueva liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo grupo de liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo torneo Doble KO</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showPozoPanel()">Nuevo torneo Pozo</button>
@@ -193,12 +193,85 @@ function showAdminMenu(){
   if(header) header.innerText = 'Jugadores'
 }
 
+const MAX_LEAGUE_GROUPS = 20
+const MAX_LEAGUE_PHASES = 10
+
+function clampLeagueCount(value, maxValue){
+  const parsed = Number.parseInt(String(value ?? ''), 10)
+  if(!Number.isFinite(parsed)) return 1
+  return Math.min(Math.max(parsed, 1), maxValue)
+}
+
 function normalizeDateInput(val){
   if(/^\d{4}-\d{2}-\d{2}$/.test(String(val||''))){
     const [y,m,d] = String(val).split('-')
     return `${d}/${m}/${y}`
   }
   return String(val || '')
+}
+
+function addDaysToDateText(dateText, daysToAdd){
+  const [d, m, y] = String(dateText || '').split('/')
+  if(!d || !m || !y) return null
+  const date = new Date(Date.UTC(Number(y), Number(m) - 1, Number(d)))
+  date.setUTCDate(date.getUTCDate() + daysToAdd)
+  const dd = String(date.getUTCDate()).padStart(2, '0')
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const yyyy = String(date.getUTCFullYear())
+  return `${dd}/${mm}/${yyyy}`
+}
+
+function validateLeaguePhaseSequence(leagueStartDate, leagueEndDate, phaseList){
+  if(!leagueStartDate || !leagueEndDate){
+    return 'Faltan las fechas de la liga'
+  }
+
+  const leagueStart = new Date(Date.UTC(Number(leagueStartDate.split('/')[2]), Number(leagueStartDate.split('/')[1]) - 1, Number(leagueStartDate.split('/')[0])))
+  const leagueEnd = new Date(Date.UTC(Number(leagueEndDate.split('/')[2]), Number(leagueEndDate.split('/')[1]) - 1, Number(leagueEndDate.split('/')[0])))
+
+  if(leagueStart > leagueEnd){
+    return 'La fecha de inicio de la liga no puede ser posterior a la de fin'
+  }
+
+  if(!phaseList || phaseList.length === 0){
+    return 'La liga debe tener al menos una fase'
+  }
+
+  const firstPhase = phaseList[0]
+  const lastPhase = phaseList[phaseList.length - 1]
+
+  if(firstPhase.start_date !== leagueStartDate){
+    return 'La primera fase debe empezar el mismo día que la liga'
+  }
+  if(lastPhase.end_date !== leagueEndDate){
+    return 'La última fase debe terminar el mismo día que la liga'
+  }
+
+  for(let i = 0; i < phaseList.length; i++){
+    const phase = phaseList[i]
+    const phaseStart = new Date(Date.UTC(Number(phase.start_date.split('/')[2]), Number(phase.start_date.split('/')[1]) - 1, Number(phase.start_date.split('/')[0])))
+    const phaseEnd = new Date(Date.UTC(Number(phase.end_date.split('/')[2]), Number(phase.end_date.split('/')[1]) - 1, Number(phase.end_date.split('/')[0])))
+
+    if(phaseStart > phaseEnd){
+      return `La fecha de inicio de la fase ${i + 1} no puede ser posterior a la de fin`
+    }
+
+    if(i === 0 && phaseStart.getTime() !== leagueStart.getTime()){
+      return 'La primera fase debe empezar el mismo día que la liga'
+    }
+
+    if(i > 0){
+      const previousPhase = phaseList[i - 1]
+      const previousEnd = new Date(Date.UTC(Number(previousPhase.end_date.split('/')[2]), Number(previousPhase.end_date.split('/')[1]) - 1, Number(previousPhase.end_date.split('/')[0])))
+      const expectedStart = new Date(previousEnd)
+      expectedStart.setUTCDate(expectedStart.getUTCDate() + 1)
+      if(phaseStart.getTime() !== expectedStart.getTime()){
+        return 'Las fases deben ser consecutivas, sin dejar días en blanco ni solaparse'
+      }
+    }
+  }
+
+  return null
 }
 
 function showPlayerPanel(){
@@ -218,6 +291,186 @@ function showPlayerPanel(){
     <div id="adminList" style="display:flex;flex-direction:column;gap:8px;overflow:auto"></div>
   `
   loadAdminNames()
+}
+
+function renderLeagueDynamicFields(){
+  const groupField = document.getElementById('leagueGroupCount')
+  const phaseField = document.getElementById('leaguePhaseCount')
+  const groupCount = clampLeagueCount(groupField?.value || '1', MAX_LEAGUE_GROUPS)
+  const phaseCount = clampLeagueCount(phaseField?.value || '1', MAX_LEAGUE_PHASES)
+
+  if(groupField) groupField.value = String(groupCount)
+  if(phaseField) phaseField.value = String(phaseCount)
+
+  const groupContainer = document.getElementById('leagueGroupNameContainer')
+  const phaseContainer = document.getElementById('leaguePhaseContainer')
+
+  if(groupContainer){
+    const items = []
+    for(let i=0;i<groupCount;i++){
+      items.push(`
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Grupo ${i + 1}
+          <input id="leagueGroupName_${i}" class="register-input" placeholder="Ej: A, B, Oro, Plata..." maxlength="40" />
+        </label>
+      `)
+    }
+    groupContainer.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-weight:700;color:var(--muted)">Nombres de los grupos</div>
+        ${items.join('')}
+      </div>
+    `
+  }
+
+  if(phaseContainer){
+    const items = []
+    for(let i=0;i<phaseCount;i++){
+      items.push(`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;border:1px solid rgba(148,163,184,0.25);padding:10px;border-radius:8px">
+          <div style="font-weight:700;color:var(--muted);grid-column:1 / -1">Fase ${i + 1}</div>
+          <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+            Fecha inicio
+            <input id="leaguePhaseStart_${i}" type="date" class="register-input" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+            Fecha fin
+            <input id="leaguePhaseEnd_${i}" type="date" class="register-input" />
+          </label>
+        </div>
+      `)
+    }
+    phaseContainer.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-weight:700;color:var(--muted)">Fases</div>
+        ${items.join('')}
+      </div>
+    `
+  }
+}
+
+function showLeaguePanel(){
+  const menu = document.getElementById('adminMenuColumn')
+  const content = document.getElementById('adminContent')
+  const adminMain = document.getElementById('adminMain')
+  const header = document.getElementById('adminHeaderTitle')
+  if(menu) menu.style.display = 'none'
+  if(adminMain) adminMain.style.display = 'flex'
+  if(content) content.style.display = 'flex'
+  if(header) header.innerText = 'Nueva liga'
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        Nombre de la liga
+        <input id="leagueName" class="register-input" placeholder="Ej: Liga Primavera" />
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Fecha inicio
+          <input id="leagueStartDate" type="date" class="register-input" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Fecha fin
+          <input id="leagueEndDate" type="date" class="register-input" />
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Cantidad de grupos
+          <input id="leagueGroupCount" type="number" min="1" max="20" value="1" class="register-input" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Cantidad de fases
+          <input id="leaguePhaseCount" type="number" min="1" max="10" value="1" class="register-input" />
+        </label>
+      </div>
+      <div id="leagueGroupNameContainer"></div>
+      <div id="leaguePhaseContainer"></div>
+      <button class="btn secondary-green" onclick="submitLeague()">Guardar liga</button>
+    </div>
+  `
+
+  const groupField = document.getElementById('leagueGroupCount')
+  const phaseField = document.getElementById('leaguePhaseCount')
+  if(groupField){
+    groupField.oninput = () => {
+      groupField.value = String(clampLeagueCount(groupField.value, MAX_LEAGUE_GROUPS))
+      renderLeagueDynamicFields()
+    }
+  }
+  if(phaseField){
+    phaseField.oninput = () => {
+      phaseField.value = String(clampLeagueCount(phaseField.value, MAX_LEAGUE_PHASES))
+      renderLeagueDynamicFields()
+    }
+  }
+  renderLeagueDynamicFields()
+}
+
+async function submitLeague(){
+  const leagueName = document.getElementById('leagueName')?.value.trim() || ''
+  const leagueStart = document.getElementById('leagueStartDate')?.value || ''
+  const leagueEnd = document.getElementById('leagueEndDate')?.value || ''
+  const groupCount = clampLeagueCount(document.getElementById('leagueGroupCount')?.value || '1', MAX_LEAGUE_GROUPS)
+  const phaseCount = clampLeagueCount(document.getElementById('leaguePhaseCount')?.value || '1', MAX_LEAGUE_PHASES)
+
+  if(!leagueName){ alert('Introduce el nombre de la liga'); return }
+  if(!leagueStart || !leagueEnd){ alert('Selecciona la fecha de inicio y la de fin de la liga'); return }
+  if(groupCount > MAX_LEAGUE_GROUPS){ alert(`El número máximo de grupos es ${MAX_LEAGUE_GROUPS}`); return }
+  if(phaseCount > MAX_LEAGUE_PHASES){ alert(`El número máximo de fases es ${MAX_LEAGUE_PHASES}`); return }
+
+  const groupNames = []
+  for(let i=0;i<groupCount;i++){
+    const raw = document.getElementById(`leagueGroupName_${i}`)?.value.trim() || ''
+    const value = raw || String(i + 1)
+    groupNames.push(value)
+  }
+
+  if(new Set(groupNames).size !== groupNames.length){
+    alert('Los nombres de los grupos deben ser únicos');
+    return
+  }
+
+  const phases = []
+  for(let i=0;i<phaseCount;i++){
+    const start = document.getElementById(`leaguePhaseStart_${i}`)?.value || ''
+    const end = document.getElementById(`leaguePhaseEnd_${i}`)?.value || ''
+    if(!start || !end){ alert(`Falta la fecha de inicio o fin de la fase ${i + 1}`); return }
+    phases.push({ start_date: normalizeDateInput(start), end_date: normalizeDateInput(end) })
+  }
+
+  const errorMessage = validateLeaguePhaseSequence(normalizeDateInput(leagueStart), normalizeDateInput(leagueEnd), phases)
+  if(errorMessage){
+    alert(errorMessage)
+    return
+  }
+
+  try{
+    const res = await fetch('/api/createLeague', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: leagueName,
+        start_date: normalizeDateInput(leagueStart),
+        end_date: normalizeDateInput(leagueEnd),
+        group_count: groupCount,
+        phase_count: phaseCount,
+        group_names: groupNames,
+        phases
+      })
+    })
+
+    const json = await res.json().catch(() => ({}))
+    if(!res.ok || !json.ok){
+      throw new Error(json && json.error ? json.error : 'Error al guardar la liga')
+    }
+
+    alert('Liga guardada')
+    closeAdmin()
+  }catch(e){
+    console.error(e)
+    alert(e && e.message ? e.message : 'Error al guardar la liga')
+  }
 }
 
 function showPozoPanel(){
