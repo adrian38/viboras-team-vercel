@@ -203,8 +203,8 @@ async function loadData(){
     parsedMatches = parseMatches(db.matches || [])
     setupEventSelector(db.events || [], parsedMatches)
     document.getElementById('summary').innerText = ''
-    document.getElementById('tableContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados.</div>'
-    document.getElementById('rankingContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver la clasificación.</div>'
+    document.getElementById('tableContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados y la clasificación.</div>'
+    document.getElementById('rankingContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados y la clasificación.</div>'
   } catch (e) {
     console.error('Could not load tournament results', e)
     document.getElementById('summary').innerText = 'No se pudieron cargar los resultados del torneo.'

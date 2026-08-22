@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados de ligas</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;padding:28px 18px;background:linear-gradient(180deg,#f5f8ff,#eef4ff 60%);color:#0b1530}
+.site{max-width:980px;margin:0 auto}
+.block{background:#fff;border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+.block-title{font-weight:700;margin-bottom:10px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.view-toggle{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
+.view-btn{background:#fff;color:#6b7280;border:1px solid rgba(15,23,42,0.08);padding:8px 12px;border-radius:999px;cursor:pointer}
+.view-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.filter-box{background:linear-gradient(180deg,#eaf4ff,#e1f0ff);padding:12px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);margin-bottom:12px}
+.select{padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
+.small-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 8px;border-radius:6px;cursor:pointer}
+.btn{background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
+.muted{color:#6b7280}
+.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff;border:1px solid #eee;margin-right:6px;font-weight:600}
+.tag.win{background:#dcfce7;color:#065f46;border-color:rgba(16,185,129,0.12)}
+.tag.lose{background:#fff5f5;color:#7f1d1d;border-color:rgba(239,68,68,0.08)}
+.tag.tie{background:#ffffff;color:#374151;border-color:#e5e7eb}
+.desktop-only{display:inline}
+.mobile-only{display:none}
+@media(max-width:720px){.desktop-only{display:none}.mobile-only{display:inline-block;margin-right:8px}}
+.set-list{display:flex;gap:6px;flex-wrap:wrap}
+.set-item{display:inline-block}
+@media(max-width:720px){body{padding:16px}.table-wrap{overflow-x:auto}.set-list{display:block}.set-item{display:block;margin-bottom:6px}.set-item:not(:last-child)::after{content:""}}
+</style>
+</head>
+<body>
+
+<div class="site">
+  <div class="block">
+    <div class="block-title">Resultados de ligas</div>
+    <div class="filter-box">
+      <div class="controls" role="toolbar" aria-label="Filtros">
+        <label style="display:flex;flex-direction:column;min-width:220px;flex:1">
+          Liga
+          <select id="leagueSelect" class="select"></select>
+        </label>
+
+        <label style="display:flex;flex-direction:column;min-width:160px">
+          Grupo
+          <select id="groupSelect" class="select"></select>
+        </label>
+
+        <label style="display:flex;flex-direction:column;min-width:140px">
+          Fase
+          <select id="phaseSelect" class="select"></select>
+        </label>
+
+        <label style="display:flex;flex-direction:column;flex:1;min-width:220px">
+          Jugador
+          <input id="player" class="select" placeholder="Nombre (parte del nombre)" />
+        </label>
+
+        <div style="display:flex;align-items:end;gap:8px">
+          <button class="btn" id="filterBtn">Filtrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="durationLine" class="muted" style="margin-top:8px">Duración de la liga: -</div>
+
+    <div id="leagueViewToggle" class="view-toggle" role="tablist" aria-label="Vista de la liga" style="display:none">
+      <button type="button" class="view-btn" data-view="ranking">Clasificación</button>
+      <button type="button" class="view-btn active" data-view="results">Resultados</button>
+    </div>
+
+    <div id="provisionalNote" class="muted" style="margin-top:6px;display:none">Esta clasificación es provisional hasta la finalización de la liga.</div>
+
+    <div id="rankingContainer" class="table-wrap" style="margin-top:6px;display:none"></div>
+    <div id="pendingContainer" class="table-wrap" style="margin-top:12px;display:none"></div>
+    <div id="completedContainer" class="table-wrap" style="margin-top:12px;display:none"></div>
+
+    <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="flex:1;text-align:left">
+        <button class="btn" id="downloadBtn">Descargar resultados</button>
+      </div>
+      <div style="flex:0 0 auto;text-align:right">
+        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let allMatches = []
+let allEvents = []
+let leagues = []
+let currentView = 'results'
+
+function formatDateText(text){
+  if(!text) return ''
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(text)) return text
+  if(/^\d{4}-\d{2}-\d{2}$/.test(text)){ const [y,m,d]=text.split('-'); return `${d}/${m}/${y}` }
+  return text
+}
+
+function parseEventNameForLeague(eventName, leagueName){
+  // expect leagueName_Group_FaseN
+  const prefix = `${leagueName}_`
+  if(!eventName || !eventName.startsWith(prefix)) return null
+  const rest = eventName.substring(prefix.length)
+  const m = rest.match(/^(.*)_Fase(\d+)$/)
+  if(!m) return null
+  return { group: m[1], phase: Number(m[2]) }
+}
+
+function buildOption(value,label){ const o=document.createElement('option'); o.value=value; o.textContent=label; return o }
+
+async function loadInitial(){
+  try{
+    const lg = await (await fetch('/api/getLeagues')).json()
+    leagues = Array.isArray(lg)?lg:[]
+    const sel = document.getElementById('leagueSelect')
+    sel.innerHTML = ''
+    sel.appendChild(buildOption('','-- Selecciona una liga --'))
+    leagues.forEach(l=> sel.appendChild(buildOption(String(l.id), l.name)))
+
+    // load group events matches
+    const res = await fetch('/api/getResults?eventType=grupo_liga')
+    const db = await res.json()
+    allMatches = db.matches || []
+    allEvents = db.events || []
+
+    document.getElementById('durationLine').innerText = 'Duración de la liga: -'
+    document.getElementById('pendingContainer').style.display = 'none'
+    document.getElementById('completedContainer').style.display = 'none'
+    document.getElementById('rankingContainer').style.display = 'none'
+    document.getElementById('leagueViewToggle').style.display = 'none'
+  }catch(e){ console.error(e); alert('No se pudieron cargar ligas y partidos') }
+}
+
+function onLeagueChange(){
+  const leagueId = document.getElementById('leagueSelect').value
+  if(!leagueId){
+    document.getElementById('groupSelect').innerHTML = ''
+    document.getElementById('phaseSelect').innerHTML = ''
+    document.getElementById('durationLine').innerText = 'Duración de la liga: -'
+    document.getElementById('leagueViewToggle').style.display = 'none'
+    return
+  }
+  const league = leagues.find(l=>String(l.id)===String(leagueId))
+  if(!league) return
+  document.getElementById('durationLine').innerText = `Duración de la liga: ${formatDateText(league.start_date)} - ${formatDateText(league.end_date)}`
+
+  // derive groups and phases from events whose name starts with league.name_
+  const evForLeague = allEvents.filter(ev => String(ev.name || '').startsWith(`${league.name}_`))
+  const groups = new Set(); const phases = new Set()
+  evForLeague.forEach(ev=>{
+    const parsed = parseEventNameForLeague(ev.name, league.name)
+    if(parsed){ groups.add(parsed.group); phases.add(parsed.phase) }
+  })
+
+  const gsel = document.getElementById('groupSelect')
+  gsel.innerHTML = ''
+  gsel.appendChild(buildOption('all','Todas'))
+  Array.from(groups).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'})).forEach(g=> gsel.appendChild(buildOption(g,g)))
+
+  const psel = document.getElementById('phaseSelect')
+  psel.innerHTML = ''
+  psel.appendChild(buildOption('all','Todas'))
+  Array.from(phases).sort((a,b)=>a-b).forEach(p=> psel.appendChild(buildOption(String(p), String(p))) )
+
+  document.getElementById('leagueViewToggle').style.display = 'flex'
+  // default view is results
+  setLeagueView('results')
+  // automatically apply filter so selecting a league shows results immediately
+  applyFilter()
+}
+
+function setLeagueView(view){
+  currentView = (view==='ranking') ? 'ranking' : 'results'
+  const buttons = document.querySelectorAll('#leagueViewToggle .view-btn')
+  buttons.forEach(btn=> btn.classList.toggle('active', btn.getAttribute('data-view')===currentView))
+  document.getElementById('rankingContainer').style.display = (currentView==='ranking') ? 'block' : 'none'
+  document.getElementById('pendingContainer').style.display = (currentView==='results') ? 'block' : 'none'
+  document.getElementById('completedContainer').style.display = (currentView==='results') ? 'block' : 'none'
+
+  // provisional note: only show when viewing classification
+  const provisionalEl = document.getElementById('provisionalNote')
+  if(currentView === 'ranking'){
+    const leagueId = document.getElementById('leagueSelect').value
+    const league = leagues.find(l=>String(l.id)===String(leagueId))
+    provisionalEl.style.display = isLeagueProvisional(league) ? 'block' : 'none'
+  }else{
+    provisionalEl.style.display = 'none'
+  }
+}
+
+function isLeagueProvisional(league){
+  if(!league) return false
+  const s = league.end_date || ''
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    const parts = s.split('-'); const endDate = new Date(Date.UTC(Number(parts[0]), Number(parts[1])-1, Number(parts[2])));
+    const check = new Date(endDate); check.setUTCDate(check.getUTCDate()+1)
+    const today = new Date(); const tUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()); const cUTC = Date.UTC(check.getUTCFullYear(), check.getUTCMonth(), check.getUTCDate())
+    return tUTC < cUTC
+  }
+  const parts = (s||'').split('/')
+  if(parts.length!==3) return false
+  const endDate = new Date(Date.UTC(Number(parts[2]), Number(parts[1])-1, Number(parts[0])))
+  const check = new Date(endDate); check.setUTCDate(check.getUTCDate()+1)
+  const today = new Date(); const tUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()); const cUTC = Date.UTC(check.getUTCFullYear(), check.getUTCMonth(), check.getUTCDate())
+  return tUTC < cUTC
+}
+
+function isPendingMatch(m){
+  return m.s11 === '0' && m.s21 === '0' && (m.s12 === '' || m.s12 === null) && (m.s22===''||m.s22==null) && (m.s13===''||m.s13==null) && (m.s23===''||m.s23==null)
+}
+
+function computeRanking(matches){
+  // reuse logic from tournaments: simple wins and games
+  const stats = new Map()
+  function ensure(n){ if(!stats.has(n)) stats.set(n,{name:n,wins:0,gamesWon:0,gamesLost:0}) }
+  matches.forEach(m=>{
+    const p1 = [(m.p1a||'').trim(), (m.p1b||'').trim()].filter(Boolean)
+    const p2 = [(m.p2a||'').trim(), (m.p2b||'').trim()].filter(Boolean)
+    let t1=0,t2=0
+    for(let i=1;i<=3;i++){
+      const a = (m['s1'+i]!==undefined && m['s1'+i]!=='')? parseInt(m['s1'+i],10): NaN
+      const b = (m['s2'+i]!==undefined && m['s2'+i]!=='')? parseInt(m['s2'+i],10): NaN
+      if(!isNaN(a) && !isNaN(b)){
+        if(a>b) t1++
+        else if(b>a) t2++
+        p1.forEach(n=>{ ensure(n); const e=stats.get(n); e.gamesWon += a; e.gamesLost += b })
+        p2.forEach(n=>{ ensure(n); const e=stats.get(n); e.gamesWon += b; e.gamesLost += a })
+      }
+    }
+    if(t1>t2) p1.forEach(n=>{ ensure(n); stats.get(n).wins +=1 })
+    else if(t2>t1) p2.forEach(n=>{ ensure(n); stats.get(n).wins +=1 })
+    else {
+      if((m.s12||'')==='1') p1.forEach(n=>{ ensure(n); stats.get(n).wins +=1 })
+      else if((m.s22||'')==='1') p2.forEach(n=>{ ensure(n); stats.get(n).wins +=1 })
+    }
+  })
+
+  const out = Array.from(stats.values()).map(s=>{
+    const total = (s.gamesWon||0)+(s.gamesLost||0)
+    const pct = total>0? s.gamesWon/total : null
+    return Object.assign({}, s, { gamesTotal: total, gamesPct: pct })
+  })
+  out.sort((a,b)=>{ if((b.wins||0)!==(a.wins||0)) return (b.wins||0)-(a.wins||0); const pa=a.gamesPct===null?-1:a.gamesPct; const pb=b.gamesPct===null?-1:b.gamesPct; if(pb!==pa) return pb>pa?1:-1; return 0 })
+  let lastKey=null,pos=0,displayPos=0
+  out.forEach(r=>{ pos++; const key=`${r.wins}_${r.gamesPct}`; if(key!==lastKey){ displayPos=pos; lastKey=key } r.position=displayPos })
+  return out
+}
+
+function renderRanking(matches){
+  const container = document.getElementById('rankingContainer')
+  const ranking = computeRanking(matches||[])
+  if(!ranking.length){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
+  const table = document.createElement('table')
+  const thead = document.createElement('thead')
+  thead.innerHTML = '<tr><th>Jugador</th><th>Victorias</th><th>Juegos</th></tr>'
+  table.appendChild(thead)
+  const tbody = document.createElement('tbody')
+  ranking.forEach(r=>{
+    const tr=document.createElement('tr')
+    const tdName=document.createElement('td'); tdName.innerText = r.name
+    const tdW=document.createElement('td'); tdW.innerText=String(r.wins||0)
+    const tdG=document.createElement('td'); tdG.innerText = `${Math.round(r.gamesWon||0)}-${Math.round(r.gamesLost||0)} (${r.gamesPct===null?'-':Math.round((r.gamesPct||0)*100)+'%'})`
+    tr.appendChild(tdName); tr.appendChild(tdW); tr.appendChild(tdG); tbody.appendChild(tr)
+  })
+  table.appendChild(tbody)
+  container.innerHTML=''
+  container.appendChild(table)
+}
+
+function renderResults(pending, completed){
+  const pendC = document.getElementById('pendingContainer')
+  const compC = document.getElementById('completedContainer')
+
+  // Pending
+  if(!pending.length) pendC.innerHTML = '<div class="muted">No hay partidos pendientes.</div>'
+  else{
+    const title = document.createElement('div')
+    title.className = 'muted'
+    title.innerText = 'Partidos pendientes'
+
+    const t = document.createElement('table')
+    const thead = document.createElement('thead')
+    thead.innerHTML = '<tr><th>Jugadores</th><th>Marcador</th></tr>'
+    t.appendChild(thead)
+    const tbody = document.createElement('tbody')
+
+    pending.forEach(m => {
+      const tr = document.createElement('tr')
+
+      // players column (desktop: individual tags, mobile: combined)
+      const tdPlayers = document.createElement('td')
+      const p1aTag = document.createElement('span'); p1aTag.className = 'tag desktop-only'; p1aTag.innerText = m.p1a || ''
+      const p1bTag = document.createElement('span'); p1bTag.className = 'tag desktop-only'; p1bTag.innerText = m.p1b || ''
+      const vs = document.createElement('strong'); vs.className = 'desktop-only'; vs.style.margin = '0 8px'; vs.innerText = 'VS'
+      const p2aTag = document.createElement('span'); p2aTag.className = 'tag desktop-only'; p2aTag.innerText = m.p2a || ''
+      const p2bTag = document.createElement('span'); p2bTag.className = 'tag desktop-only'; p2bTag.innerText = m.p2b || ''
+      tdPlayers.appendChild(p1aTag); tdPlayers.appendChild(p1bTag); tdPlayers.appendChild(vs); tdPlayers.appendChild(p2aTag); tdPlayers.appendChild(p2bTag)
+
+      const mobileTeam1 = document.createElement('span'); mobileTeam1.className = 'tag mobile-only'; mobileTeam1.innerText = `${(m.p1a||'').trim()} / ${(m.p1b||'').trim()}`
+      const mobileTeam2 = document.createElement('span'); mobileTeam2.className = 'tag mobile-only'; mobileTeam2.innerText = `${(m.p2a||'').trim()} / ${(m.p2b||'').trim()}`
+      tdPlayers.appendChild(mobileTeam1); tdPlayers.appendChild(mobileTeam2)
+
+      // score column: show sets similar to tournaments
+      const sets = []
+      for(let i=1;i<=3;i++){
+        if(i===2 && String(m.format) === 'timed_games') continue
+        const a = m['s1'+i] || ''
+        const b = m['s2'+i] || ''
+        if(a === '' && b === '') continue
+        const score = String(a) + '-' + String(b)
+        const display = (String(m.format) === 'bo3_stb' && i === 3) ? `[${score}]` : score
+        sets.push(display)
+      }
+      const tdScore = document.createElement('td')
+      const list = document.createElement('div'); list.className = 'set-list'
+      sets.forEach(s=>{ const it=document.createElement('span'); it.className='set-item'; it.innerText = String(s).replace(/-/g,'\u2011') ; list.appendChild(it) })
+      // if no sets, show '-' or 0-0
+      if(sets.length === 0){ tdScore.innerText = (m.s11||'') ? `${m.s11}-${m.s21}` : '0-0' }
+      else tdScore.appendChild(list)
+
+      tr.appendChild(tdPlayers); tr.appendChild(tdScore)
+      tbody.appendChild(tr)
+    })
+
+    t.appendChild(tbody)
+    pendC.innerHTML = ''
+    pendC.appendChild(title)
+    pendC.appendChild(t)
+  }
+
+  // Completed
+  if(!completed.length) compC.innerHTML = '<div class="muted">No hay partidos completados.</div>'
+  else{
+    const title = document.createElement('div')
+    title.className = 'muted'
+    title.innerText = 'Partidos completados'
+
+    const t = document.createElement('table')
+    const thead = document.createElement('thead')
+    thead.innerHTML = '<tr><th>Jugadores</th><th>Marcador</th></tr>'
+    t.appendChild(thead)
+    const tbody = document.createElement('tbody')
+
+    completed.forEach(m => {
+      const tr = document.createElement('tr')
+
+      // compute result type
+      let team1Sets = 0, team2Sets = 0
+      for(let i=1;i<=3;i++){ const aRaw = m['s1'+i]; const bRaw = m['s2'+i]; const a = (aRaw!==undefined && aRaw!=='')?parseInt(aRaw,10):NaN; const b = (bRaw!==undefined && bRaw!=='')?parseInt(bRaw,10):NaN; if(!isNaN(a) && !isNaN(b)){ if(a>b) team1Sets++; else if(b>a) team2Sets++ } }
+      let resultType = 'tie'
+      if(team1Sets > team2Sets) resultType = 'team1'
+      else if(team2Sets > team1Sets) resultType = 'team2'
+      else { if((m.s12||'') === '1') resultType = 'team1'; else if((m.s22||'') === '1') resultType = 'team2' }
+
+      function makeTag(name, team){ const span = document.createElement('span'); span.className = 'tag'; if(resultType === 'tie') span.classList.add('tie'); else if(resultType === 'team1' && team===1) span.classList.add('win'); else if(resultType === 'team2' && team===2) span.classList.add('win'); else span.classList.add('lose'); span.innerText = name; return span }
+
+      const tdPlayers = document.createElement('td')
+      const p1aTag = makeTag(m.p1a||'',1); p1aTag.classList.add('desktop-only')
+      const p1bTag = makeTag(m.p1b||'',1); p1bTag.classList.add('desktop-only')
+      const vs = document.createElement('strong'); vs.className='desktop-only'; vs.style.margin='0 8px'; vs.innerText = 'VS'
+      const p2aTag = makeTag(m.p2a||'',2); p2aTag.classList.add('desktop-only')
+      const p2bTag = makeTag(m.p2b||'',2); p2bTag.classList.add('desktop-only')
+      tdPlayers.appendChild(p1aTag); tdPlayers.appendChild(p1bTag); tdPlayers.appendChild(vs); tdPlayers.appendChild(p2aTag); tdPlayers.appendChild(p2bTag)
+
+      const mobileTeam1 = document.createElement('span'); mobileTeam1.className='tag mobile-only'; mobileTeam1.innerText = `${(m.p1a||'').trim()} / ${(m.p1b||'').trim()}`
+      const mobileTeam2 = document.createElement('span'); mobileTeam2.className='tag mobile-only'; mobileTeam2.innerText = `${(m.p2a||'').trim()} / ${(m.p2b||'').trim()}`
+      if(resultType === 'team1'){ mobileTeam1.classList.add('win'); mobileTeam2.classList.add('lose') }
+      else if(resultType === 'team2'){ mobileTeam1.classList.add('lose'); mobileTeam2.classList.add('win') }
+      else { mobileTeam1.classList.add('tie'); mobileTeam2.classList.add('tie') }
+      tdPlayers.appendChild(mobileTeam1); tdPlayers.appendChild(mobileTeam2)
+
+      // score
+      const sets = []
+      for(let i=1;i<=3;i++){
+        if(i===2 && String(m.format) === 'timed_games') continue
+        let a = m['s1'+i] || ''
+        let b = m['s2'+i] || ''
+        if(a === '' && b === '') continue
+        const score = String(a) + '-' + String(b)
+        const display = (String(m.format) === 'bo3_stb' && i === 3) ? `[${score}]` : score
+        sets.push(display)
+      }
+      const tdScore = document.createElement('td')
+      const list = document.createElement('div'); list.className = 'set-list'
+      sets.forEach(s=>{ const it=document.createElement('span'); it.className='set-item'; it.innerText = String(s).replace(/-/g, '\u2011'); list.appendChild(it) })
+      tdScore.appendChild(list)
+
+      tr.appendChild(tdPlayers); tr.appendChild(tdScore); tbody.appendChild(tr)
+    })
+
+    t.appendChild(tbody)
+    compC.innerHTML = ''
+    compC.appendChild(title)
+    compC.appendChild(t)
+  }
+}
+
+function applyFilter(){
+  const leagueId = document.getElementById('leagueSelect').value
+  const group = document.getElementById('groupSelect').value
+  const phase = document.getElementById('phaseSelect').value
+  const player = (document.getElementById('player').value||'').trim().toLowerCase()
+  if(!leagueId){ document.getElementById('durationLine').innerText='Duración de la liga: -'; return }
+  const league = leagues.find(l=>String(l.id)===String(leagueId))
+  const matchesForLeague = allMatches.filter(m=> (m.event_name||'').startsWith(`${league.name}_`))
+  // filter by group/phase
+  let filtered = matchesForLeague.filter(m=>{
+    const parsed = parseEventNameForLeague(m.event_name||'', league.name)
+    if(!parsed) return false
+    if(group && group!=='all' && parsed.group !== group) return false
+    if(phase && phase!=='all' && String(parsed.phase) !== String(phase)) return false
+    return true
+  })
+  // player filter
+  if(player){ filtered = filtered.filter(m=> [m.p1a,m.p1b,m.p2a,m.p2b].some(n => (n||'').toLowerCase().includes(player))) }
+
+  // separate pending/completed
+  const pending = filtered.filter(isPendingMatch)
+  const completed = filtered.filter(m=> !isPendingMatch(m))
+
+  // ranking uses filtered (including pending?) Probably all matches for selection; we'll use completed matches for ranking
+  renderResults(pending, completed)
+
+  // classification
+  if(currentView==='ranking'){
+    const leagueEndStr = league.end_date || ''
+    const endParts = (leagueEndStr||'').split('/')
+    let showProvisional = false
+    if(endParts.length===3){
+      const endDate = new Date(Date.UTC(Number(endParts[2]), Number(endParts[1])-1, Number(endParts[0])))
+      const check = new Date(endDate); check.setUTCDate(check.getUTCDate()+1)
+      const today = new Date();
+      const tUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+      const cUTC = Date.UTC(check.getUTCFullYear(), check.getUTCMonth(), check.getUTCDate())
+      if(tUTC < cUTC) showProvisional = true
+    }
+    document.getElementById('provisionalNote').style.display = showProvisional ? 'block' : 'none'
+    renderRanking(completed)
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await loadInitial()
+  document.getElementById('leagueSelect').addEventListener('change', onLeagueChange)
+  document.getElementById('filterBtn').addEventListener('click', applyFilter)
+  document.querySelectorAll('#leagueViewToggle .view-btn').forEach(b=> b.addEventListener('click', ()=>{ setLeagueView(b.getAttribute('data-view')); applyFilter() }))
+})
+</script>
+
+</body>
+</html>
