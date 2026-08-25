@@ -81,7 +81,7 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 
         <label style="display:flex;flex-direction:column;flex:1;min-width:220px">
           Jugador
-          <input id="player" class="select" placeholder="Nombre (parte del nombre)" />
+          <select id="player" class="select"></select>
         </label>
 
         <div style="display:flex;align-items:end;gap:8px">
@@ -175,6 +175,20 @@ async function loadInitial(){
     document.getElementById('rankingContainer').style.display = 'none'
     document.getElementById('leagueViewToggle').style.display = 'none'
   }catch(e){ console.error(e); alert('No se pudieron cargar ligas y partidos') }
+}
+
+async function loadPlayerNames(){
+  try{
+    const res = await fetch('/api/getNames?ts=' + Date.now())
+    const j = await res.json()
+    const sel = document.getElementById('player')
+    sel.innerHTML = ''
+    const opt = document.createElement('option')
+    opt.value = ''
+    opt.innerText = 'Todos'
+    sel.appendChild(opt)
+    ;(j.names || []).forEach(n=>{ const o=document.createElement('option'); o.value = n; o.innerText = n; sel.appendChild(o) })
+  }catch(e){ console.error('Could not load player names', e) }
 }
 
 function onLeagueChange(){
@@ -518,9 +532,12 @@ function renderGroupRankings(league){
 
 document.addEventListener('DOMContentLoaded', async ()=>{
   await loadInitial()
+  await loadPlayerNames()
   const leagueSelectEl = document.getElementById('leagueSelect')
   leagueSelectEl.addEventListener('change', onLeagueChange)
   document.getElementById('filterBtn').addEventListener('click', applyFilter)
+  // player select change applies filter immediately
+  document.getElementById('player').addEventListener('change', applyFilter)
   document.querySelectorAll('#leagueViewToggle .view-btn').forEach(b=> b.addEventListener('click', ()=>{ setLeagueView(b.getAttribute('data-view')); applyFilter() }))
   // if a league was auto-selected during loadInitial, trigger the change handler to populate groups/results
   if(leagueSelectEl.value){ onLeagueChange() }

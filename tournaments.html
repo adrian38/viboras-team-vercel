@@ -61,12 +61,8 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 
         <label style="display:flex;flex-direction:column;flex:1;min-width:220px">
           Jugador
-          <input id="player" class="select" placeholder="Nombre (parte del nombre)" />
+          <select id="player" class="select"></select>
         </label>
-
-        <div style="display:flex;align-items:end;gap:8px">
-          <button class="btn" id="filterBtn">Filtrar</button>
-        </div>
       </div>
     </div>
 
@@ -202,6 +198,7 @@ async function loadData(){
 
     parsedMatches = parseMatches(db.matches || [])
     setupEventSelector(db.events || [], parsedMatches)
+    await loadPlayerNames()
     document.getElementById('summary').innerText = ''
     document.getElementById('tableContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados y la clasificación.</div>'
     document.getElementById('rankingContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados y la clasificación.</div>'
@@ -210,6 +207,20 @@ async function loadData(){
     document.getElementById('summary').innerText = 'No se pudieron cargar los resultados del torneo.'
     document.getElementById('tableContainer').innerHTML = '<div class="muted">No hay resultados para mostrar.</div>'
   }
+}
+
+async function loadPlayerNames(){
+  try{
+    const res = await fetch('/api/getNames?ts=' + Date.now())
+    const j = await res.json()
+    const sel = document.getElementById('player')
+    sel.innerHTML = ''
+    const opt = document.createElement('option')
+    opt.value = ''
+    opt.innerText = 'Todos'
+    sel.appendChild(opt)
+    ;(j.names || []).forEach(n=>{ const o=document.createElement('option'); o.value = n; o.innerText = n; sel.appendChild(o) })
+  }catch(e){ console.error('Could not load player names', e) }
 }
 
 function applyFilter(){
@@ -516,9 +527,8 @@ document.querySelectorAll('.view-btn[data-view]').forEach((btn) => {
   btn.addEventListener('click', () => setTournamentView(btn.getAttribute('data-view')))
 })
 
-document.getElementById('filterBtn').addEventListener('click', applyFilter)
 document.getElementById('eventSelect').addEventListener('change', applyFilter)
-document.getElementById('player').addEventListener('input', applyFilter)
+document.getElementById('player').addEventListener('change', applyFilter)
 document.getElementById('downloadBtn').addEventListener('click', downloadCSV)
 
 setTournamentView('ranking')

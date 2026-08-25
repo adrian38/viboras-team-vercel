@@ -92,12 +92,8 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 
       <label style="display:flex;flex-direction:column;flex:1">
         Jugador
-        <input id="player" class="select" placeholder="Nombre (parte del nombre)" />
+        <select id="player" class="select"></select>
       </label>
-
-      <div style="display:flex;align-items:end;gap:8px">
-        <button class="btn" id="filterBtn">Filtrar</button>
-      </div>
       </div>
     </div>
 
@@ -171,6 +167,7 @@ async function loadData(){
 
   parsedMatches = parseMatches(db.matches || [])
   setupSelectors(parsedMatches)
+  await loadPlayerNames()
   applyFilter()
 }
 
@@ -189,6 +186,20 @@ function setupSelectors(matches){
   const now = new Date()
   if(years.includes(now.getFullYear())) yearSel.value = now.getFullYear()
   monthSel.value = now.getMonth()+1
+}
+
+async function loadPlayerNames(){
+  try{
+    const res = await fetch('/api/getNames?ts=' + Date.now())
+    const j = await res.json()
+    const sel = document.getElementById('player')
+    sel.innerHTML = ''
+    const opt = document.createElement('option')
+    opt.value = ''
+    opt.innerText = 'Todos'
+    sel.appendChild(opt)
+    ;(j.names || []).forEach(n=>{ const o=document.createElement('option'); o.value = n; o.innerText = n; sel.appendChild(o) })
+  }catch(e){ console.error('Could not load player names', e) }
 }
 
 function applyFilter(){
@@ -351,12 +362,10 @@ function renderTable(matches){
   container.appendChild(table)
 }
 
-document.getElementById('filterBtn').addEventListener('click', applyFilter)
-
-// also apply filter when selectors change or player input changes
+// also apply filter when selectors change or player selection changes
 document.getElementById('year').addEventListener('change', applyFilter)
 document.getElementById('month').addEventListener('change', applyFilter)
-document.getElementById('player').addEventListener('input', applyFilter)
+document.getElementById('player').addEventListener('change', applyFilter)
 
 loadData()
 
