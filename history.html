@@ -160,7 +160,7 @@ async function loadData(){
   const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
   let db = {matches:[]}
   try{
-    const url = `/api/getResults?ts=${Date.now()}`
+    const url = `/api/getResults?eventType=ranked,legacy&ts=${Date.now()}`
     const res = await fetch(url)
     db = await res.json()
   }catch(e){ console.error('Could not load results',e) }
