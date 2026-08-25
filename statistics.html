@@ -54,10 +54,10 @@ th{cursor:pointer;user-select:none}
     </div>
 
     <div class="event-type-filter" aria-label="Tipos de partidos incluidos">
-      <label class="event-checkbox"><input type="checkbox" value="ranked" checked> Partidos competitivos</label>
-      <label class="event-checkbox"><input type="checkbox" value="unranked" checked> Partidos amistosos</label>
+      <label class="event-checkbox"><input type="checkbox" value="ranked" checked> Partidos</label>
       <label class="event-checkbox"><input type="checkbox" value="grupo_liga" checked> Ligas</label>
       <label class="event-checkbox"><input type="checkbox" value="pozo,doble_ko" checked> Torneos</label>
+      <label class="event-checkbox"><input type="checkbox" value="legacy" checked> Pre-09/2026</label>
       <button type="button" class="update-btn" id="refreshStatsBtn">Aplicar</button>
     </div>
 
@@ -75,8 +75,8 @@ th{cursor:pointer;user-select:none}
 
 <script>
 const EVENT_FILTER_DEFS = [
-  { id: 'ranked', label: 'Partidos competitivos', values: ['ranked'] },
-  { id: 'unranked', label: 'Partidos amistosos', values: ['unranked'] },
+  { id: 'ranked', label: 'Partidos', values: ['ranked'] },
+  { id: 'legacy', label: 'Pre-09/2026', values: ['legacy'] },
   { id: 'grupo_liga', label: 'Ligas', values: ['grupo_liga'] },
   { id: 'tournaments', label: 'Torneos', values: ['pozo', 'doble_ko'] }
 ]
@@ -101,7 +101,7 @@ function isMatchIncludedByEventType(match){
 }
 
 function loadData(){
-  const url = `/api/getResults?eventType=ranked,unranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`
+  const url = `/api/getResults?eventType=ranked,legacy,grupo_liga,pozo,doble_ko&ts=${Date.now()}`
   return fetch(url)
     .then(r=>{
       if(!r.ok) throw new Error('HTTP '+r.status)
