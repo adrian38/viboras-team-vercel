@@ -58,6 +58,7 @@ th{cursor:pointer;user-select:none}
       <label class="event-checkbox"><input type="checkbox" value="grupo_liga" checked> Ligas</label>
       <label class="event-checkbox"><input type="checkbox" value="pozo,doble_ko" checked> Torneos</label>
       <label class="event-checkbox"><input type="checkbox" id="includePreToggle" value="legacy" checked> Incluir pre-09/2026</label>
+      <label class="event-checkbox"><input type="checkbox" id="includeInactiveCheckbox"> Incluir no activos</label>
       <button type="button" class="update-btn" id="refreshStatsBtn">Aplicar</button>
     </div>
 
@@ -150,9 +151,10 @@ function normalizeTeamNames(names){
 
 function toIntStrict(v){ if(v===undefined || v===null) return null; const s=String(v).trim(); if(!/^[0-9]+$/.test(s)) return null; return parseInt(s,10) }
 
-function computeStats(matches, mode){
+function computeStats(matches, mode, includeInactive){
   const stats = new Map()
-  const registered = (window._registeredNames && window._registeredNames.size>0) ? window._registeredNames : null
+  // If includeInactive is true, bypass the registered filter so inactive names are included
+  const registered = (!includeInactive && window._registeredNames && window._registeredNames.size>0) ? window._registeredNames : null
 
   function ensure(key, displayName){ if(!stats.has(key)) stats.set(key,{name:displayName,played:0,wins:0,losses:0,draws:0,setsWon:0,setsTotal:0,gamesWon:0,gamesTotal:0}) }
   function isRegisteredName(name){ if(!name) return false; return !registered || registered.has(name) }
@@ -557,8 +559,9 @@ async function refresh(){
     const names = await loadNames()
     window._registeredNames = new Set((names||[]).map(n=>String(n).trim()).filter(x=>x))
     const parsed = (Array.isArray(raw) ? raw : []).map(m=>Object.assign({},m,{__date:parseDateStr(m.date)}))
-    const playersStats = computeStats(parsed, 'players')
-    const teamsStats = computeStats(parsed, 'teams')
+    const includeInactive = !!(document.getElementById('includeInactiveCheckbox') && document.getElementById('includeInactiveCheckbox').checked)
+    const playersStats = computeStats(parsed, 'players', includeInactive)
+    const teamsStats = computeStats(parsed, 'teams', includeInactive)
     statsCache = {players:playersStats, teams:teamsStats}
     renderTable(statsCache[currentView] || [])
   }catch(err){
