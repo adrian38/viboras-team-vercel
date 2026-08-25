@@ -57,7 +57,7 @@ th{cursor:pointer;user-select:none}
       <label class="event-checkbox"><input type="checkbox" value="ranked" checked> Partidos</label>
       <label class="event-checkbox"><input type="checkbox" value="grupo_liga" checked> Ligas</label>
       <label class="event-checkbox"><input type="checkbox" value="pozo,doble_ko" checked> Torneos</label>
-      <label class="event-checkbox"><input type="checkbox" value="legacy" checked> Pre-09/2026</label>
+      <label class="event-checkbox"><input type="checkbox" id="includePreToggle" value="legacy" checked> Incluir pre-09/2026</label>
       <button type="button" class="update-btn" id="refreshStatsBtn">Aplicar</button>
     </div>
 
@@ -86,6 +86,8 @@ function parseDateStr(s){ if(!s) return new Date(0); if(/^-?\d{4}-\d{2}-\d{2}$/.
 function getSelectedEventTypes(){
   const selected = []
   document.querySelectorAll('.event-checkbox input[type="checkbox"]').forEach((input) => {
+    // ignore the pre-09 toggle input here; it only modifies behavior when 'ranked' is selected
+    if (input.id === 'includePreToggle') return
     if (!input.checked) return
     const values = String(input.value || '').split(',').map((v) => String(v).trim().toLowerCase()).filter(Boolean)
     selected.push(...values)
@@ -96,8 +98,29 @@ function getSelectedEventTypes(){
 function isMatchIncludedByEventType(match){
   const selected = getSelectedEventTypes()
   if (!selected.length) return false
+
   const type = String(match && match.event_type ? match.event_type : '').trim().toLowerCase()
-  return selected.includes(type)
+  const eventId = (match && (match.event_id !== undefined && match.event_id !== null)) ? Number(match.event_id) : null
+  const includePre = !!document.getElementById('includePreToggle') && document.getElementById('includePreToggle').checked
+
+  // When the pre-09 toggle is disabled, always exclude specific old-tournament event IDs
+  if (!includePre && (eventId === 23 || eventId === 24)) return false
+
+  // Special handling for the "Partidos" checkbox (value 'ranked'):
+  // - If 'ranked' is selected and the pre toggle is enabled, include event_id 1 and 3
+  // - If 'ranked' is selected and pre toggle is disabled, include only event_id 1
+  if (selected.includes('ranked')){
+    if (eventId === 1) return true
+    if (includePre && eventId === 3) return true
+    // fallback to matching by type string
+    if (type === 'ranked') return true
+    if (includePre && type === 'legacy') return true
+  }
+
+  // For other selected event types, match by event_type string
+  if (type && selected.includes(type)) return true
+
+  return false
 }
 
 function loadData(){
