@@ -35,21 +35,21 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
   opacity: 0.75;
 }
 
-/* Category Styles (Soft Backgrounds & Text Colors) */
-.tier-capitan { background-color: #fff8f0; border-color: #fed7aa; }
-.tier-capitan .tier-title { color: #ea580c; } /* Orange */
+/* Category Styles (Shared Colors for Tier 1 and Tier 2) */
+.tier-capitan_1, .tier-capitan_2 { background-color: #fff8f0; border-color: #fed7aa; }
+.tier-capitan_1 .tier-title, .tier-capitan_2 .tier-title { color: #ea580c; } /* Orange */
 
-.tier-contramaestre { background-color: #f0f7ff; border-color: #bfdbfe; }
-.tier-contramaestre .tier-title { color: #2563eb; } /* Blue */
+.tier-contramaestre_1, .tier-contramaestre_2 { background-color: #f0f7ff; border-color: #bfdbfe; }
+.tier-contramaestre_1 .tier-title, .tier-contramaestre_2 .tier-title { color: #2563eb; } /* Blue */
 
-.tier-bucanero { background-color: #fdf2f4; border-color: #fbcfe8; }
-.tier-bucanero .tier-title { color: #9f1239; } /* Garnet */
+.tier-bucanero_1, .tier-bucanero_2 { background-color: #fdf2f4; border-color: #fbcfe8; }
+.tier-bucanero_1 .tier-title, .tier-bucanero_2 .tier-title { color: #9f1239; } /* Garnet */
 
-.tier-marinero { background-color: #f0fdf4; border-color: #bbf7d0; }
-.tier-marinero .tier-title { color: #16a34a; } /* Green */
+.tier-marinero_1, .tier-marinero_2 { background-color: #f0fdf4; border-color: #bbf7d0; }
+.tier-marinero_1 .tier-title, .tier-marinero_2 .tier-title { color: #16a34a; } /* Green */
 
-.tier-grumete { background-color: #fdf8f6; border-color: #fed7aa; }
-.tier-grumete .tier-title { color: #854d0e; } /* Brown */
+.tier-grumete_1, .tier-grumete_2 { background-color: #fdf8f6; border-color: #fed7aa; }
+.tier-grumete_1 .tier-title, .tier-grumete_2 .tier-title { color: #854d0e; } /* Brown */
 
 /* Table Styles */
 table{width:100%;border-collapse:collapse;margin-top:4px}
@@ -478,18 +478,28 @@ function renderTable(rows) {
     return num.toFixed(2).replace('.', ',');
   }
 
-  const TIER_DEFINITIONS = [
-    { key: 'capitan', title: 'Capitán', rangeText: '≥ 1800 pts', min: 1800, max: Infinity },
-    { key: 'contramaestre', title: 'Contramaestre', rangeText: '1600 - 1799,99 pts', min: 1600, max: 1800 },
-    { key: 'bucanero', title: 'Bucanero', rangeText: '1400 - 1599,99 pts', min: 1400, max: 1600 },
-    { key: 'marinero', title: 'Marinero', rangeText: '1200 - 1399,99 pts', min: 1200, max: 1400 },
-    { key: 'grumete', title: 'Grumete', rangeText: '< 1200 pts', min: -Infinity, max: 1200 }
+const TIER_DEFINITIONS = [
+    { key: 'capitan_1', title: 'Capitán 1', rangeText: '> 1900,00 pts', min: 1900, max: Infinity },
+    { key: 'capitan_2', title: 'Capitán 2', rangeText: '1800,01 – 1900,00 pts', min: 1800, max: 1900 },
+
+    { key: 'contramaestre_1', title: 'Contramaestre 1', rangeText: '1700,01 – 1800,00 pts', min: 1700, max: 1800 },
+    { key: 'contramaestre_2', title: 'Contramaestre 2', rangeText: '1600,01 – 1700,00 pts', min: 1600, max: 1700 },
+
+    { key: 'bucanero_1', title: 'Bucanero 1', rangeText: '1500,01 – 1600,00 pts', min: 1500, max: 1600 },
+    { key: 'bucanero_2', title: 'Bucanero 2', rangeText: '1400,01 – 1500,00 pts', min: 1400, max: 1500 },
+
+    { key: 'marinero_1', title: 'Marinero 1', rangeText: '1300,01 – 1400,00 pts', min: 1300, max: 1400 },
+    { key: 'marinero_2', title: 'Marinero 2', rangeText: '1200,01 – 1300,00 pts', min: 1200, max: 1300 },
+
+    { key: 'grumete_1', title: 'Grumete 1', rangeText: '1100,01 – 1200,00 pts', min: 1100, max: 1200 },
+    { key: 'grumete_2', title: 'Grumete 2', rangeText: '≤ 1100,00 pts', min: -Infinity, max: 1100 }
   ];
 
   const html = [];
 
   for (const tier of TIER_DEFINITIONS) {
-    const tierRows = rows.filter(r => r.rating >= tier.min && r.rating < tier.max);
+    // Exact threshold boundary falls into tier 2 (e.g., 1500.00 stays in min < rating <= max)
+    const tierRows = rows.filter(r => r.rating > tier.min && r.rating <= tier.max);
     if (tierRows.length === 0) continue;
 
     html.push(`
