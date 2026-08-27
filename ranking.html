@@ -29,10 +29,9 @@ th{background:#fbfdff;font-weight:700}
 
 <div class="site">
   <div class="block">
-    <div class="block-title">Ranking</div>
 
     <div id="rankingContainer">
-      <div class="muted">Cargando jugadores…</div>
+      <div class="muted">Cargando ranking…</div>
     </div>
 
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
@@ -421,9 +420,21 @@ function renderTable(rows) {
     document.getElementById('rankingContainer').innerHTML = '<div class="muted">No hay jugadores registrados</div>';
     return;
   }
+  function rdLabel(rd) {
+    if (rd === undefined || rd === null) return '';
+    const v = Number(rd);
+    if (!Number.isFinite(v)) return '';
+    if (v < 120) return 'Muy alta';
+    if (v < 160) return 'Alta';
+    if (v < 200) return 'Media';
+    if (v < 240) return 'Baja';
+    return 'Muy baja';
+  }
+
   const html = [`<table aria-label="Ranking"><thead><tr><th class="rank-col">Pos</th><th>Jugador</th><th class="rating-col">Puntos</th><th class="fiabilidad-col">Fiabilidad</th></tr></thead><tbody>`];
   for (const r of rows) {
-    html.push(`<tr><td class="rank-col">${r.rank}</td><td class="name-col">${escapeHtml(r.name)}</td><td class="rating-col">${r.rating}</td><td class="fiabilidad-col">${r.rd !== undefined ? r.rd : ''}</td></tr>`);
+    const label = rdLabel(r.rd);
+    html.push(`<tr><td class="rank-col">${r.rank}</td><td class="name-col">${escapeHtml(r.name)}</td><td class="rating-col">${r.rating}</td><td class="fiabilidad-col">${label}</td></tr>`);
   }
   html.push('</tbody></table>');
   document.getElementById('rankingContainer').innerHTML = html.join('');
