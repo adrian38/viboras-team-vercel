@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ranking</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb}
 *{box-sizing:border-box}
@@ -17,9 +17,11 @@ table{width:100%;border-collapse:collapse;margin-top:8px}
 th,td{padding:10px;border-bottom:1px solid #f0f0f0;text-align:left}
 th{background:#fbfdff;font-weight:700}
 .rank-col{width:72px;text-align:center}
-.rating-col{width:96px;text-align:center;color:var(--muted);font-weight:700}
-.fiabilidad-col{width:96px;text-align:center;color:var(--muted);font-weight:700}
-.name-col{font-weight:600}
+.rating-col{width:96px;text-align:center;font-weight:700}
+.fiabilidad-col{width:110px;text-align:center}
+th.fiabilidad-col{font-weight:700}
+td.fiabilidad-col{font-weight:500}
+.name-col{font-weight:600;color:var(--muted)}
 .back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
 .muted{color:var(--muted)}
 @media(max-width:720px){body{padding:16px}}
@@ -239,8 +241,8 @@ function calculateEngineRankings(names, matches) {
   if (!matches || matches.length === 0) {
     return Array.from(playerMap.entries()).map(([name, p]) => ({
       name,
-      rating: Math.round(p.rating),
-      rd: Math.round(p.rd)
+      rating: p.rating,
+      rd: p.rd
     }));
   }
 
@@ -250,7 +252,6 @@ function calculateEngineRankings(names, matches) {
     });
   });
 
-  // Preserve insertion order on identical dates (stable sort)
   matches.sort((a, b) => {
     const dComp = a.date.localeCompare(b.date);
     return dComp !== 0 ? dComp : (a.id - b.id);
@@ -287,8 +288,8 @@ function calculateEngineRankings(names, matches) {
 
   return Array.from(playerMap.entries()).map(([name, p]) => ({
     name,
-    rating: Math.round(p.rating),
-    rd: Math.round(p.rd)
+    rating: p.rating,
+    rd: p.rd
   }));
 }
 
@@ -420,21 +421,35 @@ function renderTable(rows) {
     document.getElementById('rankingContainer').innerHTML = '<div class="muted">No hay jugadores registrados</div>';
     return;
   }
-  function rdLabel(rd) {
-    if (rd === undefined || rd === null) return '';
+
+  function getFiabilidadConfig(rd) {
+    if (rd === undefined || rd === null) return { label: '', color: '' };
     const v = Number(rd);
-    if (!Number.isFinite(v)) return '';
-    if (v < 110) return 'Muy alta';
-    if (v < 140) return 'Alta';
-    if (v < 190) return 'Media';
-    if (v < 260) return 'Baja';
-    return 'Muy baja';
+    if (!Number.isFinite(v)) return { label: '', color: '' };
+
+    if (v < 110) return { label: 'Muy alta', color: '#16a34a' };  // Green
+    if (v < 140) return { label: 'Alta', color: '#65a30d' };      // Light Green
+    if (v < 190) return { label: 'Media', color: '#ca8a04' };     // Yellow
+    if (v < 260) return { label: 'Baja', color: '#ea580c' };      // Orange
+    return { label: 'Muy baja', color: '#dc2626' };               // Red
+  }
+
+  function formatRating(num) {
+    if (num === undefined || num === null || !Number.isFinite(num)) return '-';
+    return num.toFixed(2).replace('.', ',');
   }
 
   const html = [`<table aria-label="Ranking"><thead><tr><th class="rank-col">Pos</th><th>Jugador</th><th class="rating-col">Puntos</th><th class="fiabilidad-col">Fiabilidad</th></tr></thead><tbody>`];
   for (const r of rows) {
-    const label = rdLabel(r.rd);
-    html.push(`<tr><td class="rank-col">${r.rank}</td><td class="name-col">${escapeHtml(r.name)}</td><td class="rating-col">${r.rating}</td><td class="fiabilidad-col">${label}</td></tr>`);
+    const { label, color } = getFiabilidadConfig(r.rd);
+    const ratingFormatted = formatRating(r.rating);
+
+    html.push(`<tr>
+      <td class="rank-col">${r.rank}</td>
+      <td class="name-col">${escapeHtml(r.name)}</td>
+      <td class="rating-col">${ratingFormatted}</td>
+      <td class="fiabilidad-col" style="color: ${color};">${label}</td>
+    </tr>`);
   }
   html.push('</tbody></table>');
   document.getElementById('rankingContainer').innerHTML = html.join('');
