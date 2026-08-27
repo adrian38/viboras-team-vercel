@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb}
+*{box-sizing:border-box}
+body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px}
+.site{max-width:980px;margin:0 auto}
+.block{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+.block-title{font-weight:700;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{padding:10px;border-bottom:1px solid #f0f0f0;text-align:left}
+th{background:#fbfdff;font-weight:700}
+.rank-col{width:72px;text-align:center}
+.rating-col{width:96px;text-align:center;color:var(--muted);font-weight:700}
+.name-col{font-weight:600}
+.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
+@media(max-width:720px){body{padding:16px}}
+</style>
+</head>
+<body>
+
+<div class="site">
+  <div class="block">
+    <div class="block-title">Ranking</div>
+
+    <div id="rankingContainer">
+      <div class="muted">Cargando jugadores…</div>
+    </div>
+
+    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+      <div></div>
+      <div style="text-align:right">
+        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function fetchNames(){
+  return fetch('/api/getNames').then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json() }).then(db=>{ return (db && db.names) ? db.names : [] }).catch(e=>{ console.error('Could not load names', e); return [] })
+}
+
+function computeRankings(entries){
+  // entries: [{name, rating}]
+  // sort by rating desc, then name
+  entries.sort((a,b)=>{
+    if(b.rating !== a.rating) return b.rating - a.rating
+    return String(a.name||'').localeCompare(String(b.name||''),'es',{sensitivity:'base',numeric:true})
+  })
+
+  const out = []
+  for(let i=0;i<entries.length;i++){
+    const e = entries[i]
+    let rank
+    if(i===0) rank = 1
+    else if(entries[i].rating === entries[i-1].rating) rank = out[i-1].rank
+    else rank = i+1
+    out.push({ rank, rating: e.rating, name: e.name })
+  }
+  return out
+}
+
+function renderTable(rows){
+  if(!rows || rows.length===0){
+    document.getElementById('rankingContainer').innerHTML = '<div class="muted">No hay jugadores registrados</div>'
+    return
+  }
+  const html = [`<table aria-label="Ranking"><thead><tr><th class="rank-col">Pos</th><th>Jugador</th><th class="rating-col">Puntos</th></tr></thead><tbody>`]
+  for(const r of rows){
+    html.push(`<tr><td class="rank-col">${r.rank}</td><td class="name-col">${escapeHtml(r.name)}</td><td class="rating-col">${r.rating}</td></tr>`)
+  }
+  html.push('</tbody></table>')
+  document.getElementById('rankingContainer').innerHTML = html.join('')
+}
+
+function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c] }) }
+
+async function init(){
+  const names = await fetchNames()
+  // assign static rating 1500 for all players for now
+  const entries = (names||[]).map(n=>({ name: n, rating: 1500 }))
+  const ranked = computeRankings(entries)
+  renderTable(ranked)
+}
+
+init()
+</script>
+
+</body>
+</html>
