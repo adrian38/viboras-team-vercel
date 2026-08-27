@@ -14,6 +14,10 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
 .block{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
 .block-title{font-weight:700;margin-bottom:10px}
 
+/* Controls Header */
+.controls { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-weight: 500; font-size: 0.95rem; }
+.controls input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+
 /* Category Section Layout */
 .tier-section {
   margin-bottom: 24px;
@@ -71,12 +75,21 @@ td.fiabilidad-col{font-weight:500}
 <div class="site">
   <div class="block">
 
+    <div class="controls">
+      <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="toggleInactive" onchange="handleFilterChange()">
+        <span>Incluir jugadores no activos</span>
+      </label>
+    </div>
+
     <div id="rankingContainer">
       <div class="muted">Cargando ranking…</div>
     </div>
 
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
-      <div></div>
+      <button class="back-btn" style="color:var(--muted);border-color:rgba(0,0,0,0.1)" onclick="window.location.href='/ranking-info.html'">
+        ¿Cómo funciona el ranking?
+      </button>
       <div style="text-align:right">
         <button class="back-btn" onclick="window.location='/'">Atrás</button>
       </div>
@@ -336,13 +349,7 @@ function calculateEngineRankings(names, matches) {
 // DATA FETCHING & UI RENDER
 // ============================================================================
 
-function fetchNames() {
-  const url = '/api/getNames?includeInactive=1&ts=' + Date.now();
-  return fetch(url)
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(db => (db && db.names) ? db.names : [])
-    .catch(e => { console.error('Could not load names', e); return []; });
-}
+let cachedEntries = [];
 
 function fetchMatches() {
   function toIsoDate(s){
@@ -437,18 +444,32 @@ function fetchMatches() {
     .catch(e => { console.error('Could not load matches', e); return []; });
 }
 
-function computeRankings(entries) {
-  entries.sort((a, b) => {
+function loadNames(){
+  const url = '/api/getNames';
+  return fetch(url)
+    .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(db => { return (db && db.names) ? db.names : []; })
+    .catch(e => { return []; });
+}
+
+function computeRankings(entries, includeInactive = false) {
+  const registered = (!includeInactive && window._registeredNames && window._registeredNames.size > 0) ? window._registeredNames : null;
+
+  const filtered = registered
+    ? entries.filter(e => registered.has(e.name))
+    : entries;
+
+  filtered.sort((a, b) => {
     if (b.rating !== a.rating) return b.rating - a.rating;
     return String(a.name || '').localeCompare(String(b.name || ''), 'es', { sensitivity: 'base', numeric: true });
   });
 
   const out = [];
-  for (let i = 0; i < entries.length; i++) {
-    const e = entries[i];
+  for (let i = 0; i < filtered.length; i++) {
+    const e = filtered[i];
     let rank;
     if (i === 0) rank = 1;
-    else if (entries[i].rating === entries[i - 1].rating) rank = out[i - 1].rank;
+    else if (filtered[i].rating === filtered[i - 1].rating) rank = out[i - 1].rank;
     else rank = i + 1;
     out.push({ rank, rating: e.rating, name: e.name, rd: e.rd });
   }
@@ -478,7 +499,7 @@ function renderTable(rows) {
     return num.toFixed(2).replace('.', ',');
   }
 
-const TIER_DEFINITIONS = [
+  const TIER_DEFINITIONS = [
     { key: 'capitan_1', title: 'Capitán 1', rangeText: '> 1900,00 pts', min: 1900, max: Infinity },
     { key: 'capitan_2', title: 'Capitán 2', rangeText: '1800,01 – 1900,00 pts', min: 1800, max: 1900 },
 
@@ -498,7 +519,6 @@ const TIER_DEFINITIONS = [
   const html = [];
 
   for (const tier of TIER_DEFINITIONS) {
-    // Exact threshold boundary falls into tier 2 (e.g., 1500.00 stays in min < rating <= max)
     const tierRows = rows.filter(r => r.rating > tier.min && r.rating <= tier.max);
     if (tierRows.length === 0) continue;
 
@@ -542,6 +562,12 @@ const TIER_DEFINITIONS = [
   document.getElementById('rankingContainer').innerHTML = html.join('');
 }
 
+function handleFilterChange() {
+  const showInactive = document.getElementById('toggleInactive').checked;
+  const ranked = computeRankings(cachedEntries, showInactive);
+  renderTable(ranked);
+}
+
 function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, function(c) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -549,10 +575,16 @@ function escapeHtml(s) {
 }
 
 async function init() {
-  const [names, matches] = await Promise.all([fetchNames(), fetchMatches()]);
-  const entries = calculateEngineRankings(names, matches);
-  const ranked = computeRankings(entries);
-  renderTable(ranked);
+  const [names, matches] = await Promise.all([
+    loadNames(),
+    fetchMatches()
+  ]);
+
+  window._registeredNames = new Set((names || []).map(n => String(n).trim()).filter(Boolean));
+
+  cachedEntries = calculateEngineRankings(names, matches);
+
+  handleFilterChange();
 }
 
 init();

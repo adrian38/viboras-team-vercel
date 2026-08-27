@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Ranking - Explicación</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Configuración de MathJax para habilitar math inline con $...$ -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb}
+*{box-sizing:border-box}
+body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px;line-height:1.6}
+.site{max-width:850px;margin:0 auto}
+.block{background:var(--card);border-radius:12px;padding:24px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+
+h1{font-size:1.5rem;font-weight:700;margin-top:0;margin-bottom:12px;color:#1e293b}
+h2{font-size:1.2rem;font-weight:700;margin-top:28px;margin-bottom:12px;color:#2563eb;border-bottom:2px solid #eff6ff;padding-bottom:6px}
+p{margin-top:0;margin-bottom:12px;color:#334155}
+ul{margin:0 0 16px 0;padding-left:20px;color:#334155}
+li{margin-bottom:8px}
+
+.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
+.back-btn:hover{background:#f8fafc}
+.formula-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.95rem;overflow-x:auto}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.85rem;font-weight:600}
+.badge-alta{background:#dcfce7;color:#16a34a}
+.badge-baja{background:#ffedd5;color:#ea580c}
+
+@media(max-width:720px){body{padding:16px}.block{padding:16px}}
+</style>
+</head>
+<body>
+
+<div class="site">
+  <div class="block">
+
+    <h1>¿Cómo funciona el sistema de ranking?</h1>
+    <p>El ranking de pádel utiliza un sistema de puntuación matemático diseñado para medir tu nivel real de juego de forma dinámica. A medida que juegas partidos, el sistema no solo actualiza tu puntuación, sino también el nivel de fiabilidad de tu ranking.</p>
+
+    <h2>Conceptos Clave</h2>
+    <ul>
+      <li><strong>Puntuación de Nivel:</strong> Todos los jugadores comienzan con 1500 puntos. Si ganas partidos, tus puntos suben; si pierdes, bajan. Ganar a una pareja más fuerte te dará muchos más puntos que ganar a un equipo al que tenías fácil superar.</li>
+      <li><strong>Fiabilidad (Confianza del Sistema):</strong> Indica lo seguro que está el sistema de que tus puntos reflejan tu nivel real. En la tabla se muestra de forma intuitiva:
+        <ul>
+          <li><span class="badge badge-baja">Fiabilidad Baja</span> El sistema aún te está evaluando (o llevas tiempo sin jugar). Tus puntos cambiarán de forma más rápida tras cada partido.</li>
+          <li><span class="badge badge-alta">Fiabilidad Alta</span> Has jugado varios partidos recientemente. Tu puntuación está consolidada y variará de forma más gradual.</li>
+        </ul>
+      </li>
+      <li><strong>Partidos de Pádel 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja promediando el nivel y la incertidumbre de ambos integrantes antes de compararla con la pareja rival.</li>
+      <li><strong>Peso por Resultado y Formato:</strong> El impacto en tu ranking depende de lo contundente que sea la victoria. Ganar de forma holgada (ej. 6–2 6–1) otorga más puntos que un triunfo apretado en tres sets (ej. 7–6 3–6 6–3). Los partidos cortos por tiempo (por ejemplo los que se juegan en torneos pozo) tienen menos peso que un partido completo a 3 sets.</li>
+      <li><strong>Pérdida por Inactividad:</strong> Cada día que pasas sin jugar, tu nivel de fiabilidad disminuye ligeramente. Si estás meses sin jugar, tu puntuación se vuelve más flexible para que al volver puedas ajustar tu nivel rápidamente.</li>
+      <li><strong>Límite de Incertidumbre:</strong> Para garantizar la equidad durante maratones o torneos de un solo día (donde puedes jugar más de 6 partidos), la fiabilidad tiene un tope máximo. Esto evita que tu puntuación se quede "bloqueada" tras un fin de semana con mucha actividad.</li>
+    </ul>
+
+    <h2>Detalles Técnicos y Fórmulas</h2>
+    <p>Para quienes desean profundizar en la configuración matemática, el motor funciona sobre una adaptación del algoritmo <strong>Glicko-2</strong> ajustado a ciclos diarios y partidas en parejas.</p>
+
+    <p><strong>Parámetros Base y Escala</strong></p>
+    <ul>
+      <li><strong>Rating Inicial ($r$):</strong> 1500.0</li>
+      <li><strong>Desviación Inicial ($RD$):</strong> 350.0</li>
+      <li><strong>Volatilidad del Sistema ($\tau$):</strong> 0.50</li>
+      <li><strong>Volatilidad Base ($\sigma$):</strong> 0.06</li>
+    </ul>
+
+    <p><strong>Límites de Desviación ($RD$)</strong></p>
+    <ul>
+      <li><strong>$RD_{\min} = 80.0$ ($\phi \approx 0.460$):</strong> Limita la compresión excesiva de varianza durante torneos de un solo día (4–10 partidos cortos), asegurando que los jugadores mantengan al menos un 22% de su varianza inicial.</li>
+      <li><strong>$RD_{\max} = 350.0$ ($\phi \approx 2.015$):</strong> Fija el tope de inactividad en la línea base de jugadores no clasificados.</li>
+    </ul>
+
+    <p><strong>Modelado 2v2</strong></p>
+    <p>El estado combinado de la pareja ($\mu_{\text{team}}, \phi_{\text{team}}$) se deriva del promedio de los parámetros individuales:</p>
+    <div class="formula-box">
+      $$\mu_{\text{team}} = \frac{\mu_1 + \mu_2}{2}, \quad \phi_{\text{team}} = \frac{\sqrt{\phi_1^2 + \phi_2^2}}{2}$$
+    </div>
+    <p>Cada jugador actualiza sus parámetros de forma independiente frente al estado global del equipo rival.</p>
+
+    <p><strong>Pérdida Diaria Secuencial</strong></p>
+    <p>En lugar de saltos estáticos, el sistema avanza día a día en el calendario. Cada 24 horas transcurridas, la incertidumbre de todos los jugadores evoluciona mediante:</p>
+    <div class="formula-box">
+      $$\phi^* = \min\left(\sqrt{\phi^2 + \sigma^2}, \; \phi_{\max}\right)$$
+    </div>
+
+    <p><strong>Ponderación de Observaciones y Dominancia ($w$)</strong></p>
+    <p>El peso final de cada partido ($w$) se calcula multiplicando el factor de formato ($w_1$) por el factor de dominancia de juegos ($w_2$):</p>
+    <ul>
+      <li><strong>Factor de Formato ($w_1$):</strong> Se asigna $w_1 = 0.25$ para partidos cortos por tiempo y $w_1 = 1.0$ para partidos estándar a sets completos.</li>
+      <li><strong>Factor de Dominancia ($w_2$):</strong> Se calcula mediante la función de dominancia basada en la proporción de juegos ganados por el vencedor ($x = \frac{\text{Juegos Ganados}}{\text{Juegos Totales}}$):
+        <div class="formula-box">
+          $$f(x) = \frac{4.0 \cdot x - 1.0}{x + 1.0}$$
+        </div>
+      </li>
+    </ul>
+    <p>El peso total del partido $w = w_1 \cdot w_2$ escala tanto la varianza esperada ($v$) como la diferencia de puntuación ($\Delta$) en la actualización de Glicko-2:</p>
+    <div class="formula-box">
+      $$v^{-1} = \sum w_i \, g(\phi_i)^2 \, E_i \, (1 - E_i), \quad \Delta = v \sum w_i \, g(\phi_i) \, (s_i - E_i)$$
+    </div>
+
+    <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
+      <div></div>
+      <button class="back-btn" onclick="window.location.href='/ranking.html'">Volver al Ranking</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
