@@ -53,7 +53,7 @@ const GLICKO_SCALE = 173.7178;
 const TAU = 0.5;
 const INITIAL_RATING = 1500.0;
 const INITIAL_RD = 350.0;
-const INITIAL_SIGMA = 0.12;
+const INITIAL_SIGMA = 0.06;
 const MIN_RD = 80.0;
 const MAX_RD = 350.0;
 
@@ -424,10 +424,10 @@ function renderTable(rows) {
     if (rd === undefined || rd === null) return '';
     const v = Number(rd);
     if (!Number.isFinite(v)) return '';
-    if (v < 120) return 'Muy alta';
-    if (v < 160) return 'Alta';
-    if (v < 200) return 'Media';
-    if (v < 240) return 'Baja';
+    if (v < 110) return 'Muy alta';
+    if (v < 140) return 'Alta';
+    if (v < 190) return 'Media';
+    if (v < 260) return 'Baja';
     return 'Muy baja';
   }
 
