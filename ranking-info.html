@@ -35,8 +35,12 @@ li{margin-bottom:8px}
 .back-btn:hover{background:#f8fafc}
 .formula-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.95rem;overflow-x:auto}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.85rem;font-weight:600}
-.badge-alta{background:#dcfce7;color:#16a34a}
+.badge-sin{background:#fee2e2;color:#dc2626}
+.badge-muy-baja{background:#fee2e2;color:#dc2626}
 .badge-baja{background:#ffedd5;color:#ea580c}
+.badge-media{background:#fef9c3;color:#ca8a04}
+.badge-alta{background:#ecfccb;color:#65a30d}
+.badge-muy-alta{background:#dcfce7;color:#16a34a}
 
 @media(max-width:720px){body{padding:16px}.block{padding:16px}}
 </style>
@@ -52,13 +56,16 @@ li{margin-bottom:8px}
     <h2>Conceptos Clave</h2>
     <ul>
       <li><strong>Puntuación de Nivel:</strong> Todos los jugadores comienzan con 1500 puntos. Si ganas partidos, tus puntos suben; si pierdes, bajan. Ganar a una pareja más fuerte te dará muchos más puntos que ganar a un equipo al que tenías fácil superar.</li>
-      <li><strong>Fiabilidad (Confianza del Sistema):</strong> Indica lo seguro que está el sistema de que tus puntos reflejan tu nivel real. En la tabla se muestra de forma intuitiva:
-        <ul>
-          <li><span class="badge badge-baja">Fiabilidad Baja</span> El sistema aún te está evaluando (o llevas tiempo sin jugar). Tus puntos cambiarán de forma más rápida tras cada partido.</li>
-          <li><span class="badge badge-alta">Fiabilidad Alta</span> Has jugado varios partidos recientemente. Tu puntuación está consolidada y variará de forma más gradual.</li>
+      <li><strong>Fiabilidad (Confianza del Sistema):</strong> Mide qué tan consolidado está tu nivel en función de tu actividad reciente. A menor fiabilidad, más puntos ganas o pierdes en cada partido para ajustar tu nivel rápidamente:
+        <ul style="margin-top:8px">
+          <li><span class="badge badge-sin">Sin fiabilidad</span> / <span class="badge badge-muy-baja">Muy baja</span> Sin datos o inactivo mucho tiempo ($RD \ge 260$). El sistema aún te está evaluando y tus puntos variarán drásticamente.</li>
+          <li><span class="badge badge-baja">Baja</span> Has empezado a jugar o vuelves tras semanas parado ($RD < 260$). Equivale a haber jugado <strong>1 o 2 partidos</strong>.</li>
+          <li><span class="badge badge-media">Media</span> Nivel en proceso de estabilización ($RD < 190$). Equivale a unos <strong>3 a 5 partidos</strong> recientes (o un torneo rápido de un día).</li>
+          <li><span class="badge badge-alta">Alta</span> Tu ranking refleja fielmente tu nivel ($RD < 150$). Equivale a llevar <strong>varias semanas activo</strong> (aprox. 6 a 8 partidos estándar o un torneo completo más algún partido).</li>
+          <li><span class="badge badge-muy-alta">Muy alta</span> Máxima precisión del sistema ($RD < 120$). Requiere un <strong>ritmo constante de juego semanal</strong> (más de 8-10 partidos recientes). Tus puntos cambiarán de forma muy gradual.</li>
         </ul>
       </li>
-      <li><strong>Partidos de Pádel 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja promediando el nivel y la incertidumbre de ambos integrantes antes de compararla con la pareja rival.</li>
+      <li><strong>Adaptación a Partidos 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja promediando el nivel y la incertidumbre de ambos integrantes antes de compararla con la pareja rival.</li>
       <li><strong>Peso por Resultado y Formato:</strong> El impacto en tu ranking depende de lo contundente que sea la victoria. Ganar de forma holgada (ej. 6–2 6–1) otorga más puntos que un triunfo apretado en tres sets (ej. 7–6 3–6 6–3). Los partidos cortos por tiempo (por ejemplo los que se juegan en torneos pozo) tienen menos peso que un partido completo a 3 sets.</li>
       <li><strong>Pérdida por Inactividad:</strong> Cada día que pasas sin jugar, tu nivel de fiabilidad disminuye ligeramente. Si estás meses sin jugar, tu puntuación se vuelve más flexible para que al volver puedas ajustar tu nivel rápidamente.</li>
       <li><strong>Límite de Incertidumbre:</strong> Para garantizar la equidad durante maratones o torneos de un solo día (donde puedes jugar más de 6 partidos), la fiabilidad tiene un tope máximo. Esto evita que tu puntuación se quede "bloqueada" tras un fin de semana con mucha actividad.</li>

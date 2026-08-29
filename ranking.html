@@ -15,8 +15,18 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
 .block-title{font-weight:700;margin-bottom:10px}
 
 /* Controls Header */
-.controls { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-weight: 500; font-size: 0.95rem; }
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Pushes items to the edges */
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
 .controls input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+.controls select { padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.9rem; outline: none; background: #fff; cursor: pointer; }
 
 /* Category Section Layout */
 .tier-section {
@@ -68,7 +78,7 @@ td.fiabilidad-col{font-weight:500}
 .back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
 .muted{color:var(--muted)}
 
-/* Estilos de la barra de progreso por segmentos (sin pico de batería) */
+/* Estilos de la barra de progreso por segmentos */
 .progress-segmented {
   display: inline-flex;
   align-items: center;
@@ -100,6 +110,17 @@ td.fiabilidad-col{font-weight:500}
         <input type="checkbox" id="toggleInactive" onchange="handleFilterChange()">
         <span>Incluir jugadores no activos</span>
       </label>
+
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <span>Fiabilidad mínima:</span>
+        <select id="minReliability" onchange="handleFilterChange()">
+          <option value="any" selected>Cualquiera</option>
+          <option value="very_low">Muy baja</option>
+          <option value="low">Baja</option>
+          <option value="medium">Media</option>
+          <option value="high">Alta</option>
+        </select>
+      </label>
     </div>
 
     <div id="rankingContainer">
@@ -120,7 +141,7 @@ td.fiabilidad-col{font-weight:500}
 
 <script>
 // ============================================================================
-// GLICKO-2 ENGINE (MATCHES PYTHON IMPLEMENTATION EXACTLY)
+// GLICKO-2 ENGINE
 // ============================================================================
 
 const GLICKO_SCALE = 173.7178;
@@ -472,12 +493,25 @@ function loadNames(){
     .catch(e => { return []; });
 }
 
-function computeRankings(entries, includeInactive = false) {
+function computeRankings(entries, includeInactive = false, minReliability = 'any') {
   const registered = (!includeInactive && window._registeredNames && window._registeredNames.size > 0) ? window._registeredNames : null;
 
-  const filtered = registered
+  let filtered = registered
     ? entries.filter(e => registered.has(e.name))
     : entries;
+
+  if (minReliability !== 'any') {
+    filtered = filtered.filter(e => {
+      const rd = Number(e.rd);
+      if (!Number.isFinite(rd)) return false;
+
+      if (minReliability === 'very_low') return rd < 350;
+      if (minReliability === 'low') return rd < 260;
+      if (minReliability === 'medium') return rd < 190;
+      if (minReliability === 'high') return rd < 150;
+      return true;
+    });
+  }
 
   filtered.sort((a, b) => {
     if (b.rating !== a.rating) return b.rating - a.rating;
@@ -498,7 +532,7 @@ function computeRankings(entries, includeInactive = false) {
 
 function renderTable(rows) {
   if (!rows || rows.length === 0) {
-    document.getElementById('rankingContainer').innerHTML = '<div class="muted">No hay jugadores registrados</div>';
+    document.getElementById('rankingContainer').innerHTML = '<div class="muted">No hay jugadores que coincidan con los filtros</div>';
     return;
   }
 
@@ -508,8 +542,8 @@ function renderTable(rows) {
     if (!Number.isFinite(v)) return { bars: 0, color: '', label: '' };
 
     if (v >= 350) return { bars: 0, color: '#dc2626', label: 'Sin fiabilidad' };
-    if (v < 110) return { bars: 5, color: '#16a34a', label: 'Muy alta' };
-    if (v < 140) return { bars: 4, color: '#65a30d', label: 'Alta' };
+    if (v < 120) return { bars: 5, color: '#16a34a', label: 'Muy alta' };
+    if (v < 150) return { bars: 4, color: '#65a30d', label: 'Alta' };
     if (v < 190) return { bars: 3, color: '#ca8a04', label: 'Media' };
     if (v < 260) return { bars: 2, color: '#ea580c', label: 'Baja' };
     return { bars: 1, color: '#dc2626', label: 'Muy baja' };
@@ -597,7 +631,8 @@ function renderTable(rows) {
 
 function handleFilterChange() {
   const showInactive = document.getElementById('toggleInactive').checked;
-  const ranked = computeRankings(cachedEntries, showInactive);
+  const minReliability = document.getElementById('minReliability').value;
+  const ranked = computeRankings(cachedEntries, showInactive, minReliability);
   renderTable(ranked);
 }
 
