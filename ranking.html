@@ -57,16 +57,36 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
 
 /* Table Styles */
 table{width:100%;border-collapse:collapse;margin-top:4px}
-th,td{padding:10px;border-bottom:1px solid rgba(0,0,0,0.04);text-align:left}
+th,td{padding:10px;border-bottom:1px solid rgba(0,0,0,0.04);text-align:left;vertical-align:middle}
 th{background:transparent;font-weight:700;color:#4b5563}
 .rank-col{width:72px;text-align:center}
 .rating-col{width:96px;text-align:center;font-weight:700}
-.fiabilidad-col{width:110px;text-align:center}
+.fiabilidad-col{width:120px;text-align:center}
 th.fiabilidad-col{font-weight:700}
 td.fiabilidad-col{font-weight:500}
 .name-col{font-weight:600;color:#1e293b}
 .back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
 .muted{color:var(--muted)}
+
+/* Estilos de la barra de progreso por segmentos (sin pico de batería) */
+.progress-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+}
+.progress-segment {
+  width: 7px;
+  height: 11px;
+  background-color: #e2e8f0;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
 @media(max-width:720px){body{padding:16px}}
 </style>
 </head>
@@ -483,15 +503,16 @@ function renderTable(rows) {
   }
 
   function getFiabilidadConfig(rd) {
-    if (rd === undefined || rd === null) return { label: '', color: '' };
+    if (rd === undefined || rd === null) return { bars: 0, color: '', label: '' };
     const v = Number(rd);
-    if (!Number.isFinite(v)) return { label: '', color: '' };
+    if (!Number.isFinite(v)) return { bars: 0, color: '', label: '' };
 
-    if (v < 110) return { label: 'Muy alta', color: '#16a34a' };
-    if (v < 140) return { label: 'Alta', color: '#65a30d' };
-    if (v < 190) return { label: 'Media', color: '#ca8a04' };
-    if (v < 260) return { label: 'Baja', color: '#ea580c' };
-    return { label: 'Muy baja', color: '#dc2626' };
+    if (v >= 350) return { bars: 0, color: '#dc2626', label: 'Sin fiabilidad' };
+    if (v < 110) return { bars: 5, color: '#16a34a', label: 'Muy alta' };
+    if (v < 140) return { bars: 4, color: '#65a30d', label: 'Alta' };
+    if (v < 190) return { bars: 3, color: '#ca8a04', label: 'Media' };
+    if (v < 260) return { bars: 2, color: '#ea580c', label: 'Baja' };
+    return { bars: 1, color: '#dc2626', label: 'Muy baja' };
   }
 
   function formatRating(num) {
@@ -541,14 +562,26 @@ function renderTable(rows) {
     `);
 
     for (const r of tierRows) {
-      const { label, color } = getFiabilidadConfig(r.rd);
+      const { bars, color, label } = getFiabilidadConfig(r.rd);
       const ratingFormatted = formatRating(r.rating);
+
+      let segmentsHtml = '';
+      for (let i = 1; i <= 5; i++) {
+        const activeBg = i <= bars ? color : '#e2e8f0';
+        segmentsHtml += `<span class="progress-segment" style="background-color: ${activeBg};"></span>`;
+      }
+
+      const progressHtml = `
+        <div class="progress-segmented" title="${label}">
+          ${segmentsHtml}
+        </div>
+      `;
 
       html.push(`<tr>
         <td class="rank-col">${r.rank}</td>
         <td class="name-col">${escapeHtml(r.name)}</td>
         <td class="rating-col">${ratingFormatted}</td>
-        <td class="fiabilidad-col" style="color: ${color};">${label}</td>
+        <td class="fiabilidad-col">${progressHtml}</td>
       </tr>`);
     }
 
