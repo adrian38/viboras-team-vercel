@@ -44,6 +44,8 @@ body{
 .btn.secondary-green{background:#14b8a6}
 .btn.purple{background:#8b5cf6;box-shadow:0 8px 20px rgba(139,92,246,0.12)}
 .btn.red{background:#ef4444;color:white;box-shadow:0 8px 20px rgba(239,68,68,0.12)}
+.btn.rating{background:#D69E2E;color:white;box-shadow:0 8px 20px rgba(251,191,36,0.12)}
+.btn.ranking{background:#00A3C4;color:white;box-shadow:0 8px 20px rgba(37,99,235,0.12)}
 .btn.warn{background:#fb923c;color:white;box-shadow:0 8px 20px rgba(251,146,60,0.12)}
 
 .admin-bottom{background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
@@ -128,7 +130,8 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
       <div style="flex:1">
         <label class="small">Analiza tu rendimiento de juego y el del grupo</label>
         <div class="controls">
-            <button class="btn red" onclick="window.location='ranking.html'">Ranking</button>
+          <button class="btn ranking" onclick="window.location='ranking.html'">Ranking</button>
+          <button class="btn rating" onclick="window.location='rating.html'">Rating de nivel</button>
           <button class="btn purple" onclick="window.location='statistics.html'">Estadísticas</button>
         </div>
       </div>

@@ -41,7 +41,7 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 @media(max-width:720px){.set-list{display:inline;font-size:calc(1rem - 3pt)}.set-item{display:inline;margin-right:8px}.team-break{display:block}.th-res{display:none}.th-full-res{display:inline}}
 @media(max-width:720px){.team-break{display:block}}
 .pos-badge{display:inline-flex;width:34px;height:34px;border-radius:999px;align-items:center;justify-content:center;background:#fff;border:1px solid #e5e7eb;margin-right:10px;font-weight:700;color:#0b1530}
-.ranking-name{display:flex;align-items:center}
+.rating-name{display:flex;align-items:center}
 /* Top 3 medallion colors (light backgrounds for black text) */
 .pos-badge.pos-1{background:#FDE68A;border-color:#F6C84A}
 .pos-badge.pos-2{background:#E5E7EB;border-color:#BFC6CC}
@@ -69,11 +69,11 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
     <div id="summary" class="muted" style="margin-top:8px"></div>
 
     <div id="tournamentViewToggle" class="view-toggle" role="tablist" aria-label="Vista del torneo" style="display:none">
-      <button type="button" class="view-btn active" data-view="ranking">Clasificación</button>
+      <button type="button" class="view-btn active" data-view="rating">Clasificación</button>
       <button type="button" class="view-btn" data-view="results">Resultados</button>
     </div>
 
-    <div id="rankingContainer" class="table-wrap" style="margin-top:6px"></div>
+    <div id="ratingContainer" class="table-wrap" style="margin-top:6px"></div>
     <div id="tableContainer" class="table-wrap" style="margin-top:12px"></div>
 
     <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -90,7 +90,7 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 <script>
 let parsedMatches = []
 let lastFiltered = []
-let currentTournamentView = 'ranking'
+let currentTournamentView = 'rating'
 let tournamentDateMap = new Map()
 
 function formatEventDates(startDate, endDate){
@@ -115,7 +115,7 @@ function formatEventDates(startDate, endDate){
 }
 
 function setTournamentView(view){
-  const nextView = (view === 'results') ? 'results' : 'ranking'
+  const nextView = (view === 'results') ? 'results' : 'rating'
   currentTournamentView = nextView
 
   const buttons = document.querySelectorAll('.view-btn[data-view]')
@@ -124,9 +124,9 @@ function setTournamentView(view){
     btn.classList.toggle('active', isActive)
   })
 
-  const rankingContainer = document.getElementById('rankingContainer')
+  const ratingContainer = document.getElementById('ratingContainer')
   const tableContainer = document.getElementById('tableContainer')
-  if (rankingContainer) rankingContainer.style.display = (nextView === 'ranking') ? 'block' : 'none'
+  if (ratingContainer) ratingContainer.style.display = (nextView === 'rating') ? 'block' : 'none'
   if (tableContainer) tableContainer.style.display = (nextView === 'results') ? 'block' : 'none'
 
   const toggle = document.getElementById('tournamentViewToggle')
@@ -201,7 +201,7 @@ async function loadData(){
     await loadPlayerNames()
     document.getElementById('summary').innerText = ''
     document.getElementById('tableContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados y la clasificación.</div>'
-    document.getElementById('rankingContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados y la clasificación.</div>'
+    document.getElementById('ratingContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados y la clasificación.</div>'
   } catch (e) {
     console.error('Could not load tournament results', e)
     document.getElementById('summary').innerText = 'No se pudieron cargar los resultados del torneo.'
@@ -228,22 +228,22 @@ function applyFilter(){
   const player = (document.getElementById('player').value || '').trim().toLowerCase()
 
 
-  // filter by selected event (this set is used for ranking)
+  // filter by selected event (this set is used for rating)
   const toggle = document.getElementById('tournamentViewToggle')
   if (toggle) toggle.style.display = selectedEvent ? 'flex' : 'none'
 
   if (!selectedEvent) {
     document.getElementById('summary').innerText = ''
     document.getElementById('tableContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados.</div>'
-    document.getElementById('rankingContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver la clasificación.</div>'
+    document.getElementById('ratingContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver la clasificación.</div>'
     lastFiltered = []
-    setTournamentView('ranking')
+    setTournamentView('rating')
     return
   }
 
   const eventFiltered = parsedMatches.filter(x => String(x.event_id) === String(selectedEvent))
 
-  // now apply player filter only to results (ranking remains based on full event)
+  // now apply player filter only to results (rating remains based on full event)
   let filtered = eventFiltered.slice()
   if (player) {
     filtered = filtered.filter(x => {
@@ -261,11 +261,11 @@ function applyFilter(){
 
   lastFiltered = filtered
   renderTable(filtered)
-  renderRanking(eventFiltered)
+  renderRating(eventFiltered)
   setTournamentView(currentTournamentView)
 }
 
-function computeRanking(matches){
+function computeRating(matches){
   const stats = new Map()
 
   function ensure(name){ if(!stats.has(name)) stats.set(name,{name:name,wins:0,gamesWon:0,gamesLost:0}) }
@@ -332,10 +332,10 @@ function computeRanking(matches){
   return out
 }
 
-function renderRanking(matches){
-  const container = document.getElementById('rankingContainer')
-  const ranking = computeRanking(matches || [])
-  if(!ranking || ranking.length === 0){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
+function renderRating(matches){
+  const container = document.getElementById('ratingContainer')
+  const rating = computeRating(matches || [])
+  if(!rating || rating.length === 0){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
 
   const table = document.createElement('table')
   const thead = document.createElement('thead')
@@ -343,11 +343,11 @@ function renderRanking(matches){
   table.appendChild(thead)
   const tbody = document.createElement('tbody')
 
-  ranking.forEach(r => {
+  rating.forEach(r => {
     const tr = document.createElement('tr')
     const tdName = document.createElement('td')
     const nameWrap = document.createElement('div')
-    nameWrap.className = 'ranking-name'
+    nameWrap.className = 'rating-name'
     const badge = document.createElement('span')
     badge.className = 'pos-badge'
     if (r.position === 1) badge.classList.add('pos-1')
@@ -531,7 +531,7 @@ document.getElementById('eventSelect').addEventListener('change', applyFilter)
 document.getElementById('player').addEventListener('change', applyFilter)
 document.getElementById('downloadBtn').addEventListener('click', downloadCSV)
 
-setTournamentView('ranking')
+setTournamentView('rating')
 loadData()
 </script>
 </body>

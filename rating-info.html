@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Ranking - Explicación</title>
+<title>Sistema de Rating - Explicación</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -50,8 +50,8 @@ li{margin-bottom:8px}
 <div class="site">
   <div class="block">
 
-    <h1>¿Cómo funciona el sistema de ranking?</h1>
-    <p>El ranking de pádel utiliza un sistema de puntuación matemático diseñado para medir tu nivel real de juego de forma dinámica. A medida que juegas partidos, el sistema no solo actualiza tu puntuación, sino también el nivel de fiabilidad de tu ranking.</p>
+    <h1>¿Cómo funciona el sistema de rating?</h1>
+    <p>El rating de pádel utiliza un sistema de puntuación matemático diseñado para medir tu nivel real de juego de forma dinámica. A medida que juegas partidos, el sistema no solo actualiza tu puntuación, sino también el nivel de fiabilidad de tu rating.</p>
 
     <h2>Conceptos Clave</h2>
     <ul>
@@ -61,12 +61,12 @@ li{margin-bottom:8px}
           <li><span class="badge badge-sin">Sin fiabilidad</span> / <span class="badge badge-muy-baja">Muy baja</span> Sin datos o inactivo mucho tiempo ($RD \ge 260$). El sistema aún te está evaluando y tus puntos variarán drásticamente.</li>
           <li><span class="badge badge-baja">Baja</span> Has empezado a jugar o vuelves tras semanas parado ($RD < 260$). Equivale a haber jugado <strong>1 o 2 partidos</strong>.</li>
           <li><span class="badge badge-media">Media</span> Nivel en proceso de estabilización ($RD < 190$). Equivale a unos <strong>3 a 5 partidos</strong> recientes (o un torneo rápido de un día).</li>
-          <li><span class="badge badge-alta">Alta</span> Tu ranking refleja fielmente tu nivel ($RD < 150$). Equivale a llevar <strong>varias semanas activo</strong> (aprox. 6 a 8 partidos estándar o un torneo completo más algún partido).</li>
+          <li><span class="badge badge-alta">Alta</span> Tu rating refleja fielmente tu nivel ($RD < 150$). Equivale a llevar <strong>varias semanas activo</strong> (aprox. 6 a 8 partidos estándar o un torneo completo más algún partido).</li>
           <li><span class="badge badge-muy-alta">Muy alta</span> Máxima precisión del sistema ($RD < 120$). Requiere un <strong>ritmo constante de juego semanal</strong> (más de 8-10 partidos recientes). Tus puntos cambiarán de forma muy gradual.</li>
         </ul>
       </li>
       <li><strong>Adaptación a Partidos 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja promediando el nivel y la incertidumbre de ambos integrantes antes de compararla con la pareja rival.</li>
-      <li><strong>Peso por Resultado y Formato:</strong> El impacto en tu ranking depende de lo contundente que sea la victoria. Ganar de forma holgada (ej. 6–2 6–1) otorga más puntos que un triunfo apretado en tres sets (ej. 7–6 3–6 6–3). Los partidos cortos por tiempo (por ejemplo los que se juegan en torneos pozo) tienen menos peso que un partido completo a 3 sets.</li>
+      <li><strong>Peso por Resultado y Formato:</strong> El impacto en tu rating depende de lo contundente que sea la victoria. Ganar de forma holgada (ej. 6–2 6–1) otorga más puntos que un triunfo apretado en tres sets (ej. 7–6 3–6 6–3). Los partidos cortos por tiempo (por ejemplo los que se juegan en torneos pozo) tienen menos peso que un partido completo a 3 sets.</li>
       <li><strong>Pérdida por Inactividad:</strong> Cada día que pasas sin jugar, tu nivel de fiabilidad disminuye ligeramente. Si estás meses sin jugar, tu puntuación se vuelve más flexible para que al volver puedas ajustar tu nivel rápidamente.</li>
       <li><strong>Límite de Incertidumbre:</strong> Para garantizar la equidad durante maratones o torneos de un solo día (donde puedes jugar más de 6 partidos), la fiabilidad tiene un tope máximo. Esto evita que tu puntuación se quede "bloqueada" tras un fin de semana con mucha actividad.</li>
     </ul>
@@ -118,7 +118,7 @@ li{margin-bottom:8px}
 
     <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
       <div></div>
-      <button class="back-btn" onclick="window.location.href='/ranking.html'">Volver al Ranking</button>
+      <button class="back-btn" onclick="window.location.href='/rating.html'">Volver al Rating</button>
     </div>
 
   </div>

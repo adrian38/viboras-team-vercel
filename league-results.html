@@ -50,7 +50,7 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
   </style>
   <style>
   .pos-badge{display:inline-flex;width:34px;height:34px;border-radius:999px;align-items:center;justify-content:center;background:#fff;border:1px solid #e5e7eb;margin-right:10px;font-weight:700;color:#0b1530}
-  .ranking-name{display:flex;align-items:center}
+  .rating-name{display:flex;align-items:center}
   .pos-badge.pos-1{background:#FDE68A;border-color:#F6C84A}
   .pos-badge.pos-2{background:#E5E7EB;border-color:#BFC6CC}
   .pos-badge.pos-3{background:#F2C79D;border-color:#D69A6A}
@@ -93,13 +93,13 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
     <div id="durationLine" class="muted" style="margin-top:8px">Duración de la liga: -</div>
 
     <div id="leagueViewToggle" class="view-toggle" role="tablist" aria-label="Vista de la liga" style="display:none">
-      <button type="button" class="view-btn" data-view="ranking">Clasificación</button>
+      <button type="button" class="view-btn" data-view="rating">Clasificación</button>
       <button type="button" class="view-btn active" data-view="results">Resultados</button>
     </div>
 
     <div id="provisionalNote" class="muted" style="margin-top:6px;display:none">Esta clasificación es provisional hasta la finalización de la liga.</div>
 
-    <div id="rankingContainer" class="table-wrap" style="margin-top:6px;display:none"></div>
+    <div id="ratingContainer" class="table-wrap" style="margin-top:6px;display:none"></div>
     <div id="pendingContainer" class="table-wrap" style="margin-top:12px;display:none"></div>
     <div id="completedContainer" class="table-wrap" style="margin-top:12px;display:none"></div>
 
@@ -172,7 +172,7 @@ async function loadInitial(){
     document.getElementById('durationLine').innerText = 'Duración de la liga: -'
     document.getElementById('pendingContainer').style.display = 'none'
     document.getElementById('completedContainer').style.display = 'none'
-    document.getElementById('rankingContainer').style.display = 'none'
+    document.getElementById('ratingContainer').style.display = 'none'
     document.getElementById('leagueViewToggle').style.display = 'none'
   }catch(e){ console.error(e); alert('No se pudieron cargar ligas y partidos') }
 }
@@ -230,16 +230,16 @@ function onLeagueChange(){
 }
 
 function setLeagueView(view){
-  currentView = (view==='ranking') ? 'ranking' : 'results'
+  currentView = (view==='rating') ? 'rating' : 'results'
   const buttons = document.querySelectorAll('#leagueViewToggle .view-btn')
   buttons.forEach(btn=> btn.classList.toggle('active', btn.getAttribute('data-view')===currentView))
-  document.getElementById('rankingContainer').style.display = (currentView==='ranking') ? 'block' : 'none'
+  document.getElementById('ratingContainer').style.display = (currentView==='rating') ? 'block' : 'none'
   document.getElementById('pendingContainer').style.display = (currentView==='results') ? 'block' : 'none'
   document.getElementById('completedContainer').style.display = (currentView==='results') ? 'block' : 'none'
 
   // provisional note: only show when viewing classification
   const provisionalEl = document.getElementById('provisionalNote')
-  if(currentView === 'ranking'){
+  if(currentView === 'rating'){
     const leagueId = document.getElementById('leagueSelect').value
     const league = leagues.find(l=>String(l.id)===String(leagueId))
     provisionalEl.style.display = isLeagueProvisional(league) ? 'block' : 'none'
@@ -269,7 +269,7 @@ function isPendingMatch(m){
   return m.s11 === '0' && m.s21 === '0' && (m.s12 === '' || m.s12 === null) && (m.s22===''||m.s22==null) && (m.s13===''||m.s13==null) && (m.s23===''||m.s23==null)
 }
 
-function computeRanking(matches){
+function computeRating(matches){
   // reuse logic from tournaments: simple wins and games
   const stats = new Map()
   function ensure(n){ if(!stats.has(n)) stats.set(n,{name:n,wins:0,gamesWon:0,gamesLost:0}) }
@@ -306,16 +306,16 @@ function computeRanking(matches){
   return out
 }
 
-function renderRanking(matches){
-  const container = document.getElementById('rankingContainer')
-  const ranking = computeRanking(matches||[])
-  if(!ranking.length){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
+function renderRating(matches){
+  const container = document.getElementById('ratingContainer')
+  const rating = computeRating(matches||[])
+  if(!rating.length){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
   const table = document.createElement('table')
   const thead = document.createElement('thead')
   thead.innerHTML = '<tr><th>Jugador</th><th>Victorias</th><th>Juegos</th></tr>'
   table.appendChild(thead)
   const tbody = document.createElement('tbody')
-  ranking.forEach(r=>{
+  rating.forEach(r=>{
     const tr=document.createElement('tr')
     const tdName=document.createElement('td'); tdName.innerText = r.name
     const tdW=document.createElement('td'); tdW.innerText=String(r.wins||0)
@@ -469,18 +469,18 @@ function applyFilter(){
   const pending = filtered.filter(isPendingMatch)
   const completed = filtered.filter(m=> !isPendingMatch(m))
 
-  // ranking uses filtered (including pending?) Probably all matches for selection; we'll use completed matches for ranking
+  // rating uses filtered (including pending?) Probably all matches for selection; we'll use completed matches for rating
   renderResults(pending, completed)
 
   // classification
-  if(currentView==='ranking'){
+  if(currentView==='rating'){
     // show classifications for ALL groups of the selected league (ignore group dropdown)
-    renderGroupRankings(league)
+    renderGroupRatings(league)
   }
 }
 
-function renderGroupRankings(league){
-  const container = document.getElementById('rankingContainer')
+function renderGroupRatings(league){
+  const container = document.getElementById('ratingContainer')
   if(!league){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
 
   // derive groups from events for this league
@@ -498,18 +498,18 @@ function renderGroupRankings(league){
     // collect matches for this group across all phases
     const matches = allMatches.filter(m=>{ const parsed = parseEventNameForLeague(m.event_name||'', league.name); return parsed && parsed.group === groupName })
     const completedMatches = matches.filter(m=> !isPendingMatch(m))
-    const ranking = computeRanking(completedMatches)
+    const rating = computeRating(completedMatches)
 
-    if(!ranking.length){ const empty = document.createElement('div'); empty.className='muted'; empty.innerText='Sin clasificación para mostrar.'; container.appendChild(empty); return }
+    if(!rating.length){ const empty = document.createElement('div'); empty.className='muted'; empty.innerText='Sin clasificación para mostrar.'; container.appendChild(empty); return }
 
     const table = document.createElement('table')
     const thead = document.createElement('thead'); thead.innerHTML = '<tr><th>Jugador</th><th>Victorias</th><th>Juegos</th></tr>'; table.appendChild(thead)
     const tbody = document.createElement('tbody')
 
-    ranking.forEach(r=>{
+    rating.forEach(r=>{
       const tr = document.createElement('tr')
       const tdName = document.createElement('td')
-      const nameWrap = document.createElement('div'); nameWrap.className = 'ranking-name'
+      const nameWrap = document.createElement('div'); nameWrap.className = 'rating-name'
       const badge = document.createElement('span'); badge.className = 'pos-badge'
       if(r.position === 1) badge.classList.add('pos-1')
       else if(r.position === 2) badge.classList.add('pos-2')
