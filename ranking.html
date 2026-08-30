@@ -109,6 +109,25 @@ tr:last-child td { border-bottom: none; }
 
 <script>
 // ============================================================================
+// TABLAS DE TABULACIÓN DE TORNEOS Y REGLAS
+// ============================================================================
+
+const TOURNAMENT_POINTS_12 = {
+  1: 20, 2: 16, 3: 13, 4: 11, 5: 10, 6: 9, 7: 8, 8: 7, 9: 6, 10: 5, 11: 4, 12: 4
+};
+
+const TOURNAMENT_POINTS_16 = {
+  1: 25, 2: 20, 3: 16, 4: 13, 5: 11, 6: 10, 7: 9, 8: 8, 9: 7, 10: 7, 11: 6, 12: 6, 13: 5, 14: 5, 15: 4, 16: 4
+};
+
+function getTournamentPoints(position, totalPlayers) {
+  const table = totalPlayers >= 15 ? TOURNAMENT_POINTS_16 : TOURNAMENT_POINTS_12;
+  if (table[position]) return table[position];
+  // Si la posición supera el máximo previsto en la tabla, otorga la puntuación mínima (4 pts)
+  return 4;
+}
+
+// ============================================================================
 // UI & TABLA
 // ============================================================================
 
@@ -130,7 +149,7 @@ function renderRanking(data) {
     return;
   }
 
-  // Ordenar por Puntos totales descendente, y en empate alfabéticamente
+  // Ordenar por Puntos totales descendente, y en caso de empate alfabéticamente
   data.sort((a, b) => {
     if (b.puntos !== a.puntos) return b.puntos - a.puntos;
     return a.name.localeCompare(b.name, 'es', { sensitivity: 'base', numeric: true });
@@ -140,7 +159,6 @@ function renderRanking(data) {
   let currentRank = 1;
 
   data.forEach((row, index) => {
-    // Manejo de empates en posiciones
     if (index > 0 && row.puntos < data[index - 1].puntos) {
       currentRank = index + 1;
     }
@@ -167,7 +185,76 @@ function escapeHtml(s) {
 }
 
 // ============================================================================
-// CARGA Y PROCESAMIENTO DE DATOS
+// CÁLCULO DE CLASIFICACIÓN DE TORNEOS (LÓGICA TOURNAME_HTML)
+// ============================================================================
+
+function computeTournamentStandings(matches) {
+  const stats = new Map();
+
+  function ensure(name) {
+    if (!stats.has(name)) stats.set(name, { name: name, wins: 0, gamesWon: 0, gamesLost: 0 });
+  }
+
+  matches.forEach(m => {
+    const p1 = [(m.p1a || '').trim(), (m.p1b || '').trim()].filter(Boolean);
+    const p2 = [(m.p2a || '').trim(), (m.p2b || '').trim()].filter(Boolean);
+
+    let team1Sets = 0, team2Sets = 0;
+    for (let i = 1; i <= 3; i++) {
+      const aRaw = m['s1' + i];
+      const bRaw = m['s2' + i];
+
+      const isSet2Flag = (i === 2) && (String(m.format) === 'timed_games' || String(aRaw) === '1' || String(bRaw) === '1');
+      if (isSet2Flag) continue;
+
+      const ai = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw, 10) : NaN;
+      const bi = (bRaw !== undefined && bRaw !== '') ? parseInt(bRaw, 10) : NaN;
+      if (!isNaN(ai) && !isNaN(bi)) {
+        if (ai > bi) team1Sets++;
+        else if (bi > ai) team2Sets++;
+
+        p1.forEach(n => { if (n) { ensure(n); const ent = stats.get(n); ent.gamesWon += ai; ent.gamesLost += bi; } });
+        p2.forEach(n => { if (n) { ensure(n); const ent = stats.get(n); ent.gamesLost += ai; ent.gamesWon += bi; } });
+      }
+    }
+
+    if (team1Sets > team2Sets) { p1.forEach(n => { if (n) { ensure(n); stats.get(n).wins += 1; } }); }
+    else if (team2Sets > team1Sets) { p2.forEach(n => { if (n) { ensure(n); stats.get(n).wins += 1; } }); }
+    else {
+      if ((m.s12 || '') === '1') { p1.forEach(n => { if (n) { ensure(n); stats.get(n).wins += 1; } }); }
+      else if ((m.s22 || '') === '1') { p2.forEach(n => { if (n) { ensure(n); stats.get(n).wins += 1; } }); }
+    }
+  });
+
+  const out = Array.from(stats.values()).map(s => {
+    const totalGames = (s.gamesWon || 0) + (s.gamesLost || 0);
+    const pct = totalGames > 0 ? (s.gamesWon / totalGames) : null;
+    return Object.assign({}, s, { gamesTotal: totalGames, gamesPct: pct });
+  });
+
+  out.sort((a, b) => {
+    if ((b.wins || 0) !== (a.wins || 0)) return (b.wins || 0) - (a.wins || 0);
+    const pa = a.gamesPct === null ? -1 : a.gamesPct;
+    const pb = b.gamesPct === null ? -1 : b.gamesPct;
+    if (pb !== pa) return pb > pa ? 1 : -1;
+    return 0;
+  });
+
+  let lastKey = null;
+  let pos = 0;
+  let displayPos = 0;
+  out.forEach(row => {
+    pos++;
+    const key = `${row.wins}_${row.gamesPct}`;
+    if (key !== lastKey) { displayPos = pos; lastKey = key; }
+    row.position = displayPos;
+  });
+
+  return out;
+}
+
+// ============================================================================
+// FETCH & PROCESAMIENTO
 // ============================================================================
 
 function fetchActivePlayers() {
@@ -178,74 +265,143 @@ function fetchActivePlayers() {
 }
 
 function fetchMatches() {
-  const url = `/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`;
+  const url = `/api/getResults?eventType=legacy,grupo_liga,pozo,doble_ko&ts=${Date.now()}`;
   return fetch(url)
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(db => (db && db.matches) ? db.matches : [])
-    .catch(e => { console.error('Error cargando partidos', e); return []; });
+    .then(db => db || { matches: [], events: [] })
+    .catch(e => { console.error('Error cargando resultados', e); return { matches: [], events: [] }; });
 }
 
-function processRanking(players, matches) {
-  const rankingMap = new Map();
+function processRanking(players, dbData) {
+  const matches = dbData.matches || [];
+  const activePlayersSet = new Set(players.map(p => String(p || '').trim()).filter(Boolean));
 
-  // 1. Inicializar mapa solo con jugadores activos
-  players.forEach(name => {
-    const trimmed = String(name || '').trim();
-    if (trimmed) {
-      rankingMap.set(trimmed, {
-        name: trimmed,
-        torneos: 0,
-        ligas: 0,
-        partidos: 0,
-        puntos: 0
-      });
+  // Mapa principal indexado por nombre del jugador
+  const playerScores = new Map();
+
+  // Inicializar solo jugadores activos
+  activePlayersSet.forEach(name => {
+    playerScores.set(name, {
+      name: name,
+      tournamentScores: [], // Array con las puntuaciones obtenidas en torneos
+      matchScores: [],      // Array con las puntuaciones de sus partidos (3 vic, 1 der)
+      torneosPts: 0,
+      ligasPts: 0,
+      partidosPts: 0,
+      puntosTotales: 0
+    });
+  });
+
+  // 1. PROCESAR TORNEOS (pozo / doble_ko)
+  const matchesByEvent = new Map();
+  matches.forEach(m => {
+    const type = String(m.event_type || '').trim().toLowerCase();
+    if (type === 'pozo' || type === 'doble_ko') {
+      const eventId = String(m.event_id || '');
+      if (eventId) {
+        if (!matchesByEvent.has(eventId)) matchesByEvent.set(eventId, []);
+        matchesByEvent.get(eventId).push(m);
+      }
     }
   });
 
-  // 2. Procesar los partidos para asignar los puntos por categoría
-  matches.forEach(m => {
-    const type = String(m.event_type || '').trim().toLowerCase();
+  // Calcular las posiciones de cada torneo y asignar puntos
+  matchesByEvent.forEach((eventMatches) => {
+    const standings = computeTournamentStandings(eventMatches);
+    const totalPlayers = standings.length;
 
-    // Obtener los 4 jugadores del partido
-    const matchPlayers = [m.p1a, m.p1b, m.p2a, m.p2b]
-      .map(p => String(p || '').trim())
-      .filter(Boolean);
-
-    matchPlayers.forEach(pName => {
-      // Solo sumamos puntos si el jugador está entre los activos registrados
-      if (rankingMap.has(pName)) {
-        const stats = rankingMap.get(pName);
-
-        // Partidos: event_type = ranked
-        if (type === 'ranked') {
-          stats.partidos += 1;
-        }
-        // Ligas: event_type = grupo_liga
-        else if (type === 'grupo_liga') {
-          stats.ligas += 1;
-        }
-        // Torneos: event_type = pozo o doble_ko
-        else if (type === 'pozo' || type === 'doble_ko') {
-          stats.torneos += 1;
-        }
-
-        // Fórmula básica: 1 punto por partido disputado en cualquier categoría
-        stats.puntos = stats.partidos + stats.ligas + stats.torneos;
+    standings.forEach(playerRes => {
+      const pName = playerRes.name;
+      if (activePlayersSet.has(pName)) {
+        const pts = getTournamentPoints(playerRes.position, totalPlayers);
+        playerScores.get(pName).tournamentScores.push(pts);
       }
     });
   });
 
-  return Array.from(rankingMap.values());
+  // 2. PROCESAR PARTIDOS COMPETITIVOS (ranked)
+  matches.forEach(m => {
+    const type = String(m.event_type || '').trim().toLowerCase();
+    if (type === 'legacy') {
+      const p1 = [(m.p1a || '').trim(), (m.p1b || '').trim()].filter(Boolean);
+      const p2 = [(m.p2a || '').trim(), (m.p2b || '').trim()].filter(Boolean);
+
+      let team1Sets = 0, team2Sets = 0;
+      for (let i = 1; i <= 3; i++) {
+        const aRaw = m['s1' + i];
+        const bRaw = m['s2' + i];
+        const ai = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw, 10) : NaN;
+        const bi = (bRaw !== undefined && bRaw !== '') ? parseInt(bRaw, 10) : NaN;
+        if (!isNaN(ai) && !isNaN(bi)) {
+          if (ai > bi) team1Sets++;
+          else if (bi > ai) team2Sets++;
+        }
+      }
+
+      let winnerTeam = 0;
+      if (team1Sets > team2Sets) winnerTeam = 1;
+      else if (team2Sets > team1Sets) winnerTeam = 2;
+      else {
+        if ((m.s12 || '') === '1') winnerTeam = 1;
+        else if ((m.s22 || '') === '1') winnerTeam = 2;
+      }
+
+      p1.forEach(pName => {
+        if (activePlayersSet.has(pName)) {
+          const pts = (winnerTeam === 1) ? 3 : 1;
+          playerScores.get(pName).matchScores.push(pts);
+        }
+      });
+
+      p2.forEach(pName => {
+        if (activePlayersSet.has(pName)) {
+          const pts = (winnerTeam === 2) ? 3 : 1;
+          playerScores.get(pName).matchScores.push(pts);
+        }
+      });
+    }
+  });
+
+  // 3. CALCULAR PUNTUACIÓN FINAL SEGÚN TOP DE CADA CATEGORÍA
+  const rankingList = [];
+
+  playerScores.forEach(pData => {
+    // Top 2 torneos
+    pData.tournamentScores.sort((a, b) => b - a);
+    const top2Torneos = pData.tournamentScores.slice(0, 2);
+    pData.torneosPts = top2Torneos.reduce((acc, v) => acc + v, 0);
+
+    // Ligas: 0 pts por ahora
+    pData.ligasPts = 0;
+
+    // Top 10 partidos
+    pData.matchScores.sort((a, b) => b - a);
+    const top10Partidos = pData.matchScores.slice(0, 10);
+    pData.partidosPts = top10Partidos.reduce((acc, v) => acc + v, 0);
+
+    // Suma global
+    pData.puntosTotales = pData.torneosPts + pData.ligasPts + pData.partidosPts;
+
+    rankingList.push({
+      name: pData.name,
+      torneos: pData.torneosPts,
+      ligas: pData.ligasPts,
+      partidos: pData.partidosPts,
+      puntos: pData.puntosTotales
+    });
+  });
+
+  return rankingList;
 }
 
 async function init() {
   try {
-    const [players, matches] = await Promise.all([
+    const [players, dbData] = await Promise.all([
       fetchActivePlayers(),
       fetchMatches()
     ]);
 
-    const rankingData = processRanking(players, matches);
+    const rankingData = processRanking(players, dbData);
     renderRanking(rankingData);
   } catch (err) {
     console.error('Error al inicializar el ranking:', err);

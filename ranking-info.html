@@ -40,14 +40,57 @@ li{margin-bottom:8px}
 
 .back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
 .back-btn:hover{background:#f8fafc}
-.formula-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.95rem;overflow-x:auto}
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.85rem;font-weight:600}
-.badge-sin{background:#fee2e2;color:#dc2626}
-.badge-muy-baja{background:#fee2e2;color:#dc2626}
-.badge-baja{background:#ffedd5;color:#ea580c}
-.badge-media{background:#fef9c3;color:#ca8a04}
-.badge-alta{background:#ecfccb;color:#65a30d}
-.badge-muy-alta{background:#dcfce7;color:#16a34a}
+
+/* Estilos de Spoilers / Details */
+details {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin: 12px 0 16px 0;
+  overflow: hidden;
+}
+summary {
+  padding: 10px 14px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  background: #f1f5f9;
+  transition: background 0.15s ease;
+}
+summary:hover {
+  background: #e2e8f0;
+}
+details[open] summary {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Tablas de puntuación */
+.points-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  background: #fff;
+}
+.points-table th, .points-table td {
+  padding: 8px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+}
+.points-table tr:last-child td {
+  border-bottom: none;
+}
+.points-table th {
+  background: #fafafa;
+  color: #4b5563;
+  font-weight: 700;
+}
+.points-table td.pts {
+  font-weight: 700;
+  color: #2563eb;
+  width: 100px;
+}
 
 @media(max-width:720px){body{padding:16px}.block{padding:16px}}
 </style>
@@ -70,11 +113,108 @@ li{margin-bottom:8px}
     </ul>
 
     <h3>Puntuación de torneos</h3>
+    <p>Cada torneo otorga una <strong>puntuación en función de la clasificación</strong>.</p>
+
+    <!-- Spoiler Torneo 12 Jugadores -->
+    <details>
+      <summary>Ver tabla de puntuación: Torneo de 12 jugadores</summary>
+      <table class="points-table">
+        <thead>
+          <tr>
+            <th>Posición</th>
+            <th class="pts">Puntos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1º puesto</td><td class="pts">20 pts</td></tr>
+          <tr><td>2º puesto</td><td class="pts">16 pts</td></tr>
+          <tr><td>3º puesto</td><td class="pts">13 pts</td></tr>
+          <tr><td>4º puesto</td><td class="pts">11 pts</td></tr>
+          <tr><td>5º puesto</td><td class="pts">10 pts</td></tr>
+          <tr><td>6º puesto</td><td class="pts">9 pts</td></tr>
+          <tr><td>7º puesto</td><td class="pts">8 pts</td></tr>
+          <tr><td>8º puesto</td><td class="pts">7 pts</td></tr>
+          <tr><td>9º puesto</td><td class="pts">6 pts</td></tr>
+          <tr><td>10º puesto</td><td class="pts">5 pts</td></tr>
+          <tr><td>11º y 12º puesto</td><td class="pts">4 pts</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <!-- Spoiler Torneo 16 Jugadores -->
+    <details>
+      <summary>Ver tabla de puntuación: Torneo de 16 jugadores</summary>
+      <table class="points-table">
+        <thead>
+          <tr>
+            <th>Posición</th>
+            <th class="pts">Puntos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1º puesto</td><td class="pts">25 pts</td></tr>
+          <tr><td>2º puesto</td><td class="pts">20 pts</td></tr>
+          <tr><td>3º puesto</td><td class="pts">16 pts</td></tr>
+          <tr><td>4º puesto</td><td class="pts">13 pts</td></tr>
+          <tr><td>5º puesto</td><td class="pts">11 pts</td></tr>
+          <tr><td>6º puesto</td><td class="pts">10 pts</td></tr>
+          <tr><td>7º puesto</td><td class="pts">9 pts</td></tr>
+          <tr><td>8º puesto</td><td class="pts">8 pts</td></tr>
+          <tr><td>9º y 10º puesto</td><td class="pts">7 pts</td></tr>
+          <tr><td>11º y 12º puesto</td><td class="pts">6 pts</td></tr>
+          <tr><td>13º y 14º puesto</td><td class="pts">5 pts</td></tr>
+          <tr><td>15º y 16º puesto</td><td class="pts">4 pts</td></tr>
+        </tbody>
+      </table>
+    </details>
 
     <h3>Puntuación de liga</h3>
+    <p>La participación en la liga otorga una <strong>puntuación en función de la clasificación</strong>.</p>
+
+    <!-- Spoiler Liga -->
+    <details>
+      <summary>Ver tabla de puntuación: Liga</summary>
+      <table class="points-table">
+        <thead>
+          <tr>
+            <th>Posición</th>
+            <th class="pts">Puntos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1º puesto</td><td class="pts">50 pts</td></tr>
+          <tr><td>2º puesto</td><td class="pts">45 pts</td></tr>
+          <tr><td>3º puesto</td><td class="pts">41 pts</td></tr>
+          <tr><td>4º puesto</td><td class="pts">37 pts</td></tr>
+          <tr><td>5º puesto</td><td class="pts">34 pts</td></tr>
+          <tr><td>6º puesto</td><td class="pts">31 pts</td></tr>
+          <tr><td>7º puesto</td><td class="pts">29 pts</td></tr>
+          <tr><td>8º puesto</td><td class="pts">27 pts</td></tr>
+          <tr><td>9º puesto</td><td class="pts">25 pts</td></tr>
+          <tr><td>10º puesto</td><td class="pts">23 pts</td></tr>
+          <tr><td>11º puesto</td><td class="pts">22 pts</td></tr>
+          <tr><td>12º puesto</td><td class="pts">21 pts</td></tr>
+          <tr><td>13º puesto</td><td class="pts">20 pts</td></tr>
+          <tr><td>14º puesto</td><td class="pts">19 pts</td></tr>
+          <tr><td>15º puesto</td><td class="pts">18 pts</td></tr>
+          <tr><td>16º puesto</td><td class="pts">17 pts</td></tr>
+          <tr><td>17º puesto</td><td class="pts">16 pts</td></tr>
+          <tr><td>18º puesto</td><td class="pts">15 pts</td></tr>
+          <tr><td>19º puesto</td><td class="pts">14 pts</td></tr>
+          <tr><td>20º y 21º puesto</td><td class="pts">13 pts</td></tr>
+          <tr><td>22º y 23º puesto</td><td class="pts">12 pts</td></tr>
+          <tr><td>24º y 25º puesto</td><td class="pts">11 pts</td></tr>
+          <tr><td>26º y 27º puesto</td><td class="pts">10 pts</td></tr>
+          <tr><td>28º y 29º puesto</td><td class="pts">9 pts</td></tr>
+          <tr><td>30º y 31º puesto</td><td class="pts">8 pts</td></tr>
+          <tr><td>32º y 33º puesto</td><td class="pts">7 pts</td></tr>
+          <tr><td>34º a 36º puesto</td><td class="pts">6 pts</td></tr>
+        </tbody>
+      </table>
+    </details>
 
     <h3>Puntuación de partidos competitivos</h3>
-    <strong>Cada victoria contabiliza 3 puntos y cada derrota 1 punto</strong>. Por ejemplo, un jugador que haya jugado 4 partidos con 3 victorias y una derrota obtendrá 10 puntos, y un jugador que haya jugado 12 partidos con 6 victorias y 6 derrotas sumará 22 puntos de sus 10 mejores partidos.
+    <p><strong>Cada victoria contabiliza 3 puntos y cada derrota 1 punto</strong>. Por ejemplo, un jugador que haya jugado 4 partidos con 3 victorias y una derrota obtendrá 10 puntos, y un jugador que haya jugado 12 partidos con 6 victorias y 6 derrotas sumará 22 puntos de sus 10 mejores partidos.</p>
 
     <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
       <div></div>
