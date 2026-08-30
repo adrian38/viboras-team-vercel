@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ranking general</title>
+<title>Ranking</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -89,7 +89,6 @@ tr:last-child td { border-bottom: none; }
           </tr>
         </thead>
         <tbody id="rankingBody">
-          <!-- El Javascript inyectará las filas aquí -->
           <tr><td colspan="6" class="muted" style="text-align:center; padding: 24px;">Cargando ranking…</td></tr>
         </tbody>
       </table>
@@ -113,7 +112,6 @@ tr:last-child td { border-bottom: none; }
 // UI & TABLA
 // ============================================================================
 
-// Alterna la visibilidad de las columnas de detalle mediante una clase CSS
 function toggleColumns() {
   const table = document.getElementById('rankingTable');
   const isChecked = document.getElementById('toggleDetail').checked;
@@ -124,7 +122,6 @@ function toggleColumns() {
   }
 }
 
-// Función para pintar los datos en la tabla
 function renderRanking(data) {
   const tbody = document.getElementById('rankingBody');
 
@@ -133,18 +130,28 @@ function renderRanking(data) {
     return;
   }
 
-  // Ordenar por puntos (de mayor a menor)
-  data.sort((a, b) => b.puntos - a.puntos);
+  // Ordenar por Puntos totales descendente, y en empate alfabéticamente
+  data.sort((a, b) => {
+    if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+    return a.name.localeCompare(b.name, 'es', { sensitivity: 'base', numeric: true });
+  });
 
   let html = '';
+  let currentRank = 1;
+
   data.forEach((row, index) => {
+    // Manejo de empates en posiciones
+    if (index > 0 && row.puntos < data[index - 1].puntos) {
+      currentRank = index + 1;
+    }
+
     html += `
       <tr>
-        <td class="rank-col">${index + 1}</td>
+        <td class="rank-col">${currentRank}</td>
         <td class="name-col">${escapeHtml(row.name)}</td>
-        <td class="detail-col">${row.torneos || 0}</td>
-        <td class="detail-col">${row.ligas || 0}</td>
-        <td class="detail-col">${row.partidos || 0}</td>
+        <td class="detail-col">${row.torneos}</td>
+        <td class="detail-col">${row.ligas}</td>
+        <td class="detail-col">${row.partidos}</td>
         <td class="points-col">${row.puntos.toLocaleString('es-ES')}</td>
       </tr>
     `;
@@ -153,7 +160,6 @@ function renderRanking(data) {
   tbody.innerHTML = html;
 }
 
-// Prevenir inyecciones XSS
 function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, function(c) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -161,25 +167,92 @@ function escapeHtml(s) {
 }
 
 // ============================================================================
-// DATOS (EJEMPLO MOCKUP - REEMPLAZAR CON TU LÓGICA DE FETCH)
+// CARGA Y PROCESAMIENTO DE DATOS
 // ============================================================================
-async function init() {
-  // Aquí puedes integrar tus fetch() a la API igual que en rating.html
-  // Por ahora cargamos un set de datos de prueba para ver el layout
-  const mockData = [
-    { name: "Carlos Perez", torneos: 12, ligas: 2, partidos: 45, puntos: 3500 },
-    { name: "Ana Gomez", torneos: 8, ligas: 3, partidos: 30, puntos: 2840 },
-    { name: "Luis Fernandez", torneos: 5, ligas: 1, partidos: 22, puntos: 1950 },
-    { name: "Maria Garcia", torneos: 2, ligas: 0, partidos: 10, puntos: 800 }
-  ];
 
-  // Simular un tiempo de carga
-  setTimeout(() => {
-    renderRanking(mockData);
-  }, 400);
+function fetchActivePlayers() {
+  return fetch('/api/getNames')
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(db => (db && db.names) ? db.names : [])
+    .catch(e => { console.error('Error cargando jugadores', e); return []; });
 }
 
-// Inicializar al cargar
+function fetchMatches() {
+  const url = `/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`;
+  return fetch(url)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(db => (db && db.matches) ? db.matches : [])
+    .catch(e => { console.error('Error cargando partidos', e); return []; });
+}
+
+function processRanking(players, matches) {
+  const rankingMap = new Map();
+
+  // 1. Inicializar mapa solo con jugadores activos
+  players.forEach(name => {
+    const trimmed = String(name || '').trim();
+    if (trimmed) {
+      rankingMap.set(trimmed, {
+        name: trimmed,
+        torneos: 0,
+        ligas: 0,
+        partidos: 0,
+        puntos: 0
+      });
+    }
+  });
+
+  // 2. Procesar los partidos para asignar los puntos por categoría
+  matches.forEach(m => {
+    const type = String(m.event_type || '').trim().toLowerCase();
+
+    // Obtener los 4 jugadores del partido
+    const matchPlayers = [m.p1a, m.p1b, m.p2a, m.p2b]
+      .map(p => String(p || '').trim())
+      .filter(Boolean);
+
+    matchPlayers.forEach(pName => {
+      // Solo sumamos puntos si el jugador está entre los activos registrados
+      if (rankingMap.has(pName)) {
+        const stats = rankingMap.get(pName);
+
+        // Partidos: event_type = ranked
+        if (type === 'ranked') {
+          stats.partidos += 1;
+        }
+        // Ligas: event_type = grupo_liga
+        else if (type === 'grupo_liga') {
+          stats.ligas += 1;
+        }
+        // Torneos: event_type = pozo o doble_ko
+        else if (type === 'pozo' || type === 'doble_ko') {
+          stats.torneos += 1;
+        }
+
+        // Fórmula básica: 1 punto por partido disputado en cualquier categoría
+        stats.puntos = stats.partidos + stats.ligas + stats.torneos;
+      }
+    });
+  });
+
+  return Array.from(rankingMap.values());
+}
+
+async function init() {
+  try {
+    const [players, matches] = await Promise.all([
+      fetchActivePlayers(),
+      fetchMatches()
+    ]);
+
+    const rankingData = processRanking(players, matches);
+    renderRanking(rankingData);
+  } catch (err) {
+    console.error('Error al inicializar el ranking:', err);
+    document.getElementById('rankingBody').innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center; padding: 24px;">Error cargando los datos del ranking</td></tr>';
+  }
+}
+
 init();
 </script>
 
