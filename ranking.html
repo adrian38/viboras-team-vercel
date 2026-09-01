@@ -270,10 +270,19 @@ function fetchActivePlayers() {
 }
 
 function fetchMatches() {
-  const url = `/api/getResults?eventType=legacy,grupo_liga,pozo,doble_ko&ts=${Date.now()}`;
+  const url = `/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`;
   return fetch(url)
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(db => db || { matches: [], events: [] })
+    .then(db => {
+      const data = db || { matches: [], events: [] };
+      // Always exclude specific old-tournament event IDs (pre-September)
+      const filteredMatches = (data.matches || []).filter(m => {
+        const eventId = (m && (m.event_id !== undefined && m.event_id !== null)) ? Number(m.event_id) : null;
+        if (eventId === 23 || eventId === 24) return false;
+        return true;
+      });
+      return Object.assign({}, data, { matches: filteredMatches });
+    })
     .catch(e => { console.error('Error cargando resultados', e); return { matches: [], events: [] }; });
 }
 

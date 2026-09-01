@@ -430,11 +430,18 @@ function fetchMatches() {
     return (4.0 * x - 1.0) / (x + 1.0);
   }
 
-  return fetch(`/api/getResults?eventType=legacy,pozo&ts=${Date.now()}`)
+  return fetch(`/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`)
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(db => {
       const raw = (db && db.matches) ? db.matches : [];
-      return raw.map((m, idx) => {
+      // Always exclude specific old-tournament event IDs (pre-September)
+      const rawFiltered = raw.filter(m => {
+        const eventId = (m && (m.event_id !== undefined && m.event_id !== null)) ? Number(m.event_id) : null;
+        if (eventId === 23 || eventId === 24) return false;
+        return true;
+      });
+
+      return rawFiltered.map((m, idx) => {
         const dateIso = toIsoDate(m.date) || toIsoDate(m.start_date) || new Date().toISOString().split('T')[0];
 
         const p1a = (m.p1a || '').trim();
