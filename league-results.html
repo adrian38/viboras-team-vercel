@@ -23,6 +23,8 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
 table{width:100%;border-collapse:collapse;margin-top:8px}
 th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 .muted{color:#6b7280}
+.duration-line{color:#1f7a4d;background:rgba(34,197,94,0.09);padding:2px 6px;border-radius:6px;display:inline-block}
+.phase-limit{color:#7f1d1d;background:rgba(127,29,29,0.06);padding:2px 6px;border-radius:6px;display:inline-block}
 .tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff;border:1px solid #eee;margin-right:6px;font-weight:600}
 .tag.win{background:#dcfce7;color:#065f46;border-color:rgba(16,185,129,0.12)}
 .tag.lose{background:#fff5f5;color:#7f1d1d;border-color:rgba(239,68,68,0.08)}
@@ -46,6 +48,12 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
   .tag{font-weight:400;font-size:0.75rem}
   .set-list{display:inline;font-size:calc(1rem - 3pt)}
   .set-item{display:inline;margin-right:8px}
+  #durationLine,
+  #phaseLimitLine,
+  #provisionalNote,
+  .empty-state-message,
+  .muted{font-size:0.85rem}
+  #leagueViewToggle{margin-top:18px !important}
 }
   </style>
   <style>
@@ -90,9 +98,10 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
       </div>
     </div>
 
-    <div id="durationLine" class="muted" style="margin-top:8px">Duración de la liga: -</div>
+    <div id="durationLine" class="duration-line" style="margin-top:8px">Duración de la liga: -</div>
+    <div id="phaseLimitLine" class="phase-limit" style="margin-top:4px;display:none">Fecha límite fase -: - (Quedan 0 días)</div>
 
-    <div id="leagueViewToggle" class="view-toggle" role="tablist" aria-label="Vista de la liga" style="display:none">
+    <div id="leagueViewToggle" class="view-toggle" role="tablist" aria-label="Vista de la liga" style="display:none;margin-top:16px">
       <button type="button" class="view-btn" data-view="rating">Clasificación</button>
       <button type="button" class="view-btn active" data-view="results">Resultados</button>
     </div>
@@ -138,6 +147,94 @@ function parseEventNameForLeague(eventName, leagueName){
 }
 
 function buildOption(value,label){ const o=document.createElement('option'); o.value=value; o.textContent=label; return o }
+
+function parseDateValue(value){
+  if(!value) return null
+  if(/^\d{4}-\d{2}-\d{2}$/.test(value)){ const [y,m,d]=value.split('-'); return new Date(Date.UTC(Number(y),Number(m)-1,Number(d))) }
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(value)){ const [d,m,y]=value.split('/'); return new Date(Date.UTC(Number(y),Number(m)-1,Number(d))) }
+  return null
+}
+
+function getDateRangeMatch(value, start, end){
+  const d = parseDateValue(value)
+  const s = parseDateValue(start)
+  const e = parseDateValue(end)
+  if(!d || !s || !e) return false
+  const dUTC = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+  const sUTC = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate())
+  const eUTC = Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate())
+  return dUTC >= sUTC && dUTC <= eUTC
+}
+
+function getActivePhaseForLeague(league){
+  if(!league || !Array.isArray(allEvents)) return null
+  const today = new Date(); const tUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  const normalized = String(league.name || '').trim()
+  for(const ev of allEvents){
+    const eventName = String(ev.name || '')
+    if(!eventName.startsWith(`${normalized}_`)) continue
+    const parsed = parseEventNameForLeague(eventName, normalized)
+    if(!parsed) continue
+    const start = ev.start_date || ev.startDate || ''
+    const end = ev.end_date || ev.endDate || ''
+    const s = parseDateValue(start)
+    const e = parseDateValue(end)
+    if(!s || !e) continue
+    const sUTC = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate())
+    const eUTC = Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate())
+    if(tUTC >= sUTC && tUTC <= eUTC){ return String(parsed.phase) }
+  }
+  return null
+}
+
+function updatePhaseLimitLine(){
+  const leagueId = document.getElementById('leagueSelect').value
+  const league = leagues.find(l=>String(l.id)===String(leagueId))
+  const phaseEl = document.getElementById('phaseSelect')
+  const phaseLimitEl = document.getElementById('phaseLimitLine')
+  if(!league || !phaseLimitEl) return
+
+  let phaseNumber = null
+  if(phaseEl && phaseEl.value && phaseEl.value !== 'all'){
+    phaseNumber = Number(phaseEl.value)
+  }
+  if(!phaseNumber){
+    const active = getActivePhaseForLeague(league)
+    phaseNumber = active ? Number(active) : null
+  }
+  if(!phaseNumber){
+    phaseLimitEl.style.display = 'none'
+    phaseLimitEl.innerText = 'Fecha límite fase -: - (Quedan 0 días)'
+    return
+  }
+
+  const ev = (allEvents || []).find(ev => {
+    const eventName = String(ev.name || '')
+    const parsed = parseEventNameForLeague(eventName, league.name)
+    return !!parsed && String(parsed.phase) === String(phaseNumber)
+  })
+  if(!ev){
+    phaseLimitEl.style.display = 'none'
+    phaseLimitEl.innerText = 'Fecha límite fase -: - (Quedan 0 días)'
+    return
+  }
+
+  const endValue = ev.end_date || ev.endDate || ''
+  const endDate = parseDateValue(endValue)
+  if(!endDate){
+    phaseLimitEl.style.display = 'none'
+    phaseLimitEl.innerText = 'Fecha límite fase -: - (Quedan 0 días)'
+    return
+  }
+
+  const today = new Date();
+  const tUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+  const endUTC = Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate())
+  const daysLeft = Math.max(0, Math.ceil((endUTC - tUTC) / (1000 * 60 * 60 * 24)))
+
+  phaseLimitEl.innerText = `Fecha límite fase ${phaseNumber}: ${formatDateText(endValue)} (Quedan ${daysLeft} días)`
+  phaseLimitEl.style.display = 'block'
+}
 
 async function loadInitial(){
   try{
@@ -222,7 +319,15 @@ function onLeagueChange(){
   psel.appendChild(buildOption('all','Todas'))
   Array.from(phases).sort((a,b)=>a-b).forEach(p=> psel.appendChild(buildOption(String(p), String(p))) )
 
+  const activePhase = getActivePhaseForLeague(league)
+  if(activePhase && Array.from(phases).includes(Number(activePhase))){
+    psel.value = String(activePhase)
+  } else {
+    psel.value = 'all'
+  }
+
   document.getElementById('leagueViewToggle').style.display = 'flex'
+  updatePhaseLimitLine()
   // default view is results
   setLeagueView('results')
   // automatically apply filter so selecting a league shows results immediately
@@ -454,6 +559,7 @@ function applyFilter(){
   if(!leagueId){ document.getElementById('durationLine').innerText='Duración de la liga: -'; return }
   const league = leagues.find(l=>String(l.id)===String(leagueId))
   const matchesForLeague = allMatches.filter(m=> (m.event_name||'').startsWith(`${league.name}_`))
+  updatePhaseLimitLine()
   // filter by group/phase
   let filtered = matchesForLeague.filter(m=>{
     const parsed = parseEventNameForLeague(m.event_name||'', league.name)
@@ -536,6 +642,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const leagueSelectEl = document.getElementById('leagueSelect')
   leagueSelectEl.addEventListener('change', onLeagueChange)
   document.getElementById('filterBtn').addEventListener('click', applyFilter)
+  document.getElementById('phaseSelect').addEventListener('change', ()=>{ updatePhaseLimitLine(); applyFilter() })
   // player select change applies filter immediately
   document.getElementById('player').addEventListener('change', applyFilter)
   document.querySelectorAll('#leagueViewToggle .view-btn').forEach(b=> b.addEventListener('click', ()=>{ setLeagueView(b.getAttribute('data-view')); applyFilter() }))
