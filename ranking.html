@@ -336,7 +336,7 @@ function processRanking(players, dbData) {
   // 2. PROCESAR PARTIDOS COMPETITIVOS (ranked)
   matches.forEach(m => {
     const type = String(m.event_type || '').trim().toLowerCase();
-    if (type === 'legacy') {
+    if (type === 'ranked') {
       const p1 = [(m.p1a || '').trim(), (m.p1b || '').trim()].filter(Boolean);
       const p2 = [(m.p2a || '').trim(), (m.p2b || '').trim()].filter(Boolean);
 
