@@ -326,6 +326,9 @@ function computeStats(matches, mode, includeInactive){
       const b = toIntStrict(m['s2'+i])
       if(a === null || b === null) continue
 
+      // Ignore incomplete placeholder sets like 0-0 for non-timed formats
+      if(a === 0 && b === 0) continue
+
       if(a > b) team1Sets++
       else if(b > a) team2Sets++
 

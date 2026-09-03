@@ -71,24 +71,6 @@ export default async function handler(req, res) {
         res.status(200).json({ ok: true });
         return;
       }
-    } else {
-      // Update-in-place if the same match key already exists (idempotent submit)
-      const upd = await sql`
-        UPDATE matches SET
-          set1_team1 = ${s11}, set1_team2 = ${s21},
-          set2_team1 = ${s12}, set2_team2 = ${s22},
-          set3_team1 = ${s13}, set3_team2 = ${s23},
-          format = ${format}
-        WHERE date = ${date}
-          AND player1a_id IS NOT DISTINCT FROM ${p1a_id}
-          AND player1b_id IS NOT DISTINCT FROM ${p1b_id}
-          AND player2a_id IS NOT DISTINCT FROM ${p2a_id}
-          AND player2b_id IS NOT DISTINCT FROM ${p2b_id}
-        RETURNING id`;
-      if (upd.rowCount > 0) {
-        res.status(200).json({ ok: true });
-        return;
-      }
     }
 
     await sql`
