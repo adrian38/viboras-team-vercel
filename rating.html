@@ -124,6 +124,13 @@ td.fiabilidad-col{font-weight:500}
   <div class="block">
 
     <div class="controls">
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <span>Fecha:</span>
+        <select id="ratingDate" onchange="handleFilterChange()">
+          <option value="latest">Última disponible</option>
+        </select>
+      </label>
+
       <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
         <input type="checkbox" id="toggleInactive" onchange="handleFilterChange()">
         <span>Incluir jugadores no activos</span>
@@ -138,6 +145,11 @@ td.fiabilidad-col{font-weight:500}
           <option value="medium">Media</option>
           <option value="high">Alta</option>
         </select>
+      </label>
+
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="toggleShowRD" onchange="handleFilterChange()">
+        <span>Ver RD</span>
       </label>
     </div>
 
@@ -430,18 +442,13 @@ function fetchMatches() {
     return (4.0 * x - 1.0) / (x + 1.0);
   }
 
-  return fetch(`/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`)
+  // Request also 'legacy' so we can build historical views; we'll filter client-side
+  return fetch(`/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko,legacy&ts=${Date.now()}`)
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(db => {
       const raw = (db && db.matches) ? db.matches : [];
-      // Always exclude specific old-tournament event IDs (pre-September)
-      const rawFiltered = raw.filter(m => {
-        const eventId = (m && (m.event_id !== undefined && m.event_id !== null)) ? Number(m.event_id) : null;
-        if (eventId === 23 || eventId === 24) return false;
-        return true;
-      });
 
-      return rawFiltered.map((m, idx) => {
+      return raw.map((m, idx) => {
         const dateIso = toIsoDate(m.date) || toIsoDate(m.start_date) || new Date().toISOString().split('T')[0];
 
         const p1a = (m.p1a || '').trim();
@@ -498,16 +505,104 @@ function fetchMatches() {
         const weight = w1 * w2;
 
         return {
-          id: idx,
+          id: (m.id !== undefined && m.id !== null) ? m.id : idx,
           date: dateIso,
           team1: [p1a, p1b],
           team2: [p2a, p2b],
           score: score,
-          weight: weight
+          weight: weight,
+          event_type: (m.event_type || '').toString().toLowerCase(),
+          event_id: (m.event_id !== undefined && m.event_id !== null) ? Number(m.event_id) : null
         };
       }).filter(m => m && m.date && m.team1[0] && m.team1[1] && m.team2[0] && m.team2[1]);
     })
     .catch(e => { console.error('Could not load matches', e); return []; });
+}
+
+function buildDateOptionsFromMatches(matches) {
+  const isoToday = new Date().toISOString().split('T')[0];
+  if (!matches || matches.length === 0) return [isoToday];
+  const dates = new Set();
+  matches.forEach(m => { if (m && m.date) dates.add(m.date); });
+  const arr = Array.from(dates).sort();
+  if (arr.length === 0) return [isoToday];
+  const first = arr[0];
+  const last = arr[arr.length - 1];
+
+  const out = [];
+  const [y1,m1,d1] = first.split('-').map(Number);
+  const [y2,m2,d2] = last.split('-').map(Number);
+  let cur = Date.UTC(y1, m1 - 1, d1);
+  const end = Date.UTC(y2, m2 - 1, d2);
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  const temp = [];
+  while (cur <= end) {
+    const dt = new Date(cur);
+    const yyyy = dt.getUTCFullYear();
+    const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getUTCDate()).padStart(2, '0');
+    temp.push(`${yyyy}-${mm}-${dd}`);
+    cur += ONE_DAY;
+  }
+  // Return descending: most recent first
+  return temp.reverse();
+}
+
+function populateDateDropdown(matches) {
+  const sel = document.getElementById('ratingDate');
+  if (!sel) return;
+  const opts = buildDateOptionsFromMatches(matches);
+  sel.innerHTML = '';
+  const isoToday = new Date().toISOString().split('T')[0];
+  const threshold = '2026-09-01';
+  for (const v of opts) {
+    const o = document.createElement('option');
+    o.value = v;
+    // display as dd/mm/aaaa
+    const parts = v.split('-');
+    const display = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    let label = display;
+    if (v === isoToday) label += ' (Actual)';
+    if (v === threshold) label += ' (Nuevo comienzo)';
+    o.textContent = label;
+    sel.appendChild(o);
+  }
+  // default select today's date if present, otherwise the first (most recent)
+  if (opts.includes(isoToday)) sel.value = isoToday;
+  else if (opts.length > 0) sel.value = opts[0];
+}
+
+function filterMatchesForCutoff(allMatches, cutoffIso) {
+  if (!allMatches) return [];
+  // cutoffIso is expected to be an ISO date string (yyyy-mm-dd)
+  let cutoff = cutoffIso;
+  if (!cutoff) {
+    const dates = allMatches.map(m => m.date).filter(Boolean).sort();
+    cutoff = dates.length ? dates[dates.length - 1] : new Date().toISOString().split('T')[0];
+  }
+
+  const threshold = '2026-09-01';
+
+  return allMatches.filter(m => {
+    if (!m || !m.date) return false;
+    if (m.date > cutoff) return false; // exclude future matches
+
+    const et = (m.event_type || '').toString().toLowerCase();
+    const eid = (m.event_id !== undefined && m.event_id !== null) ? Number(m.event_id) : null;
+
+    if (cutoff >= threshold) {
+      // On/after 2026-09-01: include ranked, grupo_liga, pozo, doble_ko, but exclude eventId 23/24
+      if (!['ranked','grupo_liga','pozo','doble_ko'].includes(et)) return false;
+      if (eid === 23 || eid === 24) return false;
+      return true;
+    } else {
+      // Before 2026-09-01: include legacy; include pozo only if eventId 23 or 24; include other types (ranked, grupo_liga, doble_ko)
+      if (et === 'legacy') return true;
+      if (et === 'pozo') return (eid === 23 || eid === 24);
+      if (['ranked','grupo_liga','doble_ko'].includes(et)) return true;
+      return false;
+    }
+  });
 }
 
 function loadNames(){
@@ -636,11 +731,21 @@ function renderTable(rows) {
         </div>
       `;
 
+      // If the user toggles 'Ver RD', show numeric RD in dark gray instead of the progress bar
+      const showRD = (document.getElementById('toggleShowRD') && document.getElementById('toggleShowRD').checked) ? true : false;
+      let reliabilityHtml;
+      if (showRD) {
+        const rdVal = (r.rd === undefined || r.rd === null || !Number.isFinite(Number(r.rd))) ? '-' : Number(Number(r.rd)).toFixed(2).replace('.', ',');
+        reliabilityHtml = `<div style="color:#374151;font-weight:400">${rdVal}</div>`;
+      } else {
+        reliabilityHtml = progressHtml;
+      }
+
       html.push(`<tr>
         <td class="rank-col">${r.rank}</td>
         <td class="name-col">${escapeHtml(r.name)}</td>
         <td class="rating-col">${ratingFormatted}</td>
-        <td class="fiabilidad-col">${progressHtml}</td>
+        <td class="fiabilidad-col">${reliabilityHtml}</td>
       </tr>`);
     }
 
@@ -657,6 +762,15 @@ function renderTable(rows) {
 function handleFilterChange() {
   const showInactive = document.getElementById('toggleInactive').checked;
   const minReliability = document.getElementById('minReliability').value;
+  const dateSel = document.getElementById('ratingDate');
+  const selected = dateSel ? dateSel.value : 'latest';
+
+  const names = window._allNames || [];
+  const allMatches = window._allMatches || [];
+  const matchesForDate = filterMatchesForCutoff(allMatches, selected);
+
+  cachedEntries = calculateEngineRatings(names, matchesForDate);
+
   const ranked = computeRatings(cachedEntries, showInactive, minReliability);
   renderTable(ranked);
 }
@@ -674,8 +788,10 @@ async function init() {
   ]);
 
   window._registeredNames = new Set((names || []).map(n => String(n).trim()).filter(Boolean));
+  window._allNames = names || [];
+  window._allMatches = matches || [];
 
-  cachedEntries = calculateEngineRatings(names, matches);
+  populateDateDropdown(window._allMatches);
 
   handleFilterChange();
 }
