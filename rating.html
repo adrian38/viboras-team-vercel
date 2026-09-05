@@ -355,7 +355,7 @@ function updatePeriod(playerMap, periodMatches) {
   });
 }
 
-function calculateEngineRatings(names, matches) {
+function calculateEngineRatings(names, matches, cutoffDateIso) {
   const playerMap = new Map();
   names.forEach(n => {
     if (n && n.trim()) playerMap.set(n.trim(), new Glicko2Player());
@@ -386,8 +386,10 @@ function calculateEngineRatings(names, matches) {
     byDate.get(m.date).push(m);
   });
 
+  // start: first match date; end: either provided cutoff or last match date
   const [startY, startM, startD] = matches[0].date.split('-').map(Number);
-  const [endY, endM, endD] = matches[matches.length - 1].date.split('-').map(Number);
+  const endIso = (cutoffDateIso && typeof cutoffDateIso === 'string') ? cutoffDateIso : matches[matches.length - 1].date;
+  const [endY, endM, endD] = endIso.split('-').map(Number);
 
   let curTime = Date.UTC(startY, startM - 1, startD);
   const endTime = Date.UTC(endY, endM - 1, endD);
@@ -769,7 +771,7 @@ function handleFilterChange() {
   const allMatches = window._allMatches || [];
   const matchesForDate = filterMatchesForCutoff(allMatches, selected);
 
-  cachedEntries = calculateEngineRatings(names, matchesForDate);
+  cachedEntries = calculateEngineRatings(names, matchesForDate, selected);
 
   const ranked = computeRatings(cachedEntries, showInactive, minReliability);
   renderTable(ranked);
