@@ -15,6 +15,7 @@
   --primary:#2563eb; /* blue */
   --accent:#06b6d4; /* teal */
   --success:#10b981;
+  --topbar-height:56px;
 }
 *{box-sizing:border-box}
 body{
@@ -48,8 +49,19 @@ body{
 .btn.ranking{background:#00A3C4;color:white;box-shadow:0 8px 20px rgba(37,99,235,0.12)}
 .btn.warn{background:#fb923c;color:white;box-shadow:0 8px 20px rgba(251,146,60,0.12)}
 
-.admin-bottom{background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-.admin-desktop{display:block;background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;margin:12px auto 18px auto;min-width:160px;text-align:center}
+/* Nuevo color para botón "Normativa" */
+.btn.normativa{background:#d946ef;color:white;box-shadow:0 8px 20px rgba(217,70,239,0.12)}
+
+/* Botón negro fijo arriba centrado */
+.btn.black-top{background:#ef4444;color:#fff;border:none;padding:10px 18px;border-radius:999px;box-shadow:0 12px 30px rgba(239,68,68,0.18);z-index:1101;font-weight:700}
+
+/* Barra superior en el flujo del documento (no fija). Así el botón se desplaza al hacer scroll y desaparece. */
+.topbar{position:static;display:flex;align-items:center;justify-content:center;height:var(--topbar-height);pointer-events:auto}
+.topbar .btn.black-top{pointer-events:auto}
+.topbar-spacer{display:none}
+
+.admin-bottom{background:#000;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+.admin-desktop{display:block;background:#000;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;margin:12px auto 18px auto;min-width:160px;text-align:center}
 .admin-mobile{display:none}
 @media(max-width:720px){
   .admin-desktop{display:none}
@@ -83,6 +95,10 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
 
 <body>
 
+<div class="topbar">
+  <button class="btn black-top" onclick="window.location='group-normativa.html'">NORMATIVA DEL GRUPO</button>
+</div>
+
 <div class="site">
 
   <div class="block block--leagues">
@@ -92,6 +108,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
         <label class="small">Gestiona tus partidos de liga y mira resultados</label>
         <div class="controls">
           <button class="btn secondary-green" onclick="window.location='league-results.html'">Ligas</button>
+          <button class="btn normativa" onclick="window.location='league-info.html'">Normativa</button>
         </div>
       </div>
     </div>
@@ -134,16 +151,6 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
           <button class="btn rating" onclick="window.location='rating.html'">Rating de nivel</button>
           <button class="btn purple" onclick="window.location='statistics.html'">Estadísticas</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="block block--organization">
-    <div class="block-title">Organización de partidos</div>
-    <div class="block-row">
-      <div style="flex:1">
-        <label class="small">Selecciona un día para indicar tu disponibilidad</label>
-        <div id="days"></div>
       </div>
     </div>
   </div>
