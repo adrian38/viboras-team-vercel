@@ -566,7 +566,9 @@
     function formatShortDate(iso) {
       if (!iso) return '-';
       const d = new Date(`${iso}T00:00:00Z`);
-      return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      return `${day}/${month}`;
     }
 
     function dayDifferenceInDays(isoA, isoB) {
