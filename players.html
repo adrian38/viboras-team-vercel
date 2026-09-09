@@ -175,6 +175,13 @@
       font-weight: 600;
     }
 
+    .summary-delta {
+      display: inline-block;
+      margin-left: 8px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
     .page-footer {
       display: flex;
       justify-content: flex-end;
@@ -265,7 +272,7 @@
       vertical-align: middle;
     }
 
-    .event-tag.match { background: #ecfdf5; color: #047857; border-color: rgba(16, 185, 129, 0.18); }
+    .event-tag.match { background: #fdf2f8; color: #a21caf; border-color: rgba(192, 132, 252, 0.28); }
     .event-tag.league { background: #eff6ff; color: #1d4ed8; border-color: rgba(59, 130, 246, 0.18); }
     .event-tag.tournament { background: #fff7ed; color: #c2410c; border-color: rgba(249, 115, 22, 0.2); }
 
@@ -810,6 +817,27 @@
       syncNavigationButtons();
     }
 
+    function getPreviousDayRatingDelta(playerName, day) {
+      const series = getPlayerSeries(playerName);
+      if (!series.length) return null;
+
+      const currentIndex = series.findIndex((point) => point.date === day);
+      if (currentIndex <= 0) return null;
+
+      const current = series[currentIndex];
+      const previous = series[currentIndex - 1];
+      if (!current || !previous || current.rating === undefined || previous.rating === undefined) return null;
+
+      const diff = current.rating - previous.rating;
+      if (!Number.isFinite(diff) || diff === 0) return null;
+
+      return {
+        diff,
+        icon: diff > 0 ? '︽' : '︾',
+        color: diff > 0 ? '#16a34a' : '#dc2626'
+      };
+    }
+
     function updateSelectedDayDetails(playerName, day) {
       if (!playerName) {
         document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
@@ -827,8 +855,16 @@
         return namesInMatch.includes(playerName);
       });
 
-      const summaryText = 'Día ' + formatDisplayDate(day) + ' · ' + playerName + ' · Rating: ' + formatRating(rating) + ' ± ' + formatRating(rd);
-      document.getElementById('summary').textContent = summaryText;
+      const summaryEl = document.getElementById('summary');
+      const baseText = 'Día ' + formatDisplayDate(day) + ' · Rating: ' + formatRating(rating) + ' ± ' + formatRating(rd);
+      const delta = getPreviousDayRatingDelta(playerName, day);
+
+      if (!delta) {
+        summaryEl.textContent = baseText;
+      } else {
+        const deltaText = delta.icon + ' ' + formatRating(Math.abs(delta.diff));
+        summaryEl.innerHTML = `${baseText} <span class="summary-delta" style="color:${delta.color};">${deltaText}</span>`;
+      }
 
       const listEl = document.getElementById('matchList');
       const validMatches = dayMatches
