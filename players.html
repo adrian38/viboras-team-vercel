@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jugadores</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f8ff;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --green: #22c55e;
+      --green-deep: #16a34a;
+      --border: rgba(15, 23, 42, 0.06);
+      --text: #0f172a;
+      --grid: rgba(148, 163, 184, 0.35);
+      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, var(--bg), #eef4ff 60%);
+      color: var(--text);
+      padding: 28px 18px 40px;
+    }
+
+    .site {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid rgba(15, 23, 42, 0.04);
+      box-shadow: var(--shadow);
+      padding: 18px 18px 12px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .title {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: end;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    select, .btn, .nav-btn {
+      font: inherit;
+    }
+
+    select {
+      min-width: 220px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      color: white;
+      background: var(--primary);
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.12);
+    }
+
+    .back-btn {
+      background: #fff;
+      color: var(--primary);
+      border: 1px solid rgba(37, 99, 235, 0.15);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .chart-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 10px 0 8px;
+    }
+
+    .nav-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: 700;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: #eef6ff;
+      border-color: rgba(37, 99, 235, 0.2);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .range-label {
+      flex: 1;
+      text-align: center;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .chart-shell {
+      background: linear-gradient(180deg, #fafcff, #fff);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      overflow: auto;
+      min-height: 300px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      min-width: 700px;
+      height: 310px;
+      border-radius: 10px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .summary {
+      margin-top: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+    }
+
+    .page-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+      padding-top: 4px;
+    }
+
+    .match-list {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .match-item {
+      padding: 10px 12px;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      border-radius: 10px;
+      background: #fff;
+      line-height: 1.5;
+    }
+
+    .match-item strong {
+      color: var(--text);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.38);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      position: relative;
+      width: min(420px, 100%);
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+      padding: 18px;
+      border: 1px solid rgba(15, 23, 42, 0.05);
+    }
+
+    .modal h3 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+
+    .modal .meta {
+      margin: 8px 0 12px;
+      font-size: 0.96rem;
+      color: var(--muted);
+    }
+
+    .modal .matches {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid rgba(34, 197, 94, 0.15);
+      padding: 4px 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .event-tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+      letter-spacing: 0.02em;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .event-tag.match { background: #ecfdf5; color: #047857; border-color: rgba(16, 185, 129, 0.18); }
+    .event-tag.league { background: #eff6ff; color: #1d4ed8; border-color: rgba(59, 130, 246, 0.18); }
+    .event-tag.tournament { background: #fff7ed; color: #c2410c; border-color: rgba(249, 115, 22, 0.2); }
+
+    .match-result {
+      font-weight: 700;
+    }
+
+    .match-result.win { color: #15803d; }
+    .match-result.loss { color: #b91c1c; }
+
+    @media (max-width: 720px) {
+      body { padding: 16px; }
+      .card { padding: 14px; }
+      .page-header { align-items: flex-start; }
+      .toolbar { align-items: stretch; }
+      select { width: 100%; min-width: 0; }
+      .chart-shell { padding: 8px; }
+      svg { min-width: 620px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="site">
+    <div class="card">
+
+      <div class="toolbar">
+        <label>
+          Selecciona un jugador
+          <select id="playerSelect"></select>
+        </label>
+      </div>
+
+      <div class="chart-toolbar">
+        <button id="prevWindowBtn" class="nav-btn" type="button" aria-label="Anterior">←</button>
+        <div id="rangeLabel" class="range-label">Cargando…</div>
+        <button id="nextWindowBtn" class="nav-btn" type="button" aria-label="Siguiente">→</button>
+      </div>
+
+      <div class="chart-shell">
+        <svg id="ratingChart" viewBox="0 0 820 310" preserveAspectRatio="none" aria-label="Evolución del rating"></svg>
+      </div>
+
+      <div id="summary" class="summary muted">Selecciona un punto para ver el detalle del día.</div>
+      <div id="matchList" class="match-list"></div>
+
+      <div class="page-footer">
+        <button class="back-btn" type="button" onclick="window.location='/'">Atrás</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MIN_DATE = '2026-09-01';
+    const WINDOW_DAYS = 7;
+    const DAILY_SNAPSHOT_LIMIT = 3650;
+
+    let allNames = [];
+    let allMatches = [];
+    let dailySeries = [];
+    let currentWindowStartIndex = 0;
+    let selectedDay = null;
+
+    const GLICKO_SCALE = 173.7178;
+    const TAU = 0.5;
+    const INITIAL_RATING = 1500.0;
+    const INITIAL_RD = 350.0;
+    const INITIAL_SIGMA = 0.06;
+    const MIN_RD = 80.0;
+    const MAX_RD = 350.0;
+
+    class Glicko2Player {
+      constructor(rating = INITIAL_RATING, rd = INITIAL_RD, sigma = INITIAL_SIGMA) {
+        this.rating = rating;
+        this.rd = rd;
+        this.sigma = sigma;
+      }
+
+      get mu() { return (this.rating - 1500.0) / GLICKO_SCALE; }
+      get phi() { return this.rd / GLICKO_SCALE; }
+
+      static fromGlickoScale(mu, phi, sigma) {
+        return new Glicko2Player(1500.0 + GLICKO_SCALE * mu, GLICKO_SCALE * phi, sigma);
+      }
+    }
+
+    function g(phi) {
+      return 1.0 / Math.sqrt(1.0 + (3.0 * phi * phi) / (Math.PI * Math.PI));
+    }
+
+    function expected(mu, oppMu, oppPhi) {
+      const gPhi = g(oppPhi);
+      const z = gPhi * (mu - oppMu);
+      if (z >= 0) return 1.0 / (1.0 + Math.exp(-z));
+      const ez = Math.exp(z);
+      return ez / (1.0 + ez);
+    }
+
+    function solveNewSigma(phi, sigma, delta, v, tau) {
+      const a = Math.log(sigma * sigma);
+      const phiSq = phi * phi;
+      const tauSq = tau * tau;
+
+      function f(x) {
+        const ex = Math.exp(x);
+        const num = ex * (delta * delta - phiSq - v - ex);
+        const den = 2.0 * Math.pow(phiSq + v + ex, 2);
+        return (num / den) - ((x - a) / tauSq);
+      }
+
+      let A = a;
+      let B;
+
+      if (delta * delta > phiSq + v) {
+        B = Math.log(delta * delta - phiSq - v);
+      } else {
+        let k = 1;
+        while (f(a - k * tau) < 0.0) {
+          k += 1;
+          if (k > 1000) break;
+        }
+        B = a - k * tau;
+      }
+
+      let fA = f(A);
+      let fB = f(B);
+
+      for (let i = 0; i < 100; i++) {
+        if (Math.abs(B - A) < 1e-12) break;
+        let C = A + (A - B) * fA / (fB - fA);
+        let fC = f(C);
+        if (fC * fB < 0) {
+          A = B;
+          fA = fB;
+        } else {
+          fA *= fB / (fB + fC);
+        }
+        B = C;
+        fB = fC;
+      }
+
+      return Math.exp(A / 2.0);
+    }
+
+    function decayAllPlayersOneDay(playerMap) {
+      const maxPhi = MAX_RD / GLICKO_SCALE;
+      playerMap.forEach((player, key) => {
+        const mu = player.mu;
+        const phi = player.phi;
+        let phiStar = Math.sqrt(phi * phi + player.sigma * player.sigma);
+        phiStar = Math.min(phiStar, maxPhi);
+        playerMap.set(key, Glicko2Player.fromGlickoScale(mu, phiStar, player.sigma));
+      });
+    }
+
+    function getPlayerOrCreate(playerMap, name) {
+      const trimmed = (name || '').trim();
+      if (!trimmed) return new Glicko2Player();
+      if (!playerMap.has(trimmed)) playerMap.set(trimmed, new Glicko2Player());
+      return playerMap.get(trimmed);
+    }
+
+    function getTeamState(p1Key, p2Key, playerMap) {
+      const p1 = getPlayerOrCreate(playerMap, p1Key);
+      const p2 = getPlayerOrCreate(playerMap, p2Key);
+      const teamMu = (p1.mu + p2.mu) / 2.0;
+      const teamPhi = Math.sqrt(p1.phi * p1.phi + p2.phi * p2.phi) / 2.0;
+      return { mu: teamMu, phi: teamPhi };
+    }
+
+    function updatePeriod(playerMap, periodMatches) {
+      const starting = new Map();
+      playerMap.forEach((p, name) => {
+        starting.set(name, new Glicko2Player(p.rating, p.rd, p.sigma));
+      });
+
+      const observations = new Map();
+
+      for (const m of periodMatches) {
+        const t1State = getTeamState(m.team1[0], m.team1[1], starting);
+        const t2State = getTeamState(m.team2[0], m.team2[1], starting);
+
+        const scoreT1 = m.score;
+        const scoreT2 = 1.0 - m.score;
+
+        m.team1.forEach(p => {
+          if (!observations.has(p)) observations.set(p, []);
+          observations.get(p).push({ oppMu: t2State.mu, oppPhi: t2State.phi, score: scoreT1, weight: m.weight });
+        });
+
+        m.team2.forEach(p => {
+          if (!observations.has(p)) observations.set(p, []);
+          observations.get(p).push({ oppMu: t1State.mu, oppPhi: t1State.phi, score: scoreT2, weight: m.weight });
+        });
+      }
+
+      observations.forEach((obsList, pName) => {
+        const player = getPlayerOrCreate(starting, pName);
+        const mu = player.mu;
+        const phi = player.phi;
+
+        let sumV = 0.0;
+        let sumDelta = 0.0;
+
+        for (const obs of obsList) {
+          const gPhi = g(obs.oppPhi);
+          const eVal = expected(mu, obs.oppMu, obs.oppPhi);
+          sumV += obs.weight * gPhi * gPhi * eVal * (1.0 - eVal);
+          sumDelta += obs.weight * gPhi * (obs.score - eVal);
+        }
+
+        if (sumV <= 0) return;
+
+        const v = 1.0 / sumV;
+        const delta = v * sumDelta;
+        const newSigma = solveNewSigma(phi, player.sigma, delta, v, TAU);
+        const phiStar = Math.sqrt(phi * phi + newSigma * newSigma);
+        let newPhi = 1.0 / Math.sqrt((1.0 / (phiStar * phiStar)) + (1.0 / v));
+
+        const minPhi = MIN_RD / GLICKO_SCALE;
+        newPhi = Math.max(newPhi, minPhi);
+        const newMu = mu + newPhi * newPhi * sumDelta;
+
+        playerMap.set(pName, Glicko2Player.fromGlickoScale(newMu, newPhi, newSigma));
+      });
+    }
+
+    function toIsoDate(value) {
+      if (!value) return null;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+      const parts = String(value).split('/');
+      if (parts.length === 3) {
+        const d = String(parts[0]).padStart(2, '0');
+        const m = String(parts[1]).padStart(2, '0');
+        const y = String(parts[2]);
+        return `${y}-${m}-${d}`;
+      }
+      const dt = new Date(value);
+      if (Number.isNaN(dt.getTime())) return null;
+      return dt.toISOString().split('T')[0];
+    }
+
+    function addDays(iso, days) {
+      const d = new Date(`${iso}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function formatDisplayDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(`${iso}T00:00:00Z`);
+      return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function formatShortDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(`${iso}T00:00:00Z`);
+      return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    }
+
+    function dayDifferenceInDays(isoA, isoB) {
+      const a = new Date(`${isoA}T00:00:00Z`).getTime();
+      const b = new Date(`${isoB}T00:00:00Z`).getTime();
+      return Math.round((b - a) / 86400000);
+    }
+
+    function formatRating(value) {
+      if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+      return Number(value).toFixed(2).replace('.', ',');
+    }
+
+    function getMatchEventTag(match) {
+      const rawType = String(match && (match.event_type || match.type || '')).trim().toLowerCase();
+      if (rawType === 'grupo_liga') return { label: 'Liga', className: 'league' };
+      if (rawType === 'pozo' || rawType === 'doble_ko') return { label: 'Torneo', className: 'tournament' };
+      return { label: 'Partido', className: 'match' };
+    }
+
+    function getSelectedPlayerMatchOutcome(match, playerName) {
+      const team1 = [String(match.p1a || '').trim(), String(match.p1b || '').trim()].filter(Boolean);
+      const team2 = [String(match.p2a || '').trim(), String(match.p2b || '').trim()].filter(Boolean);
+      const playerOnTeam1 = team1.includes(playerName);
+      const playerOnTeam2 = team2.includes(playerName);
+      if (!playerOnTeam1 && !playerOnTeam2) return null;
+
+      const setScores = [
+        [Number.parseInt(String(match.s11 || '').trim(), 10), Number.parseInt(String(match.s21 || '').trim(), 10)],
+        [Number.parseInt(String(match.s12 || '').trim(), 10), Number.parseInt(String(match.s22 || '').trim(), 10)],
+        [Number.parseInt(String(match.s13 || '').trim(), 10), Number.parseInt(String(match.s23 || '').trim(), 10)]
+      ];
+
+      let team1Sets = 0;
+      let team2Sets = 0;
+      setScores.forEach(([a, b]) => {
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+        if (a === 0 && b === 0) return;
+        if (a > b) team1Sets++;
+        else if (b > a) team2Sets++;
+      });
+
+      if (team1Sets === team2Sets) return null;
+
+      const playerWon = playerOnTeam1 ? team1Sets > team2Sets : team2Sets > team1Sets;
+      return playerWon ? 'win' : 'loss';
+    }
+
+    function buildMatchLineHtml(match, playerName) {
+      const team1 = [match.p1a, match.p1b].filter(Boolean).join(' / ');
+      const team2 = [match.p2a, match.p2b].filter(Boolean).join(' / ');
+      const tag = getMatchEventTag(match);
+      const resultClass = getSelectedPlayerMatchOutcome(match, playerName);
+
+      const setScores = [
+        [match.s11, match.s21],
+        [match.s12, match.s22],
+        [match.s13, match.s23]
+      ].filter(([a, b]) => {
+        if (a === null || a === undefined || b === null || b === undefined) return false;
+        const ai = Number.parseInt(String(a).trim(), 10);
+        const bi = Number.parseInt(String(b).trim(), 10);
+        if (!Number.isFinite(ai) || !Number.isFinite(bi)) return false;
+        if (ai === 0 && bi === 0) return false;
+        return true;
+      });
+
+      if (!setScores.length) return null;
+
+      const scoreText = setScores.map(([a, b]) => `${String(a ?? 0)}-${String(b ?? 0)}`).join(', ');
+      const scoreHtml = `<span class="match-result ${resultClass || ''}">${scoreText}</span>`;
+      return '<div class="match-item"><span class="event-tag ' + tag.className + '">' + tag.label + '</span><strong>' + team1 + '</strong> vs <strong>' + team2 + '</strong> — ' + scoreHtml + '</div>';
+    }
+
+    function buildDailyHistoricalSeries() {
+      const playerMap = new Map();
+      allNames.forEach((name) => {
+        const clean = String(name || '').trim();
+        if (!clean) return;
+        playerMap.set(clean, new Glicko2Player());
+      });
+
+      const byDate = new Map();
+      allMatches.forEach((m) => {
+        const day = toIsoDate(m.date) || toIsoDate(m.start_date);
+        if (!day || day < MIN_DATE) return;
+        const rec = {
+          team1: [String(m.p1a || '').trim(), String(m.p1b || '').trim()].filter(Boolean),
+          team2: [String(m.p2a || '').trim(), String(m.p2b || '').trim()].filter(Boolean),
+          score: 0,
+          weight: 1
+        };
+
+        if (rec.team1.length !== 2 || rec.team2.length !== 2) return;
+
+        const s1 = [m.s11, m.s12, m.s13].map(v => Number.parseInt(String(v || '').trim(), 10)).filter(v => Number.isFinite(v));
+        const s2 = [m.s21, m.s22, m.s23].map(v => Number.parseInt(String(v || '').trim(), 10)).filter(v => Number.isFinite(v));
+
+        if (!s1.length || !s2.length) return;
+
+        let sets1 = 0;
+        let sets2 = 0;
+        let totalGames1 = 0;
+        let totalGames2 = 0;
+
+        for (let i = 0; i < 3; i++) {
+          const a = s1[i];
+          const b = s2[i];
+          if (Number.isFinite(a) && Number.isFinite(b)) {
+            totalGames1 += a;
+            totalGames2 += b;
+            if (a > b) sets1++;
+            else if (b > a) sets2++;
+          }
+        }
+
+        if (sets1 === sets2) return;
+        const winnerIsTeam1 = sets1 > sets2;
+        const score = winnerIsTeam1 ? 1.0 : 0.0;
+        const totalGames = totalGames1 + totalGames2;
+        if (totalGames === 0) return;
+
+        const x = winnerIsTeam1 ? totalGames1 / totalGames : totalGames2 / totalGames;
+        const f_x = (4.0 * x - 1.0) / (x + 1.0);
+        let weight = f_x;
+        if (!Number.isFinite(weight) || weight <= 0) weight = 0.0001;
+
+        rec.score = score;
+        rec.weight = weight;
+
+        if (!byDate.has(day)) byDate.set(day, []);
+        byDate.get(day).push(rec);
+      });
+
+      const allDates = [];
+      const lastKnown = allMatches.length ? allMatches.map(m => toIsoDate(m.date) || toIsoDate(m.start_date)).filter(Boolean).sort().slice(-1)[0] || new Date().toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+      let cursor = MIN_DATE;
+      const end = lastKnown > new Date().toISOString().slice(0, 10) ? new Date().toISOString().slice(0, 10) : lastKnown;
+      const limitDate = new Date(`${end}T00:00:00Z`);
+      const startDate = new Date(`${cursor}T00:00:00Z`);
+      const msPerDay = 24 * 60 * 60 * 1000;
+      let counter = 0;
+
+      while (startDate.getTime() <= limitDate.getTime() && counter < DAILY_SNAPSHOT_LIMIT) {
+        const dateStr = startDate.toISOString().slice(0, 10);
+        allDates.push(dateStr);
+        startDate.setTime(startDate.getTime() + msPerDay);
+        counter++;
+      }
+
+      const historical = [];
+      const selectedPlayerMap = new Map(playerMap);
+
+      allDates.forEach((dateStr) => {
+        decayAllPlayersOneDay(selectedPlayerMap);
+        if (byDate.has(dateStr)) {
+          updatePeriod(selectedPlayerMap, byDate.get(dateStr));
+        }
+
+        historical.push({
+          date: dateStr,
+          values: new Map(selectedPlayerMap)
+        });
+      });
+
+      return historical;
+    }
+
+    function getPlayerSeries(playerName) {
+      if (!playerName) return [];
+      const cleaned = String(playerName).trim();
+      if (!cleaned) return [];
+      return dailySeries.map((entry) => {
+        const value = entry.values.get(cleaned) || new Glicko2Player();
+        return {
+          date: entry.date,
+          rating: value.rating,
+          rd: value.rd
+        };
+      });
+    }
+
+    function updateRangeLabel() {
+      const start = dailySeries[currentWindowStartIndex]?.date;
+      const end = dailySeries[Math.min(currentWindowStartIndex + WINDOW_DAYS - 1, dailySeries.length - 1)]?.date;
+      if (!start || !end) {
+        document.getElementById('rangeLabel').textContent = 'Sin datos';
+        return;
+      }
+      document.getElementById('rangeLabel').textContent = `${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+    }
+
+    function renderChart() {
+      const playerName = document.getElementById('playerSelect').value;
+      if (!playerName) {
+        document.getElementById('ratingChart').innerHTML = '';
+        document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+
+      const series = getPlayerSeries(playerName);
+      if (!series.length) {
+        document.getElementById('ratingChart').innerHTML = '';
+        document.getElementById('summary').textContent = 'No hay datos para este jugador en el rango seleccionado.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+
+      const windowSeries = series.slice(currentWindowStartIndex, currentWindowStartIndex + WINDOW_DAYS);
+      if (!windowSeries.length) {
+        document.getElementById('summary').textContent = 'Sin datos disponibles en este intervalo.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+
+      const svg = document.getElementById('ratingChart');
+      const width = 820;
+      const height = 310;
+      const padding = { top: 18, right: 16, bottom: 34, left: 42 };
+      const plotW = width - padding.left - padding.right;
+      const plotH = height - padding.top - padding.bottom;
+
+      const values = windowSeries.map(d => d.rating);
+      const minVal = Math.min(...values) - 30;
+      const maxVal = Math.max(...values) + 30;
+      const yRange = maxVal - minVal || 1;
+
+      const xForIndex = (index) => padding.left + (windowSeries.length === 1 ? plotW / 2 : (index / (windowSeries.length - 1)) * plotW);
+      const yForValue = (value) => padding.top + ((maxVal - value) / yRange) * plotH;
+
+      const gridLines = Array.from({ length: 5 }, (_, i) => {
+        const value = minVal + (i / 4) * yRange;
+        const y = yForValue(value);
+        return `
+          <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="rgba(148,163,184,0.28)" stroke-dasharray="4 4" />
+          <text x="8" y="${y + 4}" fill="#667085" font-size="11">${Math.round(value)}</text>
+        `;
+      }).join('');
+
+      const xLabels = windowSeries.map((point, idx) => {
+        const x = xForIndex(idx);
+        return `<text x="${x}" y="${height - 10}" text-anchor="middle" fill="#667085" font-size="11">${formatShortDate(point.date)}</text>`;
+      }).join('');
+
+      const points = windowSeries.map((point, idx) => ({
+        ...point,
+        x: xForIndex(idx),
+        y: yForValue(point.rating)
+      }));
+
+      const polyline = points.map((point) => `${point.x},${point.y}`).join(' ');
+
+      const dayValueMarkup = points.map((point) => `
+        <g data-day="${point.date}" class="chart-point" style="cursor:pointer">
+          <circle cx="${point.x}" cy="${point.y}" r="5.5" fill="#22c55e" stroke="#fff" stroke-width="2" />
+          <circle cx="${point.x}" cy="${point.y}" r="12" fill="transparent" data-day="${point.date}" />
+        </g>
+      `).join('');
+
+      svg.innerHTML = `
+        <g>
+          ${gridLines}
+          <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="rgba(15,23,42,0.18)" />
+          <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="rgba(15,23,42,0.18)" />
+          <polyline fill="none" stroke="#16a34a" stroke-width="2.5" points="${polyline}" opacity="0.95" />
+          ${dayValueMarkup}
+          ${xLabels}
+        </g>
+      `;
+
+      const selected = windowSeries.find((point) => point.date === selectedDay) || windowSeries[windowSeries.length - 1];
+      selectedDay = selected.date;
+      updateSelectedDayDetails(playerName, selectedDay);
+
+      svg.querySelectorAll('[data-day]').forEach((node) => {
+        node.addEventListener('click', () => {
+          const day = node.getAttribute('data-day');
+          if (!day) return;
+          openDayDetail(playerName, day);
+        });
+      });
+
+      updateRangeLabel();
+      syncNavigationButtons();
+    }
+
+    function updateSelectedDayDetails(playerName, day) {
+      if (!playerName) {
+        document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+
+      const selectedData = getPlayerSeries(playerName).find((point) => point.date === day) || { rating: null, rd: null };
+      const rating = selectedData.rating ?? 0;
+      const rd = selectedData.rd ?? 0;
+      const dayMatches = allMatches.filter((m) => {
+        const matchDay = toIsoDate(m.date) || toIsoDate(m.start_date);
+        if (matchDay !== day) return false;
+        const namesInMatch = [String(m.p1a || '').trim(), String(m.p1b || '').trim(), String(m.p2a || '').trim(), String(m.p2b || '').trim()];
+        return namesInMatch.includes(playerName);
+      });
+
+      const summaryText = 'Día ' + formatDisplayDate(day) + ' · ' + playerName + ' · Rating: ' + formatRating(rating) + ' ± ' + formatRating(rd);
+      document.getElementById('summary').textContent = summaryText;
+
+      const listEl = document.getElementById('matchList');
+      const validMatches = dayMatches
+        .map((m) => buildMatchLineHtml(m, playerName))
+        .filter(Boolean);
+
+      listEl.innerHTML = validMatches.length
+        ? validMatches.join('')
+        : '<div class="match-item muted">No hubo partidos para este jugador en este día.</div>';
+    }
+
+    function openDayDetail(playerName, day) {
+      selectedDay = day;
+      updateSelectedDayDetails(playerName, day);
+    }
+
+    function syncNavigationButtons() {
+      const prevButton = document.getElementById('prevWindowBtn');
+      const nextButton = document.getElementById('nextWindowBtn');
+      prevButton.disabled = currentWindowStartIndex <= 0;
+      nextButton.disabled = currentWindowStartIndex + WINDOW_DAYS >= dailySeries.length;
+    }
+
+    function moveWindow(direction) {
+      if (!dailySeries.length) return;
+      const maxStart = Math.max(0, dailySeries.length - WINDOW_DAYS);
+      currentWindowStartIndex = Math.min(maxStart, Math.max(0, currentWindowStartIndex + direction));
+      renderChart();
+    }
+
+    function populatePlayers() {
+      const select = document.getElementById('playerSelect');
+      const sortedNames = [...new Set(allNames.map((name) => String(name).trim()).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base', numeric: true })
+      );
+
+      select.innerHTML = '<option value="">-- Selecciona un jugador --</option>';
+      sortedNames.forEach((name) => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+      select.value = '';
+    }
+
+    function setDefaultPlayerSelection() {
+      const select = document.getElementById('playerSelect');
+      select.value = '';
+    }
+
+    function handlePlayerChange() {
+      const selected = document.getElementById('playerSelect').value;
+      if (!selected) {
+        document.getElementById('ratingChart').innerHTML = '';
+        document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+      const series = getPlayerSeries(selected);
+      if (!series.length) {
+        document.getElementById('summary').textContent = 'No hay datos para este jugador.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+      const lastDay = series[series.length - 1].date;
+      const lastIndex = dailySeries.findIndex((point) => point.date === lastDay);
+      currentWindowStartIndex = Math.max(0, lastIndex - WINDOW_DAYS + 1);
+      renderChart();
+    }
+
+    async function loadData() {
+      const namesRes = await fetch('/api/getNames?ts=' + Date.now());
+      const namesData = await namesRes.json();
+      allNames = (namesData.names || []).map((n) => String(n).trim()).filter(Boolean);
+
+      const matchesRes = await fetch('/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko,legacy&ts=' + Date.now());
+      const matchesData = await matchesRes.json();
+      allMatches = (matchesData.matches || []).filter((m) => {
+        const date = toIsoDate(m.date) || toIsoDate(m.start_date);
+        if (!date) return false;
+        return date >= MIN_DATE;
+      });
+
+      populatePlayers();
+      setDefaultPlayerSelection();
+      dailySeries = buildDailyHistoricalSeries();
+      if (!dailySeries.length) {
+        document.getElementById('rangeLabel').textContent = 'Sin datos';
+        document.getElementById('summary').textContent = 'No hay datos disponibles para mostrar.';
+        return;
+      }
+
+      currentWindowStartIndex = Math.max(0, dailySeries.length - WINDOW_DAYS);
+      document.getElementById('rangeLabel').textContent = 'Selecciona un jugador';
+      document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
+      document.getElementById('matchList').innerHTML = '';
+      document.getElementById('ratingChart').innerHTML = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('playerSelect').addEventListener('change', handlePlayerChange);
+      document.getElementById('prevWindowBtn').addEventListener('click', () => moveWindow(-1));
+      document.getElementById('nextWindowBtn').addEventListener('click', () => moveWindow(1));
+      await loadData();
+    });
+  </script>
+</body>
+</html>
