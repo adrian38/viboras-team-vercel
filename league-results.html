@@ -50,7 +50,6 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
   .tag{font-weight:400;font-size:0.75rem}
   .set-list{display:inline;font-size:calc(1rem - 3pt)}
   .set-item{display:inline;margin-right:8px}
-  .pos-badge{width:15.5px;height:15.5px;margin-right:4px}
   #durationLine,
   #phaseLimitLine,
   #provisionalNote,
@@ -58,14 +57,16 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
   .muted{font-size:0.85rem}
   #leagueViewToggle{margin-top:18px !important}
 }
-  </style>
-  <style>
-  .pos-badge{display:inline-flex;width:34px;height:34px;border-radius:999px;align-items:center;justify-content:center;background:#fff;border:1px solid #e5e7eb;margin-right:10px;font-weight:700;color:#0b1530}
-  .rating-name{display:flex;align-items:center}
-  .pos-badge.pos-1{background:#FDE68A;border-color:#F6C84A}
-  .pos-badge.pos-2{background:#E5E7EB;border-color:#BFC6CC}
-  .pos-badge.pos-3{background:#F2C79D;border-color:#D69A6A}
-  </style>
+
+.pos-badge{display:inline-flex;width:34px;height:34px;border-radius:999px;align-items:center;justify-content:center;background:#fff;border:1px solid #e5e7eb;margin-right:10px;font-weight:700;color:#0b1530}
+.rating-name{display:flex;align-items:center}
+.pos-badge.pos-1{background:#FDE68A;border-color:#F6C84A}
+.pos-badge.pos-2{background:#E5E7EB;border-color:#BFC6CC}
+.pos-badge.pos-3{background:#F2C79D;border-color:#D69A6A}
+
+@media(max-width:720px){
+  .pos-badge{width:25.5px;height:25.5px;margin-right:8px}
+}
 </style>
 </head>
 <body>
@@ -607,6 +608,68 @@ function applyFilter(){
   }
 }
 
+async function downloadCSV(){
+  const leagueId = document.getElementById('leagueSelect').value
+  if(!leagueId){ alert('Selecciona una liga para descargar los resultados'); return }
+
+  const league = leagues.find(l => String(l.id) === String(leagueId))
+  if(!league){ alert('No se pudo localizar la liga seleccionada'); return }
+
+  const group = document.getElementById('groupSelect').value
+  const phase = document.getElementById('phaseSelect').value
+  const player = (document.getElementById('player').value || '').trim().toLowerCase()
+
+  let filtered = (allMatches || []).filter(m => (m.event_name || '').startsWith(`${league.name}_`))
+  filtered = filtered.filter(m => {
+    const parsed = parseEventNameForLeague(m.event_name || '', league.name)
+    if(!parsed) return false
+    if(group && group !== 'all' && parsed.group !== group) return false
+    if(phase && phase !== 'all' && String(parsed.phase) !== String(phase)) return false
+    return true
+  })
+
+  if(player){
+    filtered = filtered.filter(m => [m.p1a, m.p1b, m.p2a, m.p2b].some(n => (n || '').toLowerCase().includes(player)))
+  }
+
+  filtered = filtered.slice().sort((a, b) => {
+    const da = parseDateValue(a.date || a.match_date || '') || new Date(0)
+    const db = parseDateValue(b.date || b.match_date || '') || new Date(0)
+    return da - db
+  })
+
+  const header = [
+    'fecha',
+    'equipo1_jugA', 'equipo1_jugB',
+    'equipo2_jugA', 'equipo2_jugB',
+    'equipo1_set1', 'equipo2_set1',
+    'equipo1_set2', 'equipo2_set2',
+    'equipo1_set3', 'equipo2_set3',
+    'formato'
+  ]
+
+  const rows = filtered.map(m => [
+    m.date || '',
+    m.p1a || '', m.p1b || '',
+    m.p2a || '', m.p2b || '',
+    m.s11 || '', m.s21 || '',
+    m.s12 || '', m.s22 || '',
+    m.s13 || '', m.s23 || '',
+    m.format || ''
+  ])
+
+  const csvContent = [header, ...rows].map(r => r.join(';')).join('\n')
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'resultados_liga.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+
 function renderGroupRatings(league){
   const container = document.getElementById('ratingContainer')
   if(!league){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
@@ -666,6 +729,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   leagueSelectEl.addEventListener('change', onLeagueChange)
   document.getElementById('filterBtn').addEventListener('click', applyFilter)
   document.getElementById('phaseSelect').addEventListener('change', ()=>{ updatePhaseLimitLine(); applyFilter() })
+  document.getElementById('downloadBtn').addEventListener('click', downloadCSV)
   // player select change applies filter immediately
   document.getElementById('player').addEventListener('change', applyFilter)
   document.querySelectorAll('#leagueViewToggle .view-btn').forEach(b=> b.addEventListener('click', ()=>{ setLeagueView(b.getAttribute('data-view')); applyFilter() }))
