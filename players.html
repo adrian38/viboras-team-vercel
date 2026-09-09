@@ -283,6 +283,15 @@
     .match-result.win { color: #15803d; }
     .match-result.loss { color: #b91c1c; }
 
+    .match-score-block {
+      display: inline-block;
+    }
+
+    .match-score-separator {
+      display: inline-block;
+      margin: 0 6px;
+    }
+
     @media (max-width: 720px) {
       body { padding: 16px; }
       .card { padding: 14px; }
@@ -291,6 +300,34 @@
       select { width: 100%; min-width: 0; }
       .chart-shell { padding: 8px; }
       svg { min-width: 620px; }
+
+      .summary,
+      .summary-delta,
+      .match-item,
+      .match-item strong,
+      .event-tag,
+      .match-result {
+        font-size: 0.7rem;
+      }
+
+      .summary,
+      .match-item {
+        line-height: 1.45;
+      }
+
+      .match-item {
+        display: block;
+      }
+
+      .match-score-separator {
+        display: none;
+      }
+
+      .match-score-block {
+        display: block;
+        margin: 6px 0 0 0;
+        text-align: center;
+      }
     }
   </style>
 </head>
@@ -601,7 +638,7 @@
 
       const scoreText = setScores.map(([a, b]) => `${String(a ?? 0)}-${String(b ?? 0)}`).join(', ');
       const scoreHtml = `<span class="match-result ${resultClass || ''}">${scoreText}</span>`;
-      return '<div class="match-item"><span class="event-tag ' + tag.className + '">' + tag.label + '</span><strong>' + team1 + '</strong> vs <strong>' + team2 + '</strong> — ' + scoreHtml + '</div>';
+      return '<div class="match-item"><span class="event-tag ' + tag.className + '">' + tag.label + '</span><strong>' + team1 + '</strong> vs <strong>' + team2 + '</strong><span class="match-score-separator"> — </span><span class="match-score-block">' + scoreHtml + '</span></div>';
     }
 
     function buildDailyHistoricalSeries() {
