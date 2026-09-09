@@ -378,6 +378,14 @@ function isPendingMatch(m){
   return m.s11 === '0' && m.s21 === '0' && (m.s12 === '' || m.s12 === null) && (m.s22===''||m.s22==null) && (m.s13===''||m.s13==null) && (m.s23===''||m.s23==null)
 }
 
+function getTodayDateText(){
+  const d = new Date()
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
 function computeRating(matches){
   // league order: wins -> sets percentage -> games percentage
   const stats = new Map()
@@ -856,8 +864,9 @@ async function submitEditResult(){
   // validate optional sets numeric if present
   for(const v of [s12,s22,s13,s23]){ if(v!=='' && !/^\d+$/.test(v)){ alert('Los sets deben ser números enteros no negativos'); return } }
 
+  const isEmptyPending = isPendingMatch(editTargetMatch)
   const payload = {
-    date: formatDateText(editTargetMatch.date || ''),
+    date: isEmptyPending ? getTodayDateText() : formatDateText(editTargetMatch.date || ''),
     p1a: editTargetMatch.p1a, p1b: editTargetMatch.p1b, p2a: editTargetMatch.p2a, p2b: editTargetMatch.p2b,
     s11: s11, s21: s21, s12: s12, s22: s22, s13: s13, s23: s23
   }
