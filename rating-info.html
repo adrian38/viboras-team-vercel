@@ -58,11 +58,12 @@ li{margin-bottom:8px}
       <li><strong>Puntuación de Nivel:</strong> Todos los jugadores comienzan con 1500 puntos. Si ganas partidos, tus puntos suben; si pierdes, bajan. Ganar a una pareja más fuerte te dará muchos más puntos que ganar a un equipo al que tenías fácil superar.</li>
       <li><strong>Fiabilidad (Confianza del Sistema):</strong> Mide qué tan consolidado está tu nivel en función de tu actividad reciente. A menor fiabilidad, más puntos ganas o pierdes en cada partido para ajustar tu nivel rápidamente:
         <ul style="margin-top:8px">
-          <li><span class="badge badge-sin">Sin fiabilidad</span> / <span class="badge badge-muy-baja">Muy baja</span> Sin datos o inactivo mucho tiempo ($RD \ge 260$). El sistema aún te está evaluando y tus puntos variarán drásticamente.</li>
-          <li><span class="badge badge-baja">Baja</span> Has empezado a jugar o vuelves tras semanas parado ($RD < 260$). Equivale a haber jugado <strong>1 o 2 partidos</strong>.</li>
-          <li><span class="badge badge-media">Media</span> Nivel en proceso de estabilización ($RD < 190$). Equivale a unos <strong>3 a 5 partidos</strong> recientes (o un torneo rápido de un día).</li>
-          <li><span class="badge badge-alta">Alta</span> Tu rating refleja fielmente tu nivel ($RD < 150$). Equivale a llevar <strong>varias semanas activo</strong> (aprox. 6 a 8 partidos estándar o un torneo completo más algún partido).</li>
-          <li><span class="badge badge-muy-alta">Muy alta</span> Máxima precisión del sistema ($RD < 120$). Requiere un <strong>ritmo constante de juego semanal</strong> (más de 8-10 partidos recientes). Tus puntos cambiarán de forma muy gradual.</li>
+          <li><span class="badge badge-sin">Sin fiabilidad</span> Sin datos o ha pasado demasiado tiempo desde tu última actividad ($RD = 350$).
+          <li><span class="badge badge-muy-baja">Muy baja</span> El sistema aún te está evaluando y tus puntos variarán drásticamente ($RD < 350$). Normalmente equivale a haber jugado solo <strong>1 o 2 partidos</strong>.</li>
+          <li><span class="badge badge-baja">Baja</span> Ya hay una primera idea de tu nivel, pero sigue siendo provisional ($RD < 300$). Normalmente equivale a haber jugado entre <strong>3 y 5 partidos</strong>.</li>
+          <li><span class="badge badge-media">Media</span> Nivel en proceso de estabilización ($RD < 250$). Normalmente equivale a haber jugado unos <strong>6-10 partidos</strong> en los últimos meses.</li>
+          <li><span class="badge badge-alta">Alta</span> El rating ofrece una estimación sólida y representativa de tu nivel actual ($RD < 200$). Suele alcanzarse al llegar a la <strong>docena de partidos recientes</strong>. Para conservar esta fiabilidad se necesita cierta continuidad.</li>
+          <li><span class="badge badge-muy-alta">Muy alta</span> Máxima precisión del sistema ($RD < 150$). Mantener esta fiabilidad requiere un <strong>ritmo constante de juego semanal</strong> en los últimos meses. Tus puntos cambiarán de forma más gradual.</li>
         </ul>
       </li>
       <li><strong>Adaptación a Partidos 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja promediando el nivel y la incertidumbre de ambos integrantes antes de compararla con la pareja rival.</li>

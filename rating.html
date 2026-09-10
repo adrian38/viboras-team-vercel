@@ -649,9 +649,9 @@ function computeRatings(entries, includeInactive = false, minReliability = 'any'
       if (!Number.isFinite(rd)) return false;
 
       if (minReliability === 'very_low') return rd < 350;
-      if (minReliability === 'low') return rd < 260;
-      if (minReliability === 'medium') return rd < 190;
-      if (minReliability === 'high') return rd < 150;
+      if (minReliability === 'low') return rd < 300;
+      if (minReliability === 'medium') return rd < 250;
+      if (minReliability === 'high') return rd < 200;
       return true;
     });
   }
@@ -685,10 +685,10 @@ function renderTable(rows) {
     if (!Number.isFinite(v)) return { bars: 0, color: '', label: '' };
 
     if (v >= 350) return { bars: 0, color: '#dc2626', label: 'Sin fiabilidad' };
-    if (v < 120) return { bars: 5, color: '#16a34a', label: 'Muy alta' };
-    if (v < 150) return { bars: 4, color: '#65a30d', label: 'Alta' };
-    if (v < 190) return { bars: 3, color: '#ca8a04', label: 'Media' };
-    if (v < 260) return { bars: 2, color: '#ea580c', label: 'Baja' };
+    if (v < 150) return { bars: 5, color: '#16a34a', label: 'Muy alta' };
+    if (v < 200) return { bars: 4, color: '#65a30d', label: 'Alta' };
+    if (v < 250) return { bars: 3, color: '#ca8a04', label: 'Media' };
+    if (v < 300) return { bars: 2, color: '#ea580c', label: 'Baja' };
     return { bars: 1, color: '#dc2626', label: 'Muy baja' };
   }
 
