@@ -354,8 +354,8 @@ function updatePeriod(playerMap, periodMatches) {
       const gPhi = g(effectiveObservationPhi);
       const eVal = expected(mu, obs.oppMu, effectiveObservationPhi);
 
-      sumV += obs.weight * gPhi * gPhi * eVal * (1.0 - eVal);
-      sumDelta += obs.weight * gPhi * (obs.score - eVal);
+      sumV     += obs.weight * 0.25 * gPhi * gPhi * eVal * (1.0 - eVal);
+      sumDelta += obs.weight * 0.5  * gPhi * (obs.score - eVal);
     }
 
     if (sumV <= 0) return;
