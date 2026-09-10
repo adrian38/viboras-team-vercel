@@ -478,6 +478,10 @@
       return { mu: teamMu, phi: teamPhi };
     }
 
+    function getEffectiveObservationMu(playerMu, teamMu, opponentTeamMu) {
+      return opponentTeamMu + (playerMu - teamMu);
+    }
+
     function getEffectiveObservationPhi(opponentTeamPhi, teammatePhi) {
       const safeOpp = Number.isFinite(opponentTeamPhi) ? opponentTeamPhi : 0;
       const safeTeammate = Number.isFinite(teammatePhi) ? teammatePhi : 0;
@@ -502,15 +506,21 @@
         m.team1.forEach((p, idx) => {
           const teammate = m.team1[1 - idx] || p;
           const teammatePhi = getPlayerOrCreate(starting, teammate).phi;
+          const teammateMu = getPlayerOrCreate(starting, teammate).mu;
+          const playerMu = getPlayerOrCreate(starting, p).mu;
+          const effectiveObservationMu = getEffectiveObservationMu(playerMu, (playerMu + teammateMu) / 2.0, t2State.mu);
           if (!observations.has(p)) observations.set(p, []);
-          observations.get(p).push({ oppMu: t2State.mu, oppPhi: t2State.phi, teammatePhi, score: scoreT1, weight: m.weight });
+          observations.get(p).push({ oppMu: effectiveObservationMu, oppPhi: t2State.phi, teammatePhi, score: scoreT1, weight: m.weight });
         });
 
         m.team2.forEach((p, idx) => {
           const teammate = m.team2[1 - idx] || p;
           const teammatePhi = getPlayerOrCreate(starting, teammate).phi;
+          const teammateMu = getPlayerOrCreate(starting, teammate).mu;
+          const playerMu = getPlayerOrCreate(starting, p).mu;
+          const effectiveObservationMu = getEffectiveObservationMu(playerMu, (playerMu + teammateMu) / 2.0, t1State.mu);
           if (!observations.has(p)) observations.set(p, []);
-          observations.get(p).push({ oppMu: t1State.mu, oppPhi: t1State.phi, teammatePhi, score: scoreT2, weight: m.weight });
+          observations.get(p).push({ oppMu: effectiveObservationMu, oppPhi: t1State.phi, teammatePhi, score: scoreT2, weight: m.weight });
         });
       }
 

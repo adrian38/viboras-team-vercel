@@ -295,7 +295,11 @@ function getTeamState(p1Key, p2Key, playerMap) {
   return { mu: teamMu, phi: teamPhi };
 }
 
-function geteffectiveObservationPhi(opponentTeamPhi, teammatePhi) {
+function getEffectiveObservationMu(playerMu, teamMu, opponentTeamMu) {
+  return opponentTeamMu + (playerMu - teamMu);
+}
+
+function getEffectiveObservationPhi(opponentTeamPhi, teammatePhi) {
   const safeOpp = Number.isFinite(opponentTeamPhi) ? opponentTeamPhi : 0;
   const safeTeammate = Number.isFinite(teammatePhi) ? teammatePhi : 0;
   return Math.hypot(safeOpp, safeTeammate / 2);
@@ -319,8 +323,9 @@ function updatePeriod(playerMap, periodMatches) {
     m.team1.forEach((p, idx) => {
       const teammate = m.team1[1 - idx] || p;
       const teammatePhi = getPlayerOrCreate(starting, teammate).phi;
+      const teammateMu = getPlayerOrCreate(starting, teammate).mu;
       const playerMu = getPlayerOrCreate(starting, p).mu;
-      const effectiveObservationMu = t2State.mu + (playerMu - t1State.mu);
+      const effectiveObservationMu = getEffectiveObservationMu(playerMu, (playerMu + teammateMu) / 2.0, t2State.mu);
       if (!observations.has(p)) observations.set(p, []);
       observations.get(p).push({ oppMu: effectiveObservationMu, oppPhi: t2State.phi, teammatePhi, score: scoreT1, weight: m.weight });
     });
@@ -328,8 +333,9 @@ function updatePeriod(playerMap, periodMatches) {
     m.team2.forEach((p, idx) => {
       const teammate = m.team2[1 - idx] || p;
       const teammatePhi = getPlayerOrCreate(starting, teammate).phi;
+      const teammateMu = getPlayerOrCreate(starting, teammate).mu;
       const playerMu = getPlayerOrCreate(starting, p).mu;
-      const effectiveObservationMu = t1State.mu + (playerMu - t2State.mu);
+      const effectiveObservationMu = getEffectiveObservationMu(playerMu, (playerMu + teammateMu) / 2.0, t1State.mu);
       if (!observations.has(p)) observations.set(p, []);
       observations.get(p).push({ oppMu: effectiveObservationMu, oppPhi: t1State.phi, teammatePhi, score: scoreT2, weight: m.weight });
     });
@@ -344,7 +350,7 @@ function updatePeriod(playerMap, periodMatches) {
     let sumDelta = 0.0;
 
     for (const obs of obsList) {
-      const effectiveObservationPhi = geteffectiveObservationPhi(obs.oppPhi, obs.teammatePhi);
+      const effectiveObservationPhi = getEffectiveObservationPhi(obs.oppPhi, obs.teammatePhi);
       const gPhi = g(effectiveObservationPhi);
       const eVal = expected(mu, obs.oppMu, effectiveObservationPhi);
 

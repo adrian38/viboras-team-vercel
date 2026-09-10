@@ -93,9 +93,9 @@ li{margin-bottom:8px}
     <div class="formula-box">
       $$\mu_{\text{equipo}} = \frac{\mu_1 + \mu_2}{2}, \quad \phi_{\text{equipo}} = \frac{\sqrt{\phi_1^2 + \phi_2^2}}{2}$$
     </div>
-    <p>La información que aporta cada partido no depende solo de la incertidumbre del equipo rival, sino también de la del compañero. Por eso el sistema calcula una incertidumbre efectiva que mezcla ambas fuentes:</p>
+    <p>Para cada jugador, la expectativa del resultado se ajusta con la diferencia entre su nivel y la media de su pareja, y la incertidumbre efectiva de la observación combina la incertidumbre del equipo rival con la del compañero:</p>
     <div class="formula-box">
-      $$\phi_{\text{ef}} = \sqrt{\phi_{\text{equipo_rival}}^2 + \left(\frac{\phi_{\text{compañero}}}{2}\right)^2}$$
+      $$\mu_{\text{obs}} = \mu_{\text{rival}} + (\mu_{\text{jugador}} - \mu_{\text{equipo}}), \quad \phi_{\text{obs}} = \sqrt{\phi_{\text{rival}}^2 + \left(\frac{\phi_{\text{compañero}}}{2}\right)^2}$$
     </div>
 
     <p><strong>Pérdida Diaria Secuencial</strong></p>
