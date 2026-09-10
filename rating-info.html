@@ -89,11 +89,14 @@ li{margin-bottom:8px}
     </ul>
 
     <p><strong>Modelado 2v2</strong></p>
-    <p>El estado combinado de la pareja ($\mu_{\text{team}}, \phi_{\text{team}}$) se deriva del promedio de los parámetros individuales:</p>
+    <p>El estado combinado de la pareja ($\mu_{\text{equipo}}, \phi_{\text{equipo}}$) se deriva del promedio de los parámetros individuales:</p>
     <div class="formula-box">
-      $$\mu_{\text{team}} = \frac{\mu_1 + \mu_2}{2}, \quad \phi_{\text{team}} = \frac{\sqrt{\phi_1^2 + \phi_2^2}}{2}$$
+      $$\mu_{\text{equipo}} = \frac{\mu_1 + \mu_2}{2}, \quad \phi_{\text{equipo}} = \frac{\sqrt{\phi_1^2 + \phi_2^2}}{2}$$
     </div>
-    <p>Cada jugador actualiza sus parámetros de forma independiente frente al estado global del equipo rival.</p>
+    <p>La información que aporta cada partido no depende solo de la incertidumbre del equipo rival, sino también de la del compañero. Por eso el sistema calcula una incertidumbre efectiva que mezcla ambas fuentes:</p>
+    <div class="formula-box">
+      $$\phi_{\text{ef}} = \sqrt{\phi_{\text{equipo_rival}}^2 + \left(\frac{\phi_{\text{compañero}}}{2}\right)^2}$$
+    </div>
 
     <p><strong>Pérdida Diaria Secuencial</strong></p>
     <p>En lugar de saltos estáticos, el sistema avanza día a día en el calendario. Cada 24 horas transcurridas, la incertidumbre de todos los jugadores evoluciona mediante:</p>
