@@ -73,52 +73,68 @@ li{margin-bottom:8px}
     </ul>
 
     <h2>Detalles Técnicos y Fórmulas</h2>
-    <p>Para quienes desean profundizar en la configuración matemática, el motor funciona sobre una adaptación del algoritmo <strong>Glicko-2</strong> ajustado a ciclos diarios y partidas en parejas.</p>
+    <p>El documento describe la adaptación de Glicko-2 que implementa el sistema. A continuación se precisa la notación y se vinculan las fórmulas con la implementación real.</p>
 
-    <p><strong>Parámetros Base y Escala</strong></p>
+    <p><strong>Notación y parámetros</strong></p>
     <ul>
-      <li><strong>Rating Inicial ($r$):</strong> 1500.0</li>
-      <li><strong>Desviación Inicial ($RD$):</strong> 350.0</li>
-      <li><strong>Volatilidad del Sistema ($\tau$):</strong> 0.50</li>
-      <li><strong>Volatilidad Base ($\sigma$):</strong> 0.06</li>
+      <li><strong>$\mu$:</strong> rating del jugador en la escala interna (1500 ≈ puntuación base).</li>
+      <li><strong>$\phi$:</strong> desviación estándar (incertidumbre). Se usa $\phi = RD / 173.7178$.</li>
+      <li><strong>$\sigma$:</strong> volatilidad — parámetro almacenado por jugador y actualizado en cada periodo.</li>
+      <li><strong>Valores por defecto:</strong> $\mu_0=1500.0$, $RD_0=350.0$, $\tau=0.5$, $\sigma_0=0.06$.</li>
+      <li><strong>Límites:</strong> $\phi_{\min}\approx0.460$ (equiv. $RD_{\min}=80$), $\phi_{\max}\approx2.015$ (equiv. $RD_{\max}=350$).</li>
     </ul>
 
-    <p><strong>Límites de Desviación ($RD$)</strong></p>
-    <ul>
-      <li><strong>$RD_{\min} = 80.0$ ($\phi \approx 0.460$):</strong> Limita la compresión excesiva de varianza durante torneos de un solo día (4–10 partidos cortos), asegurando que los jugadores mantengan al menos un 22% de su varianza inicial.</li>
-      <li><strong>$RD_{\max} = 350.0$ ($\phi \approx 2.015$):</strong> Fija el tope de inactividad en la línea base de jugadores no clasificados.</li>
-    </ul>
+    <p><strong>Flujo de cálculo</strong></p>
+    <ol>
+      <li>Construir el mapa de jugadores y convertir a la escala interna ($\mu,\phi$).</li>
+      <li>Procesar partidos por fecha: antes de cada fecha se aplica la inflación diaria de $\phi$; luego se computan observaciones del día y se actualizan jugadores.</li>
+      <li>Para cada jugador se agregan observaciones ponderadas y se calcula $v$ y $\Delta$ adaptados; después se calcula la nueva $\sigma$, $\phi$ y $\mu$.</li>
+    </ol>
 
     <p><strong>Modelado 2v2</strong></p>
-    <p>El estado combinado de la pareja ($\mu_{\text{equipo}}, \phi_{\text{equipo}}$) se deriva del promedio de los parámetros individuales:</p>
+    <p>Dados dos jugadores con $(\mu_1,\phi_1)$ y $(\mu_2,\phi_2)$, el equipo se representa como:</p>
     <div class="formula-box">
-      $$\mu_{\text{equipo}} = \frac{\mu_1 + \mu_2}{2}, \quad \phi_{\text{equipo}} = \frac{\sqrt{\phi_1^2 + \phi_2^2}}{2}$$
+      $$\mu_{team} = \frac{\mu_1 + \mu_2}{2}, \qquad \phi_{team} = \frac{\sqrt{\phi_1^2 + \phi_2^2}}{2}$$
     </div>
-    <p>Para cada jugador, la expectativa del resultado se ajusta con la diferencia entre su nivel y la media de su pareja, y la incertidumbre efectiva de la observación combina la incertidumbre del equipo rival con la del compañero:</p>
+    <p>La observación efectiva atribuida al jugador i es:</p>
     <div class="formula-box">
-      $$\mu_{\text{obs}} = \mu_{\text{rival}} + (\mu_{\text{jugador}} - \mu_{\text{equipo}}), \quad \phi_{\text{obs}} = \sqrt{\phi_{\text{rival}}^2 + \left(\frac{\phi_{\text{compañero}}}{2}\right)^2}$$
-    </div>
-
-    <p><strong>Pérdida Diaria Secuencial</strong></p>
-    <p>En lugar de saltos estáticos, el sistema avanza día a día en el calendario. Cada 24 horas transcurridas, la incertidumbre de todos los jugadores evoluciona mediante:</p>
-    <div class="formula-box">
-      $$\phi^* = \min\left(\sqrt{\phi^2 + \sigma^2}, \; \phi_{\max}\right)$$
+      $$\mu_{obs,i} = \mu_{opponent\_team} + \frac{\mu_i - \mu_{partner}}{2},\\
+      \phi_{obs,i} = \sqrt{\phi_{opponent\_team}^2 + \left(\frac{\phi_{partner}}{2}\right)^2}$$
     </div>
 
-    <p><strong>Ponderación de Observaciones y Dominancia ($w$)</strong></p>
-    <p>El peso final de cada partido ($w$) se calcula multiplicando el factor de formato ($w_1$) por el factor de dominancia de juegos ($w_2$):</p>
+    <p><strong>Evolución diaria de incertidumbre</strong></p>
+    <p>Antes de procesar partidos de una fecha el sistema incrementa $\phi$ por cada jugador según:</p>
+    <div class="formula-box">
+      $$\phi^* = \min\left(\sqrt{\phi^2 + \sigma^2},\; \phi_{\max}\right)$$
+    </div>
+    <p>La fórmula usa la volatilidad $\sigma$ del propio jugador; es decir, $\sigma$ no es un único valor global, sino que se mantiene y actualiza por jugador.</p>
+
+    <p><strong>Ponderación por formato y dominancia</strong></p>
+    <p>El peso de un partido se calcula como:</p>
+    <div class="formula-box">
+      $$w = w_f \cdot w_d$$
+    </div>
     <ul>
-      <li><strong>Factor de Formato ($w_1$):</strong> Se asigna $w_1 = 0.25$ para partidos cortos por tiempo y $w_1 = 1.0$ para partidos estándar a sets completos.</li>
-      <li><strong>Factor de Dominancia ($w_2$):</strong> Se calcula mediante la función de dominancia basada en la proporción de juegos ganados por el vencedor ($x = \frac{\text{Juegos Ganados}}{\text{Juegos Totales}}$):
-        <div class="formula-box">
-          $$f(x) = \frac{4.0 \cdot x - 1.0}{x + 1.0}$$
-        </div>
+      <li><strong>$w_f$ (formato):</strong> $0.25$ para partidos cortos por tiempo; $1.0$ para partidos estándar.</li>
+      <li><strong>$w_d$ (dominancia):</strong> con $x$ = fracción de juegos ganados por el vencedor,
+        $$w_d = f(x) = \frac{4x - 1}{x + 1}, \qquad x=\dfrac{\text{juegos ganados}}{\text{juegos totales}}$$
       </li>
     </ul>
-    <p>El peso total del partido $w = w_1 \cdot w_2$ escala tanto la varianza esperada ($v$) como la diferencia de puntuación ($\Delta$) en la actualización de Glicko-2:</p>
+
+    <p><strong>Varianza efectiva y actualización</strong></p>
+    <p>Se definen: $g(\phi)=\dfrac{1}{\sqrt{1 + \tfrac{3\phi^2}{\pi^2}}}$ (factor de ajuste de incertidumbre), $E_i$ = expectativa de la observación i (probabilidad prevista de victoria, calculada con $g(\phi)$ y la diferencia de $\mu$) y $s_i$ = resultado observado (1 = victoria, 0 = derrota). Cada observación tiene peso $w_i$ (formato × dominancia).</p>
+    <p>En forma compacta la implementación usa:</p>
     <div class="formula-box">
-      $$v^{-1} = \sum w_i \, g(\phi_i)^2 \, E_i \, (1 - E_i), \quad \Delta = v \sum w_i \, g(\phi_i) \, (s_i - E_i)$$
+      $$v^{-1} = \sum_i w_i\; 0.25\; g(\phi_i)^2\; E_i(1-E_i),\\
+      \Delta = v \sum_i w_i\; 0.5\; g(\phi_i)\; (s_i - E_i)$$
     </div>
+    <p>A partir de $v$ y $\Delta$ se calcula $\sigma'$ mediante el solver iterativo; seguidamente:</p>
+    <div class="formula-box">
+      $$\phi^* = \sqrt{\phi^2 + {\sigma'}^2},\\
+      \phi' = \max\left(\dfrac{1}{\sqrt{1/\phi^{*2} + 1/v}},\; \phi_{\min}\right),\\
+      \mu' = \mu + \phi'^2 \; \sum_i 0.5\; w_i \; g(\phi_i) \; (s_i - E_i)$$
+    </div>
+    <p>Finalmente se almacenan $(\mu',\phi',\sigma')$ por jugador.</p>
 
     <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
       <div></div>
