@@ -545,14 +545,17 @@ function fetchMatches() {
 function buildDateOptionsFromMatches(matches) {
   const isoToday = new Date().toISOString().split('T')[0];
   if (!matches || matches.length === 0) return [isoToday];
-  const dates = new Set();
-  matches.forEach(m => { if (m && m.date) dates.add(m.date); });
-  const arr = Array.from(dates).sort();
-  if (arr.length === 0) return [isoToday];
-  const first = arr[0];
-  const last = arr[arr.length - 1];
 
-  const out = [];
+  const dates = Array.from(new Set(
+    (matches || []).map(m => m && m.date).filter(Boolean)
+  )).filter(date => date <= isoToday).sort();
+
+  if (dates.length === 0) return [isoToday];
+
+  const first = dates[0];
+  let last = dates[dates.length - 1];
+  if (last < isoToday) last = isoToday;
+
   const [y1,m1,d1] = first.split('-').map(Number);
   const [y2,m2,d2] = last.split('-').map(Number);
   let cur = Date.UTC(y1, m1 - 1, d1);
