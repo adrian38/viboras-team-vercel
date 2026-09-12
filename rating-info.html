@@ -60,10 +60,10 @@ li{margin-bottom:8px}
         <ul style="margin-top:8px">
           <li><span class="badge badge-sin">Sin fiabilidad</span> Sin datos o ha pasado demasiado tiempo desde tu última actividad ($RD = 350$).
           <li><span class="badge badge-muy-baja">Muy baja</span> El sistema aún te está evaluando y tus puntos variarán drásticamente ($RD < 350$). Normalmente equivale a haber jugado solo <strong>1 o 2 partidos</strong>.</li>
-          <li><span class="badge badge-baja">Baja</span> Ya hay una primera idea de tu nivel, pero sigue siendo provisional ($RD < 300$). Normalmente equivale a haber jugado entre <strong>3 y 5 partidos</strong>.</li>
-          <li><span class="badge badge-media">Media</span> Nivel en proceso de estabilización ($RD < 250$). Normalmente equivale a haber jugado unos <strong>6-10 partidos</strong> en los últimos meses.</li>
-          <li><span class="badge badge-alta">Alta</span> El rating ofrece una estimación sólida y representativa de tu nivel actual ($RD < 200$). Suele alcanzarse al llegar a la <strong>docena de partidos recientes</strong>. Para conservar esta fiabilidad se necesita cierta continuidad.</li>
-          <li><span class="badge badge-muy-alta">Muy alta</span> Máxima precisión del sistema ($RD < 150$). Mantener esta fiabilidad requiere un <strong>ritmo constante de juego semanal</strong> en los últimos meses. Tus puntos cambiarán de forma más gradual.</li>
+          <li><span class="badge badge-baja">Baja</span> Ya hay una primera idea de tu nivel, pero sigue siendo provisional ($RD < 230$). Normalmente equivale a haber jugado entre <strong>3 y 6 partidos</strong>.</li>
+          <li><span class="badge badge-media">Media</span> Nivel en proceso de estabilización ($RD < 170$). Normalmente equivale a haber jugado entre <strong>media y una docena de partidos</strong> en los últimos meses.</li>
+          <li><span class="badge badge-alta">Alta</span> El rating ofrece una estimación sólida y representativa de tu nivel actual ($RD < 130$). Suele alcanzarse al llegar al menos a la <strong>docena de partidos</strong> en los últimos meses. Para conservar esta fiabilidad se necesita cierta continuidad semanal.</li>
+          <li><span class="badge badge-muy-alta">Muy alta</span> Máxima precisión del sistema ($RD < 100$). Mantener esta fiabilidad requiere un <strong>ritmo constante de 2-3 partidos por semana</strong> en los últimos meses. Tus puntos cambiarán de forma más gradual.</li>
         </ul>
       </li>
       <li><strong>Adaptación a Partidos 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja promediando el nivel y la incertidumbre de ambos integrantes antes de compararla con la pareja rival.</li>
@@ -125,14 +125,14 @@ li{margin-bottom:8px}
     <p>Se definen: $g(\phi)=\dfrac{1}{\sqrt{1 + \tfrac{3\phi^2}{\pi^2}}}$ (factor de ajuste de incertidumbre), $E_i$ = expectativa de la observación i (probabilidad prevista de victoria, calculada con $g(\phi)$ y la diferencia de $\mu$) y $s_i$ = resultado observado (1 = victoria, 0 = derrota). Cada observación tiene peso $w_i$ (formato × dominancia).</p>
     <p>En forma compacta la implementación usa:</p>
     <div class="formula-box">
-      $$v^{-1} = \sum_i w_i\; 0.25\; g(\phi_i)^2\; E_i(1-E_i),\\
-      \Delta = v \sum_i w_i\; 0.5\; g(\phi_i)\; (s_i - E_i)$$
+      $$v^{-1} = \sum_i w_i\; g(\phi_i)^2\; E_i(1-E_i),\\
+      \Delta = v \sum_i w_i\; g(\phi_i)\; (s_i - E_i)$$
     </div>
     <p>A partir de $v$ y $\Delta$ se calcula $\sigma'$ mediante el solver iterativo; seguidamente:</p>
     <div class="formula-box">
       $$\phi^* = \sqrt{\phi^2 + {\sigma'}^2},\\
       \phi' = \max\left(\dfrac{1}{\sqrt{1/\phi^{*2} + 1/v}},\; \phi_{\min}\right),\\
-      \mu' = \mu + \phi'^2 \; \sum_i 0.5\; w_i \; g(\phi_i) \; (s_i - E_i)$$
+      \mu' = \mu + \phi'^2 \; \sum_i w_i \; g(\phi_i) \; (s_i - E_i)$$
     </div>
     <p>Finalmente se almacenan $(\mu',\phi',\sigma')$ por jugador.</p>
 
