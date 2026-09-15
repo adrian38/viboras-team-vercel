@@ -767,9 +767,11 @@ function renderTable(rows) {
         reliabilityHtml = progressHtml;
       }
 
+      const playerLink = `/players?player=${encodeURIComponent(r.name)}`;
+
       html.push(`<tr>
         <td class="rank-col">${r.rank}</td>
-        <td class="name-col">${escapeHtml(r.name)}</td>
+        <td class="name-col"><a href="${playerLink}" style="color:inherit; text-decoration:none; cursor:pointer;">${escapeHtml(r.name)}</a></td>
         <td class="rating-col">${ratingFormatted}</td>
         <td class="fiabilidad-col">${reliabilityHtml}</td>
       </tr>`);

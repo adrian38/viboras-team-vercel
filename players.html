@@ -977,12 +977,16 @@
 
     function setDefaultPlayerSelection() {
       const select = document.getElementById('playerSelect');
-      select.value = '';
+      const params = new URLSearchParams(window.location.search);
+      const requestedPlayer = params.get('player') || '';
+      const exists = Array.from(select.options).some((option) => option.value === requestedPlayer);
+
+      select.value = exists ? requestedPlayer : '';
     }
 
     function handlePlayerChange() {
       const selected = document.getElementById('playerSelect').value;
-      if (!selected) {
+      if (!selected || !Array.isArray(dailySeries) || !dailySeries.length) {
         document.getElementById('ratingChart').innerHTML = '';
         document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
         document.getElementById('matchList').innerHTML = '';
@@ -1022,11 +1026,16 @@
         return;
       }
 
+      const requestedPlayer = document.getElementById('playerSelect').value;
       currentWindowStartIndex = Math.max(0, dailySeries.length - WINDOW_DAYS);
-      document.getElementById('rangeLabel').textContent = 'Selecciona un jugador';
-      document.getElementById('summary').textContent = 'Selecciona un punto para ver el detalle del día';
+      document.getElementById('rangeLabel').textContent = requestedPlayer ? requestedPlayer : 'Selecciona un jugador';
+      document.getElementById('summary').textContent = requestedPlayer ? 'Cargando evolución...' : 'Selecciona un punto para ver el detalle del día';
       document.getElementById('matchList').innerHTML = '';
       document.getElementById('ratingChart').innerHTML = '';
+
+      if (requestedPlayer) {
+        handlePlayerChange();
+      }
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
