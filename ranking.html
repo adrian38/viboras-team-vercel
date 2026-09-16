@@ -263,14 +263,14 @@ function computeTournamentStandings(matches) {
 // ============================================================================
 
 function fetchActivePlayers() {
-  return fetch('/api/getNames')
+  return fetch('/api/read?action=getNames')
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(db => (db && db.names) ? db.names : [])
     .catch(e => { console.error('Error cargando jugadores', e); return []; });
 }
 
 function fetchMatches() {
-  const url = `/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`;
+  const url = `/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,doble_ko&ts=${Date.now()}`;
   return fetch(url)
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(db => {

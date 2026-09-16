@@ -50,7 +50,7 @@ for(let i=0; i<7; i++){
     }
 
     try{
-      const res = await fetch("/api/submitName",{
+      const res = await fetch("/api/write?action=submitName",{
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name })

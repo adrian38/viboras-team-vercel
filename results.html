@@ -151,7 +151,7 @@ let slotsData = {}
 
 async function load(){
 
-  const res = await fetch(`/api/getSlots?date=${date}`)
+  const res = await fetch(`/api/read?action=getSlots&date=${date}`)
   const data = await res.json()
 
   slotsData = data

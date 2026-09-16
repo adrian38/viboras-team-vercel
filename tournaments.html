@@ -187,7 +187,7 @@ function setupEventSelector(events, matches){
 
 async function loadData(){
   try {
-    const url = `/api/getResults?eventType=pozo,doble_ko&ts=${Date.now()}`
+    const url = `/api/read?action=getResults&eventType=pozo,doble_ko&ts=${Date.now()}`
     const res = await fetch(url)
     const db = await res.json()
 
@@ -211,7 +211,7 @@ async function loadData(){
 
 async function loadPlayerNames(){
   try{
-    const res = await fetch('/api/getNames?ts=' + Date.now())
+    const res = await fetch('/api/read?action=getNames&ts=' + Date.now())
     const j = await res.json()
     const sel = document.getElementById('player')
     sel.innerHTML = ''

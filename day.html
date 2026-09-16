@@ -134,7 +134,7 @@ for(let h=9; h<=21; h++){
 }
 
 async function loadSlots(){
-  const res = await fetch(`/api/getSlots?date=${date}`)
+  const res = await fetch(`/api/read?action=getSlots&date=${date}`)
   const data = await res.json()
   document.querySelectorAll(".slot").forEach(el=>{
     const t = el.dataset.time
@@ -154,7 +154,7 @@ async function submitVote(){
   const selected = [...document.querySelectorAll(".selected")]
       .map(e=>e.dataset.time)
 
-  await fetch("/api/submitVote",{
+  await fetch("/api/write?action=submitVote",{
     method:"POST",
     body:JSON.stringify({
       date,
@@ -186,7 +186,7 @@ loadSlots()
 async function loadNames(){
   const isLocal = location.hostname==="localhost" || location.hostname==="127.0.0.1"
   try{
-    const res = await fetch("/api/getNames")
+    const res = await fetch("/api/read?action=getNames")
     const db = await res.json()
     const names = (db && db.names)
       ? db.names.slice().sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))

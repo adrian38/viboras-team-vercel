@@ -1005,11 +1005,11 @@
     }
 
     async function loadData() {
-      const namesRes = await fetch('/api/getNames?ts=' + Date.now());
+      const namesRes = await fetch('/api/read?action=getNames&ts=' + Date.now());
       const namesData = await namesRes.json();
       allNames = (namesData.names || []).map((n) => String(n).trim()).filter(Boolean);
 
-      const matchesRes = await fetch('/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko,legacy&ts=' + Date.now());
+      const matchesRes = await fetch('/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,doble_ko,legacy&ts=' + Date.now());
       const matchesData = await matchesRes.json();
       allMatches = (matchesData.matches || []).filter((m) => {
         const date = toIsoDate(m.date) || toIsoDate(m.start_date);

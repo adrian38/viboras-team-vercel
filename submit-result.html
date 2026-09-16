@@ -192,7 +192,7 @@ async function submitResult(){
   submitInFlight = true
 
   try{
-    const res = await fetch('/api/submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    const res = await fetch('/api/write?action=submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     const json = await res.json().catch(() => ({}))
     if(!res.ok || !json.ok){ throw new Error('save_failed') }
     alert('Resultado guardado')
@@ -210,7 +210,7 @@ async function submitResult(){
 async function loadNamesIntoSelects(){
   const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
   try{
-    const res = await fetch('/api/getNames')
+    const res = await fetch('/api/read?action=getNames')
     const db = await res.json()
     const names = (db && db.names) ? (db.names.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))) : []
     const ids = ['p1a','p1b','p2a','p2b']

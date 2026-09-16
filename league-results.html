@@ -253,7 +253,7 @@ function updatePhaseLimitLine(){
 
 async function loadInitial(){
   try{
-    const lg = await (await fetch('/api/getLeagues')).json()
+    const lg = await (await fetch('/api/read?action=getLeagues')).json()
     leagues = Array.isArray(lg)?lg:[]
     const sel = document.getElementById('leagueSelect')
     sel.innerHTML = ''
@@ -276,7 +276,7 @@ async function loadInitial(){
     }catch(_){ }
 
     // load group events matches
-    const res = await fetch('/api/getResults?eventType=grupo_liga')
+    const res = await fetch('/api/read?action=getResults&eventType=grupo_liga')
     const db = await res.json()
     allMatches = db.matches || []
     allEvents = db.events || []
@@ -291,7 +291,7 @@ async function loadInitial(){
 
 async function loadPlayerNames(){
   try{
-    const res = await fetch('/api/getNames?ts=' + Date.now())
+    const res = await fetch('/api/read?action=getNames&ts=' + Date.now())
     const j = await res.json()
     const sel = document.getElementById('player')
     sel.innerHTML = ''
@@ -935,7 +935,7 @@ async function submitEditResult(){
   const btn = document.getElementById('e_save')
   btn.disabled = true; btn.textContent = 'Enviando...'
   try{
-    const res = await fetch('/api/submitResult',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+    const res = await fetch('/api/write?action=submitResult',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
     const j = await res.json().catch(()=>({}))
     if(!res.ok || !j.ok){ throw new Error('save_failed') }
     closeEditModal()

@@ -160,7 +160,7 @@ async function loadData(){
   const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
   let db = {matches:[]}
   try{
-    const url = `/api/getResults?eventType=ranked,legacy&ts=${Date.now()}`
+    const url = `/api/read?action=getResults&eventType=ranked,legacy&ts=${Date.now()}`
     const res = await fetch(url)
     db = await res.json()
   }catch(e){ console.error('Could not load results',e) }
@@ -190,7 +190,7 @@ function setupSelectors(matches){
 
 async function loadPlayerNames(){
   try{
-    const res = await fetch('/api/getNames?ts=' + Date.now())
+    const res = await fetch('/api/read?action=getNames&ts=' + Date.now())
     const j = await res.json()
     const sel = document.getElementById('player')
     sel.innerHTML = ''
@@ -412,7 +412,7 @@ document.getElementById('adminAddBtn').addEventListener('click', async ()=>{
   }
 
   try {
-    await fetch('/api/submitResult', {
+    await fetch('/api/write?action=submitResult', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -427,7 +427,7 @@ document.getElementById('adminAddBtn').addEventListener('click', async ()=>{
 async function deleteMatch(m){
   if(!confirm('¿Eliminar este partido?')) return
   try{
-    await fetch('/api/deleteResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:m.date,p1a:m.p1a,p1b:m.p1b,p2a:m.p2a,p2b:m.p2b})})
+    await fetch('/api/write?action=deleteResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:m.date,p1a:m.p1a,p1b:m.p1b,p2a:m.p2a,p2b:m.p2b})})
     loadData()
   }catch(e){ console.error(e); alert('Error al eliminar') }
 }
@@ -438,7 +438,7 @@ document.getElementById('downloadBtn').addEventListener('click', ()=>{
 })
 
 async function downloadCSV(){
-  const res = await fetch("/api/getResults")
+  const res = await fetch("/api/read?action=getResults")
   const db = await res.json()
 
   if(!db.matches || db.matches.length===0){
@@ -552,7 +552,7 @@ function startEditRow(tr,m){
       _original: { date: m.date, p1a: m.p1a, p1b: m.p1b, p2a: m.p2a, p2b: m.p2b }
     }
     try{
-      await fetch('/api/submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      await fetch('/api/write?action=submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       loadData()
     }catch(e){ console.error(e); alert('Error al guardar') }
   })

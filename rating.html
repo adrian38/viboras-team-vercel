@@ -466,7 +466,7 @@ function fetchMatches() {
   }
 
   // Request also 'legacy' so we can build historical views; we'll filter client-side
-  return fetch(`/api/getResults?eventType=ranked,grupo_liga,pozo,doble_ko,legacy&ts=${Date.now()}`)
+  return fetch(`/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,doble_ko,legacy&ts=${Date.now()}`)
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(db => {
       const raw = (db && db.matches) ? db.matches : [];
@@ -632,7 +632,7 @@ function filterMatchesForCutoff(allMatches, cutoffIso) {
 }
 
 function loadNames(){
-  const url = '/api/getNames';
+  const url = '/api/read?action=getNames';
   return fetch(url)
     .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(db => { return (db && db.names) ? db.names : []; })

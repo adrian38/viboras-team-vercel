@@ -543,7 +543,7 @@ async function submitLeague(){
   }
 
   try{
-    const res = await fetch('/api/createLeague', {
+    const res = await fetch('/api/league-admin?action=createLeague', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -658,7 +658,7 @@ function showBracketPanel(){
   // load leagues into select
   (async ()=>{
     try{
-      const res = await fetch('/api/getLeagues')
+      const res = await fetch('/api/read?action=getLeagues')
       const json = await res.json()
       const sel = document.getElementById('bracketLeagueSelect')
       if(!sel) return
@@ -705,7 +705,7 @@ function showSubstitutionPanel(){
 
   ;(async ()=>{
     try{
-      const res = await fetch('/api/getLeagues')
+      const res = await fetch('/api/read?action=getLeagues')
       const json = await res.json()
       const sel = document.getElementById('substitutionLeagueSelect')
       if(!sel) return
@@ -735,7 +735,7 @@ async function loadSubstitutionGroupsForSelectedLeague(){
   if(!leagueId){ input.value = ''; return }
 
   try{
-    const res = await fetch('/api/getLeagues')
+    const res = await fetch('/api/read?action=getLeagues')
     const json = await res.json()
     const league = Array.isArray(json) ? json.find(l => String(l.id) === String(leagueId)) : null
     const rawGroups = league && league.substitution_groups ? league.substitution_groups : []
@@ -760,7 +760,7 @@ async function submitLeagueSubstitutions(){
   }
 
   try{
-    const res = await fetch('/api/updateLeagueSubstitutions', {
+    const res = await fetch('/api/league-admin?action=updateLeagueSubstitutions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ league_id: Number(leagueId), substitution_groups: groups })
@@ -786,7 +786,7 @@ async function submitLeagueBracket(){
   try{
     const csvText = await file.text()
     const payload = { league_id: Number(leagueId), csv: csvText }
-    const res = await fetch('/api/createLeagueBracket',{
+    const res = await fetch('/api/league-admin?action=createLeagueBracket',{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
     })
     const json = await res.json().catch(()=>({}))
@@ -819,7 +819,7 @@ async function submitPozoTournament(){
       csv: csvText
     }
 
-    const res = await fetch('/api/createPozoTournament', {
+    const res = await fetch('/api/league-admin?action=createPozoTournament', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -844,7 +844,7 @@ async function registerPlayer(){
   const name = el.value.trim()
   if(!name){ alert('Introduce un nombre completo'); return }
   try{
-    const res = await fetch('/api/submitName',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})})
+    const res = await fetch('/api/write?action=submitName',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})})
     const j = await res.json()
     if(j && j.ok){
       if(j.added){ alert('Jugador guardado'); el.value = '' }
@@ -860,7 +860,7 @@ function closeAdmin(){ const o=document.getElementById('adminOverlay'); if(o) o.
 async function loadAdminNames(){
   const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
   try{
-    const res = await fetch('/api/getNames')
+    const res = await fetch('/api/read?action=getNames')
     const db = await res.json()
     const names = (db && db.names) ? (db.names.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))) : []
     const container = document.getElementById('adminList')
@@ -884,7 +884,7 @@ async function loadAdminNames(){
       btn.onclick = (async ()=>{
         if(!confirm(`Eliminar "${n}"?`)) return
         try{
-          const endpoint = '/api/deleteName'
+          const endpoint = '/api/write?action=deleteName'
           const r = await fetch(endpoint,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
