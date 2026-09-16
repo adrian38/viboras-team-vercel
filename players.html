@@ -143,6 +143,12 @@
       font-size: 0.96rem;
       font-weight: 700;
       color: var(--muted);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      user-select: none;
     }
 
     .chart-shell {
@@ -343,7 +349,7 @@
 
       <div class="chart-toolbar">
         <button id="prevWindowBtn" class="nav-btn" type="button" aria-label="Anterior">←</button>
-        <div id="rangeLabel" class="range-label">Cargando…</div>
+        <button id="rangeLabel" class="range-label" type="button">Cargando…</button>
         <button id="nextWindowBtn" class="nav-btn" type="button" aria-label="Siguiente">→</button>
       </div>
 
@@ -362,14 +368,13 @@
 
   <script>
     const MIN_DATE = '2026-09-01';
-    const WINDOW_DAYS = 10;
     const DAILY_SNAPSHOT_LIMIT = 3650;
 
     let allNames = [];
     let allMatches = [];
     let dailySeries = [];
-    let currentWindowStartIndex = 0;
     let selectedDay = null;
+    let currentMonthDate = new Date();
 
     const GLICKO_SCALE = 173.7178;
     const TAU = 0.5;
@@ -771,14 +776,54 @@
       });
     }
 
+    function monthNames() {
+      return ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    }
+
+    function formatMonthLabel(date) {
+      const safeDate = date instanceof Date ? new Date(date) : new Date();
+      const month = monthNames()[safeDate.getUTCMonth() || safeDate.getMonth()];
+      const year = safeDate.getUTCFullYear ? safeDate.getUTCFullYear() : safeDate.getFullYear();
+      return `${month} ${year}`;
+    }
+
+    function getVisibleMonthStart(date) {
+      return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+    }
+
+    function getVisibleMonthEnd(date) {
+      return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
+    }
+
+    function clampMonthDate(date) {
+      const minMonth = new Date('2026-09-01T00:00:00Z');
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const currentMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      if (date < minMonth) return new Date(minMonth);
+      if (date > currentMonth) return new Date(currentMonth);
+      return new Date(date);
+    }
+
+    function getVisibleMonthSeries() {
+      const monthStart = getVisibleMonthStart(currentMonthDate);
+      const monthEnd = getVisibleMonthEnd(currentMonthDate);
+      const startIso = monthStart.toISOString().slice(0, 10);
+      const endDate = new Date(monthEnd);
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      if (endDate > today) endDate.setTime(today.getTime());
+      const endIso = endDate.toISOString().slice(0, 10);
+      return dailySeries.filter((point) => point.date >= startIso && point.date <= endIso);
+    }
+
     function updateRangeLabel() {
-      const start = dailySeries[currentWindowStartIndex]?.date;
-      const end = dailySeries[Math.min(currentWindowStartIndex + WINDOW_DAYS - 1, dailySeries.length - 1)]?.date;
-      if (!start || !end) {
-        document.getElementById('rangeLabel').textContent = 'Sin datos';
+      const visible = getVisibleMonthSeries();
+      if (!visible.length) {
+        document.getElementById('rangeLabel').textContent = formatMonthLabel(currentMonthDate);
         return;
       }
-      document.getElementById('rangeLabel').textContent = `${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+      document.getElementById('rangeLabel').textContent = formatMonthLabel(currentMonthDate);
     }
 
     function renderChart() {
@@ -798,26 +843,31 @@
         return;
       }
 
-      const windowSeries = series.slice(currentWindowStartIndex, currentWindowStartIndex + WINDOW_DAYS);
-      if (!windowSeries.length) {
+      const monthStart = getVisibleMonthStart(currentMonthDate);
+      const monthEnd = getVisibleMonthEnd(currentMonthDate);
+      const startIso = monthStart.toISOString().slice(0, 10);
+      const endIso = monthEnd.toISOString().slice(0, 10);
+      const visibleSeries = series.filter((point) => point.date >= startIso && point.date <= endIso);
+      if (!visibleSeries.length) {
         document.getElementById('summary').textContent = 'Sin datos disponibles en este intervalo.';
         document.getElementById('matchList').innerHTML = '';
         return;
       }
 
       const svg = document.getElementById('ratingChart');
-      const width = 820;
+      const daysInMonth = getVisibleMonthEnd(currentMonthDate).getUTCDate();
+      const width = Math.max(820, daysInMonth * 30);
       const height = 310;
       const padding = { top: 18, right: 16, bottom: 34, left: 42 };
       const plotW = width - padding.left - padding.right;
       const plotH = height - padding.top - padding.bottom;
 
-      const values = windowSeries.map(d => d.rating);
+      const values = visibleSeries.map(d => d.rating);
       const minVal = Math.min(...values) - 30;
       const maxVal = Math.max(...values) + 30;
       const yRange = maxVal - minVal || 1;
 
-      const xForIndex = (index) => padding.left + (windowSeries.length === 1 ? plotW / 2 : (index / (windowSeries.length - 1)) * plotW);
+      const xForIndex = (index) => padding.left + (visibleSeries.length === 1 ? plotW / 2 : (index / (visibleSeries.length - 1)) * plotW);
       const yForValue = (value) => padding.top + ((maxVal - value) / yRange) * plotH;
 
       const gridLines = Array.from({ length: 5 }, (_, i) => {
@@ -829,12 +879,12 @@
         `;
       }).join('');
 
-      const xLabels = windowSeries.map((point, idx) => {
+      const xLabels = visibleSeries.map((point, idx) => {
         const x = xForIndex(idx);
         return `<text x="${x}" y="${height - 10}" text-anchor="middle" fill="#667085" font-size="11">${formatShortDate(point.date)}</text>`;
       }).join('');
 
-      const points = windowSeries.map((point, idx) => ({
+      const points = visibleSeries.map((point, idx) => ({
         ...point,
         x: xForIndex(idx),
         y: yForValue(point.rating)
@@ -849,6 +899,8 @@
         </g>
       `).join('');
 
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.setAttribute('width', String(width));
       svg.innerHTML = `
         <g>
           ${gridLines}
@@ -860,7 +912,7 @@
         </g>
       `;
 
-      const selected = windowSeries.find((point) => point.date === selectedDay) || null;
+      const selected = visibleSeries.find((point) => point.date === selectedDay) || visibleSeries[visibleSeries.length - 1];
       if (selected) {
         selectedDay = selected.date;
         updateSelectedDayDetails(playerName, selectedDay);
@@ -948,14 +1000,24 @@
     function syncNavigationButtons() {
       const prevButton = document.getElementById('prevWindowBtn');
       const nextButton = document.getElementById('nextWindowBtn');
-      prevButton.disabled = currentWindowStartIndex <= 0;
-      nextButton.disabled = currentWindowStartIndex + WINDOW_DAYS >= dailySeries.length;
+      const minMonth = new Date('2026-09-01T00:00:00Z');
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const currentMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      prevButton.disabled = currentMonthDate.getTime() <= minMonth.getTime();
+      nextButton.disabled = currentMonthDate.getTime() >= currentMonth.getTime();
     }
 
     function moveWindow(direction) {
       if (!dailySeries.length) return;
-      const maxStart = Math.max(0, dailySeries.length - WINDOW_DAYS);
-      currentWindowStartIndex = Math.min(maxStart, Math.max(0, currentWindowStartIndex + direction));
+      const nextDate = new Date(Date.UTC(currentMonthDate.getUTCFullYear(), currentMonthDate.getUTCMonth() + direction, 1));
+      const minMonth = new Date('2026-09-01T00:00:00Z');
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const maxMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      if (nextDate < minMonth) return;
+      if (nextDate > maxMonth) return;
+      currentMonthDate = nextDate;
       renderChart();
     }
 
@@ -984,6 +1046,34 @@
       select.value = exists ? requestedPlayer : '';
     }
 
+    function promptMonthSelection() {
+      const suggested = `${String(currentMonthDate.getUTCMonth() + 1).padStart(2, '0')}/${currentMonthDate.getUTCFullYear()}`;
+      const input = prompt('Introduce un mes (MM/YYYY):', suggested);
+      if (input === null) return;
+      const match = String(input).trim().match(/^(\d{1,2})\/(\d{4})$/);
+      if (!match) {
+        alert('Formato inválido. Usa MM/YYYY, por ejemplo 03/2026');
+        return;
+      }
+      const month = Number(match[1]);
+      const year = Number(match[2]);
+      if (month < 1 || month > 12) {
+        alert('El mes debe estar entre 01 y 12');
+        return;
+      }
+      const minMonth = new Date('2026-09-01T00:00:00Z');
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const maxMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      const candidate = new Date(Date.UTC(year, month - 1, 1));
+      if (candidate < minMonth || candidate > maxMonth) {
+        alert('Solo se puede consultar desde Septiembre 2026 hasta el mes actual');
+        return;
+      }
+      currentMonthDate = candidate;
+      renderChart();
+    }
+
     function handlePlayerChange() {
       const selected = document.getElementById('playerSelect').value;
       if (!selected || !Array.isArray(dailySeries) || !dailySeries.length) {
@@ -992,15 +1082,7 @@
         document.getElementById('matchList').innerHTML = '';
         return;
       }
-      const series = getPlayerSeries(selected);
-      if (!series.length) {
-        document.getElementById('summary').textContent = 'No hay datos para este jugador.';
-        document.getElementById('matchList').innerHTML = '';
-        return;
-      }
-      const lastDay = series[series.length - 1].date;
-      const lastIndex = dailySeries.findIndex((point) => point.date === lastDay);
-      currentWindowStartIndex = Math.max(0, lastIndex - WINDOW_DAYS + 1);
+      currentMonthDate = clampMonthDate(new Date());
       renderChart();
     }
 
@@ -1027,8 +1109,8 @@
       }
 
       const requestedPlayer = document.getElementById('playerSelect').value;
-      currentWindowStartIndex = Math.max(0, dailySeries.length - WINDOW_DAYS);
-      document.getElementById('rangeLabel').textContent = requestedPlayer ? requestedPlayer : 'Selecciona un jugador';
+      currentMonthDate = clampMonthDate(new Date());
+      document.getElementById('rangeLabel').textContent = requestedPlayer ? formatMonthLabel(currentMonthDate) : 'Selecciona un jugador';
       document.getElementById('summary').textContent = requestedPlayer ? 'Cargando evolución...' : 'Selecciona un punto para ver el detalle del día';
       document.getElementById('matchList').innerHTML = '';
       document.getElementById('ratingChart').innerHTML = '';
@@ -1042,6 +1124,7 @@
       document.getElementById('playerSelect').addEventListener('change', handlePlayerChange);
       document.getElementById('prevWindowBtn').addEventListener('click', () => moveWindow(-1));
       document.getElementById('nextWindowBtn').addEventListener('click', () => moveWindow(1));
+      document.getElementById('rangeLabel').addEventListener('click', promptMonthSelection);
       await loadData();
     });
   </script>
