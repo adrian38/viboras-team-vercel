@@ -12,9 +12,13 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
 .block{background:#fff;border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
 .block-title{font-weight:700;margin-bottom:10px}
 .controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.view-toggle{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
+.view-toggle{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;align-items:center}
 .view-btn{background:#fff;color:#6b7280;border:1px solid rgba(15,23,42,0.08);padding:8px 12px;border-radius:999px;cursor:pointer}
 .view-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.classification-mode-toggle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;margin-bottom:8px}
+.classification-mode-label{font-weight:600;color:#374151;line-height:1.2}
+.classification-mode-btn{background:#ffffff;color:#1d4ed8;border-color:#bfdbfe}
+.classification-mode-btn.active{background:#bfd7fe;color:#1e3a8a;border-color:#93c5fd;box-shadow:0 0 0 1px rgba(59,130,246,0.08)}
 .filter-box{background:linear-gradient(180deg,#eaf4ff,#e1f0ff);padding:12px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);margin-bottom:12px}
 .select{padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
 .small-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 8px;border-radius:6px;cursor:pointer}
@@ -110,6 +114,12 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
       <button type="button" class="view-btn active" data-view="results">Resultados</button>
     </div>
 
+    <div id="classificationModeToggle" class="classification-mode-toggle" role="tablist" aria-label="Modo de clasificación" style="display:none">
+      <span class="classification-mode-label">Sustituciones:</span>
+      <button type="button" class="view-btn classification-mode-btn active" data-classification-mode="separate">Separadas</button>
+      <button type="button" class="view-btn classification-mode-btn" data-classification-mode="grouped">Agrupadas</button>
+    </div>
+
     <div id="provisionalNote" class="muted" style="margin-top:6px;display:none">Esta clasificación es provisional hasta la finalización de la liga.</div>
 
     <div id="ratingContainer" class="table-wrap" style="margin-top:6px;display:none"></div>
@@ -132,6 +142,7 @@ let allMatches = []
 let allEvents = []
 let leagues = []
 let currentView = 'results'
+let currentClassificationMode = 'separate'
 
 function formatDateText(text){
   if(!text) return ''
@@ -345,6 +356,7 @@ function setLeagueView(view){
   document.getElementById('ratingContainer').style.display = (currentView==='rating') ? 'block' : 'none'
   document.getElementById('pendingContainer').style.display = (currentView==='results') ? 'block' : 'none'
   document.getElementById('completedContainer').style.display = (currentView==='results') ? 'block' : 'none'
+  document.getElementById('classificationModeToggle').style.display = (currentView==='rating') ? 'flex' : 'none'
 
   // provisional note: only show when viewing classification
   const provisionalEl = document.getElementById('provisionalNote')
@@ -354,6 +366,44 @@ function setLeagueView(view){
     provisionalEl.style.display = isLeagueProvisional(league) ? 'block' : 'none'
   }else{
     provisionalEl.style.display = 'none'
+  }
+}
+
+function getLeagueSubstitutionGroups(league){
+  if(!league) return []
+  const raw = league.substitution_groups
+  if(!raw) return []
+  if(Array.isArray(raw)) return raw
+  if(typeof raw === 'string'){
+    try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : [] } catch(e) { return [] }
+  }
+  return []
+}
+
+function normalizePlayerName(name){
+  return String(name || '').trim()
+}
+
+function buildGroupedAliasMap(league){
+  const groups = getLeagueSubstitutionGroups(league)
+  const aliasMap = new Map()
+  groups.forEach(group => {
+    const items = Array.isArray(group) ? group.map(normalizePlayerName).filter(Boolean) : []
+    if(items.length <= 1) return
+    const canonical = items[0]
+    items.forEach(name => aliasMap.set(name, canonical))
+  })
+  return aliasMap
+}
+
+function setClassificationMode(mode){
+  currentClassificationMode = (mode === 'grouped') ? 'grouped' : 'separate'
+  document.querySelectorAll('#classificationModeToggle .view-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-classification-mode') === currentClassificationMode)
+  })
+  const selectedLeague = leagues.find(l => String(l.id) === String(document.getElementById('leagueSelect').value))
+  if(currentView === 'rating' && selectedLeague){
+    renderGroupRatings(selectedLeague)
   }
 }
 
@@ -386,13 +436,20 @@ function getTodayDateText(){
   return `${day}/${month}/${year}`
 }
 
-function computeRating(matches){
-  // league order: wins -> sets percentage -> games percentage
+function computeRating(matches, league = null, mode = 'separate'){
   const stats = new Map()
+  const aliasMap = buildGroupedAliasMap(league)
+
+  function resolveName(name){
+    const normalized = normalizePlayerName(name)
+    if(mode === 'grouped' && aliasMap.has(normalized)) return aliasMap.get(normalized)
+    return normalized
+  }
+
   function ensure(n){ if(!stats.has(n)) stats.set(n,{name:n,wins:0,setsWon:0,setsLost:0,gamesWon:0,gamesLost:0}) }
   matches.forEach(m=>{
-    const p1 = [(m.p1a||'').trim(), (m.p1b||'').trim()].filter(Boolean)
-    const p2 = [(m.p2a||'').trim(), (m.p2b||'').trim()].filter(Boolean)
+    const p1 = [(m.p1a||'').trim(), (m.p1b||'').trim()].filter(Boolean).map(resolveName)
+    const p2 = [(m.p2a||'').trim(), (m.p2b||'').trim()].filter(Boolean).map(resolveName)
     let t1=0,t2=0
     for(let i=1;i<=3;i++){
       const a = (m['s1'+i]!==undefined && m['s1'+i]!=='')? parseInt(m['s1'+i],10): NaN
@@ -441,9 +498,9 @@ function computeRating(matches){
   return out
 }
 
-function renderRating(matches){
+function renderRating(matches, league = null){
   const container = document.getElementById('ratingContainer')
-  const rating = computeRating(matches||[])
+  const rating = computeRating(matches||[], league, currentClassificationMode)
   if(!rating.length){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
   const table = document.createElement('table')
   const thead = document.createElement('thead')
@@ -697,7 +754,7 @@ function renderGroupRatings(league){
     // collect matches for this group across all phases
     const matches = allMatches.filter(m=>{ const parsed = parseEventNameForLeague(m.event_name||'', league.name); return parsed && parsed.group === groupName })
     const completedMatches = matches.filter(m=> !isPendingMatch(m))
-    const rating = computeRating(completedMatches)
+    const rating = computeRating(completedMatches, league, currentClassificationMode)
 
     if(!rating.length){ const empty = document.createElement('div'); empty.className='muted'; empty.innerText='Sin clasificación para mostrar.'; container.appendChild(empty); return }
 
@@ -741,6 +798,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   // player select change applies filter immediately
   document.getElementById('player').addEventListener('change', applyFilter)
   document.querySelectorAll('#leagueViewToggle .view-btn').forEach(b=> b.addEventListener('click', ()=>{ setLeagueView(b.getAttribute('data-view')); applyFilter() }))
+  document.querySelectorAll('#classificationModeToggle .view-btn').forEach(b=> b.addEventListener('click', ()=> setClassificationMode(b.getAttribute('data-classification-mode'))))
   // if a league was auto-selected during loadInitial, trigger the change handler to populate groups/results
   if(leagueSelectEl.value){ onLeagueChange() }
 })

@@ -106,6 +106,34 @@ function buildEventName(leagueName, groupName, phaseIndex) {
   return `${cleanLeague}_${cleanGroup}_Fase${phaseIndex}`;
 }
 
+function normalizeSubstitutionGroupsInput(value) {
+  const source = Array.isArray(value) ? value : [];
+  const groups = source
+    .map((group) => {
+      if (!Array.isArray(group)) return [];
+      return group
+        .map((player) => String(player ?? '').trim())
+        .filter(Boolean);
+    })
+    .filter((group) => group.length > 0);
+
+  const seen = new Set();
+  const sanitized = [];
+  for (const group of groups) {
+    const uniqueNames = [];
+    for (const player of group) {
+      if (seen.has(player)) {
+        throw new Error(`El jugador "${player}" no puede pertenecer a más de un grupo de sustitución`);
+      }
+      seen.add(player);
+      uniqueNames.push(player);
+    }
+    sanitized.push(uniqueNames);
+  }
+
+  return sanitized;
+}
+
 export default async function handler(req, res) {
   try {
     await ensureSchema();
@@ -118,6 +146,7 @@ export default async function handler(req, res) {
     const phaseCount = asInt(data?.phase_count, 0);
     const groupNames = Array.isArray(data?.group_names) ? data.group_names : [];
     const phases = Array.isArray(data?.phases) ? data.phases : [];
+    const substitutionGroups = normalizeSubstitutionGroupsInput(data?.substitution_groups);
 
     if (!name) {
       res.status(400).json({ ok: false, error: 'Falta el nombre de la liga' });
@@ -165,8 +194,8 @@ export default async function handler(req, res) {
     validatePhaseSchedule(startDate, endDate, phaseRecords);
 
     const leagueInsert = await sql`
-      INSERT INTO leagues (name, start_date, end_date)
-      VALUES (${name}, ${startDate}, ${endDate})
+      INSERT INTO leagues (name, start_date, end_date, substitution_groups)
+      VALUES (${name}, ${startDate}, ${endDate}, ${JSON.stringify(substitutionGroups)})
       RETURNING id
     `;
     const leagueId = leagueInsert.rows[0]?.id;

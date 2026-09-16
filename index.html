@@ -196,6 +196,7 @@ async function openAdmin(){
           <button class="btn" style="width:100%;text-align:left" onclick="showPlayerPanel()">Nuevo jugador</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showLeaguePanel()">Nueva liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showBracketPanel()">Nuevo cuadro de liga</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="showSubstitutionPanel()">Nueva sustitución en liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo torneo Doble KO</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showPozoPanel()">Nuevo torneo Pozo</button>
           <button class="btn red" style="width:100%;text-align:left" onclick="closeAdmin()">Cerrar</button>
@@ -347,6 +348,34 @@ function showPlayerPanel(){
     <div id="adminList" style="display:flex;flex-direction:column;gap:8px;overflow:auto"></div>
   `
   loadAdminNames()
+}
+
+function parseSubstitutionGroupsInput(rawText){
+  if(!rawText) return []
+  const lines = String(rawText).split(/\r?\n/)
+  const groups = []
+  const seen = new Set()
+
+  for(const line of lines){
+    const trimmed = line.trim()
+    if(!trimmed) continue
+    const names = trimmed.split(/[;,]/).map(part => part.trim()).filter(Boolean)
+    if(!names.length) continue
+    const uniqueNames = []
+    for(const name of names){
+      if(!name) continue
+      if(seen.has(name)){
+        throw new Error(`El jugador "${name}" no puede aparecer en más de un grupo de sustituciones`)
+      }
+      seen.add(name)
+      uniqueNames.push(name)
+    }
+    if(uniqueNames.length > 1){
+      groups.push(uniqueNames)
+    }
+  }
+
+  return groups
 }
 
 function renderLeagueDynamicFields(){
@@ -581,6 +610,25 @@ function showPozoPanel(){
   `
 }
 
+function formatSubstitutionGroupsForTextarea(groups){
+  let normalized = groups
+  if(typeof normalized === 'string'){
+    try {
+      normalized = JSON.parse(normalized)
+    } catch (e) {
+      return ''
+    }
+  }
+  if(!Array.isArray(normalized)) return ''
+  return normalized
+    .map((group) => {
+      if(!Array.isArray(group)) return ''
+      return group.map((player) => String(player || '').trim()).filter(Boolean).join(', ')
+    })
+    .filter(Boolean)
+    .join('\n')
+}
+
 function showBracketPanel(){
   const menu = document.getElementById('adminMenuColumn')
   const content = document.getElementById('adminContent')
@@ -627,6 +675,103 @@ function showBracketPanel(){
       }
     }catch(e){ console.error('Could not load leagues', e) }
   })()
+}
+
+function showSubstitutionPanel(){
+  const menu = document.getElementById('adminMenuColumn')
+  const content = document.getElementById('adminContent')
+  const adminMain = document.getElementById('adminMain')
+  const header = document.getElementById('adminHeaderTitle')
+  if(menu) menu.style.display = 'none'
+  if(adminMain) adminMain.style.display = 'flex'
+  if(content) content.style.display = 'flex'
+  if(header) header.innerText = 'Nueva sustitución en liga'
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        Liga
+        <select id="substitutionLeagueSelect" class="register-input"></select>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        Agrupaciones actuales
+        <textarea id="substitutionGroupsInput" class="register-input" rows="10" placeholder="Ejemplo:&#10;A, B, C&#10;D, E"></textarea>
+      </label>
+      <div style="color:var(--muted);font-size:0.9rem;line-height:1.4">
+        Escribe cada grupo en una línea. Cada línea representa un conjunto de jugadores que deben contarse como una sola entidad para la clasificación agrupada.
+      </div>
+      <button class="btn secondary-green" onclick="submitLeagueSubstitutions()">Guardar agrupaciones</button>
+    </div>
+  `
+
+  ;(async ()=>{
+    try{
+      const res = await fetch('/api/getLeagues')
+      const json = await res.json()
+      const sel = document.getElementById('substitutionLeagueSelect')
+      if(!sel) return
+      sel.innerHTML = ''
+      if(!Array.isArray(json) || json.length === 0){
+        sel.innerHTML = '<option value="">(sin ligas)</option>'
+        return
+      }
+      for(const league of json){
+        const opt = document.createElement('option')
+        opt.value = String(league.id)
+        opt.innerText = league.name
+        sel.appendChild(opt)
+      }
+      if(!sel.value && sel.options.length){ sel.value = sel.options[0].value }
+      sel.addEventListener('change', async ()=>{ await loadSubstitutionGroupsForSelectedLeague() })
+      await loadSubstitutionGroupsForSelectedLeague()
+    }catch(e){ console.error('Could not load substitution leagues', e) }
+  })()
+}
+
+async function loadSubstitutionGroupsForSelectedLeague(){
+  const sel = document.getElementById('substitutionLeagueSelect')
+  const input = document.getElementById('substitutionGroupsInput')
+  if(!sel || !input) return
+  const leagueId = sel.value
+  if(!leagueId){ input.value = ''; return }
+
+  try{
+    const res = await fetch('/api/getLeagues')
+    const json = await res.json()
+    const league = Array.isArray(json) ? json.find(l => String(l.id) === String(leagueId)) : null
+    const rawGroups = league && league.substitution_groups ? league.substitution_groups : []
+    input.value = formatSubstitutionGroupsForTextarea(rawGroups)
+  }catch(e){ console.error('Could not load league substitution groups', e) }
+}
+
+async function submitLeagueSubstitutions(){
+  const sel = document.getElementById('substitutionLeagueSelect')
+  const input = document.getElementById('substitutionGroupsInput')
+  const leagueId = sel ? sel.value : ''
+  const rawText = input ? input.value : ''
+
+  if(!leagueId){ alert('Selecciona una liga'); return }
+
+  let groups = []
+  try{
+    groups = parseSubstitutionGroupsInput(rawText)
+  }catch(error){
+    alert(error && error.message ? error.message : 'Hay un error en la configuración de sustituciones')
+    return
+  }
+
+  try{
+    const res = await fetch('/api/updateLeagueSubstitutions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ league_id: Number(leagueId), substitution_groups: groups })
+    })
+    const json = await res.json().catch(() => ({}))
+    if(!res.ok || !json.ok){
+      throw new Error(json && json.error ? json.error : 'Error al guardar sustituciones')
+    }
+    alert('Agrupaciones guardadas')
+    closeAdmin()
+  }catch(e){ console.error(e); alert(e && e.message ? e.message : 'Error al guardar sustituciones') }
 }
 
 async function submitLeagueBracket(){

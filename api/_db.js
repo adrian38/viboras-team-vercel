@@ -3,7 +3,6 @@ import { sql } from '@vercel/postgres';
 let schemaReady = null;
 
 export async function ensureSchema() {
-  return true;
   if (schemaReady) return schemaReady;
 
   schemaReady = (async () => {
@@ -20,8 +19,14 @@ export async function ensureSchema() {
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         start_date TEXT NOT NULL,
-        end_date TEXT NOT NULL
+        end_date TEXT NOT NULL,
+        substitution_groups TEXT NOT NULL DEFAULT '[]'
       )
+    `;
+
+    await sql`
+      ALTER TABLE leagues
+      ADD COLUMN IF NOT EXISTS substitution_groups TEXT NOT NULL DEFAULT '[]'
     `;
 
     await sql`

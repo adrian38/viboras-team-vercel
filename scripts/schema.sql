@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS leagues (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   start_date TEXT NOT NULL,
-  end_date TEXT NOT NULL
+  end_date TEXT NOT NULL,
+  substitution_groups TEXT NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS events (
