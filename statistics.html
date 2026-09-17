@@ -56,7 +56,7 @@ th{cursor:pointer;user-select:none}
     <div class="event-type-filter" aria-label="Tipos de partidos incluidos">
       <label class="event-checkbox"><input type="checkbox" value="ranked" checked> Partidos</label>
       <label class="event-checkbox"><input type="checkbox" value="grupo_liga" checked> Ligas</label>
-      <label class="event-checkbox"><input type="checkbox" value="pozo,doble_ko" checked> Torneos</label>
+      <label class="event-checkbox"><input type="checkbox" value="pozo,compas,doble_ko" checked> Torneos</label>
       <label class="event-checkbox"><input type="checkbox" id="includePreToggle" value="legacy"> Incluir pre-09/2026</label>
       <label class="event-checkbox"><input type="checkbox" id="includeInactiveCheckbox"> Incluir no activos</label>
       <button type="button" class="update-btn" id="refreshStatsBtn">Aplicar</button>
@@ -79,7 +79,7 @@ const EVENT_FILTER_DEFS = [
   { id: 'ranked', label: 'Partidos', values: ['ranked'] },
   { id: 'legacy', label: 'Pre-09/2026', values: ['legacy'] },
   { id: 'grupo_liga', label: 'Ligas', values: ['grupo_liga'] },
-  { id: 'tournaments', label: 'Torneos', values: ['pozo', 'doble_ko'] }
+  { id: 'tournaments', label: 'Torneos', values: ['pozo', 'compas', 'doble_ko'] }
 ]
 
 function parseDateStr(s){ if(!s) return new Date(0); if(/^-?\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s); const parts=String(s).split('/'); if(parts.length===3){ const d=parseInt(parts[0],10)||1; const m=(parseInt(parts[1],10)||1)-1; const y=parseInt(parts[2],10)||0; return new Date(y,m,d) } return new Date(s) }
@@ -125,7 +125,7 @@ function isMatchIncludedByEventType(match){
 }
 
 function loadData(){
-  const url = `/api/read?action=getResults&eventType=ranked,legacy,grupo_liga,pozo,doble_ko&ts=${Date.now()}`
+  const url = `/api/read?action=getResults&eventType=ranked,legacy,grupo_liga,pozo,compas,doble_ko&ts=${Date.now()}`
   return fetch(url)
     .then(r=>{
       if(!r.ok) throw new Error('HTTP '+r.status)

@@ -35,8 +35,8 @@ async function main() {
     id SERIAL PRIMARY KEY,
     type TEXT NOT NULL CHECK (
       type IN (
-        'pozo', 'doble_ko', 'grupo_liga', 'ranked', 'unranked', 'legacy'
-      )
+          'pozo', 'compas', 'doble_ko', 'grupo_liga', 'ranked', 'unranked', 'legacy'
+        )
     ),
     name TEXT NOT NULL UNIQUE,
     start_date TEXT NOT NULL,

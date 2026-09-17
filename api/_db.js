@@ -34,8 +34,9 @@ export async function ensureSchema() {
         id SERIAL PRIMARY KEY,
         type TEXT NOT NULL CHECK (
           type IN (
-            'pozo',
-            'doble_ko',
+              'pozo',
+              'compas',
+              'doble_ko',
             'grupo_liga',
             'ranked',
             'unranked',

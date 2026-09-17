@@ -197,7 +197,7 @@ async function openAdmin(){
           <button class="btn" style="width:100%;text-align:left" onclick="showLeaguePanel()">Nueva liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showBracketPanel()">Nuevo cuadro de liga</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showSubstitutionPanel()">Nueva sustitución en liga</button>
-          <button class="btn" style="width:100%;text-align:left" onclick="alert('No implementado aún')">Nuevo torneo Doble KO</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="showCompasPanel()">Nuevo torneo Compás</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showPozoPanel()">Nuevo torneo Pozo</button>
           <button class="btn red" style="width:100%;text-align:left" onclick="closeAdmin()">Cerrar</button>
         </div>
@@ -608,6 +608,80 @@ function showPozoPanel(){
       <button class="btn secondary-green" onclick="submitPozoTournament()">Guardar torneo</button>
     </div>
   `
+}
+
+function showCompasPanel(){
+  const menu = document.getElementById('adminMenuColumn')
+  const content = document.getElementById('adminContent')
+  const adminMain = document.getElementById('adminMain')
+  const header = document.getElementById('adminHeaderTitle')
+  if(menu) menu.style.display = 'none'
+  if(adminMain) adminMain.style.display = 'flex'
+  if(content) content.style.display = 'flex'
+  if(header) header.innerText = 'Nuevo torneo Compás'
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        Nombre del torneo
+        <input id="compasName" class="register-input" placeholder="Ej: Compás DD/MM/AAAA" />
+      </label>
+      <div class="pozo-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Fecha inicio
+          <input id="compasStartDate" type="date" class="register-input" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+          Fecha fin
+          <input id="compasEndDate" type="date" class="register-input" />
+        </label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        CSV del torneo
+        <input id="compasCsvFile" type="file" accept=".csv,text/csv" />
+      </label>
+      <div style="color:var(--muted);font-size:0.9rem;line-height:1.4">
+        Formato del fichero CSV (sin cabecera): ronda;bracket;jugador1;jugador2;jugador3;jugador4;juegos_pareja1;juegos_pareja2
+      </div>
+      <div style="color:var(--muted);font-size:0.9rem;line-height:1.4">
+        Valores válidos para <strong>bracket</strong>: E, W, N, S, NE, SE, NW, SW (mayúsculas o minúsculas aceptadas).
+      </div>
+      <button class="btn secondary-green" onclick="submitCompasTournament()">Guardar torneo</button>
+    </div>
+  `
+}
+
+async function submitCompasTournament(){
+  const name = document.getElementById('compasName')?.value.trim() || ''
+  const startInput = document.getElementById('compasStartDate')?.value || ''
+  const endInput = document.getElementById('compasEndDate')?.value || ''
+  const fileEl = document.getElementById('compasCsvFile')
+  const file = fileEl && fileEl.files ? fileEl.files[0] : null
+
+  if(!name){ alert('Introduce el nombre del torneo'); return }
+  if(!startInput || !endInput){ alert('Selecciona la fecha de inicio y la de fin'); return }
+  if(!file){ alert('Sube un fichero CSV'); return }
+
+  try{
+    const csvText = await file.text()
+    const payload = {
+      name,
+      start_date: normalizeDateInput(startInput),
+      end_date: normalizeDateInput(endInput),
+      csv: csvText
+    }
+
+    const res = await fetch('/api/league-admin?action=createCompasTournament', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    const json = await res.json().catch(() => ({}))
+    if(!res.ok || !json.ok){ throw new Error(json && json.error ? json.error : 'Error al guardar el torneo') }
+
+    alert('Torneo Compás guardado')
+    closeAdmin()
+  }catch(e){ console.error(e); alert(e && e.message ? e.message : 'Error al guardar el torneo') }
 }
 
 function formatSubstitutionGroupsForTextarea(groups){

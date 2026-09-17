@@ -187,7 +187,7 @@ function setupEventSelector(events, matches){
 
 async function loadData(){
   try {
-    const url = `/api/read?action=getResults&eventType=pozo,doble_ko&ts=${Date.now()}`
+    const url = `/api/read?action=getResults&eventType=pozo,compas,doble_ko&ts=${Date.now()}`
     const res = await fetch(url)
     const db = await res.json()
 
@@ -260,7 +260,8 @@ function applyFilter(){
   summary.innerHTML = `<div>${dateLine}</div><div>Total de partidos: ${filtered.length}</div>`
 
   lastFiltered = filtered
-  renderTable(filtered)
+  const eventType = (eventFiltered && eventFiltered.length) ? (eventFiltered[0].event_type || '') : ''
+  renderTable(filtered, eventType)
   renderRating(eventFiltered)
   setTournamentView(currentTournamentView)
 }
@@ -375,123 +376,152 @@ function renderRating(matches){
   container.appendChild(table)
 }
 
-function renderTable(matches){
+function renderTable(matches, eventType){
   const container = document.getElementById('tableContainer')
   if (!matches.length) {
     container.innerHTML = '<div class="muted">No hay resultados para los filtros introducidos</div>'
     return
   }
 
-  const table = document.createElement('table')
-  const thead = document.createElement('thead')
-  thead.innerHTML = '<tr><th>Jugadores</th><th><span class="th-full-res">Marcador</span></th></tr>'
-  table.appendChild(thead)
+  // helper to render a list of matches into a table element
+  function buildTableForMatches(list){
+    const table = document.createElement('table')
+    const thead = document.createElement('thead')
+    thead.innerHTML = '<tr><th>Jugadores</th><th><span class="th-full-res">Marcador</span></th></tr>'
+    table.appendChild(thead)
+    const tbody = document.createElement('tbody')
 
-  const tbody = document.createElement('tbody')
+    list.forEach(m => {
+      const tr = document.createElement('tr')
 
-  matches.forEach(m => {
-    const tr = document.createElement('tr')
+      const tdPlayers = document.createElement('td')
+      let team1Sets = 0
+      let team2Sets = 0
 
-    const tdPlayers = document.createElement('td')
-    let team1Sets = 0
-    let team2Sets = 0
-
-    for (let i = 1; i <= 3; i++) {
-      const aRaw = m['s1' + i]
-      const bRaw = m['s2' + i]
-      const a = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw, 10) : NaN
-      const b = (bRaw !== undefined && bRaw !== '') ? parseInt(bRaw, 10) : NaN
-      if (!isNaN(a) && !isNaN(b)) {
-        if (a > b) team1Sets++
-        else if (b > a) team2Sets++
+      for (let i = 1; i <= 3; i++) {
+        const aRaw = m['s1' + i]
+        const bRaw = m['s2' + i]
+        const a = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw, 10) : NaN
+        const b = (bRaw !== undefined && bRaw !== '') ? parseInt(bRaw, 10) : NaN
+        if (!isNaN(a) && !isNaN(b)) {
+          if (a > b) team1Sets++
+          else if (b > a) team2Sets++
+        }
       }
-    }
 
-    let resultType = 'tie'
-    if (team1Sets > team2Sets) resultType = 'team1'
-    else if (team2Sets > team1Sets) resultType = 'team2'
-    else {
-      // empate a juegos: comprobar marca de desempate en s12/s22 (set2 flags)
-      if ((m.s12 || '') === '1') resultType = 'team1'
-      else if ((m.s22 || '') === '1') resultType = 'team2'
-    }
-
-    function makeTag(name, team){
-      const span = document.createElement('span')
-      span.className = 'tag'
-      if (resultType === 'tie') span.classList.add('tie')
-      else if (resultType === 'team1' && team === 1) span.classList.add('win')
-      else if (resultType === 'team2' && team === 2) span.classList.add('win')
-      else span.classList.add('lose')
-      span.innerText = name
-      return span
-    }
-
-    const p1aTag = makeTag(m.p1a || '', 1); p1aTag.classList.add('desktop-only')
-    const p1bTag = makeTag(m.p1b || '', 1); p1bTag.classList.add('desktop-only')
-    const vs = document.createElement('strong'); vs.className = 'desktop-only'; vs.style.margin = '0 8px'; vs.innerText = 'VS'
-    const p2aTag = makeTag(m.p2a || '', 2); p2aTag.classList.add('desktop-only')
-    const p2bTag = makeTag(m.p2b || '', 2); p2bTag.classList.add('desktop-only')
-    tdPlayers.appendChild(p1aTag)
-    tdPlayers.appendChild(p1bTag)
-    tdPlayers.appendChild(vs)
-    tdPlayers.appendChild(p2aTag)
-    tdPlayers.appendChild(p2bTag)
-
-    const mobileTeam1 = document.createElement('span')
-    mobileTeam1.className = 'tag mobile-only'
-    mobileTeam1.innerText = `${(m.p1a || '').trim()} / ${(m.p1b || '').trim()}`
-    const mobileTeam2 = document.createElement('span')
-    mobileTeam2.className = 'tag mobile-only'
-    mobileTeam2.innerText = `${(m.p2a || '').trim()} / ${(m.p2b || '').trim()}`
-
-    if (resultType === 'team1') {
-      mobileTeam1.classList.add('win')
-      mobileTeam2.classList.add('lose')
-    } else if (resultType === 'team2') {
-      mobileTeam1.classList.add('lose')
-      mobileTeam2.classList.add('win')
-    } else {
-      mobileTeam1.classList.add('tie')
-      mobileTeam2.classList.add('tie')
-    }
-    tdPlayers.appendChild(mobileTeam1)
-    tdPlayers.appendChild(mobileTeam2)
-
-    const sets = []
-    for (let i = 1; i <= 3; i++) {
-      // Do not display set2 when it's used as a timed_games tiebreak flag
-      if (i === 2 && String(m.format) === 'timed_games') continue
-
-      let a = m['s1' + i] || ''
-      let b = m['s2' + i] || ''
-      if (a === '' && b === '') continue
-      // Ignore '+' marks in display; set2 flags are not printed
-      if (i === 1 && a !== '' && b !== '' && a === b) {
-        // do nothing: show "5-5" (no '+')
+      let resultType = 'tie'
+      if (team1Sets > team2Sets) resultType = 'team1'
+      else if (team2Sets > team1Sets) resultType = 'team2'
+      else {
+        if ((m.s12 || '') === '1') resultType = 'team1'
+        else if ((m.s22 || '') === '1') resultType = 'team2'
       }
-      const score = String(a) + '-' + String(b)
-      const display = (String(m.format) === 'bo3_stb' && i === 3) ? `[${score}]` : score
-      sets.push(display)
-    }
 
-    const tdScore = document.createElement('td')
-    const list = document.createElement('div')
-    list.className = 'set-list'
-    sets.forEach(s => {
-      const it = document.createElement('span')
-      it.className = 'set-item'
-      it.innerText = String(s).replace(/-/g, '\u2011')
-      list.appendChild(it)
+      function makeTag(name, team){
+        const span = document.createElement('span')
+        span.className = 'tag'
+        if (resultType === 'tie') span.classList.add('tie')
+        else if (resultType === 'team1' && team === 1) span.classList.add('win')
+        else if (resultType === 'team2' && team === 2) span.classList.add('win')
+        else span.classList.add('lose')
+        span.innerText = name
+        return span
+      }
+
+      const p1aTag = makeTag(m.p1a || '', 1); p1aTag.classList.add('desktop-only')
+      const p1bTag = makeTag(m.p1b || '', 1); p1bTag.classList.add('desktop-only')
+      const vs = document.createElement('strong'); vs.className = 'desktop-only'; vs.style.margin = '0 8px'; vs.innerText = 'VS'
+      const p2aTag = makeTag(m.p2a || '', 2); p2aTag.classList.add('desktop-only')
+      const p2bTag = makeTag(m.p2b || '', 2); p2bTag.classList.add('desktop-only')
+      tdPlayers.appendChild(p1aTag)
+      tdPlayers.appendChild(p1bTag)
+      tdPlayers.appendChild(vs)
+      tdPlayers.appendChild(p2aTag)
+      tdPlayers.appendChild(p2bTag)
+
+      const mobileTeam1 = document.createElement('span')
+      mobileTeam1.className = 'tag mobile-only'
+      mobileTeam1.innerText = `${(m.p1a || '').trim()} / ${(m.p1b || '').trim()}`
+      const mobileTeam2 = document.createElement('span')
+      mobileTeam2.className = 'tag mobile-only'
+      mobileTeam2.innerText = `${(m.p2a || '').trim()} / ${(m.p2b || '').trim()}`
+
+      if (resultType === 'team1') {
+        mobileTeam1.classList.add('win')
+        mobileTeam2.classList.add('lose')
+      } else if (resultType === 'team2') {
+        mobileTeam1.classList.add('lose')
+        mobileTeam2.classList.add('win')
+      } else {
+        mobileTeam1.classList.add('tie')
+        mobileTeam2.classList.add('tie')
+      }
+      tdPlayers.appendChild(mobileTeam1)
+      tdPlayers.appendChild(mobileTeam2)
+
+      const sets = []
+      for (let i = 1; i <= 3; i++) {
+        if (i === 2 && String(m.format) === 'timed_games') continue
+
+        let a = m['s1' + i] || ''
+        let b = m['s2' + i] || ''
+        if (a === '' && b === '') continue
+        const score = String(a) + '-' + String(b)
+        const display = (String(m.format) === 'bo3_stb' && i === 3) ? `[${score}]` : score
+        sets.push(display)
+      }
+
+      const tdScore = document.createElement('td')
+      const list = document.createElement('div')
+      list.className = 'set-list'
+      sets.forEach(s => {
+        const it = document.createElement('span')
+        it.className = 'set-item'
+        it.innerText = String(s).replace(/-/g, '\u2011')
+        list.appendChild(it)
+      })
+      tdScore.appendChild(list)
+
+      tr.appendChild(tdPlayers)
+      tr.appendChild(tdScore)
+      tbody.appendChild(tr)
     })
-    tdScore.appendChild(list)
 
-    tr.appendChild(tdPlayers)
-    tr.appendChild(tdScore)
-    tbody.appendChild(tr)
-  })
+    table.appendChild(tbody)
+    return table
+  }
 
-  table.appendChild(tbody)
+  // If compas, group by round (ignore bracket) and render each round separately
+  if (String(eventType).toLowerCase() === 'compas') {
+    // group by round number (round field may be like "1-E"), take part before '-'
+    const groups = new Map()
+    matches.forEach(m => {
+      const raw = String(m.round || '').trim()
+      const roundKey = raw ? raw.split('-')[0] : '0'
+      if (!groups.has(roundKey)) groups.set(roundKey, [])
+      groups.get(roundKey).push(m)
+    })
+
+    // sort round keys numerically
+    const sortedKeys = Array.from(groups.keys()).sort((a,b)=>{ const na = parseInt(a,10)||0; const nb = parseInt(b,10)||0; return na - nb })
+
+    container.innerHTML = ''
+    for (const rk of sortedKeys) {
+      const roundMatches = groups.get(rk) || []
+      const header = document.createElement('div')
+      header.style.fontWeight = '700'
+      header.style.margin = '8px 0'
+      header.innerText = `Ronda ${rk}`
+      container.appendChild(header)
+      // build table for this round
+      const tbl = buildTableForMatches(roundMatches)
+      container.appendChild(tbl)
+    }
+    return
+  }
+
+  // default: render flat list
+  const table = buildTableForMatches(matches)
   container.innerHTML = ''
   container.appendChild(table)
 }

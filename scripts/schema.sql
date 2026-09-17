@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS events (
   type TEXT NOT NULL CHECK (
     type IN (
       'pozo',
+      'compas',
       'doble_ko',
       'grupo_liga',
       'ranked',

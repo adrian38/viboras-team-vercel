@@ -457,6 +457,125 @@ async function createPozoTournament(req, res) {
   }
 }
 
+function parseCompasRows(csvText) {
+  const normalized = normalizeCsvText(csvText).trim();
+  if (!normalized) throw new Error('El CSV está vacío');
+
+  const lines = normalized.split('\n').filter((line) => line.trim() !== '');
+  if (lines.length === 0) throw new Error('El CSV está vacío');
+
+  const allowedBrackets = new Set(['E','W','N','S','NE','SE','NW','SW']);
+
+  const rows = [];
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i].trim();
+    const cells = rawLine.split(';').map((cell) => cell.trim());
+    if (cells.length !== 8) {
+      throw new Error(`Línea ${i + 1}: formato inválido. Debe tener 8 columnas: ronda;bracket;jugador1;jugador2;jugador3;jugador4;juegos_pareja1;juegos_pareja2`);
+    }
+
+    const [rondaRaw, bracketRaw, player1, player2, player3, player4, g1Raw, g2Raw] = cells;
+    if (!rondaRaw || !/^\d+$/.test(rondaRaw)) throw new Error(`Línea ${i + 1}: ronda inválida`);
+    const ronda = parseInt(rondaRaw, 10);
+
+    const bracket = String(bracketRaw || '').toUpperCase();
+    if (!allowedBrackets.has(bracket)) throw new Error(`Línea ${i + 1}: bracket inválido ('${bracketRaw}')`);
+
+    if (!player1 || !player2 || !player3 || !player4) throw new Error(`Línea ${i + 1}: faltan nombres de jugadores`);
+
+    if (!/^\d+$/.test(g1Raw) || !/^\d+$/.test(g2Raw)) throw new Error(`Línea ${i + 1}: los juegos deben ser números enteros`);
+    const g1 = parseInt(g1Raw, 10);
+    const g2 = parseInt(g2Raw, 10);
+
+    rows.push({ ronda, bracket, player1, player2, player3, player4, g1, g2 });
+  }
+  return rows;
+}
+
+async function createCompasTournament(req, res) {
+  try {
+    await ensureSchema();
+    const data = await readBody(req);
+    const name = String(data?.name || '').trim();
+    const startDate = String(data?.start_date || '').trim();
+    const endDate = String(data?.end_date || '').trim();
+    const csvText = String(data?.csv || '');
+
+    if (!name) { res.status(400).json({ ok: false, error: 'Falta el nombre del torneo' }); return; }
+    if (!startDate || !endDate) { res.status(400).json({ ok: false, error: 'Faltan las fechas del torneo' }); return; }
+
+    const rows = parseCompasRows(csvText);
+    const existingNames = new Set((await sql`SELECT name FROM players WHERE active = TRUE`).rows.map((r) => r.name));
+
+    for (const row of rows) {
+      for (const playerName of [row.player1, row.player2, row.player3, row.player4]) {
+        if (!existingNames.has(playerName)) { res.status(400).json({ ok: false, error: `El nombre "${playerName}" no existe en la tabla players` }); return; }
+      }
+    }
+
+    const eventInsert = await sql`
+      INSERT INTO events (type, name, start_date, end_date)
+      VALUES ('compas', ${name}, ${startDate}, ${endDate})
+      RETURNING id
+    `;
+    const eventId = eventInsert.rows[0]?.id;
+    if (!eventId) { throw new Error('No se pudo crear el evento'); }
+
+    const inserts = rows.map(async (row) => {
+      const p1aId = (await sql`SELECT id FROM players WHERE name = ${row.player1}`).rows[0]?.id;
+      const p1bId = (await sql`SELECT id FROM players WHERE name = ${row.player2}`).rows[0]?.id;
+      const p2aId = (await sql`SELECT id FROM players WHERE name = ${row.player3}`).rows[0]?.id;
+      const p2bId = (await sql`SELECT id FROM players WHERE name = ${row.player4}`).rows[0]?.id;
+
+      if (!p1aId || !p1bId || !p2aId || !p2bId) {
+        throw new Error(`No se pudieron resolver los ids de los jugadores en la fila: ${JSON.stringify(row)}`);
+      }
+
+      const roundText = `${row.ronda}-${row.bracket}`;
+
+      return sql`
+        INSERT INTO matches (
+          date,
+          format,
+          event_id,
+          round,
+          player1a_id,
+          player1b_id,
+          player2a_id,
+          player2b_id,
+          set1_team1,
+          set1_team2,
+          set2_team1,
+          set2_team2,
+          set3_team1,
+          set3_team2
+        ) VALUES (
+          ${startDate},
+          'timed_games',
+          ${eventId},
+          ${roundText},
+          ${p1aId},
+          ${p1bId},
+          ${p2aId},
+          ${p2bId},
+          ${row.g1},
+          ${row.g2},
+          NULL,
+          NULL,
+          NULL,
+          NULL
+        )
+      `;
+    });
+
+    await Promise.all(inserts);
+    res.status(200).json({ ok: true, eventId });
+  } catch (err) {
+    console.error('league-admin:createCompasTournament error', err);
+    res.status(400).json({ ok: false, error: err && err.message ? err.message : 'Error al crear el torneo' });
+  }
+}
+
 async function updateLeagueSubstitutions(req, res) {
   try {
     await ensureSchema();
@@ -495,6 +614,8 @@ export default async function handler(req, res) {
       return createLeagueBracket(req, res);
     case 'createPozoTournament':
       return createPozoTournament(req, res);
+    case 'createCompasTournament':
+      return createCompasTournament(req, res);
     case 'updateLeagueSubstitutions':
       return updateLeagueSubstitutions(req, res);
     default:

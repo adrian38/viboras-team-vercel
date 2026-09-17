@@ -610,7 +610,7 @@
     function getMatchEventTag(match) {
       const rawType = String(match && (match.event_type || match.type || '')).trim().toLowerCase();
       if (rawType === 'grupo_liga') return { label: 'Liga', className: 'league' };
-      if (rawType === 'pozo' || rawType === 'doble_ko') return { label: 'Torneo', className: 'tournament' };
+      if (rawType === 'pozo' || rawType === 'doble_ko' || rawType === 'compas') return { label: 'Torneo', className: 'tournament' };
       return { label: 'Partido', className: 'match' };
     }
 
@@ -1091,7 +1091,7 @@
       const namesData = await namesRes.json();
       allNames = (namesData.names || []).map((n) => String(n).trim()).filter(Boolean);
 
-      const matchesRes = await fetch('/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,doble_ko,legacy&ts=' + Date.now());
+      const matchesRes = await fetch('/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,compas,doble_ko,legacy&ts=' + Date.now());
       const matchesData = await matchesRes.json();
       allMatches = (matchesData.matches || []).filter((m) => {
         const date = toIsoDate(m.date) || toIsoDate(m.start_date);
