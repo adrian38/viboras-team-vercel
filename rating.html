@@ -486,7 +486,11 @@ function fetchMatches() {
   }
 
   function f_x(x){
-    return (4.0 * x - 1.0) / (x + 1.0);
+    // sigmoid-based weight per design: w2(x) = 0.5 + 1 / (1 + exp[-k*(x-0.60)])
+    const k = 10; // default steepness
+    const xx = Number(x);
+    if (!Number.isFinite(xx)) return 0.0001;
+    return 0.5 + 1.0 / (1.0 + Math.exp(-k * (xx - 0.60)));
   }
 
   // Request also 'legacy' so we can build historical views; we'll filter client-side

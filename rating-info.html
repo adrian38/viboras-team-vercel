@@ -116,7 +116,8 @@ li{margin-bottom:8px}
     <ul>
       <li><strong>$w_1$ (formato):</strong> $0.25$ para partidos cortos por tiempo; $1.0$ para partidos estándar.</li>
       <li><strong>$w_2$ (dominancia):</strong> con $x$ = fracción de juegos ganados por el vencedor,
-        <div class="formula-box">$$w_2 = \frac{4x - 1}{x + 1}, \qquad x=\dfrac{\text{juegos ganados}}{\text{juegos totales}}$$</div>
+        <div class="formula-box">$$w_2(x) = 0.5 + \frac{1}{1 + \exp\left(-k\,(x - 0.60)\right)}, \qquad x=\dfrac{\text{juegos ganados}}{\text{juegos totales}}$$</div>
+        <p>Siendo $k=10$.</p>
       <li><strong>$w_3$ (fiabilidad):</strong> descuento adicional por fiabilidad del entorno del partido.</li>
     </ul>
     <p>$w_3$ no se calcula al cargar los partidos, sino dentro de cada actualización de observación con el estado actual de los jugadores, porque la fiabilidad cambia con el tiempo. Si un compañero o los rivales tienen RD elevado, la observación se considera menos fiable y recibe un peso menor.</p>
