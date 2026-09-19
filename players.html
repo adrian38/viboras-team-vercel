@@ -493,6 +493,27 @@
       return Math.hypot(safeOpp, safeTeammate / 2);
     }
 
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function getReliabilityWeight(phiObs) {
+      const rdObs = phiObs * GLICKO_SCALE;
+
+      const RD_DISCOUNT_START = 110.56;
+      const RD_ALL_FRESH = Math.sqrt(3.0) * MAX_RD / 2.0;
+      const MIN_RELIABILITY_WEIGHT = 0.50;
+      const CURVE = 1.0;
+
+      const t = clamp(
+        (rdObs - RD_DISCOUNT_START) / (RD_ALL_FRESH - RD_DISCOUNT_START),
+        0.0,
+        1.0
+      );
+
+      return 1.0 - (1.0 - MIN_RELIABILITY_WEIGHT) * Math.pow(t, CURVE);
+    }
+
     function updatePeriod(playerMap, periodMatches) {
       const starting = new Map();
       playerMap.forEach((p, name) => {
@@ -541,8 +562,12 @@
           const effectiveObservationPhi = getEffectiveObservationPhi(obs.oppPhi, obs.teammatePhi);
           const gPhi = g(effectiveObservationPhi);
           const eVal = expected(mu, obs.oppMu, effectiveObservationPhi);
-          sumV     += obs.weight * gPhi * gPhi * eVal * (1.0 - eVal);
-          sumDelta += obs.weight * gPhi * (obs.score - eVal);
+
+          const w3 = getReliabilityWeight(effectiveObservationPhi);
+          const effectiveWeight = obs.weight * w3;
+
+          sumV += effectiveWeight * gPhi * gPhi * eVal * (1.0 - eVal);
+          sumDelta += effectiveWeight * gPhi * (obs.score - eVal);
         }
 
         if (sumV <= 0) return;
