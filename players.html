@@ -742,17 +742,22 @@
         if (totalGames === 0) return;
 
         const x = winnerIsTeam1 ? totalGames1 / totalGames : totalGames2 / totalGames;
-        // use sigmoid weight w2(x) = 0.5 + 1 / (1 + exp[-k*(x-0.60)]) with default k=10
+        // w1: format-based weight (timed matches get lower weight)
+        const fmtLow = String(m.format || '').toLowerCase();
+        const w1 = (fmtLow.includes('timed') || fmtLow.includes('timed_games')) ? 0.25 : 1.0;
+
+        // w2: dominance weight (sigmoid), default k=10
         const k = 10;
         const xx = Number(x);
-        let weight = 0.0001;
+        let w2 = 0.0001;
         if (Number.isFinite(xx)) {
-          weight = 0.5 + 1.0 / (1.0 + Math.exp(-k * (xx - 0.60)));
+          w2 = 0.5 + 1.0 / (1.0 + Math.exp(-k * (xx - 0.60)));
         }
-        if (!Number.isFinite(weight) || weight <= 0) weight = 0.0001;
+        if (!Number.isFinite(w2) || w2 <= 0) w2 = 0.0001;
 
+        const finalWeight = w1 * w2;
         rec.score = score;
-        rec.weight = weight;
+        rec.weight = finalWeight;
 
         if (!byDate.has(day)) byDate.set(day, []);
         byDate.get(day).push(rec);

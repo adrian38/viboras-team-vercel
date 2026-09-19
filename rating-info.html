@@ -117,10 +117,9 @@ li{margin-bottom:8px}
       <li><strong>$w_1$ (formato):</strong> $0.25$ para partidos cortos por tiempo; $1.0$ para partidos estándar.</li>
       <li><strong>$w_2$ (dominancia):</strong> con $x$ = fracción de juegos ganados por el vencedor,
         <div class="formula-box">$$w_2(x) = 0.5 + \frac{1}{1 + \exp\left(-k\,(x - 0.60)\right)}, \qquad x=\dfrac{\text{juegos ganados}}{\text{juegos totales}}$$</div>
-        <p>Siendo $k=10$.</p>
-      <li><strong>$w_3$ (fiabilidad):</strong> descuento adicional por fiabilidad del entorno del partido.</li>
+        <p>Siendo $k=10$. El valor de $w_2$ se situa aproximadamente dentro del rango entre 0.66 y 1.5.</p>
+      <li><strong>$w_3$ (fiabilidad):</strong> descuento adicional por fiabilidad del entorno del partido. $w_3$ no se calcula al cargar los partidos. En su lugar, $w_3$ se determina durante el periodo de actualización usando los estados actuales del compañero y rivales y se aplica multiplicativamente sobre el peso $w_1 * w_2$ almacenado para cada observación.</li>
     </ul>
-    <p>$w_3$ no se calcula al cargar los partidos, sino dentro de cada actualización de observación con el estado actual de los jugadores, porque la fiabilidad cambia con el tiempo. Si un compañero o los rivales tienen RD elevado, la observación se considera menos fiable y recibe un peso menor.</p>
     <p>Para la observación efectiva del jugador i, el sistema usa una incertidumbre efectiva combinada:</p>
     <div class="formula-box">
       $$\phi_{obs,i} = \sqrt{\phi_{opponent\_team}^2 + \left(\frac{\phi_{partner}}{2}\right)^2}$$
