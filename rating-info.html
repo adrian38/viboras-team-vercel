@@ -142,7 +142,6 @@ li{margin-bottom:8px}
       $$v^{-1} = \sum_i w_{1,i}w_{2,i}w_{3,i}\; g(\phi_i)^2\; E_i(1-E_i),\\
       \Delta = v \sum_i w_{1,i}w_{2,i}w_{3,i}\; g(\phi_i)\; (s_i - E_i)$$
     </div>
-    <p>La intención es consistente: el mismo peso total afecta tanto al aumento de información ($\sum_i w_i g(\phi_i)^2 E_i(1-E_i)$) como al desplazamiento del rating ($\sum_i w_i g(\phi_i)(s_i-E_i)$). Esto evita situaciones en las que una observación hace más "seguro" al jugador sin mover su rating del mismo modo o viceversa.</p>
     <p>A partir de $v$ y $\Delta$ se calcula $\sigma'$ mediante el solver iterativo; seguidamente:</p>
     <div class="formula-box">
       $$\phi^* = \sqrt{\phi^2 + {\sigma'}^2},\\
