@@ -744,7 +744,7 @@
         const x = winnerIsTeam1 ? totalGames1 / totalGames : totalGames2 / totalGames;
         // w1: format-based weight (timed matches get lower weight)
         const fmtLow = String(m.format || '').toLowerCase();
-        const w1 = (fmtLow.includes('timed') || fmtLow.includes('timed_games')) ? 0.25 : 1.0;
+        const w1 = (fmtLow.includes('timed') || fmtLow.includes('timed_games')) ? 0.3 : 1.0;
 
         // w2: dominance weight (sigmoid), default k=10
         const k = 10;
