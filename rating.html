@@ -139,8 +139,8 @@ td.fiabilidad-col{font-weight:500}
       <label style="display: flex; align-items: center; gap: 8px;">
         <span>Fiabilidad mínima:</span>
         <select id="minReliability" onchange="handleFilterChange()">
-          <option value="any" selected>Cualquiera</option>
-          <option value="very_low">Muy baja</option>
+          <option value="any">Cualquiera</option>
+          <option value="very_low" selected>Muy baja</option>
           <option value="low">Baja</option>
           <option value="medium">Media</option>
           <option value="high">Alta</option>
@@ -263,10 +263,14 @@ function solveNewSigma(phi, sigma, delta, v, tau) {
   return Math.exp(A / 2.0);
 }
 
-function decayAllPlayersOneDay(playerMap) {
+function decayAllPlayersOneDay(playerMap, activePlayersToday = new Set()) {
   const maxPhi = MAX_RD / GLICKO_SCALE;
 
   playerMap.forEach((player, key) => {
+    // Skip decay for players who played matches today;
+    // updatePeriod will handle their phi/sigma update.
+    if (activePlayersToday.has(key)) return;
+
     const mu = player.mu;
     const phi = player.phi;
 
@@ -447,10 +451,21 @@ function calculateEngineRatings(names, matches, cutoffDateIso) {
     const dd = String(d.getUTCDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
-    decayAllPlayersOneDay(playerMap);
+    const dayMatches = byDate.get(dateStr) || [];
+    const activeToday = new Set();
 
-    if (byDate.has(dateStr)) {
-      updatePeriod(playerMap, byDate.get(dateStr));
+    // Collect all players who have matches on dateStr
+    dayMatches.forEach(m => {
+      m.team1.concat(m.team2).forEach(p => {
+        if (p && p.trim()) activeToday.add(p.trim());
+      });
+    });
+
+    // Decay only idle players for this day
+    decayAllPlayersOneDay(playerMap, activeToday);
+
+    if (dayMatches.length > 0) {
+      updatePeriod(playerMap, dayMatches);
     }
 
     curTime += ONE_DAY_MS;

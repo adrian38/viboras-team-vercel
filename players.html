@@ -457,9 +457,10 @@
       return Math.exp(A / 2.0);
     }
 
-    function decayAllPlayersOneDay(playerMap) {
+    function decayAllPlayersOneDay(playerMap, activePlayersToday = new Set()) {
       const maxPhi = MAX_RD / GLICKO_SCALE;
       playerMap.forEach((player, key) => {
+        if (activePlayersToday.has(key)) return;
         const mu = player.mu;
         const phi = player.phi;
         let phiStar = Math.sqrt(phi * phi + player.sigma * player.sigma);
@@ -783,9 +784,21 @@
       const selectedPlayerMap = new Map(playerMap);
 
       allDates.forEach((dateStr) => {
-        decayAllPlayersOneDay(selectedPlayerMap);
-        if (byDate.has(dateStr)) {
-          updatePeriod(selectedPlayerMap, byDate.get(dateStr));
+        const dayMatches = byDate.get(dateStr) || [];
+        const activeToday = new Set();
+
+        // Collect all players participating in matches on dateStr
+        dayMatches.forEach(m => {
+          (m.team1 || []).concat(m.team2 || []).forEach(p => {
+            if (p && p.trim()) activeToday.add(p.trim());
+          });
+        });
+
+        // Decay only idle players for this day
+        decayAllPlayersOneDay(selectedPlayerMap, activeToday);
+
+        if (dayMatches.length > 0) {
+          updatePeriod(selectedPlayerMap, dayMatches);
         }
 
         historical.push({
