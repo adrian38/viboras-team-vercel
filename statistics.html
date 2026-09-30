@@ -255,7 +255,7 @@ function computeStats(matches, mode, includeInactive){
     const team2Names = [p2a,p2b].filter(Boolean)
 
     const format = String(m.format || '').trim()
-    if(format === 'timed_games'){
+    if(format === 'timed_games' || format === 'timed_games_long'){
       const team1Games = toIntStrict(m.s11)
       const team2Games = toIntStrict(m.s21)
       if(team1Games === null || team2Games === null) continue

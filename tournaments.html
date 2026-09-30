@@ -289,7 +289,7 @@ function computeRating(matches, eventType = ''){
 
       // For timed_games (or when set2 contains the winner flag '1'), the second set is a tiebreak flag
       // and must not be counted as games or as a set for games totals.
-      const isSet2Flag = (i === 2) && (String(m.format) === 'timed_games' || String(aRaw) === '1' || String(bRaw) === '1')
+      const isSet2Flag = (i === 2) && (String(m.format) === 'timed_games' || String(m.format) === 'timed_games_long' || String(aRaw) === '1' || String(bRaw) === '1')
       if (isSet2Flag) continue
 
       const ai = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw,10) : NaN
@@ -487,7 +487,7 @@ function renderTable(matches, eventType){
 
       const sets = []
       for (let i = 1; i <= 3; i++) {
-        if (i === 2 && String(m.format) === 'timed_games') continue
+        if (i === 2 && (String(m.format) === 'timed_games' || String(m.format) === 'timed_games_long')) continue
 
         let a = m['s1' + i] || ''
         let b = m['s2' + i] || ''

@@ -561,7 +561,12 @@ function fetchMatches() {
         const winnerIsTeam1 = setsWon1 > setsWon2;
         const score = winnerIsTeam1 ? 1.0 : 0.0;
 
-        const w1 = (fmtLow.includes('timed') || fmtLow.includes('timed_games')) ? 0.3 : 1.0;
+        let w1 = 1.0;
+        if (fmtLow.includes('timed_games_long')) {
+          w1 = 0.6;
+        } else if (fmtLow.includes('timed') || fmtLow.includes('timed_games')) {
+          w1 = 0.3;
+        }
 
         const winnerGames = winnerIsTeam1 ? totalGames1 : totalGames2;
         const x = winnerGames / totalGames;

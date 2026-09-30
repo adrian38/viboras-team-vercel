@@ -74,7 +74,8 @@ export async function ensureSchema() {
             'bo3_regular',
             'bo3_stb',
             'bo1_regular',
-            'timed_games'
+            'timed_games',
+            'timed_games_long'
           )
         ),
         event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE RESTRICT,

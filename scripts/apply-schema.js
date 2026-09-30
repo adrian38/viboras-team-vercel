@@ -66,7 +66,7 @@ async function main() {
     id SERIAL PRIMARY KEY,
     date TEXT NOT NULL,
     format TEXT NOT NULL CHECK (
-      format IN ('bo3_regular','bo3_stb','bo1_regular','timed_games')
+      format IN ('bo3_regular','bo3_stb','bo1_regular','timed_games','timed_games_long')
     ),
     event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE RESTRICT,
     round TEXT,

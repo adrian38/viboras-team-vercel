@@ -219,7 +219,7 @@ function computeTournamentStandings(matches) {
       const aRaw = m['s1' + i];
       const bRaw = m['s2' + i];
 
-      const isSet2Flag = (i === 2) && (String(m.format) === 'timed_games' || String(aRaw) === '1' || String(bRaw) === '1');
+      const isSet2Flag = (i === 2) && (String(m.format) === 'timed_games' || String(m.format) === 'timed_games_long' || String(aRaw) === '1' || String(bRaw) === '1');
       if (isSet2Flag) continue;
 
       const ai = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw, 10) : NaN;

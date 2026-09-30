@@ -114,7 +114,7 @@ li{margin-bottom:8px}
       $$w = w_1 \cdot w_2 \cdot w_3$$
     </div>
     <ul>
-      <li><strong>$w_1$ (formato):</strong> $0.3$ para partidos cortos por tiempo; $1.0$ para partidos estándar.</li>
+      <li><strong>$w_1$ (formato):</strong> $0.3$ para partidos por tiempo de 20 minutos o menos; $0.6$ para partidos por tiempo de más de 20 minutos; $1.0$ para partidos estándar.</li>
       <li><strong>$w_2$ (dominancia):</strong> con $x$ = fracción de juegos ganados por el vencedor,
         <div class="formula-box">$$w_2(x) = 0.5 + \frac{1}{1 + \exp\left(-k\,(x - 0.60)\right)}, \qquad x=\dfrac{\text{juegos ganados}}{\text{juegos totales}}$$</div>
         <p>Siendo $k=10$. El valor de $w_2$ se situa aproximadamente dentro del rango entre 0.66 y 1.5.</p>

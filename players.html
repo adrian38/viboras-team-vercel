@@ -617,9 +617,7 @@
     function formatShortDate(iso) {
       if (!iso) return '-';
       const d = new Date(`${iso}T00:00:00Z`);
-      const day = String(d.getUTCDate()).padStart(2, '0');
-      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-      return `${day}/${month}`;
+      return String(d.getUTCDate()).padStart(2, '0');
     }
 
     function dayDifferenceInDays(isoA, isoB) {
@@ -745,7 +743,12 @@
         const x = winnerIsTeam1 ? totalGames1 / totalGames : totalGames2 / totalGames;
         // w1: format-based weight (timed matches get lower weight)
         const fmtLow = String(m.format || '').toLowerCase();
-        const w1 = (fmtLow.includes('timed') || fmtLow.includes('timed_games')) ? 0.3 : 1.0;
+        let w1 = 1.0;
+        if (fmtLow.includes('timed_games_long')) {
+          w1 = 0.6;
+        } else if (fmtLow.includes('timed') || fmtLow.includes('timed_games')) {
+          w1 = 0.3;
+        }
 
         // w2: dominance weight (sigmoid), default k=10
         const k = 10;
