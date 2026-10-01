@@ -78,8 +78,8 @@ li{margin-bottom:8px}
     <ul>
       <li><strong>$\mu$:</strong> rating del jugador en la escala interna (1500 ≈ puntuación base).</li>
       <li><strong>$\phi$:</strong> incertidumbre o desviación de rating del jugador. Se muestra como $RD$ (fiabilidad). La aplicación usa la escala de Glicko con el mismo criterio de confianza.</li>
-      <li><strong>$C_{daily}$:</strong> incremento diario de incertidumbre aplicado a los jugadores que no participan en la fecha que se está procesando.</li>
-      <li><strong>Valores por defecto:</strong> $\mu_0=1500.0$, $RD_0=350.0$.</li>
+      <li><strong>$C_{daily}$:</strong> incremento diario de incertidumbre aplicado a los jugadores que no participan en la fecha que se está procesando. Valor por defecto: $C_{daily}=15.0$.</li>
+      <li><strong>Valores por defecto:</strong> $\mu_0=1500.0$, $RD_0=350.0$, $C_{daily}=15.0$.</li>
       <li><strong>Límites:</strong> $\phi_{\min}\approx0.460$ (equiv. $RD_{\min}=80$), $\phi_{\max}\approx2.015$ (equiv. $RD_{\max}=350$).</li>
     </ul>
 
@@ -106,7 +106,7 @@ li{margin-bottom:8px}
     <div class="formula-box">
       $$\phi^* = \min\left(\sqrt{\phi^2 + C_{daily}^2},\; \phi_{\max}\right)$$
     </div>
-    <p>$C_{daily}$ es un término constante de inflación diaria de la incertidumbre. El sistema combina la base de Glicko con la ponderación por formato, el modelado 2v2 y la reducción de fiabilidad por actividad.</p>
+    <p>$C_{daily}$ es un término constante de inflación diaria de la incertidumbre. Su valor en el sistema es $C_{daily}=15.0$.</p>
 
     <p><strong>Ponderación por formato, dominancia, y fiabilidad</strong></p>
     <p>El peso de un partido se calcula como:</p>
