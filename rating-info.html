@@ -51,12 +51,12 @@ li{margin-bottom:8px}
   <div class="block">
 
     <h1>¿Cómo funciona el sistema de rating?</h1>
-    <p>El rating de pádel utiliza un sistema de puntuación matemático diseñado para medir tu nivel real de juego de forma dinámica. A medida que juegas partidos, el sistema no solo actualiza tu puntuación, sino también el nivel de fiabilidad de tu rating.</p>
+    <p>El sistema de rating utiliza un sistema de puntuación matemático (Glicko) diseñado para medir tu nivel real de juego de forma dinámica. A medida que juegas partidos, el sistema no solo actualiza tu puntuación, sino también el nivel de fiabilidad de tu rating.</p>
 
     <h2>Conceptos Clave</h2>
     <ul>
       <li><strong>Puntuación de Nivel:</strong> Todos los jugadores comienzan con 1500 puntos. Si ganas partidos, tus puntos suben; si pierdes, bajan. Ganar a una pareja más fuerte te dará muchos más puntos que ganar a un equipo al que tenías fácil superar.</li>
-      <li><strong>Fiabilidad (Confianza del Sistema):</strong> Mide qué tan consolidado está tu nivel en función de tu actividad reciente. A menor fiabilidad, más puntos ganas o pierdes en cada partido para ajustar tu nivel rápidamente:
+      <li><strong>Fiabilidad (Rating Deviation, RD):</strong> Mide qué tan consolidado está tu nivel en función de tu actividad reciente. Dicho de otro modo, mide la confianza, o incertidumbre, que el sistema tiene sobre tu nivel. A menor fiabilidad, más puntos ganas o pierdes en cada partido para ajustar tu nivel rápidamente:
         <ul style="margin-top:8px">
           <li><span class="badge badge-sin">Sin fiabilidad</span> Sin datos o ha pasado demasiado tiempo desde tu última actividad ($RD = 350$).
           <li><span class="badge badge-muy-baja">Muy baja</span> El sistema aún te está evaluando y tus puntos variarán drásticamente ($RD < 350$). Normalmente equivale a haber jugado solo <strong>1 o 2 partidos</strong>.</li>
@@ -66,10 +66,10 @@ li{margin-bottom:8px}
           <li><span class="badge badge-muy-alta">Muy alta</span> Máxima precisión del sistema ($RD < 100$). Mantener esta fiabilidad requiere un <strong>ritmo constante de 2-3 partidos por semana</strong> en los últimos meses. Tus puntos cambiarán de forma más gradual.</li>
         </ul>
       </li>
-      <li><strong>Adaptación a Partidos 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja promediando el nivel y la incertidumbre de ambos integrantes antes de compararla con la pareja rival.</li>
+      <li><strong>Adaptación a Partidos 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja, promediando el nivel de cada miembro, para luego comparar los niveles de ambas parejas.</li>
       <li><strong>Peso por Resultado, Formato, y Fiabilidad:</strong> El impacto en tu rating depende de lo contundente que sea la victoria. Ganar de forma holgada (ej. 6–2 6–1) otorga más puntos que un triunfo apretado en tres sets (ej. 7–6 3–6 6–3). Los partidos cortos por tiempo (por ejemplo los que se juegan en torneos pozo) tienen menos peso que un partido completo a 3 sets. Por último, cuanto más fiable sea la puntuación actual de tu pareja y la de tus oponentes, mayor será el impacto en tu rating, ya que el sistema tiene más confianza en el resultado.</li>
       <li><strong>Pérdida por Inactividad:</strong> Cada día que pasas sin jugar, tu nivel de fiabilidad disminuye ligeramente. Si estás meses sin jugar, tu puntuación se vuelve más flexible para que al volver puedas ajustar tu nivel rápidamente.</li>
-      <li><strong>Límite de Incertidumbre:</strong> Para garantizar la equidad durante maratones o torneos de un solo día (donde puedes jugar más de 6 partidos), la fiabilidad tiene un tope máximo. Esto evita que tu puntuación se quede "bloqueada" tras un fin de semana con mucha actividad.</li>
+      <li><strong>Límite de Incertidumbre:</strong> La fiabilidad tiene un tope máximo. Esto evita que tu puntuación se quede "bloqueada" tras una temporada con mucha actividad.</li>
     </ul>
 
     <h2>Detalles Técnicos y Fórmulas</h2>
@@ -77,17 +77,17 @@ li{margin-bottom:8px}
     <p><strong>Notación y parámetros</strong></p>
     <ul>
       <li><strong>$\mu$:</strong> rating del jugador en la escala interna (1500 ≈ puntuación base).</li>
-      <li><strong>$\phi$:</strong> desviación estándar (incertidumbre). Se usa $\phi = RD / 173.7178$.</li>
-      <li><strong>$\sigma$:</strong> volatilidad — parámetro almacenado por jugador y actualizado en cada periodo.</li>
-      <li><strong>Valores por defecto:</strong> $\mu_0=1500.0$, $RD_0=350.0$, $\tau=0.5$, $\sigma_0=0.06$.</li>
+      <li><strong>$\phi$:</strong> incertidumbre o desviación de rating del jugador. Se muestra como $RD$ (fiabilidad). La aplicación usa la escala de Glicko con el mismo criterio de confianza.</li>
+      <li><strong>$C_{daily}$:</strong> incremento diario de incertidumbre aplicado a los jugadores que no participan en la fecha que se está procesando.</li>
+      <li><strong>Valores por defecto:</strong> $\mu_0=1500.0$, $RD_0=350.0$.</li>
       <li><strong>Límites:</strong> $\phi_{\min}\approx0.460$ (equiv. $RD_{\min}=80$), $\phi_{\max}\approx2.015$ (equiv. $RD_{\max}=350$).</li>
     </ul>
 
     <p><strong>Flujo de cálculo</strong></p>
     <ol>
-      <li>Construir el mapa de jugadores y convertir a la escala interna ($\mu,\phi$).</li>
-      <li>Procesar partidos por fecha: antes de cada fecha se aplica la inflación diaria de $\phi$; luego se computan observaciones del día y se actualizan jugadores.</li>
-      <li>Para cada jugador se agregan observaciones ponderadas y se calcula $v$ y $\Delta$ adaptados; después se calcula la nueva $\sigma$, $\phi$ y $\mu$.</li>
+      <li>Construir el mapa de jugadores y preparar su estado inicial en la escala de Glicko ($\mu,\phi$).</li>
+      <li>Procesar partidos por fecha: antes de cada fecha se aplica la inflación diaria de $\phi$; luego se computan las observaciones del día y se actualizan los jugadores.</li>
+      <li>Para cada jugador se agregan observaciones ponderadas y se calcula $v$ y $\Delta$ adaptados; después se recalcula la nueva $\phi$ y $\mu$.</li>
     </ol>
 
     <p><strong>Modelado 2v2</strong></p>
@@ -102,11 +102,11 @@ li{margin-bottom:8px}
     </div>
 
     <p><strong>Evolución diaria de incertidumbre</strong></p>
-    <p>Antes de procesar partidos de una fecha el sistema incrementa $\phi$ por cada jugador según:</p>
+    <p>Antes de procesar partidos de una fecha el sistema incrementa la incertidumbre $\phi$ de cada jugador según:</p>
     <div class="formula-box">
-      $$\phi^* = \min\left(\sqrt{\phi^2 + \sigma^2},\; \phi_{\max}\right)$$
+      $$\phi^* = \min\left(\sqrt{\phi^2 + C_{daily}^2},\; \phi_{\max}\right)$$
     </div>
-    <p>La fórmula usa la volatilidad $\sigma$ del propio jugador; es decir, $\sigma$ no es un único valor global, sino que se mantiene y actualiza por jugador.</p>
+    <p>$C_{daily}$ es un término constante de inflación diaria de la incertidumbre. El sistema combina la base de Glicko con la ponderación por formato, el modelado 2v2 y la reducción de fiabilidad por actividad.</p>
 
     <p><strong>Ponderación por formato, dominancia, y fiabilidad</strong></p>
     <p>El peso de un partido se calcula como:</p>
@@ -142,13 +142,12 @@ li{margin-bottom:8px}
       $$v^{-1} = \sum_i w_{1,i}w_{2,i}w_{3,i}\; g(\phi_i)^2\; E_i(1-E_i),\\
       \Delta = v \sum_i w_{1,i}w_{2,i}w_{3,i}\; g(\phi_i)\; (s_i - E_i)$$
     </div>
-    <p>A partir de $v$ y $\Delta$ se calcula $\sigma'$ mediante el solver iterativo; seguidamente:</p>
+    <p>A partir de $v$ y $\Delta$ se calcula la nueva incertidumbre y la nueva media del jugador:</p>
     <div class="formula-box">
-      $$\phi^* = \sqrt{\phi^2 + {\sigma'}^2},\\
-      \phi' = \max\left(\dfrac{1}{\sqrt{1/\phi^{*2} + 1/v}},\; \phi_{\min}\right),\\
+      $$\phi' = \max\left(\dfrac{1}{\sqrt{1/\phi^2 + 1/v}},\; \phi_{\min}\right),\\
       \mu' = \mu + \phi'^2 \; \sum_i w_i \; g(\phi_i) \; (s_i - E_i)$$
     </div>
-    <p>Finalmente se almacenan $(\mu',\phi',\sigma')$ por jugador.</p>
+    <p>El resultado final se almacena como el nuevo estado $(\mu',\phi')$ del jugador.</p>
 
     <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
       <div></div>
