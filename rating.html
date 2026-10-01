@@ -18,7 +18,7 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
 .controls {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Pushes items to the edges */
+  justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
   margin-bottom: 16px;
@@ -49,21 +49,21 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
   opacity: 0.75;
 }
 
-/* Category Styles (Shared Colors for Tier 1 and Tier 2) */
+/* Category Styles */
 .tier-capitan_1, .tier-capitan_2 { background-color: #fff8f0; border-color: #fed7aa; }
-.tier-capitan_1 .tier-title, .tier-capitan_2 .tier-title { color: #ea580c; } /* Orange */
+.tier-capitan_1 .tier-title, .tier-capitan_2 .tier-title { color: #ea580c; }
 
 .tier-contramaestre_1, .tier-contramaestre_2 { background-color: #f0f7ff; border-color: #bfdbfe; }
-.tier-contramaestre_1 .tier-title, .tier-contramaestre_2 .tier-title { color: #2563eb; } /* Blue */
+.tier-contramaestre_1 .tier-title, .tier-contramaestre_2 .tier-title { color: #2563eb; }
 
 .tier-bucanero_1, .tier-bucanero_2 { background-color: #fdf2f4; border-color: #fbcfe8; }
-.tier-bucanero_1 .tier-title, .tier-bucanero_2 .tier-title { color: #9f1239; } /* Garnet */
+.tier-bucanero_1 .tier-title, .tier-bucanero_2 .tier-title { color: #9f1239; }
 
 .tier-marinero_1, .tier-marinero_2 { background-color: #f0fdf4; border-color: #bbf7d0; }
-.tier-marinero_1 .tier-title, .tier-marinero_2 .tier-title { color: #16a34a; } /* Green */
+.tier-marinero_1 .tier-title, .tier-marinero_2 .tier-title { color: #16a34a; }
 
 .tier-grumete_1, .tier-grumete_2 { background-color: #fdf8f6; border-color: #fed7aa; }
-.tier-grumete_1 .tier-title, .tier-grumete_2 .tier-title { color: #854d0e; } /* Brown */
+.tier-grumete_1 .tier-title, .tier-grumete_2 .tier-title { color: #854d0e; }
 
 /* Table Styles */
 table{width:100%;border-collapse:collapse;margin-top:4px}
@@ -78,7 +78,6 @@ td.fiabilidad-col{font-weight:500}
 .back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
 .muted{color:var(--muted)}
 
-/* Estilos de la barra de progreso por segmentos */
 .progress-segmented {
   display: inline-flex;
   align-items: center;
@@ -98,9 +97,9 @@ td.fiabilidad-col{font-weight:500}
 }
 
 .info-btn {
-  background: #f7fee7; /* Fondo verde claro/lima */
-  color: #4d7c0f;      /* Texto verde oscuro para buen contraste */
-  border: 1px solid #bef264; /* Borde verde lima */
+  background: #f7fee7;
+  color: #4d7c0f;
+  border: 1px solid #bef264;
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
@@ -171,121 +170,45 @@ td.fiabilidad-col{font-weight:500}
 
 <script>
 // ============================================================================
-// GLICKO-2 ENGINE
+// GLICKO ENGINE
 // ============================================================================
 
-const GLICKO_SCALE = 173.7178;
-const TAU = 0.5;
+const Q = Math.LN10 / 400.0;
+const C_DAILY = 15.0; // Daily decay constant
 const INITIAL_RATING = 1500.0;
 const INITIAL_RD = 350.0;
-const INITIAL_SIGMA = 0.06;
 const MIN_RD = 80.0;
 const MAX_RD = 350.0;
 
-class Glicko2Player {
-  constructor(rating = INITIAL_RATING, rd = INITIAL_RD, sigma = INITIAL_SIGMA) {
+class GlickoPlayer {
+  constructor(rating = INITIAL_RATING, rd = INITIAL_RD) {
     this.rating = rating;
     this.rd = rd;
-    this.sigma = sigma;
-  }
-
-  get mu() { return (this.rating - 1500.0) / GLICKO_SCALE; }
-  get phi() { return this.rd / GLICKO_SCALE; }
-
-  static fromGlickoScale(mu, phi, sigma) {
-    return new Glicko2Player(
-      1500.0 + GLICKO_SCALE * mu,
-      GLICKO_SCALE * phi,
-      sigma
-    );
   }
 }
 
-function g(phi) {
-  return 1.0 / Math.sqrt(1.0 + (3.0 * phi * phi) / (Math.PI * Math.PI));
+function g(rd) {
+  return 1.0 / Math.sqrt(1.0 + (3.0 * Q * Q * rd * rd) / (Math.PI * Math.PI));
 }
 
-function expected(mu, oppMu, oppPhi) {
-  const gPhi = g(oppPhi);
-  const z = gPhi * (mu - oppMu);
-  if (z >= 0) {
-    return 1.0 / (1.0 + Math.exp(-z));
-  }
-  const ez = Math.exp(z);
-  return ez / (1.0 + ez);
-}
-
-function solveNewSigma(phi, sigma, delta, v, tau) {
-  const a = Math.log(sigma * sigma);
-  const phiSq = phi * phi;
-  const tauSq = tau * tau;
-
-  function f(x) {
-    const ex = Math.exp(x);
-    const num = ex * (delta * delta - phiSq - v - ex);
-    const den = 2.0 * Math.pow(phiSq + v + ex, 2);
-    return (num / den) - ((x - a) / tauSq);
-  }
-
-  let A = a;
-  let B;
-
-  if (delta * delta > phiSq + v) {
-    B = Math.log(delta * delta - phiSq - v);
-  } else {
-    let k = 1;
-    while (f(a - k * tau) < 0.0) {
-      k += 1;
-      if (k > 1000) break;
-    }
-    B = a - k * tau;
-  }
-
-  let fA = f(A);
-  let fB = f(B);
-
-  for (let i = 0; i < 100; i++) {
-    if (Math.abs(B - A) < 1e-12) break;
-
-    let C = A + (A - B) * fA / (fB - fA);
-    let fC = f(C);
-
-    if (fC * fB < 0) {
-      A = B;
-      fA = fB;
-    } else {
-      fA *= fB / (fB + fC);
-    }
-    B = C;
-    fB = fC;
-  }
-
-  return Math.exp(A / 2.0);
+function expected(r, oppR, oppRd) {
+  const gRd = g(oppRd);
+  return 1.0 / (1.0 + Math.pow(10, (-gRd * (r - oppR)) / 400.0));
 }
 
 function decayAllPlayersOneDay(playerMap, activePlayersToday = new Set()) {
-  const maxPhi = MAX_RD / GLICKO_SCALE;
-
   playerMap.forEach((player, key) => {
-    // Skip decay for players who played matches today;
-    // updatePeriod will handle their phi/sigma update.
     if (activePlayersToday.has(key)) return;
-
-    const mu = player.mu;
-    const phi = player.phi;
-
-    let phiStar = Math.sqrt(phi * phi + player.sigma * player.sigma);
-    phiStar = Math.min(phiStar, maxPhi);
-
-    playerMap.set(key, Glicko2Player.fromGlickoScale(mu, phiStar, player.sigma));
+    const newRd = Math.min(Math.sqrt(player.rd * player.rd + C_DAILY * C_DAILY), MAX_RD);
+    playerMap.set(key, new GlickoPlayer(player.rating, newRd));
   });
 }
 
 function getPlayerOrCreate(playerMap, name) {
   const trimmed = (name || '').trim();
-  if (!trimmed) return new Glicko2Player();
+  if (!trimmed) return new GlickoPlayer();
   if (!playerMap.has(trimmed)) {
-    playerMap.set(trimmed, new Glicko2Player());
+    playerMap.set(trimmed, new GlickoPlayer());
   }
   return playerMap.get(trimmed);
 }
@@ -294,18 +217,18 @@ function getTeamState(p1Key, p2Key, playerMap) {
   const p1 = getPlayerOrCreate(playerMap, p1Key);
   const p2 = getPlayerOrCreate(playerMap, p2Key);
 
-  const teamMu = (p1.mu + p2.mu) / 2.0;
-  const teamPhi = Math.sqrt(p1.phi * p1.phi + p2.phi * p2.phi) / 2.0;
-  return { mu: teamMu, phi: teamPhi };
+  const teamR = (p1.rating + p2.rating) / 2.0;
+  const teamRd = Math.sqrt(p1.rd * p1.rd + p2.rd * p2.rd) / 2.0;
+  return { rating: teamR, rd: teamRd };
 }
 
-function getEffectiveObservationMu(playerMu, teamMu, opponentTeamMu) {
-  return opponentTeamMu + (playerMu - teamMu);
+function getEffectiveObservationR(playerR, teamR, opponentTeamR) {
+  return opponentTeamR + (playerR - teamR);
 }
 
-function getEffectiveObservationPhi(opponentTeamPhi, teammatePhi) {
-  const safeOpp = Number.isFinite(opponentTeamPhi) ? opponentTeamPhi : 0;
-  const safeTeammate = Number.isFinite(teammatePhi) ? teammatePhi : 0;
+function getEffectiveObservationRd(opponentTeamRd, teammateRd) {
+  const safeOpp = Number.isFinite(opponentTeamRd) ? opponentTeamRd : 0;
+  const safeTeammate = Number.isFinite(teammateRd) ? teammateRd : 0;
   return Math.hypot(safeOpp, safeTeammate / 2);
 }
 
@@ -313,9 +236,7 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function getReliabilityWeight(phiObs) {
-  const rdObs = phiObs * GLICKO_SCALE;
-
+function getReliabilityWeight(rdObs) {
   const RD_DISCOUNT_START = 110.56;
   const RD_ALL_FRESH = Math.sqrt(3.0) * MAX_RD / 2.0;
   const MIN_RELIABILITY_WEIGHT = 0.50;
@@ -333,7 +254,7 @@ function getReliabilityWeight(phiObs) {
 function updatePeriod(playerMap, periodMatches) {
   const starting = new Map();
   playerMap.forEach((p, name) => {
-    starting.set(name, new Glicko2Player(p.rating, p.rd, p.sigma));
+    starting.set(name, new GlickoPlayer(p.rating, p.rd));
   });
 
   const observations = new Map();
@@ -347,67 +268,60 @@ function updatePeriod(playerMap, periodMatches) {
 
     m.team1.forEach((p, idx) => {
       const teammate = m.team1[1 - idx] || p;
-      const teammatePhi = getPlayerOrCreate(starting, teammate).phi;
-      const teammateMu = getPlayerOrCreate(starting, teammate).mu;
-      const playerMu = getPlayerOrCreate(starting, p).mu;
-      const effectiveObservationMu = getEffectiveObservationMu(playerMu, (playerMu + teammateMu) / 2.0, t2State.mu);
+      const teammateRd = getPlayerOrCreate(starting, teammate).rd;
+      const teammateR = getPlayerOrCreate(starting, teammate).rating;
+      const playerR = getPlayerOrCreate(starting, p).rating;
+      const effectiveObservationR = getEffectiveObservationR(playerR, (playerR + teammateR) / 2.0, t2State.rating);
       if (!observations.has(p)) observations.set(p, []);
-      observations.get(p).push({ oppMu: effectiveObservationMu, oppPhi: t2State.phi, teammatePhi, score: scoreT1, weight: m.weight });
+      observations.get(p).push({ oppR: effectiveObservationR, oppRd: t2State.rd, teammateRd, score: scoreT1, weight: m.weight });
     });
 
     m.team2.forEach((p, idx) => {
       const teammate = m.team2[1 - idx] || p;
-      const teammatePhi = getPlayerOrCreate(starting, teammate).phi;
-      const teammateMu = getPlayerOrCreate(starting, teammate).mu;
-      const playerMu = getPlayerOrCreate(starting, p).mu;
-      const effectiveObservationMu = getEffectiveObservationMu(playerMu, (playerMu + teammateMu) / 2.0, t1State.mu);
+      const teammateRd = getPlayerOrCreate(starting, teammate).rd;
+      const teammateR = getPlayerOrCreate(starting, teammate).rating;
+      const playerR = getPlayerOrCreate(starting, p).rating;
+      const effectiveObservationR = getEffectiveObservationR(playerR, (playerR + teammateR) / 2.0, t1State.rating);
       if (!observations.has(p)) observations.set(p, []);
-      observations.get(p).push({ oppMu: effectiveObservationMu, oppPhi: t1State.phi, teammatePhi, score: scoreT2, weight: m.weight });
+      observations.get(p).push({ oppR: effectiveObservationR, oppRd: t1State.rd, teammateRd, score: scoreT2, weight: m.weight });
     });
   }
 
   observations.forEach((obsList, pName) => {
     const player = getPlayerOrCreate(starting, pName);
-    const mu = player.mu;
-    const phi = player.phi;
+    const r = player.rating;
+    const rd = player.rd;
 
-    let sumV = 0.0;
+    let d2Inv = 0.0;
     let sumDelta = 0.0;
 
     for (const obs of obsList) {
-      const effectiveObservationPhi = getEffectiveObservationPhi(obs.oppPhi, obs.teammatePhi);
-      const gPhi = g(effectiveObservationPhi);
-      const eVal = expected(mu, obs.oppMu, effectiveObservationPhi);
+      const effectiveObservationRd = getEffectiveObservationRd(obs.oppRd, obs.teammateRd);
+      const gRd = g(effectiveObservationRd);
+      const eVal = expected(r, obs.oppR, effectiveObservationRd);
 
-      const w3 = getReliabilityWeight(effectiveObservationPhi);
+      const w3 = getReliabilityWeight(effectiveObservationRd);
       const effectiveWeight = obs.weight * w3;
 
-      sumV += effectiveWeight * gPhi * gPhi * eVal * (1.0 - eVal);
-      sumDelta += effectiveWeight * gPhi * (obs.score - eVal);
+      d2Inv += effectiveWeight * Q * Q * gRd * gRd * eVal * (1.0 - eVal);
+      sumDelta += effectiveWeight * gRd * (obs.score - eVal);
     }
 
-    if (sumV <= 0) return;
+    if (d2Inv <= 0) return;
 
-    const v = 1.0 / sumV;
-    const delta = v * sumDelta;
+    let newRd = 1.0 / Math.sqrt((1.0 / (rd * rd)) + d2Inv);
+    newRd = Math.max(newRd, MIN_RD);
 
-    const newSigma = solveNewSigma(phi, player.sigma, delta, v, TAU);
-    const phiStar = Math.sqrt(phi * phi + newSigma * newSigma);
-    let newPhi = 1.0 / Math.sqrt((1.0 / (phiStar * phiStar)) + (1.0 / v));
+    const newR = r + (Q / ((1.0 / (rd * rd)) + d2Inv)) * sumDelta;
 
-    const minPhi = MIN_RD / GLICKO_SCALE;
-    newPhi = Math.max(newPhi, minPhi);
-
-    const newMu = mu + newPhi * newPhi * sumDelta;
-
-    playerMap.set(pName, Glicko2Player.fromGlickoScale(newMu, newPhi, newSigma));
+    playerMap.set(pName, new GlickoPlayer(newR, newRd));
   });
 }
 
 function calculateEngineRatings(names, matches, cutoffDateIso) {
   const playerMap = new Map();
   names.forEach(n => {
-    if (n && n.trim()) playerMap.set(n.trim(), new Glicko2Player());
+    if (n && n.trim()) playerMap.set(n.trim(), new GlickoPlayer());
   });
 
   if (!matches || matches.length === 0) {
@@ -435,7 +349,6 @@ function calculateEngineRatings(names, matches, cutoffDateIso) {
     byDate.get(m.date).push(m);
   });
 
-  // start: first match date; end: either provided cutoff or last match date
   const [startY, startM, startD] = matches[0].date.split('-').map(Number);
   const endIso = (cutoffDateIso && typeof cutoffDateIso === 'string') ? cutoffDateIso : matches[matches.length - 1].date;
   const [endY, endM, endD] = endIso.split('-').map(Number);
@@ -454,14 +367,12 @@ function calculateEngineRatings(names, matches, cutoffDateIso) {
     const dayMatches = byDate.get(dateStr) || [];
     const activeToday = new Set();
 
-    // Collect all players who have matches on dateStr
     dayMatches.forEach(m => {
       m.team1.concat(m.team2).forEach(p => {
         if (p && p.trim()) activeToday.add(p.trim());
       });
     });
 
-    // Decay only idle players for this day
     decayAllPlayersOneDay(playerMap, activeToday);
 
     if (dayMatches.length > 0) {
@@ -501,14 +412,12 @@ function fetchMatches() {
   }
 
   function f_x(x){
-    // sigmoid-based weight per design: w2(x) = 0.5 + 1 / (1 + exp[-k*(x-0.60)])
-    const k = 10; // default steepness
+    const k = 10;
     const xx = Number(x);
     if (!Number.isFinite(xx)) return 0.0001;
     return 0.5 + 1.0 / (1.0 + Math.exp(-k * (xx - 0.60)));
   }
 
-  // Request also 'legacy' so we can build historical views; we'll filter client-side
   return fetch(`/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,compas,doble_ko,legacy&ts=${Date.now()}`)
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(db => {
@@ -618,7 +527,6 @@ function buildDateOptionsFromMatches(matches) {
     temp.push(`${yyyy}-${mm}-${dd}`);
     cur += ONE_DAY;
   }
-  // Return descending: most recent first
   return temp.reverse();
 }
 
@@ -632,7 +540,6 @@ function populateDateDropdown(matches) {
   for (const v of opts) {
     const o = document.createElement('option');
     o.value = v;
-    // display as dd/mm/aaaa
     const parts = v.split('-');
     const display = `${parts[2]}/${parts[1]}/${parts[0]}`;
     let label = display;
@@ -641,14 +548,12 @@ function populateDateDropdown(matches) {
     o.textContent = label;
     sel.appendChild(o);
   }
-  // default select today's date if present, otherwise the first (most recent)
   if (opts.includes(isoToday)) sel.value = isoToday;
   else if (opts.length > 0) sel.value = opts[0];
 }
 
 function filterMatchesForCutoff(allMatches, cutoffIso) {
   if (!allMatches) return [];
-  // cutoffIso is expected to be an ISO date string (yyyy-mm-dd)
   let cutoff = cutoffIso;
   if (!cutoff) {
     const dates = allMatches.map(m => m.date).filter(Boolean).sort();
@@ -659,18 +564,16 @@ function filterMatchesForCutoff(allMatches, cutoffIso) {
 
   return allMatches.filter(m => {
     if (!m || !m.date) return false;
-    if (m.date > cutoff) return false; // exclude future matches
+    if (m.date > cutoff) return false;
 
     const et = (m.event_type || '').toString().toLowerCase();
     const eid = (m.event_id !== undefined && m.event_id !== null) ? Number(m.event_id) : null;
 
     if (cutoff >= threshold) {
-      // On/after 2026-09-01: include ranked, grupo_liga, pozo, compas, doble_ko, but exclude eventId 23/24
       if (!['ranked','grupo_liga','pozo','compas','doble_ko'].includes(et)) return false;
       if (eid === 23 || eid === 24) return false;
       return true;
     } else {
-      // Before 2026-09-01: include legacy; include pozo only if eventId 23 or 24; include other types (ranked, grupo_liga, doble_ko)
       if (et === 'legacy') return true;
       if (et === 'pozo') return (eid === 23 || eid === 24);
       if (['ranked','grupo_liga','compas','doble_ko'].includes(et)) return true;
@@ -805,7 +708,6 @@ function renderTable(rows) {
         </div>
       `;
 
-      // If the user toggles 'Ver RD', show numeric RD in dark gray instead of the progress bar
       const showRD = (document.getElementById('toggleShowRD') && document.getElementById('toggleShowRD').checked) ? true : false;
       let reliabilityHtml;
       if (showRD) {
