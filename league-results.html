@@ -390,7 +390,7 @@ function buildGroupedAliasMap(league){
   groups.forEach(group => {
     const items = Array.isArray(group) ? group.map(normalizePlayerName).filter(Boolean) : []
     if(items.length <= 1) return
-    const canonical = items[0]
+    const canonical = items.join(' / ')
     items.forEach(name => aliasMap.set(name, canonical))
   })
   return aliasMap
