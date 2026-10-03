@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rating Test</title>
+<style>
+:root {
+  --bg: #f5f8ff;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --primary: #2563eb;
+  --border: rgba(15, 23, 42, 0.08);
+  --text: #0f172a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  margin: 0;
+  background: linear-gradient(180deg, var(--bg), #eef4ff 60%);
+  color: var(--text);
+  padding: 28px 18px;
+}
+
+.site {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.block {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 30px rgba(16, 24, 40, 0.04);
+}
+
+h1 {
+  margin: 0 0 14px;
+  font-size: clamp(1.4rem, 2vw, 2rem);
+}
+
+.description {
+  color: var(--muted);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  background: #f8fafc;
+  color: var(--text);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 12px 0 18px;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+button:hover {
+  filter: brightness(0.98);
+  transform: translateY(-1px);
+}
+
+.calculate-btn {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+
+.result-box {
+  margin-top: 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #f8fafc;
+  padding: 14px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  text-align: left;
+}
+
+th {
+  color: #475569;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+td:nth-child(2), th:nth-child(2) {
+  text-align: center;
+}
+
+td:nth-child(3), th:nth-child(3) {
+  text-align: right;
+}
+
+.name-cell {
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.empty-state {
+  color: var(--muted);
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  body { padding: 16px; }
+  .block { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="site">
+  <div class="block">
+    <h1>Rating test</h1>
+    <p class="description">
+      Cada línea es un partido, cada línea en blanco indica un nuevo día. El formato es:<br>
+      pareja1_a, pareja1_b, pareja2_a, pareja2_b, w1, set1, set2, set3
+    </p>
+
+    <textarea id="resultsInput" spellcheck="false">A,B,C,D,0.6,8-5
+E,F,A,B,1,3-6,6-4,7-5
+A,C,E,G,1,6-2,1-6,[10-5]
+
+B,D,F,H,1,6-3,7-6
+H,I,J,A,0.3,3-5</textarea>
+
+    <div class="controls" style="justify-content: space-between; gap: 12px;">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button id="importRealBtn" type="button" style="background:#e2e8f0; color:#0f172a; border:1px solid #cbd5e1; border-radius:8px; padding:10px 16px; font:inherit; font-weight:700; cursor:pointer;">Importar real</button>
+        <label style="display:flex; align-items:center; gap:8px; color:#334155; font-weight:600;">
+          <span>Fecha:</span>
+          <select id="importDate" style="padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; font:inherit;"></select>
+        </label>
+      </div>
+      <button class="calculate-btn" id="calculateBtn" type="button">Calcular</button>
+    </div>
+
+    <div class="result-box" id="resultBox">
+      <p class="empty-state">Pulsa “Calcular” para generar el rating.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// GLICKO ENGINE (copiado literalmente de rating.html)
+// ============================================================================
+
+const Q = Math.LN10 / 400.0;
+const C_DAILY = 15.0;
+const INITIAL_RATING = 1500.0;
+const INITIAL_RD = 350.0;
+const MIN_RD = 80.0;
+const MAX_RD = 350.0;
+
+class GlickoPlayer {
+  constructor(rating = INITIAL_RATING, rd = INITIAL_RD) {
+    this.rating = rating;
+    this.rd = rd;
+  }
+}
+
+function g(rd) {
+  return 1.0 / Math.sqrt(1.0 + (3.0 * Q * Q * rd * rd) / (Math.PI * Math.PI));
+}
+
+function expected(r, oppR, oppRd) {
+  const gRd = g(oppRd);
+  return 1.0 / (1.0 + Math.pow(10, (-gRd * (r - oppR)) / 400.0));
+}
+
+function decayAllPlayersOneDay(playerMap, activePlayersToday = new Set()) {
+  playerMap.forEach((player, key) => {
+    if (activePlayersToday.has(key)) return;
+    const newRd = Math.min(Math.sqrt(player.rd * player.rd + C_DAILY * C_DAILY), MAX_RD);
+    playerMap.set(key, new GlickoPlayer(player.rating, newRd));
+  });
+}
+
+function getPlayerOrCreate(playerMap, name) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return new GlickoPlayer();
+  if (!playerMap.has(trimmed)) {
+    playerMap.set(trimmed, new GlickoPlayer());
+  }
+  return playerMap.get(trimmed);
+}
+
+function getTeamState(p1Key, p2Key, playerMap) {
+  const p1 = getPlayerOrCreate(playerMap, p1Key);
+  const p2 = getPlayerOrCreate(playerMap, p2Key);
+
+  const teamR = (p1.rating + p2.rating) / 2.0;
+  const teamRd = Math.sqrt(p1.rd * p1.rd + p2.rd * p2.rd) / 2.0;
+  return { rating: teamR, rd: teamRd };
+}
+
+function getEffectiveObservationR(playerR, teamR, opponentTeamR) {
+  return opponentTeamR + (playerR - teamR);
+}
+
+function getEffectiveObservationRd(opponentTeamRd, teammateRd) {
+  const safeOpp = Number.isFinite(opponentTeamRd) ? opponentTeamRd : 0;
+  const safeTeammate = Number.isFinite(teammateRd) ? teammateRd : 0;
+  return Math.hypot(safeOpp, safeTeammate / 2);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getReliabilityWeight(rdObs) {
+  const RD_DISCOUNT_START = 110.56;
+  const RD_ALL_FRESH = Math.sqrt(3.0) * MAX_RD / 2.0;
+  const MIN_RELIABILITY_WEIGHT = 0.50;
+  const CURVE = 1.0;
+
+  const t = clamp(
+    (rdObs - RD_DISCOUNT_START) / (RD_ALL_FRESH - RD_DISCOUNT_START),
+    0.0,
+    1.0
+  );
+
+  return 1.0 - (1.0 - MIN_RELIABILITY_WEIGHT) * Math.pow(t, CURVE);
+}
+
+function updatePeriod(playerMap, periodMatches) {
+  const starting = new Map();
+  playerMap.forEach((p, name) => {
+    starting.set(name, new GlickoPlayer(p.rating, p.rd));
+  });
+
+  const observations = new Map();
+
+  for (const m of periodMatches) {
+    const t1State = getTeamState(m.team1[0], m.team1[1], starting);
+    const t2State = getTeamState(m.team2[0], m.team2[1], starting);
+
+    const scoreT1 = m.score;
+    const scoreT2 = 1.0 - m.score;
+
+    m.team1.forEach((p, idx) => {
+      const teammate = m.team1[1 - idx] || p;
+      const teammateRd = getPlayerOrCreate(starting, teammate).rd;
+      const teammateR = getPlayerOrCreate(starting, teammate).rating;
+      const playerR = getPlayerOrCreate(starting, p).rating;
+      const effectiveObservationR = getEffectiveObservationR(playerR, (playerR + teammateR) / 2.0, t2State.rating);
+      if (!observations.has(p)) observations.set(p, []);
+      observations.get(p).push({ oppR: effectiveObservationR, oppRd: t2State.rd, teammateRd, score: scoreT1, weight: m.weight });
+    });
+
+    m.team2.forEach((p, idx) => {
+      const teammate = m.team2[1 - idx] || p;
+      const teammateRd = getPlayerOrCreate(starting, teammate).rd;
+      const teammateR = getPlayerOrCreate(starting, teammate).rating;
+      const playerR = getPlayerOrCreate(starting, p).rating;
+      const effectiveObservationR = getEffectiveObservationR(playerR, (playerR + teammateR) / 2.0, t1State.rating);
+      if (!observations.has(p)) observations.set(p, []);
+      observations.get(p).push({ oppR: effectiveObservationR, oppRd: t1State.rd, teammateRd, score: scoreT2, weight: m.weight });
+    });
+  }
+
+  observations.forEach((obsList, pName) => {
+    const player = getPlayerOrCreate(starting, pName);
+    const r = player.rating;
+    const rd = player.rd;
+
+    let d2Inv = 0.0;
+    let sumDelta = 0.0;
+
+    for (const obs of obsList) {
+      const effectiveObservationRd = getEffectiveObservationRd(obs.oppRd, obs.teammateRd);
+      const gRd = g(effectiveObservationRd);
+      const eVal = expected(r, obs.oppR, effectiveObservationRd);
+
+      const w3 = getReliabilityWeight(effectiveObservationRd);
+      const effectiveWeight = obs.weight * w3;
+
+      d2Inv += effectiveWeight * Q * Q * gRd * gRd * eVal * (1.0 - eVal);
+      sumDelta += effectiveWeight * gRd * (obs.score - eVal);
+    }
+
+    if (d2Inv <= 0) return;
+
+    let newRd = 1.0 / Math.sqrt((1.0 / (rd * rd)) + d2Inv);
+    newRd = Math.max(newRd, MIN_RD);
+
+    const newR = r + (Q / ((1.0 / (rd * rd)) + d2Inv)) * sumDelta;
+
+    playerMap.set(pName, new GlickoPlayer(newR, newRd));
+  });
+}
+
+function addDaysToIso(iso, days) {
+  if (!iso || !Number.isFinite(days) || days <= 0) return iso;
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().split('T')[0];
+}
+
+function calculateEngineRatings(names, matches, cutoffDateIso, extraDecayDays = 0) {
+  const playerMap = new Map();
+  names.forEach(n => {
+    if (n && n.trim()) playerMap.set(n.trim(), new GlickoPlayer());
+  });
+
+  if (!matches || matches.length === 0) {
+    return Array.from(playerMap.entries()).map(([name, p]) => ({
+      name,
+      rating: p.rating,
+      rd: p.rd
+    }));
+  }
+
+  matches.forEach(m => {
+    m.team1.concat(m.team2).forEach(pName => {
+      getPlayerOrCreate(playerMap, pName);
+    });
+  });
+
+  matches.sort((a, b) => {
+    const dComp = a.date.localeCompare(b.date);
+    return dComp !== 0 ? dComp : (a.id - b.id);
+  });
+
+  const byDate = new Map();
+  matches.forEach(m => {
+    if (!byDate.has(m.date)) byDate.set(m.date, []);
+    byDate.get(m.date).push(m);
+  });
+
+  const [startY, startM, startD] = matches[0].date.split('-').map(Number);
+  const baseEndIso = (cutoffDateIso && typeof cutoffDateIso === 'string') ? cutoffDateIso : matches[matches.length - 1].date;
+  const endIso = addDaysToIso(baseEndIso, extraDecayDays);
+  const [endY, endM, endD] = endIso.split('-').map(Number);
+
+  let curTime = Date.UTC(startY, startM - 1, startD);
+  const endTime = Date.UTC(endY, endM - 1, endD);
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+  while (curTime <= endTime) {
+    const d = new Date(curTime);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    const dayMatches = byDate.get(dateStr) || [];
+    const activeToday = new Set();
+
+    dayMatches.forEach(m => {
+      m.team1.concat(m.team2).forEach(p => {
+        if (p && p.trim()) activeToday.add(p.trim());
+      });
+    });
+
+    decayAllPlayersOneDay(playerMap, activeToday);
+
+    if (dayMatches.length > 0) {
+      updatePeriod(playerMap, dayMatches);
+    }
+
+    curTime += ONE_DAY_MS;
+  }
+
+  return Array.from(playerMap.entries()).map(([name, p]) => ({
+    name,
+    rating: p.rating,
+    rd: p.rd
+  }));
+}
+
+// ============================================================================
+// DATA FETCHING & UI RENDER (copia literal de rating.html)
+// ============================================================================
+
+function fetchMatches() {
+  function toIsoDate(s){
+    if(!s) return null;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const parts = String(s).split('/');
+    if(parts.length===3){
+      const d = String(parts[0]).padStart(2,'0');
+      const m = String(parts[1]).padStart(2,'0');
+      const y = String(parts[2]);
+      return `${y}-${m}-${d}`;
+    }
+    const dt = new Date(s);
+    if(isNaN(dt.getTime())) return null;
+    return dt.toISOString().split('T')[0];
+  }
+
+  function f_x(x){
+    const k = 10;
+    const xx = Number(x);
+    if (!Number.isFinite(xx)) return 0.0001;
+    return 0.5 + 1.0 / (1.0 + Math.exp(-k * (xx - 0.60)));
+  }
+
+  return fetch(`/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,compas,doble_ko,legacy&ts=${Date.now()}`)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(db => {
+      const raw = (db && db.matches) ? db.matches : [];
+
+      return raw.map((m, idx) => {
+        const dateIso = toIsoDate(m.date) || toIsoDate(m.start_date) || new Date().toISOString().split('T')[0];
+
+        const p1a = (m.p1a || '').trim();
+        const p1b = (m.p1b || '').trim();
+        const p2a = (m.p2a || '').trim();
+        const p2b = (m.p2b || '').trim();
+
+        const s1 = [m.s11, m.s12, m.s13].map(x => { const v = parseInt(String(x||'').trim(),10); return Number.isFinite(v) ? v : null; });
+        const s2 = [m.s21, m.s22, m.s23].map(x => { const v = parseInt(String(x||'').trim(),10); return Number.isFinite(v) ? v : null; });
+
+        const fmtLow = String(m.format || '').toLowerCase();
+        let setsWon1 = 0;
+        let setsWon2 = 0;
+        let totalGames1 = 0;
+        let totalGames2 = 0;
+
+        for (let i = 0; i < 3; i++) {
+          const g1 = s1[i];
+          const g2 = s2[i];
+
+          if (g1 === null || g2 === null) continue;
+
+          if (i === 2 && fmtLow.includes('bo3_stb')) {
+            if (g1 > g2) {
+              setsWon1++;
+              totalGames1 += 1;
+            } else if (g2 > g1) {
+              setsWon2++;
+              totalGames2 += 1;
+            }
+            continue;
+          }
+
+          totalGames1 += g1;
+          totalGames2 += g2;
+
+          if (g1 > g2) setsWon1++;
+          else if (g2 > g1) setsWon2++;
+        }
+
+        const totalGames = totalGames1 + totalGames2;
+        if (totalGames === 0 || setsWon1 === setsWon2) return null;
+
+        const winnerIsTeam1 = setsWon1 > setsWon2;
+        const score = winnerIsTeam1 ? 1.0 : 0.0;
+
+        let w1 = 1.0;
+        if (fmtLow.includes('timed_games_long')) {
+          w1 = 0.6;
+        } else if (fmtLow.includes('timed') || fmtLow.includes('timed_games')) {
+          w1 = 0.3;
+        }
+
+        const winnerGames = winnerIsTeam1 ? totalGames1 : totalGames2;
+        const x = winnerGames / totalGames;
+        let w2 = f_x(x);
+        if (!Number.isFinite(w2) || w2 <= 0) w2 = 0.0001;
+
+        const weight = w1 * w2;
+
+        return {
+          id: (m.id !== undefined && m.id !== null) ? m.id : idx,
+          date: dateIso,
+          team1: [p1a, p1b],
+          team2: [p2a, p2b],
+          score: score,
+          weight: weight,
+          event_type: (m.event_type || '').toString().toLowerCase(),
+          event_id: (m.event_id !== undefined && m.event_id !== null) ? Number(m.event_id) : null,
+          format: m.format,
+          s11: m.s11,
+          s12: m.s12,
+          s13: m.s13,
+          s21: m.s21,
+          s22: m.s22,
+          s23: m.s23
+        };
+      }).filter(m => m && m.date && m.team1[0] && m.team1[1] && m.team2[0] && m.team2[1]);
+    })
+    .catch(e => { console.error('Could not load matches', e); return []; });
+}
+
+function buildDateOptionsFromMatches(matches) {
+  const isoToday = new Date().toISOString().split('T')[0];
+  if (!matches || matches.length === 0) return [isoToday];
+
+  const dates = Array.from(new Set(
+    (matches || []).map(m => m && m.date).filter(Boolean)
+  )).filter(date => date <= isoToday).sort();
+
+  if (dates.length === 0) return [isoToday];
+
+  const first = dates[0];
+  let last = dates[dates.length - 1];
+  if (last < isoToday) last = isoToday;
+
+  const [y1,m1,d1] = first.split('-').map(Number);
+  const [y2,m2,d2] = last.split('-').map(Number);
+  let cur = Date.UTC(y1, m1 - 1, d1);
+  const end = Date.UTC(y2, m2 - 1, d2);
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  const temp = [];
+  while (cur <= end) {
+    const dt = new Date(cur);
+    const yyyy = dt.getUTCFullYear();
+    const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getUTCDate()).padStart(2, '0');
+    temp.push(`${yyyy}-${mm}-${dd}`);
+    cur += ONE_DAY;
+  }
+  return temp.reverse();
+}
+
+function populateDateDropdown(matches) {
+  const sel = document.getElementById('ratingDate');
+  if (!sel) return;
+  const opts = buildDateOptionsFromMatches(matches);
+  sel.innerHTML = '';
+  const isoToday = new Date().toISOString().split('T')[0];
+  const threshold = '2026-09-01';
+  for (const v of opts) {
+    const o = document.createElement('option');
+    o.value = v;
+    const parts = v.split('-');
+    const display = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    let label = display;
+    if (v === isoToday) label += ' (Actual)';
+    if (v === threshold) label += ' (Nuevo comienzo)';
+    o.textContent = label;
+    sel.appendChild(o);
+  }
+  if (opts.includes(isoToday)) sel.value = isoToday;
+  else if (opts.length > 0) sel.value = opts[0];
+}
+
+function filterMatchesForCutoff(allMatches, cutoffIso) {
+  if (!allMatches) return [];
+  let cutoff = cutoffIso;
+  if (!cutoff) {
+    const dates = allMatches.map(m => m.date).filter(Boolean).sort();
+    cutoff = dates.length ? dates[dates.length - 1] : new Date().toISOString().split('T')[0];
+  }
+
+  const threshold = '2026-09-01';
+
+  return allMatches.filter(m => {
+    if (!m || !m.date) return false;
+    if (m.date > cutoff) return false;
+
+    const et = (m.event_type || '').toString().toLowerCase();
+    const eid = (m.event_id !== undefined && m.event_id !== null) ? Number(m.event_id) : null;
+
+    if (cutoff >= threshold) {
+      if (!['ranked','grupo_liga','pozo','compas','doble_ko'].includes(et)) return false;
+      if (eid === 23 || eid === 24) return false;
+      return true;
+    } else {
+      if (et === 'legacy') return true;
+      if (et === 'pozo') return (eid === 23 || eid === 24);
+      if (['ranked','grupo_liga','compas','doble_ko'].includes(et)) return true;
+      return false;
+    }
+  });
+}
+
+function loadNames(){
+  const url = '/api/read?action=getNames';
+  return fetch(url)
+    .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(db => { return (db && db.names) ? db.names : []; })
+    .catch(e => { return []; });
+}
+
+// ============================================================================
+// PARSER + UI PARA EL TEST
+// ============================================================================
+
+function parseNumericSet(token) {
+  const raw = String(token || '').trim();
+  if (!raw) return null;
+
+  const isSuperTiebreak = /^\[(.*)\]$/.test(raw);
+  const clean = isSuperTiebreak ? raw.slice(1, -1).trim() : raw;
+  const match = clean.match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+  if (!match) return null;
+
+  const g1 = Number(match[1]);
+  const g2 = Number(match[2]);
+  if (!Number.isFinite(g1) || !Number.isFinite(g2)) return null;
+
+  return { g1, g2, isSuperTiebreak };
+}
+
+function parseTestResults(rawText) {
+  const lines = String(rawText || '').split(/\r?\n/);
+  const allMatches = [];
+  const baseDate = new Date(Date.UTC(2026, 8, 1));
+
+  let dayCursor = 0;
+  let currentDayMatches = [];
+  let currentMatchId = 1;
+  let maxMatchDayIndex = -1;
+
+  function finalizeDay(dayIndex) {
+    if (currentDayMatches.length === 0) return;
+
+    const dayDate = new Date(baseDate.getTime() + dayIndex * 24 * 60 * 60 * 1000);
+    const iso = dayDate.toISOString().split('T')[0];
+
+    for (const match of currentDayMatches) {
+      match.date = iso;
+      match.id = currentMatchId++;
+      allMatches.push(match);
+    }
+
+    currentDayMatches = [];
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      if (currentDayMatches.length > 0) {
+        finalizeDay(dayCursor);
+      }
+      dayCursor += 1;
+      continue;
+    }
+
+    const parts = line.split(',').map(p => p.trim());
+    if (parts.length < 6) continue;
+
+    const team1a = parts[0];
+    const team1b = parts[1];
+    const team2a = parts[2];
+    const team2b = parts[3];
+    const w1Raw = parts[4];
+    const setTokens = parts.slice(5);
+
+    let setsWon1 = 0;
+    let setsWon2 = 0;
+    let totalGames1 = 0;
+    let totalGames2 = 0;
+
+    for (let i = 0; i < setTokens.length; i++) {
+      const parsedSet = parseNumericSet(setTokens[i]);
+      if (!parsedSet) continue;
+
+      const { g1, g2, isSuperTiebreak } = parsedSet;
+
+      if (isSuperTiebreak && i === 2) {
+        if (g1 > g2) {
+          setsWon1++;
+          totalGames1 += 1;
+        } else if (g2 > g1) {
+          setsWon2++;
+          totalGames2 += 1;
+        }
+        continue;
+      }
+
+      totalGames1 += g1;
+      totalGames2 += g2;
+
+      if (g1 > g2) setsWon1++;
+      else if (g2 > g1) setsWon2++;
+    }
+
+    const totalGames = totalGames1 + totalGames2;
+    if (totalGames === 0 || setsWon1 === setsWon2) continue;
+
+    const winnerIsTeam1 = setsWon1 > setsWon2;
+    const score = winnerIsTeam1 ? 1.0 : 0.0;
+    const w1 = Number(w1Raw);
+    const winnerGames = winnerIsTeam1 ? totalGames1 : totalGames2;
+    const x = winnerGames / totalGames;
+
+    function f_x(xValue) {
+      const k = 10;
+      const xx = Number(xValue);
+      if (!Number.isFinite(xx)) return 0.0001;
+      return 0.5 + 1.0 / (1.0 + Math.exp(-k * (xx - 0.60)));
+    }
+
+    let w2 = f_x(x);
+    if (!Number.isFinite(w2) || w2 <= 0) w2 = 0.0001;
+
+    const weight = (Number.isFinite(w1) ? w1 : 1.0) * w2;
+
+    currentDayMatches.push({
+      id: 0,
+      date: '',
+      team1: [team1a, team1b],
+      team2: [team2a, team2b],
+      score,
+      weight,
+      event_type: 'manual_test',
+      event_id: null
+    });
+    maxMatchDayIndex = Math.max(maxMatchDayIndex, dayCursor);
+  }
+
+  if (currentDayMatches.length > 0) {
+    finalizeDay(dayCursor);
+  }
+
+  const extraDecayDays = Math.max(0, dayCursor - maxMatchDayIndex);
+  return { matches: allMatches, extraDecayDays };
+}
+
+function formatImportSet(score1, score2, isSuperTiebreak) {
+  const token = `${score1}-${score2}`;
+  return isSuperTiebreak ? `[${token}]` : token;
+}
+
+function buildRealImportText(matches) {
+  if (!matches || matches.length === 0) return '';
+
+  const sorted = [...matches].sort((a, b) => {
+    const dateComp = String(a.date || '').localeCompare(String(b.date || ''));
+    if (dateComp !== 0) return dateComp;
+    return Number(a.id || 0) - Number(b.id || 0);
+  });
+
+  const byDate = new Map();
+  sorted.forEach(m => {
+    if (!byDate.has(m.date)) byDate.set(m.date, []);
+    byDate.get(m.date).push(m);
+  });
+
+  const dateGroups = Array.from(byDate.entries()).sort(([d1], [d2]) => String(d1).localeCompare(String(d2)));
+  const lines = [];
+
+  dateGroups.forEach(([dateKey, dateMatches], dateIndex) => {
+    const dayLines = [];
+
+    dateMatches.forEach((m) => {
+      const p1a = (m.team1 && m.team1[0]) ? String(m.team1[0]).trim() : '';
+      const p1b = (m.team1 && m.team1[1]) ? String(m.team1[1]).trim() : '';
+      const p2a = (m.team2 && m.team2[0]) ? String(m.team2[0]).trim() : '';
+      const p2b = (m.team2 && m.team2[1]) ? String(m.team2[1]).trim() : '';
+
+      if (!p1a || !p1b || !p2a || !p2b) return;
+
+      const fmtLow = String(m.format || '').toLowerCase();
+      const s1 = [m.s11, m.s12, m.s13].map(x => {
+        const v = parseInt(String(x || '').trim(), 10);
+        return Number.isFinite(v) ? v : null;
+      });
+      const s2 = [m.s21, m.s22, m.s23].map(x => {
+        const v = parseInt(String(x || '').trim(), 10);
+        return Number.isFinite(v) ? v : null;
+      });
+
+      const tokens = [];
+      for (let i = 0; i < 3; i++) {
+        const g1 = s1[i];
+        const g2 = s2[i];
+        if (g1 === null || g2 === null) continue;
+        const isSuperTiebreak = i === 2 && fmtLow.includes('bo3_stb');
+        tokens.push(formatImportSet(g1, g2, isSuperTiebreak));
+      }
+
+      if (tokens.length === 0) return;
+
+      let w1 = 1.0;
+      if (fmtLow.includes('timed_games_long')) {
+        w1 = 0.6;
+      } else if (fmtLow.includes('timed') || fmtLow.includes('timed_games')) {
+        w1 = 0.3;
+      }
+
+      dayLines.push([p1a, p1b, p2a, p2b, String(w1), ...tokens].join(','));
+    });
+
+    if (dayLines.length === 0) return;
+
+    if (dateIndex > 0) {
+      const previousDate = dateGroups[dateIndex - 1][0];
+      const currentDate = dateKey;
+      const prev = new Date(`${previousDate}T00:00:00Z`);
+      const curr = new Date(`${currentDate}T00:00:00Z`);
+      const diffDays = Math.max(0, Math.round((curr.getTime() - prev.getTime()) / 86400000));
+      for (let i = 0; i < diffDays; i++) {
+        lines.push('');
+      }
+    }
+
+    lines.push(...dayLines);
+  });
+
+  return lines.join('\n');
+}
+
+function populateImportDateDropdown(matches) {
+  const sel = document.getElementById('importDate');
+  if (!sel || typeof sel.appendChild !== 'function') return;
+
+  const opts = buildDateOptionsFromMatches(matches || []);
+  sel.innerHTML = '';
+
+  for (const v of opts) {
+    const o = document.createElement('option');
+    o.value = v;
+    const [y, m, d] = v.split('-');
+    o.textContent = `${d}/${m}/${y}`;
+    sel.appendChild(o);
+  }
+
+  if (opts.length > 0) {
+    sel.value = opts[0];
+  }
+}
+
+function handleImportReal() {
+  const dateSel = document.getElementById('importDate');
+  const selected = dateSel ? dateSel.value : 'latest';
+  const inputEl = document.getElementById('resultsInput');
+
+  const allMatches = window._allMatches || [];
+  const filtered = filterMatchesForCutoff(allMatches, selected);
+  const text = buildRealImportText(filtered);
+
+  if (inputEl) {
+    inputEl.value = text;
+  }
+}
+
+function renderTable(rows) {
+  const box = document.getElementById('resultBox');
+  if (!box) return;
+
+  if (!rows || rows.length === 0) {
+    box.innerHTML = '<p class="empty-state">No hay jugadores con resultados válidos.</p>';
+    return;
+  }
+
+  const html = [
+    '<table aria-label="Resultado del rating test">',
+    '<thead><tr><th>Jugador</th><th>Rating</th><th>RD</th></tr></thead>',
+    '<tbody>'
+  ];
+
+  for (const row of rows) {
+    const rating = Number(row.rating);
+    const rd = Number(row.rd);
+    html.push(`
+      <tr>
+        <td class="name-cell">${String(row.name || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))}</td>
+        <td>${Number.isFinite(rating) ? rating.toFixed(2).replace('.', ',') : '-'}</td>
+        <td>${Number.isFinite(rd) ? rd.toFixed(2).replace('.', ',') : '-'}</td>
+      </tr>
+    `);
+  }
+
+  html.push('</tbody></table>');
+  box.innerHTML = html.join('');
+}
+
+function handleCalculate() {
+  const inputEl = document.getElementById('resultsInput');
+  const rawText = inputEl ? inputEl.value : '';
+  const parsed = parseTestResults(rawText);
+  const matches = parsed && Array.isArray(parsed.matches) ? parsed.matches : [];
+  const extraDecayDays = parsed && Number.isFinite(parsed.extraDecayDays) ? parsed.extraDecayDays : 0;
+
+  if (!matches || matches.length === 0) {
+    renderTable([]);
+    return;
+  }
+
+  const names = Array.from(new Set(matches.flatMap(m => m.team1.concat(m.team2))));
+  const calculated = calculateEngineRatings(names, matches, matches[matches.length - 1].date, extraDecayDays);
+
+  const sorted = calculated.slice().sort((a, b) => {
+    if (b.rating !== a.rating) return b.rating - a.rating;
+    return String(a.name || '').localeCompare(String(b.name || ''), 'es', { sensitivity: 'base', numeric: true });
+  });
+
+  renderTable(sorted);
+}
+
+async function loadRealImportData() {
+  try {
+    const allMatches = await fetchMatches();
+    window._allMatches = allMatches || [];
+    populateImportDateDropdown(window._allMatches);
+
+    const dateSelect = document.getElementById('importDate');
+    const selected = dateSelect ? dateSelect.value : 'latest';
+    const filtered = filterMatchesForCutoff(window._allMatches, selected);
+    const text = buildRealImportText(filtered);
+    const inputEl = document.getElementById('resultsInput');
+    if (inputEl && !inputEl.value.trim()) {
+      inputEl.value = text || inputEl.value;
+    }
+  } catch (error) {
+    console.error('No se pudo importar partidos reales', error);
+  }
+}
+
+function init() {
+  const button = document.getElementById('calculateBtn');
+  if (button) {
+    button.addEventListener('click', handleCalculate);
+  }
+
+  const importButton = document.getElementById('importRealBtn');
+  if (importButton) {
+    importButton.addEventListener('click', handleImportReal);
+  }
+
+  const importDate = document.getElementById('importDate');
+  if (importDate) {
+    importDate.addEventListener('change', () => {
+      const selected = importDate.value;
+      const allMatches = window._allMatches || [];
+      const filtered = filterMatchesForCutoff(allMatches, selected);
+      const inputEl = document.getElementById('resultsInput');
+      if (inputEl) {
+        inputEl.value = buildRealImportText(filtered);
+      }
+    });
+  }
+
+  loadRealImportData();
+}
+
+init();
+</script>
+</body>
+</html>
