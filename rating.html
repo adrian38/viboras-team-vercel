@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rating</title>
+<link rel="icon" href="/image.png" type="image/png">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -50,20 +51,17 @@ body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;marg
 }
 
 /* Category Styles */
-.tier-capitan_1, .tier-capitan_2 { background-color: #fff8f0; border-color: #fed7aa; }
-.tier-capitan_1 .tier-title, .tier-capitan_2 .tier-title { color: #ea580c; }
+.tier-entreno { background-color: #fff8f0; border-color: #fed7aa; }
+.tier-entreno .tier-title { color: #ea580c; }
 
-.tier-contramaestre_1, .tier-contramaestre_2 { background-color: #f0f7ff; border-color: #bfdbfe; }
-.tier-contramaestre_1 .tier-title, .tier-contramaestre_2 .tier-title { color: #2563eb; }
+.tier-avanzado { background-color: #f0f7ff; border-color: #bfdbfe; }
+.tier-avanzado .tier-title { color: #2563eb; }
 
-.tier-bucanero_1, .tier-bucanero_2 { background-color: #fdf2f4; border-color: #fbcfe8; }
-.tier-bucanero_1 .tier-title, .tier-bucanero_2 .tier-title { color: #9f1239; }
+.tier-intermedio { background-color: #f0fdf4; border-color: #bbf7d0; }
+.tier-intermedio .tier-title { color: #16a34a; }
 
-.tier-marinero_1, .tier-marinero_2 { background-color: #f0fdf4; border-color: #bbf7d0; }
-.tier-marinero_1 .tier-title, .tier-marinero_2 .tier-title { color: #16a34a; }
-
-.tier-grumete_1, .tier-grumete_2 { background-color: #fdf8f6; border-color: #fed7aa; }
-.tier-grumete_1 .tier-title, .tier-grumete_2 .tier-title { color: #854d0e; }
+.tier-iniciacion { background-color: #fdf8f6; border-color: #fed7aa; }
+.tier-iniciacion .tier-title { color: #854d0e; }
 
 /* Table Styles */
 table{width:100%;border-collapse:collapse;margin-top:4px}
@@ -652,20 +650,13 @@ function renderTable(rows) {
   }
 
   const TIER_DEFINITIONS = [
-    { key: 'capitan_1', title: 'Capitán 1', rangeText: '> 1900,00 pts', min: 1900, max: Infinity },
-    { key: 'capitan_2', title: 'Capitán 2', rangeText: '1800,01 – 1900,00 pts', min: 1800, max: 1900 },
+    { key: 'entreno', title: 'Entreno', rangeText: '> 1800,00 pts', min: 1800, max: Infinity },
 
-    { key: 'contramaestre_1', title: 'Contramaestre 1', rangeText: '1700,01 – 1800,00 pts', min: 1700, max: 1800 },
-    { key: 'contramaestre_2', title: 'Contramaestre 2', rangeText: '1600,01 – 1700,00 pts', min: 1600, max: 1700 },
+    { key: 'avanzado', title: 'Avanzado', rangeText: '1500,01 – 1800,00 pts', min: 1500, max: 1800 },
 
-    { key: 'bucanero_1', title: 'Bucanero 1', rangeText: '1500,01 – 1600,00 pts', min: 1500, max: 1600 },
-    { key: 'bucanero_2', title: 'Bucanero 2', rangeText: '1400,01 – 1500,00 pts', min: 1400, max: 1500 },
+    { key: 'intermedio', title: 'Intermedio', rangeText: '1200,01 – 1500,00 pts', min: 1200, max: 1500 },
 
-    { key: 'marinero_1', title: 'Marinero 1', rangeText: '1300,01 – 1400,00 pts', min: 1300, max: 1400 },
-    { key: 'marinero_2', title: 'Marinero 2', rangeText: '1200,01 – 1300,00 pts', min: 1200, max: 1300 },
-
-    { key: 'grumete_1', title: 'Grumete 1', rangeText: '1100,01 – 1200,00 pts', min: 1100, max: 1200 },
-    { key: 'grumete_2', title: 'Grumete 2', rangeText: '≤ 1100,00 pts', min: -Infinity, max: 1100 }
+    { key: 'iniciacion', title: 'Iniciación', rangeText: '≤ 1200,00 pts', min: -Infinity, max: 1200 }
   ];
 
   const html = [];
