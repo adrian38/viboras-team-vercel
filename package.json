@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "migrate": "node scripts/migrate.js",
-    "schema": "node scripts/apply-schema.js"
+    "schema": "node scripts/apply-schema.js",
+    "check": "node tools/ai-context-index.mjs && node tools/rating-parity.mjs",
+    "check:index": "node tools/ai-context-index.mjs",
+    "check:rating": "node tools/rating-parity.mjs"
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0"
