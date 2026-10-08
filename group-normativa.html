@@ -9,40 +9,38 @@
 <link rel="manifest" href="/site.webmanifest">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 
 <style>
-:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb}
-*{box-sizing:border-box}
-body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px;line-height:1.6}
-.site{max-width:850px;margin:0 auto}
-.block{background:var(--card);border-radius:12px;padding:24px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
-
-h1{font-size:1.5rem;font-weight:700;margin-top:0;margin-bottom:12px;color:#1e293b}
-h2{font-size:1.2rem;font-weight:700;margin-top:28px;margin-bottom:12px;color:#2563eb;border-bottom:2px solid #eff6ff;padding-bottom:6px}
-h3{font-size:1rem;font-weight:700;margin-top:18px;margin-bottom:8px;color:#1e293b}
-p{margin-top:0;margin-bottom:12px;color:#334155}
-ul{margin:0 0 16px 0;padding-left:20px;color:#334155}
-li{margin-bottom:8px;color:#334155}
-strong{color:#0f172a}
-a{color:#2563eb;text-decoration:none}
-a:hover{text-decoration:underline}
-.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
-.back-btn:hover{background:#f8fafc}
-
-@media(max-width:720px){body{padding:16px}.block{padding:16px}}
+/* Sin maqueta propia: se deriva del documento largo, igual que la normativa
+   de la liga. Medida corta y la barra dorada en cada titulo. */
+.doc{line-height:1.65}
+.doc > ul,.doc > ol,.doc > p{max-width:72ch}
+.doc h2{display:flex;align-items:center;gap:var(--vt-sm);margin:var(--vt-xl) 0 var(--vt-md)}
+.doc h2::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
+.doc ul ul{margin-top:var(--vt-sm)}
+.doc strong{color:var(--vt-text-strong);font-weight:600}
 </style>
 </head>
 <body>
 
-<div class="site">
-  <div class="block">
+<div class="vt-page vt-page--narrow">
+  <div class="vt-card vt-card--accent vt-card--glow doc">
 
-    <h1>Normativa del Grupo</h1>
+    <header class="vt-header">
+      <div class="vt-header__logo"><img src="/image.png" alt="Víboras Team"></div>
+      <div class="vt-header__text">
+        <span class="vt-badge"><span class="vt-badge__dot"></span>Reglamento oficial</span>
+        <h1 style="margin-top:var(--vt-sm)">Normativa del <span class="vt-gold">grupo</span></h1>
+      </div>
+    </header>
 
-    <ul>
+    <ul style="margin-top:var(--vt-xl)">
       <li><strong>Nuestro Objetivo:</strong> Queremos que sea un grupo muy activo, dinámico y con un ambiente sano ("buen rollo") donde todos nos conozcamos y disfrutemos del deporte.</li>
       <li><strong>Respeto en la pista:</strong> No se tolerarán gestos de desprecio, insultos ni conductas antideportivas hacia los compañeros o rivales. Venimos a disfrutar.</li>
       <li><strong>Puntualidad:</strong> Torneos y partidos empiezan a la hora en punto. Llegar más de 5 minutos tarde de forma reiterada puede tener consecuencias.</li>
@@ -64,7 +62,9 @@ a:hover{text-decoration:underline}
     </ul>
     </ol>
 
-    <button class="back-btn" type="button" onclick="window.history.back()">Volver</button>
+    <div style="margin-top:var(--vt-xl);padding-top:var(--vt-lg);border-top:1px solid var(--vt-border)">
+      <button class="vt-btn vt-btn--ghost" type="button" onclick="window.history.back()">← Volver</button>
+    </div>
 
   </div>
 </div>
