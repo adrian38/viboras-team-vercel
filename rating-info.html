@@ -9,9 +9,12 @@
 <link rel="manifest" href="/site.webmanifest">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 
 <!-- Configuración de MathJax para habilitar math inline con $...$ -->
 <script>
@@ -25,39 +28,67 @@ window.MathJax = {
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 <style>
-:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb}
-*{box-sizing:border-box}
-body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px;line-height:1.6}
-.site{max-width:850px;margin:0 auto}
-.block{background:var(--card);border-radius:12px;padding:24px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+/* Documento tecnico: medida corta, aire entre secciones y la barra dorada
+   del mockup a la izquierda de cada h2. */
+.doc{line-height:1.65}
+.doc > p,.doc > ul,.doc > ol{max-width:72ch}
+.doc h2{display:flex;align-items:center;gap:var(--vt-sm);margin:var(--vt-xl) 0 var(--vt-md)}
+.doc h2::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
+.doc ul ul{margin-top:var(--vt-sm)}
 
-h1{font-size:1.5rem;font-weight:700;margin-top:0;margin-bottom:12px;color:#1e293b}
-h2{font-size:1.2rem;font-weight:700;margin-top:28px;margin-bottom:12px;color:#2563eb;border-bottom:2px solid #eff6ff;padding-bottom:6px}
-p{margin-top:0;margin-bottom:12px;color:#334155}
-ul{margin:0 0 16px 0;padding-left:20px;color:#334155}
-li{margin-bottom:8px}
+/* Las formulas de MathJax piden fondo propio y scroll horizontal: algunas no
+   caben en 375 px y partirlas no es una opcion. */
+.formula-box{
+  background:radial-gradient(circle at top left,var(--vt-surface-3) 0%,var(--vt-surface) 100%);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  padding:var(--vt-md);
+  margin:var(--vt-md) 0;
+  overflow-x:auto;
+  color:var(--vt-text);
+}
+mjx-container{color:var(--vt-text)}
 
-.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
-.back-btn:hover{background:#f8fafc}
-.formula-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.95rem;overflow-x:auto}
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.85rem;font-weight:600}
-.badge-sin{background:#fee2e2;color:#dc2626}
-.badge-muy-baja{background:#fee2e2;color:#dc2626}
-.badge-baja{background:#ffedd5;color:#ea580c}
-.badge-media{background:#fef9c3;color:#ca8a04}
-.badge-alta{background:#ecfccb;color:#65a30d}
-.badge-muy-alta{background:#dcfce7;color:#16a34a}
-
-@media(max-width:720px){body{padding:16px}.block{padding:16px}}
+/* Fiabilidad: seis niveles. El color es el dato, asi que se conserva la
+   progresion rojo -> verde, reescrita para fondo oscuro. */
+.badge{
+  display:inline-block;
+  padding:2px 10px;
+  border-radius:var(--vt-r-full);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  border:1px solid currentColor;
+  white-space:nowrap;
+}
+.badge-sin{color:#f87171;background:rgba(248,113,113,0.12)}
+.badge-muy-baja{color:#f87171;background:rgba(248,113,113,0.12)}
+.badge-baja{color:#fb923c;background:rgba(251,146,60,0.12)}
+.badge-media{color:#facc15;background:rgba(250,204,21,0.12)}
+.badge-alta{color:#a3e635;background:rgba(163,230,53,0.12)}
+.badge-muy-alta{color:#4ade80;background:rgba(74,222,128,0.12)}
 </style>
 </head>
 <body>
 
-<div class="site">
-  <div class="block">
+<div class="vt-page vt-page--narrow">
 
-    <h1>¿Cómo funciona el sistema de rating?</h1>
-    <p>El sistema de rating utiliza un sistema de puntuación matemático (Glicko) diseñado para medir tu nivel real de juego de forma dinámica. A medida que juegas partidos, el sistema no solo actualiza tu puntuación, sino también el nivel de fiabilidad de tu rating.</p>
+  <header class="vt-between" style="padding-bottom:var(--vt-md);border-bottom:1px solid var(--vt-border)">
+    <div class="vt-row" style="gap:var(--vt-md)">
+      <div class="vt-header__logo" style="width:64px;height:64px"><img src="/image.png" alt="Víboras Team"></div>
+      <div>
+        <span class="vt-label vt-gold">Manual técnico y algoritmo</span>
+        <h3 style="margin-top:2px">Víboras <span class="vt-gold-grad">Rating System</span></h3>
+      </div>
+    </div>
+    <button class="vt-btn vt-btn--quiet vt-btn--sm" onclick="window.location.href='/rating.html'">← Volver al Rating</button>
+  </header>
+
+  <div class="vt-card vt-card--accent vt-card--glow doc">
+
+    <h1>¿Cómo funciona el <span class="vt-gold-grad">sistema de rating?</span></h1>
+    <p style="margin-top:var(--vt-md)">El sistema de rating utiliza un sistema de puntuación matemático (Glicko) diseñado para medir tu nivel real de juego de forma dinámica. A medida que juegas partidos, el sistema no solo actualiza tu puntuación, sino también el nivel de fiabilidad de tu rating.</p>
 
     <h2>Conceptos Clave</h2>
     <ul>
@@ -154,11 +185,6 @@ li{margin-bottom:8px}
       \mu' = \mu + \phi'^2 \; \sum_i w_i \; g(\phi_i) \; (s_i - E_i)$$
     </div>
     <p>El resultado final se almacena como el nuevo estado $(\mu',\phi')$ del jugador.</p>
-
-    <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
-      <div></div>
-      <button class="back-btn" onclick="window.location.href='/rating.html'">Volver al Rating</button>
-    </div>
 
   </div>
 </div>

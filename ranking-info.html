@@ -9,9 +9,12 @@
 <link rel="manifest" href="/site.webmanifest">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 
 <!-- Configuración de MathJax para habilitar math inline con $...$ -->
 <script>
@@ -25,88 +28,88 @@ window.MathJax = {
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 <style>
-:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb}
-*{box-sizing:border-box}
-body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px;line-height:1.6}
-.site{max-width:850px;margin:0 auto}
-.block{background:var(--card);border-radius:12px;padding:24px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
+/* Reglamento: medida corta y la barra dorada del mockup en cada titulo. */
+.doc{line-height:1.65}
+.doc > p,.doc > ul{max-width:72ch}
+.doc h2{display:flex;align-items:center;gap:var(--vt-sm);margin:var(--vt-xl) 0 var(--vt-md)}
+.doc h2::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
+.doc h3{margin:var(--vt-lg) 0 var(--vt-sm);color:var(--vt-gold-soft)}
 
-h1{font-size:1.5rem;font-weight:700;margin-top:0;margin-bottom:12px;color:#1e293b}
-h2{font-size:1.2rem;font-weight:700;margin-top:28px;margin-bottom:12px;color:#2563eb;border-bottom:2px solid #eff6ff;padding-bottom:6px}
-h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-top: 20px;
-  margin-bottom: 10px;
-  color: #349655;
+/* Spoilers de las tablas de puntuacion. */
+details{
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+  margin:var(--vt-md) 0 var(--vt-lg);
+  overflow:hidden;
+  max-width:72ch;
 }
-p{margin-top:0;margin-bottom:12px;color:#334155}
-ul{margin:0 0 16px 0;padding-left:20px;color:#334155}
-li{margin-bottom:8px}
+summary{
+  padding:10px 14px;
+  background:var(--vt-surface-3);
+  color:var(--vt-text);
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:0.02em;
+  cursor:pointer;
+  user-select:none;
+  list-style:none;
+  display:flex;
+  align-items:center;
+  gap:var(--vt-sm);
+  transition:background .15s ease,color .15s ease;
+}
+summary::-webkit-details-marker{display:none}
+/* El triangulo nativo no se ve sobre el carbono; se dibuja uno con bordes,
+   que no depende de que la fuente tenga el glifo. */
+summary::before{
+  content:'';
+  flex:0 0 auto;
+  width:0;height:0;
+  border-left:6px solid var(--vt-gold);
+  border-top:4px solid transparent;
+  border-bottom:4px solid transparent;
+  transition:transform .15s ease;
+}
+details[open] summary::before{transform:rotate(90deg)}
+summary:hover{background:var(--vt-surface-4);color:var(--vt-gold-light)}
+details[open] summary{border-bottom:1px solid var(--vt-border)}
 
-.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
-.back-btn:hover{background:#f8fafc}
-
-/* Estilos de Spoilers / Details */
-details {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  margin: 12px 0 16px 0;
-  overflow: hidden;
+/* Tablas de puntuacion. */
+.points-table{width:100%;border-collapse:collapse;font-size:14px}
+.points-table th,.points-table td{padding:8px 14px;border-bottom:1px solid var(--vt-border);text-align:left}
+.points-table tr:last-child td{border-bottom:none}
+.points-table th{
+  background:var(--vt-surface-3);
+  color:var(--vt-muted);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
 }
-summary {
-  padding: 10px 14px;
-  font-weight: 600;
-  color: #1e293b;
-  cursor: pointer;
-  user-select: none;
-  outline: none;
-  background: #f1f5f9;
-  transition: background 0.15s ease;
-}
-summary:hover {
-  background: #e2e8f0;
-}
-details[open] summary {
-  border-bottom: 1px solid #e2e8f0;
-}
-
-/* Tablas de puntuación */
-.points-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.95rem;
-  background: #fff;
-}
-.points-table th, .points-table td {
-  padding: 8px 14px;
-  border-bottom: 1px solid #f1f5f9;
-  text-align: left;
-}
-.points-table tr:last-child td {
-  border-bottom: none;
-}
-.points-table th {
-  background: #fafafa;
-  color: #4b5563;
-  font-weight: 700;
-}
-.points-table td.pts {
-  font-weight: 700;
-  color: #2563eb;
-  width: 100px;
-}
-
-@media(max-width:720px){body{padding:16px}.block{padding:16px}}
+.points-table td{color:var(--vt-text)}
+.points-table td.pts{font-weight:700;color:var(--vt-gold);width:100px;font-variant-numeric:tabular-nums}
+.points-table tbody tr:hover td{background:var(--vt-surface-3)}
 </style>
 </head>
 <body>
 
-<div class="site">
-  <div class="block">
+<div class="vt-page vt-page--narrow">
 
-    <h1>¿Cómo funciona el ranking?</h1>
+  <header class="vt-between" style="padding-bottom:var(--vt-md);border-bottom:1px solid var(--vt-border)">
+    <div class="vt-row" style="gap:var(--vt-md)">
+      <div class="vt-header__logo" style="width:64px;height:64px"><img src="/image.png" alt="Víboras Team"></div>
+      <div>
+        <span class="vt-label vt-gold">Reglamento oficial</span>
+        <h3 style="margin-top:2px">Víboras <span class="vt-gold-grad">Ranking</span></h3>
+      </div>
+    </div>
+    <button class="vt-btn vt-btn--quiet vt-btn--sm" onclick="window.location.href='/ranking.html'">← Volver al Ranking</button>
+  </header>
+
+  <div class="vt-card vt-card--accent vt-card--glow doc">
+
+    <h1>¿Cómo funciona el <span class="vt-gold-grad">ranking?</span></h1>
     <p>El objetivo del ranking es valorar la <strong>actividad y el desempeño</strong> de los integrantes del grupo en torneos, ligas, y partidos competitivos. El ranking es <strong>trimestral</strong>, coincidiendo con el periodo de cada liga.</p>
     <p>Durante los tres meses, los jugadores acumulan puntos, declarándose una clasificación final al terminar el periodo actual. Al empezar un nuevo periodo trimestral del ranking, todas las puntuaciones vuelven a colocarse a cero.</p>
 
@@ -242,11 +245,6 @@ details[open] summary {
 
     <h3>Puntuación de partidos competitivos</h3>
     <p>Se contabilizan <strong>2 puntos por partido competitvo jugado hasta 10 partidos</strong>, es decir, hasta un máximo de 20 puntos. No importa el resultado, y no se contabiliza más de un partido por día. El objetivo de este apartado es premiar a los jugadores por alcanzar una actividad razonable en el grupo.</p>
-
-    <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center">
-      <div></div>
-      <button class="back-btn" onclick="window.location.href='/ranking.html'">Volver al Ranking</button>
-    </div>
 
   </div>
 </div>

@@ -139,6 +139,19 @@ small,.vt-small{font-size:13px;line-height:18px;color:var(--vt-muted)}
   color:var(--vt-muted);
 }
 
+/* Texto en degradado dorado, para la palabra destacada de un titular. */
+.vt-gold-grad{
+  background:linear-gradient(135deg,#fef08a 0%,var(--vt-gold) 50%,var(--vt-gold-dark) 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:var(--vt-gold);
+}
+
+/* Titulo de seccion con la barra dorada a la izquierda. */
+.vt-sec-title{display:flex;align-items:center;gap:var(--vt-sm);margin-bottom:var(--vt-md)}
+.vt-sec-title::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
+
 /* -------------------------------------------------------------- layout -- */
 
 .vt-page{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:var(--vt-lg)}
