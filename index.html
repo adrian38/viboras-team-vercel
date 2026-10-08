@@ -5,83 +5,188 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Viboras Team</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
 <style>
+/* El panel de administracion lo monta openAdmin() con HTML en linea, y casi
+   todo su color sale de var(--card) y var(--muted). Redefinirlas aqui lo
+   pasa a oscuro entero sin tocar el script. */
 :root{
-  --bg:#f5f8ff;
-  --card:#ffffff;
-  --muted:#6b7280;
-  --primary:#2563eb; /* blue */
-  --accent:#06b6d4; /* teal */
-  --success:#10b981;
+  --card:var(--vt-surface-2);
+  --muted:var(--vt-muted);
   --topbar-height:56px;
 }
-*{box-sizing:border-box}
-body{
-  font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
-  margin:0;
-  background:linear-gradient(180deg,var(--bg),#eef4ff 60%);
-  color:#0f172a;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  padding:28px 18px;
-}
+
 /* number controls for mobile */
 .number-with-controls{display:flex;align-items:center}
 .number-controls{display:none;flex-direction:column;margin-left:8px}
-.number-controls button{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px;border-radius:6px;width:34px;height:28px;font-weight:700;cursor:pointer}
+.number-controls button{background:var(--vt-surface-3);border:1px solid var(--vt-border-strong);color:var(--vt-text);padding:6px;border-radius:var(--vt-r-sm);width:34px;height:28px;font-weight:700;cursor:pointer}
 @media(max-width:720px){
   .number-controls{display:flex}
 }
-.site{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
-.block{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
-.block-title{font-weight:700;margin-bottom:10px;font-size:1.05rem;color:#0b1530}
-.block-row{display:flex;gap:12px;align-items:center}
 
-.controls{display:flex;gap:12px;flex-wrap:wrap}
-.btn{background:var(--primary);color:#fff;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-weight:700;min-width:140px;box-shadow:0 8px 20px rgba(37,99,235,0.08);transition:transform .12s ease}
-.btn.secondary{background:var(--accent)}
-.btn.secondary-green{background:#14b8a6}
-.btn.purple{background:#8b5cf6;box-shadow:0 8px 20px rgba(139,92,246,0.12)}
-.btn.red{background:#ef4444;color:white;box-shadow:0 8px 20px rgba(239,68,68,0.12)}
-.btn.rating{background:#D69E2E;color:white;box-shadow:0 8px 20px rgba(251,191,36,0.12)}
-.btn.ranking{background:#00A3C4;color:white;box-shadow:0 8px 20px rgba(37,99,235,0.12)}
-.btn.players-green{background:#22c55e;color:white;box-shadow:0 8px 20px rgba(34,197,94,0.16)}
-.btn.warn{background:#fb923c;color:white;box-shadow:0 8px 20px rgba(251,146,60,0.12)}
+.site{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:var(--vt-md)}
 
-/* Nuevo color para botón "Normativa" */
-.btn.normativa{background:#d946ef;color:white;box-shadow:0 8px 20px rgba(217,70,239,0.12)}
+/* Portada: logo y nombre del club, con el boton de normativa encima. */
+.hero{max-width:1100px;margin:0 auto var(--vt-lg);text-align:center}
+.hero h1{font-size:48px;line-height:52px;letter-spacing:0.01em}
+@media(max-width:720px){.hero h1{font-size:34px;line-height:38px}}
 
-/* Botón negro fijo arriba centrado */
-.btn.black-top{background:#ef4444;color:#fff;border:none;padding:10px 18px;border-radius:999px;box-shadow:0 12px 30px rgba(239,68,68,0.18);z-index:1101;font-weight:700}
+/* Tarjeta de modulo. El resplandor dorado de la esquina es el del mockup. */
+.block{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-xl);
+  padding:var(--vt-lg);
+  overflow:hidden;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+/* La fila de botones se pega abajo, para que las cuatro tarjetas alineen. */
+.block .block-row{flex:1}
+.block .block-row > div{display:flex;flex-direction:column;height:100%}
+.block .controls{margin-top:auto}
+.block::after{
+  content:'';
+  position:absolute;top:-70px;right:-70px;
+  width:170px;height:170px;border-radius:var(--vt-r-full);
+  background:rgba(245,158,11,0.09);
+  filter:blur(44px);
+  pointer-events:none;
+  transition:background .25s ease;
+}
+.block:hover{border-color:var(--vt-border-gold);box-shadow:0 12px 36px rgba(0,0,0,0.5)}
+.block:hover::after{background:rgba(245,158,11,0.18)}
+
+.block-title{
+  position:relative;z-index:1;
+  margin:0 0 var(--vt-xs);
+  font-family:var(--vt-font-head);
+  font-size:30px;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;
+  color:var(--vt-text-strong);
+}
+.block-modulo{
+  position:relative;z-index:1;
+  display:block;
+  font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--vt-gold);
+}
+.block-row{position:relative;z-index:1;display:flex;gap:var(--vt-md);align-items:center}
+
+label.small{
+  display:block;
+  margin:0 0 var(--vt-md);
+  font-size:15px;font-weight:400;line-height:1.5;
+  color:var(--vt-text);
+  max-width:56ch;
+}
+
+/* Los botones de la portada van todos iguales, como en el mockup: superficie
+   elevada que pasa a oro al pasar por encima. Las clases de color que habia
+   (.warn, .purple, .ranking...) se conservan porque estan en el marcado, pero
+   ya no pintan nada distinto. */
+/* Rejilla en vez de flex: con cuatro botones, flex dejaba tres arriba y uno
+   suelto a lo ancho. Asi caen 2x2, como en el mockup. */
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:var(--vt-sm)}
+.btn{
+  min-width:0;
+  padding:12px 16px;
+  background:var(--vt-surface-4);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
+  cursor:pointer;
+  transition:background .18s ease,color .18s ease,border-color .18s ease;
+}
+.btn:hover{background:var(--vt-gold);border-color:var(--vt-gold);color:#121316}
+
+/* La normativa del grupo es la unica en rojo, como estaba: es el aviso. */
+.btn.black-top{
+  flex:0 0 auto;min-width:0;
+  background:var(--vt-error-bg);
+  border:1px solid rgba(255,180,171,0.35);
+  border-radius:var(--vt-r-full);
+  color:var(--vt-error);
+  padding:9px 20px;
+  z-index:1101;
+}
+.btn.black-top:hover{background:rgba(147,0,10,0.34);border-color:var(--vt-error);color:var(--vt-error)}
 
 /* Barra superior en el flujo del documento (no fija). Así el botón se desplaza al hacer scroll y desaparece. */
 .topbar{position:static;display:flex;align-items:center;justify-content:center;height:var(--topbar-height);pointer-events:auto}
 .topbar .btn.black-top{pointer-events:auto}
 .topbar-spacer{display:none}
 
-.admin-bottom{background:#000;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-.admin-desktop{display:block;background:#000;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;margin:12px auto 18px auto;min-width:160px;text-align:center}
+.admin-bottom,.admin-desktop{
+  background:transparent;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-muted);
+  padding:10px 20px;
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
+  cursor:pointer;
+}
+.admin-bottom:hover,.admin-desktop:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+.admin-desktop{display:block;margin:var(--vt-lg) auto;min-width:200px;text-align:center}
 .admin-mobile{display:none}
 @media(max-width:720px){
   .admin-desktop{display:none}
-  .admin-mobile{display:block;margin:12px auto 18px auto}
+  .admin-mobile{display:block;margin:var(--vt-lg) auto}
 }
 
-.register-input{flex:1;min-width:180px;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
+.register-input{
+  flex:1;min-width:180px;
+  padding:10px 12px;
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:15px;
+}
+.register-input:focus{outline:none;border-color:var(--vt-gold)}
+.register-input::placeholder{color:var(--vt-faint)}
 
-#days{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:8px}
-.day{background:linear-gradient(180deg,#fff,#fbfdff);padding:14px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:600;color:#0b1530;min-height:58px}
-.day.red{background:linear-gradient(180deg,#fff1f0,#fff8f7);border-color:rgba(255,99,99,0.08)}
-.day:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(12,20,40,0.06)}
+#days{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:var(--vt-sm);margin-top:var(--vt-sm)}
+.day{
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  padding:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:600;min-height:58px;
+  transition:background .12s ease,border-color .12s ease;
+}
+.day.red{background:var(--vt-error-bg);border-color:rgba(255,180,171,0.25);color:var(--vt-error)}
+.day:hover{background:var(--vt-surface-4);border-color:var(--vt-gold-dark)}
 
-label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
+/* El panel de administracion trae sus propios colores claros en linea. */
+#adminOverlay{background:rgba(0,0,0,0.72) !important}
+#adminOverlay input,#adminOverlay select,#adminOverlay textarea{
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  padding:8px 10px;
+}
+#adminOverlay input:focus,#adminOverlay select:focus{outline:none;border-color:var(--vt-gold)}
+#adminOverlay option{background:var(--vt-surface-2)}
+#adminOverlay .btn{min-width:0}
 
 @media(min-width:900px){
   .site{gap:20px}
@@ -95,19 +200,24 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
   .block--performance{ grid-area: performance }
   .block--organization{ grid-area: organization }
 }
-@media(max-width:720px){body{padding:16px}.btn{min-width:120px;padding:12px 14px}#days{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.register-input{min-width:0;width:100%}#adminOverlay > div{flex-direction:column}#adminOverlay > div > #adminMenuColumn{flex-basis:auto;width:100%}#adminOverlay > div > #adminMain{width:100%;max-width:100%}.pozo-form-grid{grid-template-columns:1fr !important}}
+@media(max-width:720px){.block{padding:var(--vt-md)}.block-title{font-size:25px}.btn{min-width:120px;padding:12px 14px}#days{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.register-input{min-width:0;width:100%}#adminOverlay > div{flex-direction:column}#adminOverlay > div > #adminMenuColumn{flex-basis:auto;width:100%}#adminOverlay > div > #adminMain{width:100%;max-width:100%}.pozo-form-grid{grid-template-columns:1fr !important}}
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-  <button class="btn black-top" onclick="window.location='group-normativa.html'">NORMATIVA DEL GRUPO</button>
+<div class="hero">
+  <div class="topbar">
+    <button class="btn black-top" onclick="window.location='group-normativa.html'">NORMATIVA DEL GRUPO</button>
+  </div>
+  <img src="/image.png" alt="Víboras Team" width="112" height="112" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 6px 24px rgba(245,158,11,0.3))">
+  <h1 style="margin-top:var(--vt-md)">Club <span class="vt-gold-grad">Víboras Team</span></h1>
 </div>
 
 <div class="site">
 
   <div class="block block--leagues">
+    <span class="block-modulo">Módulo 01</span>
     <div class="block-title">Ligas</div>
     <div class="block-row">
       <div style="flex:1">
@@ -122,6 +232,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
 
 
   <div class="block block--upload">
+    <span class="block-modulo">Módulo 02</span>
     <div class="block-title">Sube resultados</div>
       <div class="block-row">
         <div style="flex:1">
@@ -135,6 +246,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
   </div>
 
   <div class="block block--consult">
+    <span class="block-modulo">Módulo 03</span>
     <div class="block-title">Consulta resultados</div>
     <div class="block-row">
       <div style="flex:1">
@@ -148,6 +260,7 @@ label.small{display:block;font-weight:600;margin-bottom:6px;color:var(--muted)}
   </div>
 
   <div class="block block--performance">
+    <span class="block-modulo">Módulo 04</span>
     <div class="block-title">Rendimiento</div>
     <div class="block-row">
       <div style="flex:1">
