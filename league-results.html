@@ -134,8 +134,10 @@ tbody tr:hover td{background:var(--vt-surface-2)}
      carbono. Ahora es el icono edit_note, que hereda el color del boton. */
 
   /* Modal de indicar resultado. */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.72);display:none;align-items:center;justify-content:center;z-index:1200;padding:var(--vt-md)}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.72);display:none;align-items:center;justify-content:center;z-index:var(--vt-z-velo);padding:var(--vt-md)}
   .modal{
+    position:relative;
+    z-index:var(--vt-z-modal);
     background:var(--vt-surface);
     border:1px solid var(--vt-border-strong);
     border-radius:var(--vt-r-lg);

@@ -71,7 +71,7 @@
 /* Cabecera del modulo: distintivo con el icono, y a la derecha el icono
    grande de marca de agua que llevan las tarjetas del mockup. */
 .block-head{
-  position:relative;z-index:1;
+  position:relative;z-index:var(--vt-z-contenido);
   display:flex;align-items:center;justify-content:space-between;
   gap:var(--vt-sm);
   margin-bottom:var(--vt-sm);
@@ -88,7 +88,7 @@
 .block:hover .block-marca{color:var(--vt-gold-dark)}
 
 .block-title{
-  position:relative;z-index:1;
+  position:relative;z-index:var(--vt-z-contenido);
   margin:0;
   font-family:var(--vt-font-head);
   font-size:30px;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;
@@ -96,12 +96,12 @@
   line-height:1;
 }
 .block-modulo{
-  position:relative;z-index:1;
+  position:relative;z-index:var(--vt-z-contenido);
   display:block;
   font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
   color:var(--vt-gold);
 }
-.block-row{position:relative;z-index:1;display:flex;gap:var(--vt-md);align-items:center}
+.block-row{position:relative;z-index:var(--vt-z-contenido);display:flex;gap:var(--vt-md);align-items:center}
 
 label.small{
   display:block;
@@ -144,7 +144,9 @@ label.small{
   border-radius:var(--vt-r-full);
   color:var(--vt-error);
   padding:9px 20px;
-  z-index:1101;
+  /* Sin z-index: lo heredaba de cuando .topbar era fija. Como .topbar es
+     flex, el boton es un elemento flexible y ahi el z-index si cuenta, de
+     modo que ese 1101 le hacia tapar el panel de administracion. */
 }
 .btn.black-top:hover{background:rgba(147,0,10,0.34);border-color:var(--vt-error);color:var(--vt-error)}
 
@@ -203,7 +205,11 @@ body > .admin-desktop{display:flex;width:max-content}
 .day:hover{background:var(--vt-surface-4);border-color:var(--vt-gold-dark)}
 
 /* El panel de administracion trae sus propios colores claros en linea. */
-#adminOverlay{background:rgba(0,0,0,0.72) !important}
+/* openAdmin() crea el overlay con position:fixed pero sin z-index, asi que
+   se quedaba por debajo de las tarjetas, que llevan z-index:1 para taparse
+   su propio resplandor. La pagina se veia a traves del panel. */
+#adminOverlay{background:rgba(0,0,0,0.72) !important;z-index:var(--vt-z-velo) !important}
+#adminOverlay > div{position:relative;z-index:var(--vt-z-modal)}
 #adminOverlay input,#adminOverlay select,#adminOverlay textarea{
   background:var(--vt-surface-deep);
   border:1px solid var(--vt-border-strong);

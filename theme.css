@@ -75,6 +75,17 @@
   --vt-lg:1.5rem;
   --vt-xl:2.5rem;
 
+  /* Capas. Las tarjetas del rediseno usan z-index:1 para ponerse por encima
+   * de su propio resplandor, y eso basta para tapar un overlay que no declare
+   * ninguna: un elemento con z-index:1 pinta por encima de uno con
+   * z-index:auto, aunque el overlay venga despues en el DOM y sea fixed.
+   * Paso exactamente eso con el panel de administracion. Cualquier capa que
+   * se ponga encima de la pagina usa estas variables, no un numero suelto. */
+  --vt-z-contenido:1;
+  --vt-z-flotante:100;
+  --vt-z-velo:2000;
+  --vt-z-modal:2001;
+
   /* Profundidad. */
   --vt-shadow-card:0 8px 30px rgba(0,0,0,0.45);
   --vt-shadow-float:0 8px 24px -4px rgba(0,0,0,0.6);

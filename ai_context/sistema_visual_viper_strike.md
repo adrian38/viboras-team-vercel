@@ -124,6 +124,47 @@ vive dentro de `renderTable`, que está perdonada y **sólo puede encoger**. Dos
 líneas de comentario la hicieron fallar. La explicación va en el CSS, que no se
 mide ([[tamano_del_codigo_y_trinquete]]).
 
+## Las capas: usar `--vt-z-*`, nunca un número suelto
+
+Las tarjetas del rediseño llevan un resplandor dorado en un pseudoelemento
+absoluto, y su contenido usa `z-index: 1` para quedar por encima de él. Eso
+parece inofensivo y no lo es: **un elemento con `z-index: 1` pinta por encima
+de uno con `z-index: auto`**, aunque el segundo sea `position: fixed` y venga
+después en el DOM.
+
+Pasó justo eso. `openAdmin()` crea el panel de administración con
+`position: fixed` y sin `z-index`, así que los títulos de las tarjetas y el
+botón de normativa —que arrastraba un `z-index: 1101` de cuando la barra
+superior era fija— se dibujaban por encima del panel. La página se veía a
+través del menú.
+
+Hay cuatro variables en `theme.css` y cualquier capa usa una de ellas:
+
+| Variable | Valor | Para qué |
+| --- | --- | --- |
+| `--vt-z-contenido` | 1 | contenido de tarjeta sobre su propio resplandor |
+| `--vt-z-flotante` | 100 | menús, cabeceras pegajosas |
+| `--vt-z-velo` | 2000 | el velo oscuro de un overlay |
+| `--vt-z-modal` | 2001 | el panel que va dentro del velo |
+
+Los dos overlays de la app son el panel de administración de `index.html` y el
+modal de indicar resultado de `league-results.html`.
+
+Mirarlo no basta, porque un panel medio tapado sigue pareciendo un panel. Se
+comprueba preguntándole al navegador **qué elemento está realmente arriba** en
+una rejilla de puntos sobre el panel; todos tienen que caer dentro del overlay:
+
+```js
+const o = document.getElementById('adminOverlay');   // o '#editBackdrop'
+const r = o.firstElementChild.getBoundingClientRect();
+const ajenos = [];
+for (let i = 1; i <= 19; i++) for (let j = 1; j <= 7; j++) {
+  const el = document.elementFromPoint(r.left + r.width*j/8, r.top + r.height*i/20);
+  if (!o.contains(el)) ajenos.push(el);
+}
+ajenos;   // tiene que quedar vacio
+```
+
 ## Al tocar el `<head>`
 
 El rediseño añadió a las 16 páginas la fuente Barlow Condensed y
