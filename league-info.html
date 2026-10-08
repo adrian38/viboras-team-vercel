@@ -9,76 +9,89 @@
 <link rel="manifest" href="/site.webmanifest">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 
 <style>
-:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb}
-*{box-sizing:border-box}
-body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px;line-height:1.6}
-.site{max-width:850px;margin:0 auto}
-.block{background:var(--card);border-radius:12px;padding:24px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
-
-h1{font-size:1.5rem;font-weight:700;margin-top:0;margin-bottom:12px;color:#1e293b}
-h2{font-size:1.2rem;font-weight:700;margin-top:28px;margin-bottom:12px;color:#2563eb;border-bottom:2px solid #eff6ff;padding-bottom:6px}
-h3{font-size:1rem;font-weight:700;margin-top:18px;margin-bottom:8px;color:#1e293b}
-p{margin-top:0;margin-bottom:12px;color:#334155}
-ul{margin:0 0 16px 0;padding-left:20px;color:#334155}
-li{margin-bottom:8px;color:#334155}
-
-.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600}
-.back-btn:hover{background:#f8fafc}
-
-@media(max-width:720px){body{padding:16px}.block{padding:16px}}
+/* Documento largo: se lee mejor con la medida corta y mas aire entre secciones. */
+.norma{line-height:1.65}
+.norma section{margin-top:var(--vt-xl)}
+.norma section + section{border-top:1px solid var(--vt-border);padding-top:var(--vt-xl)}
+.norma h2{margin-bottom:var(--vt-sm)}
+.norma p,.norma ul{max-width:68ch}
 </style>
 </head>
 <body>
 
-<div class="site">
-  <div class="block">
+<div class="vt-page vt-page--narrow">
+  <div class="vt-card vt-card--accent vt-card--glow">
 
-    <h1>Normativa de la liga</h1>
+    <header class="vt-header">
+      <div class="vt-header__logo"><img src="/image.png" alt="Víboras Team"></div>
+      <div class="vt-header__text">
+        <span class="vt-badge"><span class="vt-badge__dot"></span>Reglamento oficial</span>
+        <h1 style="margin-top:var(--vt-sm)">Normativa de la <span class="vt-gold">liga</span></h1>
+        <p class="vt-small" style="margin-top:var(--vt-sm)">Estas normas aplican a al menos la liga actual que finaliza el 30/11/2026.</p>
+      </div>
+    </header>
 
-    <p>Estas normas aplican a al menos la liga actual que finaliza el 30/11/2026.</p>
+    <div class="norma">
 
-    <h2>Calendario</h2>
-    <p>La liga se divide en 3 fases consecutivas, cada una con un calendario específico. Cada fase tiene un número determinado de partidos que cada jugador debe disputar.</p>
-    <ul>
-      <li>Fase 1: Del 7/09 al 4/10 (3 partidos por persona).</li>
-      <li>Fase 2: Del 5/10 al 1/11 (3 partidos por persona).</li>
-      <li>Fase 3: Del 2/11 al 30/11 (3 partidos por persona).</li>
-    </ul>
+      <section>
+        <h2>Calendario</h2>
+        <p>La liga se divide en 3 fases consecutivas, cada una con un calendario específico. Cada fase tiene un número determinado de partidos que cada jugador debe disputar.</p>
+        <ul>
+          <li>Fase 1: Del 7/09 al 4/10 (3 partidos por persona).</li>
+          <li>Fase 2: Del 5/10 al 1/11 (3 partidos por persona).</li>
+          <li>Fase 3: Del 2/11 al 30/11 (3 partidos por persona).</li>
+        </ul>
+      </section>
 
-    <h2>Organización de los partidos</h2>
+      <section>
+        <h2>Organización de los partidos</h2>
+        <p>Cada jugador debe entrar a los grupos de WhatsApp facilitados por la organización que correspondan a sus tres partidos de la fase actual. Dentro del grupo se consensuará una fecha para disputar el partido. Tras completar un partido, los cuatro jugadores podrán abandonar el grupo asociado a dicho partido.</p>
+        <p>Los jugadores deben poner de su parte para intentar completar sus partidos a tiempo. En caso de que los jugadores de un partido no sean capaces de encontrar una fecha compatible para jugar, se podrá excepcionalmente alargar el plazo para ese partido, siempre que se haya definido una fecha consensuada antes de la finalización de la fase para disputarlo. En caso de que esto sea necesario, uno de los jugadores del partido deberá notificar de la situación de manera privada a uno de los administradores de la comunidad.</p>
+        <p>En casos excepcionales en los que no haya ninguna posibilidad de disputar un partido por falta de compatibilidad, la organización podrá excepcionalmente tomar la decisión de intercambiar dos jugadores de diferentes partidos, habiendose consensuado con todos los implicados.</p>
+      </section>
 
-    <p>Cada jugador debe entrar a los grupos de WhatsApp facilitados por la organización que correspondan a sus tres partidos de la fase actual. Dentro del grupo se consensuará una fecha para disputar el partido. Tras completar un partido, los cuatro jugadores podrán abandonar el grupo asociado a dicho partido.</p>
+      <section>
+        <h2>Formato de los partidos</h2>
+        <p>Los partidos son al mejor de 3 sets. Los sets se juegan por defecto con ventajas (sin punto de oro), pero se puede adaptar el formato si el tiempo escasea de alguna de las siguientes maneras o de ambas:</p>
+        <ul>
+          <li>Introduciendo el punto de oro en el partido a partir de cualquier set.</li>
+          <li>Sustituyendo el tercer set por un super tie-break a 10 puntos.</li>
+        </ul>
+      </section>
 
-    <p>Los jugadores deben poner de su parte para intentar completar sus partidos a tiempo. En caso de que los jugadores de un partido no sean capaces de encontrar una fecha compatible para jugar, se podrá excepcionalmente alargar el plazo para ese partido, siempre que se haya definido una fecha consensuada antes de la finalización de la fase para disputarlo. En caso de que esto sea necesario, uno de los jugadores del partido deberá notificar de la situación de manera privada a uno de los administradores de la comunidad.</p>
+      <section>
+        <h2>Notificación de resultados</h2>
+        <p>Tras finalizar un partido, uno de los jugadores debe <a href="/league-results">indicar el resultado en la app</a>.</p>
+        <p>En caso de no poder completarse un partido en el tiempo reservado, los jugadores deben encontrar otra fecha para terminarlo, a no ser que se llegue a un acuerdo entre los cuatro jugadores para conceder la victoria a una de las parejas. Si no es así, los partidos no completados no son válidos.</p>
+      </section>
 
-    <p>En casos excepcionales en los que no haya ninguna posibilidad de disputar un partido por falta de compatibilidad, la organización podrá excepcionalmente tomar la decisión de intercambiar dos jugadores de diferentes partidos, habiendose consensuado con todos los implicados.</p>
+      <section>
+        <h2>Bajas y sustituciones</h2>
+        <p>Cualquier jugador que quiera participar en la liga como sustituto puede indicarselo a cualquier administrador de la comunidad por privado, indicando si su disponibilidad sería para la totalidad de la liga o solo para una o varias fases concretas.</p>
+        <p>Cualquier jugador que esté inscrito en la liga y que, durante el transcurso de la liga, tenga que darse de baja por lesión o motivos personales que le impedirán poder completar los partidos de la fase actual a tiempo, deberá indicarlo por privado a cualquier administrador de la comunidad con la mayor brevedad posible. Deberá indicar si necesita bajarse solo de la fase actual o de la liga completa.</p>
+        <p>En caso de ser necesaria una sustitución, se realizará un sorteo entre los jugadores que se hayan inscrito como sustitutos. Si el ganador del sorteo no es capaz de cubrir la totalidad de la baja, se realizará un nuevo sorteo entre los demás.</p>
+      </section>
 
-    <h2>Formato de los partidos</h2>
-    <p>Los partidos son al mejor de 3 sets. Los sets se juegan por defecto con ventajas (sin punto de oro), pero se puede adaptar el formato si el tiempo escasea de alguna de las siguientes maneras o de ambas:
-    <ul>
-        <li>Introduciendo el punto de oro en el partido a partir de cualquier set.</li>
-        <li>Sustituyendo el tercer set por un super tie-break a 10 puntos.</li>
-    </ul>
+      <section>
+        <h2>Puntuación y clasificación</h2>
+        <p>La clasificación final se decide en base a la cantidad de partidos ganados por cada jugador a lo largo de todas las fases que conforman la liga. En caso de empate a victorias, se desempata en base al porcentaje de sets ganados, y, en caso de persistir el empate, se desempata en base al porcentaje de juegos ganados.</p>
+        <p>En caso de que se haya producido alguna sustición parcial, se establecerán dos clasificaciones. En una de ellas se contabilizarán las victorias de cada jugador por separado, y, en la otra, se contabilizará cada sustituto junto con el jugador al que ha sustituido como una misma persona (de forma que habrá 9 partidos disputados por entidad).</p>
+      </section>
 
-    <h2>Notificación de resultados</h2>
-    <p>Tras finalizar un partido, uno de los jugadores debe <a href="/league-results">indicar el resultado en la app</a>.</p>
-    <p>En caso de no poder completarse un partido en el tiempo reservado, los jugadores deben encontrar otra fecha para terminarlo, a no ser que se llegue a un acuerdo entre los cuatro jugadores para conceder la victoria a una de las parejas. Si no es así, los partidos no completados no son válidos.</p>
+    </div>
 
-    <h2>Bajas y sustituciones</h2>
-    <p>Cualquier jugador que quiera participar en la liga como sustituto puede indicarselo a cualquier administrador de la comunidad por privado, indicando si su disponibilidad sería para la totalidad de la liga o solo para una o varias fases concretas.</p>
-    <p>Cualquier jugador que esté inscrito en la liga y que, durante el transcurso de la liga, tenga que darse de baja por lesión o motivos personales que le impedirán poder completar los partidos de la fase actual a tiempo, deberá indicarlo por privado a cualquier administrador de la comunidad con la mayor brevedad posible. Deberá indicar si necesita bajarse solo de la fase actual o de la liga completa.</p>
-    <p>En caso de ser necesaria una sustitución, se realizará un sorteo entre los jugadores que se hayan inscrito como sustitutos. Si el ganador del sorteo no es capaz de cubrir la totalidad de la baja, se realizará un nuevo sorteo entre los demás.</p>
+    <div style="margin-top:var(--vt-xl);padding-top:var(--vt-lg);border-top:1px solid var(--vt-border)">
+      <button class="vt-btn vt-btn--ghost" type="button" onclick="window.history.back()">← Volver</button>
+    </div>
 
-    <h2>Puntuación y clasificación</h2>
-    <p>La clasificación final se decide en base a la cantidad de partidos ganados por cada jugador a lo largo de todas las fases que conforman la liga. En caso de empate a victorias, se desempata en base al porcentaje de sets ganados, y, en caso de persistir el empate, se desempata en base al porcentaje de juegos ganados.</p>
-    <p>En caso de que se haya producido alguna sustición parcial, se establecerán dos clasificaciones. En una de ellas se contabilizarán las victorias de cada jugador por separado, y, en la otra, se contabilizará cada sustituto junto con el jugador al que ha sustituido como una misma persona (de forma que habrá 9 partidos disputados por entidad).</p>
-
-    <button class="back-btn" type="button" onclick="window.history.back()">Volver</button>
   </div>
 </div>
 

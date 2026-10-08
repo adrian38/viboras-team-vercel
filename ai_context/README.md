@@ -19,6 +19,12 @@ que hay.
   total, cómo el baseline perdona lo que ya existía y sólo encoge, y qué no ve
   la guarda.
 
+- `sistema_visual_viper_strike.md`: `theme.css` es la única copia de los
+  tokens del tema oscuro y por qué no se tomaron de las maquetas, que se
+  contradicen entre sí; qué trae la exportación de Stitch que se descartó a
+  propósito —una barra lateral inventada en inglés— y qué páginas se quedaron
+  sin maqueta.
+
 ## El rating
 
 - `motor_de_rating_duplicado.md`: el motor Glicko está implementado tres veces
