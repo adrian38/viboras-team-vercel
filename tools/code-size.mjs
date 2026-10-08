@@ -25,11 +25,18 @@ const TECHO_JS = 600;
 const BASELINE = 'tools/code-size-baseline.json';
 const IGNORAR = ['.git', 'node_modules', 'backups', '.claude', '.vercel', '.codebase-memory'];
 
+// Las exportaciones de Stitch (stitch_*/) son maquetas de referencia, no
+// codigo del sitio, y vienen con un tailwind.config en linea de varios miles
+// de caracteres. Medirlas no dice nada y haria fallar `npm run check` por una
+// maqueta que nadie va a desplegar.
+const IGNORAR_PREFIJO = ['stitch_'];
+
 const escribir = process.argv.includes('--write');
 
 function recorrer(dir, base, out = []) {
   for (const e of readdirSync(dir ? join(base, dir) : base, { withFileTypes: true })) {
     if (IGNORAR.includes(e.name)) continue;
+    if (e.isDirectory() && IGNORAR_PREFIJO.some((p) => e.name.startsWith(p))) continue;
     const rel = dir ? `${dir}/${e.name}` : e.name;
     if (e.isDirectory()) recorrer(rel, base, out);
     else if (/\.(html|js|mjs)$/.test(e.name)) out.push(rel);

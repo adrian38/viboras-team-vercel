@@ -9,12 +9,16 @@
 //
 // Para forzar que todos los navegadores descarten lo cacheado, cambia CACHE.
 
-const CACHE = 'viboras-v1';
+const CACHE = 'viboras-v2';
 
 // Lo minimo para que la app abra aunque no haya cobertura.
+//
+// theme.css entra aqui desde el tema oscuro: lo cargan las 16 paginas y sin
+// el la portada abre sin estilos, texto negro sobre blanco.
 const PRECACHE = [
   '/',
   '/index.html',
+  '/theme.css',
   '/image.png',
   '/icon-192.png',
   '/apple-touch-icon.png'
