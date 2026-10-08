@@ -39,7 +39,7 @@ td{padding:8px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--vt-surface-3)}
 .muted{color:var(--vt-muted)}
-.sortable-ind{font-weight:700;margin-left:6px;color:var(--vt-outline,#a08e7a);opacity:.7}
+.sortable-ind{margin-left:6px;color:var(--vt-outline,#a08e7a);opacity:.65;font-size:15px;vertical-align:middle}
 
 /* El panel que envuelve la tabla tambien se monta con estilos en linea: sus
    valores claros se sobreescriben desde aqui. */
@@ -153,7 +153,7 @@ tbody tr:hover td{background:var(--vt-surface-3)}
       <label class="event-checkbox"><input type="checkbox" value="pozo,compas,doble_ko" checked> Torneos</label>
       <label class="event-checkbox"><input type="checkbox" id="includePreToggle" value="legacy"> Incluir pre-09/2026</label>
       <label class="event-checkbox"><input type="checkbox" id="includeInactiveCheckbox"> Incluir no activos</label>
-      <button type="button" class="update-btn" id="refreshStatsBtn">Aplicar</button>
+      <button type="button" class="update-btn" id="refreshStatsBtn"><span class="ms ms--sm" aria-hidden="true">tune</span>Aplicar</button>
     </div>
 
     <div id="tableContainer"></div>
@@ -161,7 +161,7 @@ tbody tr:hover td{background:var(--vt-surface-3)}
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
       <div></div>
       <div style="text-align:right">
-        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+        <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
       </div>
     </div>
 
@@ -536,11 +536,11 @@ function renderTable(statsArr){
   const thead = document.createElement('thead')
   const nameLabel = currentView === 'teams' ? 'Pareja' : 'Jugador'
   thead.innerHTML = '<tr>'+
-    `<th class="name-col" data-key="name">${nameLabel}<span class="sortable-ind">⇅</span></th>`+
-    '<th class="center" data-key="played">Partidos<span class="sortable-ind">⇅</span></th>'+
-    '<th class="metric-col" data-key="winPct">Victorias (%)<span class="sortable-ind">⇅</span></th>'+
-    '<th class="metric-col" data-key="setsPct">Sets (%)<span class="sortable-ind">⇅</span></th>'+
-    '<th class="metric-col" data-key="gamesPct">Juegos (%)<span class="sortable-ind">⇅</span></th>'+
+    `<th class="name-col" data-key="name">${nameLabel}<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>`+
+    '<th class="center" data-key="played">Partidos<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="winPct">Victorias (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="setsPct">Sets (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="gamesPct">Juegos (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
     '</tr>'
   table.appendChild(thead)
 

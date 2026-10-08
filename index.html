@@ -68,12 +68,32 @@
 .block:hover{border-color:var(--vt-border-gold);box-shadow:0 12px 36px rgba(0,0,0,0.5)}
 .block:hover::after{background:rgba(245,158,11,0.18)}
 
+/* Cabecera del modulo: distintivo con el icono, y a la derecha el icono
+   grande de marca de agua que llevan las tarjetas del mockup. */
+.block-head{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--vt-sm);
+  margin-bottom:var(--vt-sm);
+}
+.block-head > div{display:flex;align-items:center;gap:var(--vt-sm)}
+.block-icon{
+  display:flex;align-items:center;justify-content:center;
+  width:40px;height:40px;flex:0 0 auto;
+  border-radius:var(--vt-r);
+  background:rgba(245,158,11,0.14);
+  color:var(--vt-gold);
+}
+.block-marca{color:var(--vt-outline-variant,#534434);transition:color .2s ease}
+.block:hover .block-marca{color:var(--vt-gold-dark)}
+
 .block-title{
   position:relative;z-index:1;
-  margin:0 0 var(--vt-xs);
+  margin:0;
   font-family:var(--vt-font-head);
   font-size:30px;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;
   color:var(--vt-text-strong);
+  line-height:1;
 }
 .block-modulo{
   position:relative;z-index:1;
@@ -99,6 +119,10 @@ label.small{
    suelto a lo ancho. Asi caen 2x2, como en el mockup. */
 .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:var(--vt-sm)}
 .btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:var(--vt-sm);
   min-width:0;
   padding:12px 16px;
   background:var(--vt-surface-4);
@@ -130,6 +154,7 @@ label.small{
 .topbar-spacer{display:none}
 
 .admin-bottom,.admin-desktop{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--vt-sm);
   background:transparent;
   border:1px solid var(--vt-border-strong);
   border-radius:var(--vt-r);
@@ -140,7 +165,10 @@ label.small{
   cursor:pointer;
 }
 .admin-bottom:hover,.admin-desktop:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
-.admin-desktop{display:block;margin:var(--vt-lg) auto;min-width:200px;text-align:center}
+.admin-desktop{display:inline-flex;margin:var(--vt-lg) auto;min-width:200px}
+/* El boton va suelto fuera de .site, asi que para centrarlo con inline-flex
+   hace falta que su linea sea un bloque. */
+body > .admin-desktop{display:flex;width:max-content}
 .admin-mobile{display:none}
 @media(max-width:720px){
   .admin-desktop{display:none}
@@ -208,7 +236,7 @@ label.small{
 
 <div class="hero">
   <div class="topbar">
-    <button class="btn black-top" onclick="window.location='group-normativa.html'">NORMATIVA DEL GRUPO</button>
+    <button class="btn black-top" onclick="window.location='group-normativa.html'"><span class="ms ms--sm" aria-hidden="true">gavel</span>NORMATIVA DEL GRUPO</button>
   </div>
   <img src="/image.png" alt="Víboras Team" width="112" height="112" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 6px 24px rgba(245,158,11,0.3))">
   <h1 style="margin-top:var(--vt-md)">Club <span class="vt-gold-grad">Víboras Team</span></h1>
@@ -217,14 +245,22 @@ label.small{
 <div class="site">
 
   <div class="block block--leagues">
-    <span class="block-modulo">Módulo 01</span>
-    <div class="block-title">Ligas</div>
+    <div class="block-head">
+      <div>
+        <span class="ms block-icon">emoji_events</span>
+        <div>
+          <span class="block-modulo">Módulo 01</span>
+          <div class="block-title">Ligas</div>
+        </div>
+      </div>
+      <span class="ms ms--lg block-marca" aria-hidden="true">trophy</span>
+    </div>
     <div class="block-row">
       <div style="flex:1">
         <label class="small">Gestiona tus partidos de liga y mira resultados</label>
         <div class="controls">
-          <button class="btn secondary-green" onclick="window.location='league-results.html'">Ligas</button>
-          <button class="btn normativa" onclick="window.location='league-info.html'">Normativa</button>
+          <button class="btn secondary-green" onclick="window.location='league-results.html'"><span class="ms ms--sm" aria-hidden="true">format_list_bulleted</span>Ligas</button>
+          <button class="btn normativa" onclick="window.location='league-info.html'"><span class="ms ms--sm" aria-hidden="true">menu_book</span>Normativa</button>
         </div>
       </div>
     </div>
@@ -232,44 +268,68 @@ label.small{
 
 
   <div class="block block--upload">
-    <span class="block-modulo">Módulo 02</span>
-    <div class="block-title">Sube resultados</div>
+    <div class="block-head">
+      <div>
+        <span class="ms block-icon">cloud_upload</span>
+        <div>
+          <span class="block-modulo">Módulo 02</span>
+          <div class="block-title">Sube resultados</div>
+        </div>
+      </div>
+      <span class="ms ms--lg block-marca" aria-hidden="true">publish</span>
+    </div>
       <div class="block-row">
         <div style="flex:1">
           <label class="small">Publica los resultados de tus partidos</label>
           <div class="controls">
-            <button onclick="window.location='submit-result.html'" class="btn">Partidos individuales</button>
-            <button class="btn warn">Torneos</button>
+            <button onclick="window.location='submit-result.html'" class="btn"><span class="ms ms--sm" aria-hidden="true">sports_tennis</span>Partidos individuales</button>
+            <button class="btn warn"><span class="ms ms--sm" aria-hidden="true">military_tech</span>Torneos</button>
           </div>
         </div>
       </div>
   </div>
 
   <div class="block block--consult">
-    <span class="block-modulo">Módulo 03</span>
-    <div class="block-title">Consulta resultados</div>
+    <div class="block-head">
+      <div>
+        <span class="ms block-icon">history</span>
+        <div>
+          <span class="block-modulo">Módulo 03</span>
+          <div class="block-title">Consulta resultados</div>
+        </div>
+      </div>
+      <span class="ms ms--lg block-marca" aria-hidden="true">fact_check</span>
+    </div>
     <div class="block-row">
       <div style="flex:1">
         <label class="small">Consulta resultados de partidos y torneos</label>
         <div class="controls">
-          <button class="btn" onclick="window.location='history.html'">Partidos individuales</button>
-          <button class="btn warn" onclick="window.location='tournaments.html'">Torneos</button>
+          <button class="btn" onclick="window.location='history.html'"><span class="ms ms--sm" aria-hidden="true">calendar_month</span>Partidos individuales</button>
+          <button class="btn warn" onclick="window.location='tournaments.html'"><span class="ms ms--sm" aria-hidden="true">emoji_symbols</span>Torneos</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="block block--performance">
-    <span class="block-modulo">Módulo 04</span>
-    <div class="block-title">Rendimiento</div>
+    <div class="block-head">
+      <div>
+        <span class="ms block-icon">query_stats</span>
+        <div>
+          <span class="block-modulo">Módulo 04</span>
+          <div class="block-title">Rendimiento</div>
+        </div>
+      </div>
+      <span class="ms ms--lg block-marca" aria-hidden="true">trending_up</span>
+    </div>
     <div class="block-row">
       <div style="flex:1">
         <label class="small">Analiza tu rendimiento de juego y el del grupo</label>
         <div class="controls">
-          <button class="btn ranking" onclick="window.location='ranking.html'">Ranking</button>
-          <button class="btn rating" onclick="window.location='rating.html'">Rating de nivel</button>
-          <button class="btn players-green" onclick="window.location='players.html'">Jugadores</button>
-          <button class="btn purple" onclick="window.location='statistics.html'">Estadísticas</button>
+          <button class="btn ranking" onclick="window.location='ranking.html'"><span class="ms ms--sm" aria-hidden="true">leaderboard</span>Ranking</button>
+          <button class="btn rating" onclick="window.location='rating.html'"><span class="ms ms--sm" aria-hidden="true">speed</span>Rating de nivel</button>
+          <button class="btn players-green" onclick="window.location='players.html'"><span class="ms ms--sm" aria-hidden="true">group</span>Jugadores</button>
+          <button class="btn purple" onclick="window.location='statistics.html'"><span class="ms ms--sm" aria-hidden="true">monitoring</span>Estadísticas</button>
         </div>
       </div>
     </div>
@@ -278,10 +338,10 @@ label.small{
 </div>
 
 <!-- Desktop admin button (visible on larger screens) -->
-<button class="btn admin-desktop" onclick="openAdmin()" aria-label="Administración">Administración</button>
+<button class="btn admin-desktop" onclick="openAdmin()" aria-label="Administración"><span class="ms ms--sm" aria-hidden="true">shield_person</span>Administración</button>
 
 <!-- Mobile-only admin button (bottom center, shown only on small screens) -->
-<button class="admin-bottom admin-mobile" onclick="openAdmin()" aria-label="Administración móvil">Administración</button>
+<button class="admin-bottom admin-mobile" onclick="openAdmin()" aria-label="Administración móvil"><span class="ms ms--sm" aria-hidden="true">shield_person</span>Administración</button>
 
 <script>
 // Administration overlay for managing registered names

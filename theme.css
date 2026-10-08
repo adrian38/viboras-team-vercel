@@ -13,6 +13,19 @@
  * ai_context/sistema_visual_viper_strike.md
  */
 
+/* Iconos: Material Symbols, los mismos que nombran los mockups.
+ *
+ * El parametro icon_names recorta la fuente a los glifos de la lista, que es
+ * lo que la hace viable aqui: 5,6 KB en vez de los ~300 KB de la fuente
+ * entera. Al anadir un icono a una pagina hay que anadir su nombre aqui o
+ * saldra el nombre escrito en texto.
+ *
+ * Va con @import, y no con un <link> en cada pagina, para no repetir una URL
+ * de 400 caracteres dieciseis veces: cambiar la lista es una linea. Cuesta un
+ * viaje extra, que con font-display:block solo retrasa los iconos.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=admin_panel_settings,arrow_back,arrow_forward,calendar_month,cloud_upload,download,edit_note,emoji_events,emoji_symbols,fact_check,filter_alt,format_list_bulleted,gavel,group,history,leaderboard,lightbulb,menu_book,military_tech,monitoring,publish,query_stats,scoreboard,shield_person,speed,sports_tennis,swap_vert,trending_up,trophy,tune,verified_user,workspace_premium&display=block');
+
 :root{
   /* Superficies: negro carbono y sus elevaciones. */
   --vt-bg:#121316;
@@ -96,6 +109,43 @@ a{color:var(--vt-gold-soft);text-decoration-color:var(--vt-border-gold);text-und
 a:hover{color:var(--vt-gold-light)}
 
 hr,.vt-divider{border:0;border-top:1px solid var(--vt-border);margin:var(--vt-lg) 0}
+
+/* -------------------------------------------------------------- iconos -- */
+
+/* El texto del elemento es el nombre del icono y la ligadura lo convierte en
+   glifo. Si la fuente no llega se veria el nombre escrito; por eso el
+   @import pide font-display:block, que deja el hueco en blanco hasta que
+   carga en vez de ensenar "arrow_back". */
+.ms{
+  font-family:'Material Symbols Outlined';
+  font-weight:400;
+  font-style:normal;
+  font-size:20px;
+  line-height:1;
+  letter-spacing:normal;
+  text-transform:none;
+  display:inline-block;
+  white-space:nowrap;
+  direction:ltr;
+  flex:0 0 auto;
+  user-select:none;
+  -webkit-font-feature-settings:'liga';
+  font-feature-settings:'liga';
+  -webkit-font-smoothing:antialiased;
+}
+.ms--sm{font-size:17px}
+.ms--lg{font-size:26px}
+
+/* Los botones de las paginas son <button> sueltos con sus propias clases, no
+   .vt-btn. Para que el icono no quede pegado al texto tienen que ser flex.
+   Se declara aqui y no dieciseis veces; si una pagina necesita otra cosa,
+   su <style> va despues y gana. */
+.btn,.back-btn,.admin-bottom,.update-btn,.info-btn,.nav-btn,.small-btn,.edit-btn,.organize-btn,.calculate-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:var(--vt-sm);
+}
 
 /* --------------------------------------------------------- tipografia -- */
 

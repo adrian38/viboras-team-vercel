@@ -64,12 +64,36 @@ en la app**. Nada de esto se portó:
 Si alguien compara una captura con la página y echa algo de esto en falta, **es
 deliberado**.
 
-## Los iconos tampoco se portaron
+## Los iconos: Material Symbols recortada a 32 glifos
 
-Las maquetas usan Material Symbols. En la portada eso serían varios cientos de
-KB de fuente en una PWA que carga red primero y cachea como respaldo
-([[service_worker]]). Las tarjetas se leen igual sin ellos. Es la única
-diferencia visible con la maqueta 01 que no viene de descartar algo inventado.
+Las maquetas usan Material Symbols. La fuente entera son unos 300 KB, que en
+una PWA que carga red primero no se sostiene; pero Google Fonts acepta
+`&icon_names=` y devuelve **sólo los glifos de la lista: 5,6 KB medidos**. Con
+eso sí se sostiene.
+
+El `@import` está en `theme.css`, al principio del fichero, que es donde la
+regla lo obliga. Está ahí y no como `<link>` en cada página para no repetir una
+URL de 400 caracteres dieciséis veces.
+
+**Al añadir un icono nuevo hay que añadir su nombre a esa lista.** Si no, no
+falla: se ve el nombre escrito en texto, porque estos iconos se pintan por
+ligadura —el contenido del elemento es `arrow_back` y la fuente lo convierte en
+flecha—. El `display:block` del `@import` tapa el caso mientras carga, pero no
+el de un nombre que no está en la lista.
+
+Para comprobar que ninguno se quedó en texto, los glifos miden ~24 px y una
+palabra mucho más:
+
+```js
+[...document.querySelectorAll('.ms')].filter(e => e.getBoundingClientRect().width > 44)
+```
+
+Los iconos que sólo existían en el cromo descartado no se portaron. Los que
+quedaron fuera a propósito aunque la maqueta los ponga sobre algo real son dos:
+el `workspace_premium` junto al primero de `rating.html`, porque colocarlo
+obliga a tocar `renderTable`, que está en el techo de líneas; y los
+`expand_more` de los desplegables y el `play_arrow` de los spoilers, que ya se
+dibujan con CSS y no necesitan fuente.
 
 ## La página sin maqueta
 

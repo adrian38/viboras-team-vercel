@@ -130,10 +130,8 @@ tbody tr:hover td{background:var(--vt-surface-2)}
 .set-item:not(:last-child)::after{content:", "}
   .edit-btn{background:transparent;border:1px solid var(--vt-border-strong);padding:6px 10px;border-radius:var(--vt-r-sm);color:var(--vt-text);font-size:13px;cursor:pointer}
   .edit-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
-  /* El lapiz lleva stroke="#0b1530" en el propio SVG, azul casi negro: sobre
-     carbono no se veia. Como es atributo de presentacion, el CSS lo gana sin
-     !important. */
-  .edit-btn svg path{stroke:currentColor}
+  /* El lapiz era un SVG escrito a mano con stroke="#0b1530", invisible sobre
+     carbono. Ahora es el icono edit_note, que hereda el color del boton. */
 
   /* Modal de indicar resultado. */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.72);display:none;align-items:center;justify-content:center;z-index:1200;padding:var(--vt-md)}
@@ -240,7 +238,7 @@ tbody tr:hover td{background:var(--vt-surface-2)}
         </label>
 
         <div style="display:flex;align-items:end;gap:8px">
-          <button class="btn" id="filterBtn">Filtrar</button>
+          <button class="btn" id="filterBtn"><span class="ms ms--sm" aria-hidden="true">filter_alt</span>Filtrar</button>
         </div>
       </div>
     </div>
@@ -267,10 +265,10 @@ tbody tr:hover td{background:var(--vt-surface-2)}
 
     <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
       <div style="flex:1;text-align:left">
-        <button class="btn" id="downloadBtn">Descargar resultados</button>
+        <button class="btn" id="downloadBtn"><span class="ms ms--sm" aria-hidden="true">download</span>Descargar resultados</button>
       </div>
       <div style="flex:0 0 auto;text-align:right">
-        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+        <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
       </div>
     </div>
   </div>
@@ -698,7 +696,7 @@ function renderResults(pending, completed){
       edit.className = 'edit-btn'
       edit.setAttribute('type','button')
       edit.title = 'Editar marcador'
-      edit.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0b1530" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0b1530" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      edit.innerHTML = '<span class="ms ms--sm" aria-hidden="true">edit_note</span>'
       edit.addEventListener('click', ()=> openEditModal(m))
       tdScore.appendChild(edit)
       tr.appendChild(tdPlayers); tr.appendChild(tdScore)
