@@ -4,6 +4,8 @@
 #   docker compose exec postgres psql -U postgres -d padel -f /backups/<fichero>.sql
 #   -> http://localhost:3000
 
+name: viboras-team-vercel
+
 services:
   postgres:
     image: postgres:17
