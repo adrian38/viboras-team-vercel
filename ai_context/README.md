@@ -12,6 +12,13 @@ que hay.
 
 `AGENTS.md`, en la raíz, contiene el flujo de trabajo y de verificación.
 
+## El código
+
+- `tamano_del_codigo_y_trinquete.md`: los techos de 60 líneas por función y 600
+  de JavaScript por fichero, por qué en un `.html` se mide el JavaScript y no el
+  total, cómo el baseline perdona lo que ya existía y sólo encoge, y qué no ve
+  la guarda.
+
 ## El rating
 
 - `motor_de_rating_duplicado.md`: el motor Glicko está implementado tres veces

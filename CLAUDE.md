@@ -20,7 +20,7 @@ La herramienta lo deriva de la ruta, así que cambia de equipo: confirmar con
 ```bash
 docker compose up -d --build        # entorno local -> http://localhost:3000
 docker compose logs -f app          # ver las peticiones al API
-npm run check                       # las dos guardas mecanicas
+npm run check                       # las tres guardas mecanicas
 ```
 
 `/health` del entorno local dice contra qué base está hablando y cuántos

@@ -88,27 +88,43 @@ quince. Al tocar el `<head>`, recorrer todas y comprobar el resultado:
 grep -c '<etiqueta que sea>' *.html
 ```
 
-## Tamaño del código
+## Tamaño del código: 60 líneas por función, 600 de JavaScript por fichero
 
-Aquí no hay techo, y conviene decir por qué en vez de fingir una regla que el
-repositorio incumple en cada fichero. Las páginas grandes mezclan HTML, CSS y
-JavaScript en un solo archivo:
+No es estética, es el coste de leer. Una función de 60 líneas son unos 700
+tokens y tres caben en la ventana sin pensarlo; por encima, cambiar tres líneas
+obliga a cargar el fichero entero.
 
-```
-players.html 1061   index.html 989   rating-test.html 977
-league-results.html 958   rating.html 800   api/league-admin.js 625
-```
+| Techo | Medida | Guarda | Perdonados |
+| --- | --- | --- | --- |
+| 60 líneas por función | declaraciones y arrow asignadas | `tools/code-size.mjs` | `tools/code-size-baseline.json` |
+| 600 líneas de JavaScript por fichero | los `<script>` en línea, no el `.html` entero | `tools/code-size.mjs` | `tools/code-size-baseline.json` |
 
-La regla practicable es la dirección, no el número:
+En un `.html` se mide **el JavaScript, no el fichero**: `players.html` tiene
+1061 líneas pero 738 de código. El marcado es presentación y trocearlo no
+abarata nada; el número baja cuando el JavaScript sale a un fichero propio, que
+es el refactor que de verdad reduce el coste de leer.
 
-- **Lo nuevo no empeora el reparto.** Lógica nueva que no sea de presentación va
-  a `api/` o a un `.js` propio, no a otro bloque dentro de un `.html` de mil
-  líneas.
+**El baseline nació con 34 funciones y 6 ficheros perdonados**, que es el estado
+del repositorio el día que se puso la guarda. Eso no es deuda que pagar antes de
+seguir: está grabado para que lo nuevo no se esconda entre lo viejo.
+
+- **Lo nuevo cumple.** Función o fichero nuevo por encima del techo: se parte.
+  No se añade al baseline; la guarda no ofrece esa puerta.
+- **El baseline sólo encoge.** `--write` escribe `min(actual, registrado)` sobre
+  las entradas que ya había: nunca añade una ni sube un número, y una regresión
+  sigue fallando después de ejecutarlo.
+- **Una entrada caducada falla.** Lo perdonado que encoge, desaparece o baja del
+  techo obliga a `node tools/code-size.mjs --write`. Así el trinquete aprieta.
+- **La guarda no lo ve todo**: ni métodos de objeto, ni funciones anónimas, ni
+  nada dentro de una plantilla. Un resultado vacío no prueba que no haya código.
 - **No reescribir una página entera de paso.** Un refactor y un cambio de
   comportamiento nunca van en el mismo commit; y en estas páginas un refactor
   amplio no se puede verificar, porque no hay pruebas que lo respalden.
-- Si una página se parte alguna vez, el trabajo real es sacar el JavaScript a un
-  fichero propio, no trocear el HTML.
+- **Antes de partir un fichero, buscar las guardas que lo nombran**
+  (`rg -l <fichero> tools/`). `rating-parity.mjs` lee tres páginas por su
+  nombre: partir una sin tocarlo la dejaría pasando mientras comprueba la mitad.
+
+Detalle: `ai_context/tamano_del_codigo_y_trinquete.md`.
 
 ## El código no se edita a ciegas por el shell
 
@@ -135,7 +151,8 @@ manual y está descrita aquí.
    npm run check
    ```
 
-   Ejecuta `tools/ai-context-index.mjs` y `tools/rating-parity.mjs`.
+   Ejecuta `tools/ai-context-index.mjs`, `tools/rating-parity.mjs` y
+   `tools/code-size.mjs`.
 
 2. **Entorno local**, que replica Vercel con Postgres propio:
 
