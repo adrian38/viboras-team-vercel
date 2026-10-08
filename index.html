@@ -167,14 +167,17 @@ label.small{
   cursor:pointer;
 }
 .admin-bottom:hover,.admin-desktop:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
-.admin-desktop{display:inline-flex;margin:var(--vt-lg) auto;min-width:200px}
-/* El boton va suelto fuera de .site, asi que para centrarlo con inline-flex
-   hace falta que su linea sea un bloque. */
-body > .admin-desktop{display:flex;width:max-content}
+/* Hay dos botones de administracion en el marcado, uno por ancho, y solo
+   puede verse uno. Van en flex, no en block, para que el icono se separe del
+   texto, y con width:max-content para que el margin:auto los centre.
+   Nada de "body > .admin-desktop": ese selector tiene mas especificidad que
+   el display:none del media query, que no la gana por estar dentro de una
+   media query, y dejaba los dos botones a la vista en movil. */
+.admin-desktop{display:flex;width:max-content;margin:var(--vt-lg) auto;min-width:200px}
 .admin-mobile{display:none}
 @media(max-width:720px){
   .admin-desktop{display:none}
-  .admin-mobile{display:block;margin:var(--vt-lg) auto}
+  .admin-mobile{display:flex;width:max-content;margin:var(--vt-lg) auto}
 }
 
 .register-input{
