@@ -77,7 +77,6 @@ services:
       - ./api:/app/api
       - ./docker:/app/docker
       - ./data:/app/data
-      - ./app.js:/app/app.js
       - ./index.html:/app/index.html
       - ./day.html:/app/day.html
       - ./history.html:/app/history.html
