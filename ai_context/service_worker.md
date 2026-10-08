@@ -5,6 +5,37 @@
 directo que abre el navegador con sus barras). Se registra desde `pwa.js`, que
 cargan las 16 páginas.
 
+## En un preview protegido, la consola se llena de errores del manifiesto
+
+Si el despliegue tiene la Deployment Protection de Vercel activada, **todas**
+las rutas responden 302 a `vercel.com/sso-api`. La navegación lleva la cookie
+de sesión y la página carga, pero `site.webmanifest` se pide siempre en modo
+CORS y **sin credenciales**: rebota al SSO, que es otro origen, y CORS lo corta.
+
+Los errores salen en parejas y la segunda línea parece de aquí:
+
+```
+Access to fetch at 'https://vercel.com/sso-api?...' (redirected from
+'.../site.webmanifest') ... blocked by CORS policy
+The FetchEvent for ".../site.webmanifest" resulted in a network error response
+```
+
+El service worker no lo causa: intercepta, la red falla, mira en la caché, no
+está, y devuelve `Response.error()`, que es lo que dice su código. Esa segunda
+línea es, de hecho, la señal de que **está registrado y funcionando** — que es
+justo lo que no se puede comprobar en local.
+
+Por eso las 16 páginas llevan
+`<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">`:
+así la petición manda la cookie, no la redirigen, y no queda nada que bloquear.
+En producción no cambia nada, porque ahí no hay protección.
+
+**`site.webmanifest` no está en `PRECACHE` a propósito.** `cache.addAll()` es
+todo o nada: si una sola entrada falla, el `install` entero falla y el service
+worker no llega a activarse. Meter ahí precisamente el recurso que puede fallar
+en un preview protegido cambiaría un aviso en consola por quedarse sin service
+worker.
+
 ## La estrategia es deliberada
 
 **Red primero, caché sólo como respaldo.** En una app de resultados una caché
