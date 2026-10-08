@@ -184,3 +184,67 @@ vercel deploy --prod
 
 Removed dependency: `@netlify/blobs`.
 Added dependency: `@vercel/postgres`.
+
+---
+
+## Entorno local con Docker
+
+Levanta la app completa contra un Postgres local, sin tocar Neon ni produccion.
+
+```bash
+docker compose up -d --build
+```
+
+Servicios que arranca:
+
+| servicio     | puerto | para que sirve                                        |
+|--------------|--------|-------------------------------------------------------|
+| `postgres`   | 5433   | la base de datos (volumen `pgdata`, persiste)          |
+| `neon-http`  | 4444   | traduce el API HTTP de Neon -> Postgres normal         |
+| `wsproxy`    | —      | lo mismo para el camino WebSocket (hoy sin uso)        |
+| `app`        | 3000   | servidor Express que emula las funciones de Vercel     |
+
+App en http://localhost:3000 y comprobacion de la conexion en
+http://localhost:3000/health
+
+### Por que hacen falta los proxies
+
+`@vercel/postgres` **no habla el protocolo TCP de Postgres**. Internamente el tag
+`sql` llama a `neon()`, que hace un `fetch` contra `https://<host>/sql`. Por eso
+no se le puede apuntar a un Postgres normal sin un traductor delante.
+
+`docker/neon-local.js` reconfigura el driver (`neonConfig.fetchEndpoint`) para que
+apunte al proxy local. **Los ficheros de `api/` no se modifican**: son los mismos
+que corren en produccion.
+
+Dos detalles que hacen perder el tiempo si no se saben:
+
+- La cadena de conexion debe contener `-pooler.` o el driver la rechaza con
+  `invalid_connection_string`. La comprobacion es literalmente
+  `connectionString.includes("-pooler.")`.
+- Vercel/Neon exponen la variable como `DATABASE_URL`, pero este codigo solo lee
+  `POSTGRES_URL`. Si se copia tal cual, todo devuelve 500.
+
+### Cargar datos
+
+Los dumps de `backups/` estan montados en `/backups` dentro del contenedor:
+
+```bash
+docker compose exec postgres psql -U postgres -d padel -f /backups/<fichero>.sql
+```
+
+Para sacar un backup de produccion (usar la URL **UNPOOLED** de Neon, la
+pooled no sirve para `pg_dump`):
+
+```bash
+docker compose exec postgres pg_dump "$NEON_UNPOOLED_URL" --no-owner --no-privileges -f /backups/neon-$(date +%Y%m%d-%H%M).sql
+```
+
+`backups/` esta en `.gitignore`: contiene nombres reales de jugadores.
+
+### Parar
+
+```bash
+docker compose down        # conserva los datos
+docker compose down -v     # borra tambien el volumen
+```

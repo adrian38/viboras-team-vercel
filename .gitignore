@@ -16,3 +16,7 @@ node_modules/
 
 # Local Netlify folder
 .netlify
+
+# backups de base de datos (datos personales - nunca commitear)
+backups/
+*.sql.gz

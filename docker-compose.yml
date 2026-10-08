@@ -1,0 +1,99 @@
+# Entorno de desarrollo local. No se usa en produccion.
+#
+#   docker compose up -d --build
+#   docker compose exec postgres psql -U postgres -d padel -f /backups/<fichero>.sql
+#   -> http://localhost:3000
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: padel-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: padel_local
+      POSTGRES_DB: padel
+    ports:
+      - "5433:5432"   # 5433 en el host para no chocar con un Postgres instalado
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups:ro   # para restaurar dumps sin copiarlos a mano
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d padel"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Traduce WebSocket (protocolo Neon) -> TCP (Postgres normal).
+  # Sin esto, @vercel/postgres no puede hablar con un Postgres local.
+  wsproxy:
+    image: ghcr.io/neondatabase/wsproxy:latest
+    container_name: padel-wsproxy
+    environment:
+      APPEND_PORT: "postgres:5432"   # destino real de todas las conexiones
+      ALLOW_ADDR_REGEX: ".*"         # solo local: acepta cualquier destino
+      LOG_TRAFFIC: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Implementa el API HTTP de Neon (POST /sql) sobre un Postgres normal.
+  # Es el que de verdad usa la app: el tag `sql` de @vercel/postgres va por
+  # HTTP, no por WebSocket.
+  neon-http:
+    image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+    container_name: padel-neon-http
+    environment:
+      PG_CONNECTION_STRING: "postgres://postgres:padel_local@postgres:5432/padel"
+    ports:
+      - "4444:4444"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: padel-app
+    environment:
+      # El host de esta URL lo ignora el driver (va todo por wsproxy), pero
+      # usuario, contrasena y nombre de base de datos si se usan.
+      #
+      # El "-pooler." del host NO es decorativo: @vercel/postgres valida la
+      # cadena con `connectionString.includes("-pooler.")` y rechaza la
+      # conexion si no aparece ("invalid_connection_string"). Es el mismo
+      # motivo por el que en produccion hay que usar la URL pooled de Neon.
+      POSTGRES_URL: "postgres://postgres:padel_local@padel-pooler.local:5432/padel"
+      USE_LOCAL_PG: "1"
+      WS_PROXY: "wsproxy:80"
+      HTTP_PROXY_NEON: "neon-http:4444"
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      # Codigo montado en caliente: editas un .html o un api/*.js y se recarga.
+      - ./api:/app/api
+      - ./docker:/app/docker
+      - ./data:/app/data
+      - ./app.js:/app/app.js
+      - ./index.html:/app/index.html
+      - ./day.html:/app/day.html
+      - ./history.html:/app/history.html
+      - ./players.html:/app/players.html
+      - ./ranking.html:/app/ranking.html
+      - ./rating.html:/app/rating.html
+      - ./results.html:/app/results.html
+      - ./statistics.html:/app/statistics.html
+      - ./tournaments.html:/app/tournaments.html
+      - ./league-results.html:/app/league-results.html
+      - ./submit-result.html:/app/submit-result.html
+    depends_on:
+      wsproxy:
+        condition: service_started
+      neon-http:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
