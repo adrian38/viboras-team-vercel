@@ -6,144 +6,200 @@
 <title>Rating</title>
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 <style>
-:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb}
-*{box-sizing:border-box}
-body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px}
-.site{max-width:980px;margin:0 auto}
-.block{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
-.block-title{font-weight:700;margin-bottom:10px}
+/* Las seis categorias y sus clases .tier-<key> estan descritas en
+   ai_context/categorias_de_rating.md: cada una necesita su pareja de reglas
+   o sale gris sin dar error. Siguen siendo seis. */
 
-/* Controls Header */
-.controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-  font-weight: 500;
-  font-size: 0.95rem;
+.controls{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--vt-md);
+  flex-wrap:wrap;
+  margin-bottom:var(--vt-md);
+  padding:var(--vt-sm) var(--vt-md);
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  font-size:13px;
+  color:var(--vt-text);
 }
-.controls input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
-.controls select { padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.9rem; outline: none; background: #fff; cursor: pointer; }
-
-/* Category Section Layout */
-.tier-section {
-  margin-bottom: 24px;
-  border-radius: 10px;
-  padding: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+.controls select{
+  padding:6px 28px 6px 10px;
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:inherit;
+  font-size:13px;
+  outline:none;cursor:pointer;
+  appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--vt-muted) 50%),linear-gradient(135deg,var(--vt-muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
 }
-.tier-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin: 0 0 8px 4px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.controls select:focus{border-color:var(--vt-gold)}
+.controls select option{background:var(--vt-surface-2)}
+
+/* Banda de categoria: el degradado ambar del mockup, con el punto dorado
+   a la izquierda y el rango a la derecha. */
+.tier-section{
+  margin-bottom:var(--vt-lg);
+  border-radius:var(--vt-r-lg);
+  border:1px solid var(--vt-border);
+  background:var(--vt-surface-2);
+  overflow:hidden;
 }
-.tier-subtitle {
-  font-size: 0.8rem;
-  font-weight: 500;
-  opacity: 0.75;
+.tier-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--vt-sm);
+  margin:0;
+  padding:9px 14px;
+  font-family:var(--vt-font-head);
+  font-size:19px;
+  font-weight:700;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+}
+.tier-title > span:first-child{display:flex;align-items:center;gap:var(--vt-sm)}
+.tier-title > span:first-child::before{
+  content:'';
+  width:7px;height:7px;border-radius:var(--vt-r-full);
+  background:currentColor;
+}
+.tier-subtitle{
+  font-family:var(--vt-font-body);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.05em;
+  color:var(--vt-muted);
+  text-transform:none;
 }
 
-/* Category Styles */
-.tier-entreno { background-color: #fff8f0; border-color: #fed7aa; }
-.tier-entreno .tier-title { color: #ea580c; }
+/* Escalera de intensidad: mas oro cuanto mas alta la categoria. El nombre y
+   el rango ya dicen cual es; el tono solo ordena. */
+.tier-entreno .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.30),transparent 70%);color:#ffd79a}
+.tier-avanzado-alto .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.24),transparent 70%);color:#ffc97f}
+.tier-avanzado-medio .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.18),transparent 70%);color:#f0b670}
+.tier-intermedio-alto .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.13),transparent 70%);color:#dca564}
+.tier-intermedio-medio .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.09),transparent 70%);color:#c69459}
+.tier-iniciacion .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.06),transparent 70%);color:#b0854f}
 
-.tier-avanzado-alto { background-color: #f0f7ff; border-color: #bfdbfe; }
-.tier-avanzado-alto .tier-title { color: #2563eb; }
+table{width:100%;border-collapse:collapse;margin-top:0;table-layout:fixed}
+th{
+  padding:8px 10px;
+  background:var(--vt-surface-3);
+  color:var(--vt-muted);
+  font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  text-align:left;
+  border-bottom:1px solid var(--vt-border-strong);
+}
+td{padding:9px 10px;border-bottom:1px solid var(--vt-border);color:var(--vt-text);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--vt-surface-3)}
 
-.tier-avanzado-medio { background-color: #f0fbff; border-color: #bae6fd; }
-.tier-avanzado-medio .tier-title { color: #0891b2; }
-
-.tier-intermedio-alto { background-color: #f0fdf4; border-color: #bbf7d0; }
-.tier-intermedio-alto .tier-title { color: #16a34a; }
-
-.tier-intermedio-medio { background-color: #f7fee7; border-color: #d9f99d; }
-.tier-intermedio-medio .tier-title { color: #65a30d; }
-
-.tier-iniciacion { background-color: #fdf8f6; border-color: #fed7aa; }
-.tier-iniciacion .tier-title { color: #854d0e; }
-
-/* Table Styles */
-table{width:100%;border-collapse:collapse;margin-top:4px;table-layout:fixed}
-th,td{padding:10px;border-bottom:1px solid rgba(0,0,0,0.04);text-align:left;vertical-align:middle}
-th{background:transparent;font-weight:700;color:#4b5563}
 .rank-col{width:72px;text-align:center}
-.rating-col{width:96px;text-align:center;font-weight:700}
+td.rank-col{color:var(--vt-muted);font-variant-numeric:tabular-nums}
+.rating-col{width:96px;text-align:center}
+/* El rating es el dato de la pagina: oro y condensada. */
+td.rating-col{
+  font-family:var(--vt-font-head);
+  font-size:19px;font-weight:700;letter-spacing:0.02em;
+  color:var(--vt-gold);
+  font-variant-numeric:tabular-nums;
+}
 .fiabilidad-col{width:120px;text-align:center}
-th.fiabilidad-col{font-weight:700}
-td.fiabilidad-col{font-weight:500}
-.name-col{font-weight:600;color:#1e293b;overflow-wrap:anywhere}
-.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
-.muted{color:var(--muted)}
+.name-col{font-weight:500;color:var(--vt-text);overflow-wrap:anywhere}
+.name-col a{color:inherit;text-decoration:none}
+.name-col a:hover{color:var(--vt-gold-light)}
+.muted{color:var(--vt-muted)}
 
-.progress-segmented {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 3px 4px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background-color: #ffffff;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+/* Cinco segmentos de fiabilidad. El color lo pone getFiabilidadConfig(), con
+   el mismo rojo -> verde que explican las insignias de rating-info.html,
+   aclarado para que se lea sobre el carbono: f87171, fb923c, facc15, a3e635
+   y 4ade80. El segmento apagado y la cifra de RD tambien se escriben desde
+   el script, en 343538 y d8c3ad. No se comenta ahi porque getFiabilidadConfig
+   vive dentro de renderTable, que esta en el baseline de tools/code-size.mjs
+   y solo puede encoger. */
+.progress-segmented{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:3px 4px;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-sm);
+  background-color:var(--vt-surface-deep);
 }
-.progress-segment {
-  width: 7px;
-  height: 11px;
-  background-color: #e2e8f0;
-  border-radius: 2px;
-  transition: background-color 0.2s ease;
-}
-
-.info-btn {
-  background: #f7fee7;
-  color: #4d7c0f;
-  border: 1px solid #bef264;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 700;
-  transition: all 0.15s ease;
-  box-shadow: 0 2px 8px rgba(163, 230, 53, 0.25);
+.progress-segment{
+  width:7px;height:11px;
+  border-radius:2px;
+  transition:background-color .2s ease;
 }
 
-.info-btn:hover {
-  background: #ecfccb;
-  border-color: #a3e635;
-  transform: translateY(-1px);
+.info-btn{
+  padding:9px 16px;
+  background:transparent;
+  border:1px solid var(--vt-border-gold);
+  border-radius:var(--vt-r);
+  color:var(--vt-gold-light);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;
+  cursor:pointer;
+  transition:background .15s ease,border-color .15s ease;
 }
+.info-btn:hover{background:rgba(245,158,11,0.12);border-color:var(--vt-gold)}
 
-@media(max-width:720px){body{padding:16px}}
+.back-btn{
+  padding:9px 16px;
+  background:transparent;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;
+  cursor:pointer;
+}
+.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
 
-/* Movil: los anchos fijos de arriba no caben en 375px, se reducen aqui */
+/* Movil: los anchos fijos de arriba no caben en 375px, se reducen aqui.
+   Detalle en ai_context/tabla_de_rating_en_movil.md */
 @media(max-width:560px){
-  .block{padding:12px}
-  .tier-section{padding:10px 8px}
-  .tier-title{flex-direction:column;align-items:flex-start;gap:2px;margin-left:2px;font-size:1.05rem}
-  th,td{padding:8px 4px;font-size:0.9rem}
-  th{font-size:0.72rem}
+  .tier-title{flex-direction:column;align-items:flex-start;gap:2px;font-size:17px;padding:8px 10px}
+  th,td{padding:8px 4px;font-size:13px}
+  th{font-size:9px}
+  td.rating-col{font-size:16px}
   .rank-col{width:30px}
   .rating-col{width:66px}
   .fiabilidad-col{width:74px}
   .progress-segmented{gap:2px;padding:2px 3px}
   .progress-segment{width:5px;height:10px}
+  .controls{font-size:12px;gap:var(--vt-sm);padding:var(--vt-sm)}
 }
 </style>
 </head>
 <body>
 
-<div class="site">
-  <div class="block">
+<div class="vt-page">
+
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Rating</h1>
+    <span class="vt-label">Víboras Ranking Circuit</span>
+  </div>
+
+  <div class="vt-card vt-card--accent">
 
     <div class="controls">
       <label style="display: flex; align-items: center; gap: 8px;">
@@ -181,10 +237,10 @@ td.fiabilidad-col{font-weight:500}
 
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
       <button class="info-btn" onclick="window.location.href='/rating-info.html'">
-        💡 ¿Cómo funciona el rating?
+        <span class="ms ms--sm" aria-hidden="true">lightbulb</span>¿Cómo funciona el rating?
       </button>
       <div style="text-align:right">
-        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+        <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
       </div>
     </div>
 
@@ -661,12 +717,12 @@ function renderTable(rows) {
     const v = Number(rd);
     if (!Number.isFinite(v)) return { bars: 0, color: '', label: '' };
 
-    if (v >= 350) return { bars: 0, color: '#dc2626', label: 'Sin fiabilidad' };
-    if (v < 100) return { bars: 5, color: '#16a34a', label: 'Muy alta' };
-    if (v < 140) return { bars: 4, color: '#65a30d', label: 'Alta' };
-    if (v < 190) return { bars: 3, color: '#ca8a04', label: 'Media' };
-    if (v < 250) return { bars: 2, color: '#ea580c', label: 'Baja' };
-    return { bars: 1, color: '#dc2626', label: 'Muy baja' };
+    if (v >= 350) return { bars: 0, color: '#f87171', label: 'Sin fiabilidad' };
+    if (v < 100) return { bars: 5, color: '#4ade80', label: 'Muy alta' };
+    if (v < 140) return { bars: 4, color: '#a3e635', label: 'Alta' };
+    if (v < 190) return { bars: 3, color: '#facc15', label: 'Media' };
+    if (v < 250) return { bars: 2, color: '#fb923c', label: 'Baja' };
+    return { bars: 1, color: '#f87171', label: 'Muy baja' };
   }
 
   function formatRating(num) {
@@ -718,7 +774,7 @@ function renderTable(rows) {
 
       let segmentsHtml = '';
       for (let i = 1; i <= 5; i++) {
-        const activeBg = i <= bars ? color : '#e2e8f0';
+        const activeBg = i <= bars ? color : '#343538';
         segmentsHtml += `<span class="progress-segment" style="background-color: ${activeBg};"></span>`;
       }
 
@@ -732,7 +788,7 @@ function renderTable(rows) {
       let reliabilityHtml;
       if (showRD) {
         const rdVal = (r.rd === undefined || r.rd === null || !Number.isFinite(Number(r.rd))) ? '-' : Number(Number(r.rd)).toFixed(2).replace('.', ',');
-        reliabilityHtml = `<div style="color:#374151;font-weight:400">${rdVal}</div>`;
+        reliabilityHtml = `<div style="color:#d8c3ad;font-weight:400;font-variant-numeric:tabular-nums">${rdVal}</div>`;
       } else {
         reliabilityHtml = progressHtml;
       }

@@ -6,139 +6,135 @@
 <title>Votos del día</title>
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 
 <style>
-body{
-  font-family:sans-serif;
-  padding:20px;
-  text-align:center;
-  background:#fafafa;
-}
+/* El panel de organizar lo genera toggleOrganizer() con HTML en linea y sin
+   clases, asi que sus selects se estilan por selector de elemento dentro de
+   #organizer: asi el script no se toca. */
 
+/* Una hora votada, con sus nombres. */
 .hour{
-  margin-bottom:15px;
-  padding:12px 16px;
-  border:1px solid #ddd;
-  border-radius:8px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:var(--vt-sm) var(--vt-md);
+  margin-bottom:var(--vt-sm);
+  padding:var(--vt-sm) var(--vt-md);
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-left:3px solid var(--vt-gold);
+  border-radius:var(--vt-r);
+  text-align:left;
 }
-
 .hour-title{
-  font-weight:bold;
-  margin-bottom:8px;
+  flex:0 0 auto;
+  min-width:86px;
+  font-family:var(--vt-font-head);
+  font-size:19px;
+  font-weight:700;
+  letter-spacing:0.03em;
+  color:var(--vt-gold);
 }
-
-.names{
-  margin-left:10px;
-}
-
+.names{display:flex;flex-wrap:wrap;gap:var(--vt-xs)}
 .name{
-  background:#f2f2f2;
   display:inline-block;
-  padding:4px 8px;
-  margin:3px;
-  border-radius:4px;
+  padding:3px 10px;
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-full);
+  color:var(--vt-text);
+  font-size:13px;
+  font-weight:500;
 }
 
-button{
-  margin-top:20px;
-  font-size:1rem;
-  padding:8px 12px;
-  border-radius:6px;
+#organizer{text-align:left;max-width:420px;margin-left:auto;margin-right:auto}
+#organizer label{
+  display:block;
+  margin-bottom:var(--vt-xs);
+  font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;
+  color:var(--vt-muted);
 }
-
-#organizer select{
-  font-size:1.1rem;
-  padding:8px 12px;
-  margin-top:5px;
-  margin-bottom:5px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  min-width:160px;
-  height:36px;
+#organizer select,#players select{
+  width:100%;
+  padding:10px 34px 10px 12px;
+  margin:0 0 var(--vt-sm);
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:15px;
+  appearance:none;
+  cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--vt-muted) 50%),linear-gradient(135deg,var(--vt-muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
 }
+#organizer select:focus,#players select:focus{outline:none;border-color:var(--vt-gold)}
+#organizer option{background:var(--vt-surface-2)}
+/* El script mete un <br> detras de cada select de jugador. */
+#players br{display:none}
 
-#players select{
-  font-size:1.1rem;
-  padding:10px 14px;
-  height:40px;
-  min-width:200px;
-}
-
+/* Compartir abre WhatsApp: se conserva su verde, que aqui es informacion
+   sobre a donde lleva el boton y no decoracion. */
 .share-btn{
-  margin-top:12px;
-  font-size:1.1rem;
+  display:block;
+  width:100%;
+  margin-top:var(--vt-md);
   padding:12px 20px;
-  border-radius:8px;
-  border:none;
   background:#25D366;
-  color:white;
-  cursor:pointer;
-}
-
-.share-btn:hover{
-  background:#1ebe5d;
-}
-
-.organize-btn{
-  background:#2F80ED;
-  color:white;
   border:none;
-  padding:12px 20px;
-  font-size:1.1rem;
-  border-radius:8px;
+  border-radius:var(--vt-r);
+  color:#07301a;
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;letter-spacing:0.02em;
   cursor:pointer;
+  transition:background .15s ease;
 }
+.share-btn:hover{background:#1ebe5d}
 
-.organize-btn:hover{
-  background:#1c63c7;
-}
+.acciones{display:flex;flex-wrap:wrap;gap:var(--vt-sm);justify-content:center;margin-top:var(--vt-lg)}
 
 @media(max-width:600px){
-
-  .hour{
-    font-size:1.1rem;
-    padding:14px 18px;
-  }
-
-  .name{
-    font-size:1rem;
-    padding:5px 10px;
-  }
-
-  button{
-    font-size:1.1rem;
-    padding:10px 14px;
-  }
-
-  #organizer select{
-    font-size:1.1rem;
-    height:42px;
-    min-width:210px;
-  }
-
-  #players select{
-    font-size:1.2rem;
-    height:46px;
-    min-width:220px;
-  }
-
+  .hour-title{min-width:0;width:100%}
+  .acciones .vt-btn{flex:1;min-width:120px}
 }
 </style>
 </head>
 <body>
 
-<h2 id="title"></h2>
+<div class="vt-page vt-page--narrow">
 
-<div id="results"></div>
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <div class="vt-label vt-gold" style="margin-top:var(--vt-sm)">Víboras Pádel Club</div>
+  </div>
 
-<button class="organize-btn" onclick="toggleOrganizer()">Organizar partido</button>
-<div id="organizer" style="display:none;margin-top:20px"></div>
+  <div class="vt-card vt-card--accent" style="text-align:center">
 
-<button onclick="goBack()">Atrás</button>
+    <h1 id="title"></h1>
+
+    <div id="results" style="margin-top:var(--vt-lg)"></div>
+
+    <div class="acciones">
+      <button class="vt-btn organize-btn" onclick="toggleOrganizer()">Organizar partido</button>
+      <button class="vt-btn vt-btn--ghost" onclick="goBack()"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
+    </div>
+
+    <div id="organizer" style="display:none;margin-top:20px"></div>
+
+  </div>
+</div>
 
 <script>
 

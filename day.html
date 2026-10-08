@@ -6,102 +6,98 @@
 <title>Disponibilidad</title>
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 
 <style>
-body{
-  font-family: Arial, sans-serif;
-  padding:20px;
-  text-align:center;
-  background:#fafafa;
-}
-
+/* Rejilla de horas. Los nombres .slot y .selected los usa el script para
+   leer la seleccion, asi que se conservan. */
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(80px, 1fr));
-  gap:10px;
-  justify-items:center;
-  margin:20px 0;
+  grid-template-columns:repeat(auto-fit, minmax(84px, 1fr));
+  gap:var(--vt-sm);
+  margin:var(--vt-lg) 0;
 }
 
 .slot{
-  border:1px solid #ccc;
-  border-radius:8px;
-  padding:12px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:56px;
+  padding:10px 6px;
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-head);
+  font-size:17px;
+  font-weight:600;
+  letter-spacing:0.02em;
   cursor:pointer;
-  min-width:70px;
-  min-height:50px;
-  transition: transform 0.1s;
+  user-select:none;
+  transition:background .12s ease,border-color .12s ease,color .12s ease;
 }
+.slot:hover{background:var(--vt-surface-3);border-color:var(--vt-gold-dark)}
 
-.slot:hover{
-  transform: scale(1.05);
-}
-
+/* Marcado: oro solido, que es la senal mas fuerte del sistema. */
 .selected{
-  background:#8fd3ff;
+  background:var(--vt-gold);
+  border-color:var(--vt-gold);
+  color:#121316;
+  font-weight:800;
 }
+.selected:hover{background:var(--vt-yellow);border-color:var(--vt-yellow)}
 
-input, button{
-  font-size:1rem;
-  padding:8px 12px;
-  margin:5px;
-  border-radius:6px;
-}
+#warning{color:var(--vt-error)}
 
-.send{
-  background:#4caf50;
-  color:white;
-}
-
-.back{
-  background:#888;
-  color:white;
-}
+.acciones{display:flex;flex-wrap:wrap;gap:var(--vt-sm);justify-content:center;margin-top:var(--vt-lg)}
 
 @media(max-width:600px){
-
-  .grid{
-    grid-template-columns:repeat(auto-fit, minmax(70px, 1fr));
-  }
-
-  .slot{
-    padding:10px 8px;
-    font-size:1rem;
-    min-width:unset;
-    min-height:50px;
-  }
-
-  input, button{
-    font-size:1.1rem;
-    padding:10px 14px;
-  }
-
+  .grid{grid-template-columns:repeat(auto-fit, minmax(72px, 1fr))}
+  .slot{font-size:15px;min-height:52px}
+  .acciones .vt-btn{flex:1;min-width:96px}
 }
 </style>
 </head>
 <body>
 
-<h2 id="title"></h2>
+<div class="vt-page vt-page--narrow">
 
-<div id="warning" style="margin:10px 0; font-size:0.95rem; color:#d32f2f; display:none;">
-  Atención: si queda menos de 48 horas es posible que no haya pistas disponibles
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+  </div>
+
+  <div class="vt-card vt-card--accent" style="text-align:center">
+
+    <h1 id="title"></h1>
+
+    <div id="warning" style="margin:10px 0; font-size:0.95rem; display:none;">
+      Atención: si queda menos de 48 horas es posible que no haya pistas disponibles
+    </div>
+
+    <select id="name" class="vt-select" style="max-width:380px;margin:var(--vt-md) auto 0;text-align:center"></select>
+
+    <div id="info" class="vt-small" style="margin:var(--vt-sm) 0 0">
+      Marca todas las horas en las que puedes jugar
+    </div>
+
+    <div class="grid" id="slots"></div>
+
+    <div class="acciones">
+      <button class="vt-btn send" onclick="submitVote()">Enviar</button>
+      <button class="vt-btn vt-btn--ghost view" onclick="viewResults()">Ver votos</button>
+      <button class="vt-btn vt-btn--ghost back" onclick="goBack()"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
+    </div>
+
+  </div>
 </div>
-
-<select id="name"></select>
-
-<div id="info" style="margin:10px 0; font-size:0.95rem; color:#666;">
-  Marca todas las horas en las que puedes jugar
-</div>
-
-<div class="grid" id="slots"></div>
-
-<button class="send" onclick="submitVote()">Enviar</button>
-<button class="view" onclick="viewResults()">Ver votos</button>
-<button class="back" onclick="goBack()">Atrás</button>
 
 <script>
 const params = new URLSearchParams(window.location.search)

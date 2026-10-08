@@ -6,50 +6,138 @@
 <title>Estadísticas</title>
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 <style>
-:root{--bg:#f5f8ff;--card:#ffffff;--muted:#6b7280;--primary:#2563eb;--accent:#06b6d4;--success:#10b981}
-*{box-sizing:border-box}
-body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;background:linear-gradient(180deg,var(--bg),#eef4ff 60%);color:#0b1530;padding:28px 18px}
-.site{max-width:980px;margin:0 auto}
-.block{background:var(--card);border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
-.block-title{font-weight:700;margin-bottom:10px}
-.controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.search{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
-table{width:100%;border-collapse:collapse;margin-top:8px}
-th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
-th{cursor:pointer;user-select:none}
-.muted{color:var(--muted)}
-.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
-.view-toggle{display:flex;gap:8px;flex-wrap:wrap}
-.view-btn{background:#fff;color:var(--muted);border:1px solid rgba(15,23,42,0.08);padding:8px 12px;border-radius:999px;cursor:pointer}
-.view-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-.event-type-filter{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:10px 0 4px}
-.event-checkbox{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(15,23,42,0.08);border-radius:999px;background:#f8fafc;color:#0f172a;font-size:0.92rem}
+/* --card lo lee renderTable(), que monta el panel de la tabla con estilos en
+   linea (panel.style.background = 'var(--card)'). Se redefine aqui en vez de
+   tocar el script. */
+:root{--card:var(--vt-surface-2);--muted:var(--vt-muted)}
+
+.controls{display:flex;gap:var(--vt-md);flex-wrap:wrap;align-items:center;margin-bottom:var(--vt-sm)}
+
+table{width:100%;border-collapse:collapse;margin-top:var(--vt-sm)}
+th{
+  padding:10px 12px;
+  background:var(--vt-surface-3);
+  color:var(--vt-muted);
+  font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  text-align:left;
+  white-space:nowrap;
+  border-bottom:1px solid var(--vt-border-strong);
+  cursor:pointer;user-select:none;
+}
+th:hover{color:var(--vt-gold-light)}
+td{padding:8px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text);font-size:14px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--vt-surface-3)}
+.muted{color:var(--vt-muted)}
+.sortable-ind{margin-left:6px;color:var(--vt-outline,#a08e7a);opacity:.65;font-size:15px;vertical-align:middle}
+
+/* El panel que envuelve la tabla tambien se monta con estilos en linea: sus
+   valores claros se sobreescriben desde aqui. */
+#tableContainer > div{
+  background:var(--vt-surface-2) !important;
+  border:1px solid var(--vt-border) !important;
+  border-radius:var(--vt-r-lg) !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+
+.view-toggle{display:flex;gap:var(--vt-sm);flex-wrap:wrap}
+.view-btn{
+  padding:8px 16px;
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-full);
+  color:var(--vt-muted);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:600;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}
+.view-btn.active{background:var(--vt-gold);color:#121316;border-color:var(--vt-gold);font-weight:700}
+
+.event-type-filter{display:flex;gap:var(--vt-sm);flex-wrap:wrap;align-items:center;padding:var(--vt-sm) 0 var(--vt-md)}
+.event-checkbox{
+  display:inline-flex;align-items:center;gap:var(--vt-sm);
+  padding:7px 12px;
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-full);
+  color:var(--vt-text);
+  font-size:13px;
+  cursor:pointer;
+}
+.event-checkbox:hover{border-color:var(--vt-gold-dark)}
 .event-checkbox input{margin:0}
-.update-btn{background:var(--primary);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;min-width:120px}
-.sortable-ind{font-weight:700;margin-left:6px;color:#94a3b8}
-/* metric cell visuals and layout */
+
+.update-btn{
+  padding:8px 18px;
+  background:var(--vt-gold);
+  border:none;
+  border-radius:var(--vt-r);
+  color:#121316;
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
+  cursor:pointer;
+  min-width:120px;
+}
+.update-btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
+
+.back-btn{
+  padding:9px 16px;
+  background:transparent;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;
+  cursor:pointer;
+}
+.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+
+/* Celda de metrica: la barra la colorea createMetricCell() con un hsl() que
+   va de rojo a verde segun el porcentaje. Es el dato, asi que se conserva;
+   solo sube la opacidad, que sobre carbono se quedaba corta. */
 .metric-col{min-width:120px;padding-right:12px}
 .name-col{max-width:280px}
-.td-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .center{text-align:center}
 .metric-cell{position:relative;padding:6px 12px}
-.metric-cell .bar{position:absolute;left:0;top:0;bottom:0;right:8px;z-index:0;border-radius:8px;opacity:0.32}
-.metric-cell .label{position:relative;z-index:1;font-weight:700}
-.metric-cell.empty{color:var(--muted);font-weight:600}
-@media(max-width:720px){body{padding:16px}}
+.metric-cell .bar{position:absolute;left:0;top:3px;bottom:3px;right:8px;z-index:0;border-radius:var(--vt-r);opacity:0.34}
+/* La cifra va en blanco sobre la barra: es lo que se lee, no la barra. */
+.metric-cell .label{position:relative;z-index:1;font-weight:700;font-variant-numeric:tabular-nums;color:var(--vt-text-strong)}
+.metric-cell.empty{color:var(--vt-muted);font-weight:600}
+
+@media(max-width:720px){
+  th,td{padding:8px 8px;font-size:13px}
+  .metric-col{min-width:104px}
+  .event-type-filter{gap:var(--vt-xs)}
+  .event-checkbox{font-size:12px;padding:6px 10px}
+  .update-btn{flex:1}
+}
 </style>
 </head>
 <body>
 
-<div class="site">
-  <div class="block">
+<div class="vt-page">
+
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Estadísticas de temporada</h1>
+    <span class="vt-label">Registro oficial · Víboras Pádel</span>
+  </div>
+
+  <div class="vt-card vt-card--accent">
 
     <div class="controls">
       <div class="view-toggle" role="tablist" aria-label="Vista de estadísticas">
@@ -65,7 +153,7 @@ th{cursor:pointer;user-select:none}
       <label class="event-checkbox"><input type="checkbox" value="pozo,compas,doble_ko" checked> Torneos</label>
       <label class="event-checkbox"><input type="checkbox" id="includePreToggle" value="legacy"> Incluir pre-09/2026</label>
       <label class="event-checkbox"><input type="checkbox" id="includeInactiveCheckbox"> Incluir no activos</label>
-      <button type="button" class="update-btn" id="refreshStatsBtn">Aplicar</button>
+      <button type="button" class="update-btn" id="refreshStatsBtn"><span class="ms ms--sm" aria-hidden="true">tune</span>Aplicar</button>
     </div>
 
     <div id="tableContainer"></div>
@@ -73,7 +161,7 @@ th{cursor:pointer;user-select:none}
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
       <div></div>
       <div style="text-align:right">
-        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+        <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
       </div>
     </div>
 
@@ -448,11 +536,11 @@ function renderTable(statsArr){
   const thead = document.createElement('thead')
   const nameLabel = currentView === 'teams' ? 'Pareja' : 'Jugador'
   thead.innerHTML = '<tr>'+
-    `<th class="name-col" data-key="name">${nameLabel}<span class="sortable-ind">⇅</span></th>`+
-    '<th class="center" data-key="played">Partidos<span class="sortable-ind">⇅</span></th>'+
-    '<th class="metric-col" data-key="winPct">Victorias (%)<span class="sortable-ind">⇅</span></th>'+
-    '<th class="metric-col" data-key="setsPct">Sets (%)<span class="sortable-ind">⇅</span></th>'+
-    '<th class="metric-col" data-key="gamesPct">Juegos (%)<span class="sortable-ind">⇅</span></th>'+
+    `<th class="name-col" data-key="name">${nameLabel}<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>`+
+    '<th class="center" data-key="played">Partidos<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="winPct">Victorias (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="setsPct">Sets (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="gamesPct">Juegos (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
     '</tr>'
   table.appendChild(thead)
 

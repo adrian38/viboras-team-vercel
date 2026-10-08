@@ -20,3 +20,9 @@ node_modules/
 # backups de base de datos (datos personales - nunca commitear)
 backups/
 *.sql.gz
+
+# exportaciones de Stitch: son material de referencia, no codigo del sitio.
+# Lo que habia que deducir de ellas esta en
+# ai_context/sistema_visual_viper_strike.md, y los tokens en theme.css.
+stitch_*/
+stitch_*.zip

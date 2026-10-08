@@ -6,111 +6,90 @@
   <title>Jugadores</title>
   <link rel="icon" href="/image.png" type="image/png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
+  <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
   <script src="/pwa.js" defer></script>
   <meta name="apple-mobile-web-app-title" content="Viboras">
-  <meta name="theme-color" content="#000000">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#121316">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
   <style>
-    :root {
-      --bg: #f5f8ff;
-      --card: #ffffff;
-      --muted: #6b7280;
-      --primary: #2563eb;
-      --green: #22c55e;
-      --green-deep: #16a34a;
-      --border: rgba(15, 23, 42, 0.06);
-      --text: #0f172a;
-      --grid: rgba(148, 163, 184, 0.35);
-      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
-      background: linear-gradient(180deg, var(--bg), #eef4ff 60%);
-      color: var(--text);
-      padding: 28px 18px 40px;
-    }
-
-    .site {
-      max-width: 980px;
-      margin: 0 auto;
-    }
+    /* La grafica la monta renderChart() como una cadena de SVG con los
+       colores escritos a mano (fill="#667085", stroke="#16a34a"...). Son
+       atributos de presentacion, asi que el CSS los gana sin !important y
+       sin tocar la funcion, que esta perdonada en tools/code-size.mjs con
+       106 lineas y solo puede encoger. */
 
     .card {
-      background: var(--card);
-      border-radius: 16px;
-      border: 1px solid rgba(15, 23, 42, 0.04);
-      box-shadow: var(--shadow);
-      padding: 18px 18px 12px;
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .title {
-      font-size: 1.15rem;
-      font-weight: 700;
+      background: var(--vt-surface);
+      border: 1px solid var(--vt-border);
+      border-radius: var(--vt-r-xl);
+      box-shadow: var(--vt-shadow-card);
+      padding: var(--vt-lg);
     }
 
     .toolbar {
       display: flex;
       align-items: end;
-      gap: 12px;
+      gap: var(--vt-md);
       flex-wrap: wrap;
-      margin-bottom: 14px;
+      margin-bottom: var(--vt-md);
     }
 
     label {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      font-size: 0.9rem;
-      color: var(--muted);
+      gap: var(--vt-xs);
+      font-size: 12px;
       font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--vt-muted);
     }
 
-    select, .btn, .nav-btn {
-      font: inherit;
-    }
+    select, .btn, .nav-btn { font: inherit; }
 
     select {
       min-width: 220px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text);
+      padding: 10px 34px 10px 12px;
+      border-radius: var(--vt-r);
+      border: 1px solid var(--vt-border-strong);
+      background: var(--vt-surface-deep);
+      color: var(--vt-text);
+      font-size: 15px;
+      font-weight: 600;
+      appearance: none;
+      cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 50%, var(--vt-muted) 50%), linear-gradient(135deg, var(--vt-muted) 50%, transparent 50%);
+      background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
     }
+    select:focus { outline: none; border-color: var(--vt-gold); }
+    select option { background: var(--vt-surface-2); }
 
     .btn {
-      padding: 10px 16px;
-      border-radius: 10px;
+      padding: 10px 18px;
+      border-radius: var(--vt-r);
       border: none;
       cursor: pointer;
       font-weight: 700;
-      color: white;
-      background: var(--primary);
-      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.12);
+      color: #121316;
+      background: var(--vt-gold);
     }
+    .btn:hover { background: var(--vt-yellow); }
 
     .back-btn {
-      background: #fff;
-      color: var(--primary);
-      border: 1px solid rgba(37, 99, 235, 0.15);
-      padding: 8px 12px;
-      border-radius: 8px;
+      padding: 9px 16px;
+      background: transparent;
+      color: var(--vt-text);
+      border: 1px solid var(--vt-border-strong);
+      border-radius: var(--vt-r);
       cursor: pointer;
       font-weight: 700;
     }
+    .back-btn:hover { border-color: var(--vt-gold); color: var(--vt-gold-light); }
 
     .chart-toolbar {
       display: flex;
@@ -123,10 +102,10 @@
     .nav-btn {
       width: 40px;
       height: 40px;
-      border-radius: 999px;
-      border: 1px solid rgba(15, 23, 42, 0.1);
-      background: #fff;
-      color: var(--text);
+      border-radius: var(--vt-r);
+      border: 1px solid var(--vt-border-strong);
+      background: var(--vt-surface-3);
+      color: var(--vt-text);
       cursor: pointer;
       font-size: 1.2rem;
       font-weight: 700;
@@ -134,34 +113,39 @@
     }
 
     .nav-btn:hover:not(:disabled) {
-      background: #eef6ff;
-      border-color: rgba(37, 99, 235, 0.2);
+      background: var(--vt-surface-4);
+      border-color: var(--vt-gold);
+      color: var(--vt-gold-light);
     }
 
     .nav-btn:disabled {
-      opacity: 0.45;
+      opacity: 0.35;
       cursor: not-allowed;
     }
 
     .range-label {
       flex: 1;
       text-align: center;
-      font-size: 0.96rem;
+      font-family: var(--vt-font-head);
+      font-size: 19px;
       font-weight: 700;
-      color: var(--muted);
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      background: #fff;
-      border-radius: 999px;
-      padding: 8px 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--vt-text);
+      border: 1px solid var(--vt-border-strong);
+      background: var(--vt-surface-3);
+      border-radius: var(--vt-r);
+      padding: 9px 12px;
       cursor: pointer;
       user-select: none;
     }
+    .range-label:hover { border-color: var(--vt-gold); color: var(--vt-gold-light); }
 
     .chart-shell {
-      background: linear-gradient(180deg, #fafcff, #fff);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px;
+      background: var(--vt-surface-deep);
+      border: 1px solid var(--vt-border);
+      border-radius: var(--vt-r-lg);
+      padding: var(--vt-md);
       overflow: auto;
       min-height: 300px;
     }
@@ -171,20 +155,27 @@
       width: 100%;
       min-width: 700px;
       height: 310px;
-      border-radius: 10px;
+      border-radius: var(--vt-r);
     }
 
-    .muted {
-      color: var(--muted);
-    }
+    /* Colores de la grafica, sobre los atributos que escribe renderChart(). */
+    .chart-shell svg text { fill: var(--vt-outline, #a08e7a); }
+    .chart-shell svg line { stroke: var(--vt-border-strong); }
+    .chart-shell svg polyline { stroke: var(--vt-gold); }
+    .chart-shell svg circle { fill: var(--vt-gold); stroke: var(--vt-bg); }
+    /* El circulo grande de cada punto es solo zona de click: sigue invisible. */
+    .chart-shell svg circle[fill="transparent"] { fill: transparent; stroke: none; }
+
+    .muted { color: var(--vt-muted); }
 
     .summary {
-      margin-top: 14px;
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
+      margin-top: var(--vt-md);
+      background: var(--vt-surface-3);
+      border: 1px solid var(--vt-border);
+      border-radius: var(--vt-r);
+      padding: var(--vt-md);
       font-weight: 600;
+      color: var(--vt-text);
     }
 
     .summary-delta {
@@ -209,14 +200,16 @@
 
     .match-item {
       padding: 10px 12px;
-      border: 1px solid rgba(15, 23, 42, 0.06);
-      border-radius: 10px;
-      background: #fff;
+      border: 1px solid var(--vt-border);
+      border-left: 3px solid var(--vt-border-strong);
+      border-radius: var(--vt-r);
+      background: var(--vt-surface-2);
       line-height: 1.5;
+      color: var(--vt-text);
     }
 
     .match-item strong {
-      color: var(--text);
+      color: var(--vt-text-strong);
     }
 
     .event-tag {
@@ -231,16 +224,18 @@
       vertical-align: middle;
     }
 
-    .event-tag.match { background: #fdf2f8; color: #a21caf; border-color: rgba(192, 132, 252, 0.28); }
-    .event-tag.league { background: #eff6ff; color: #1d4ed8; border-color: rgba(59, 130, 246, 0.18); }
-    .event-tag.tournament { background: #fff7ed; color: #c2410c; border-color: rgba(249, 115, 22, 0.2); }
+    /* Partido suelto, liga o torneo: tres tonos que siguen distinguiendose
+       sobre carbono. */
+    .event-tag.match { background: rgba(216, 180, 254, 0.10); color: #d8b4fe; border-color: rgba(216, 180, 254, 0.30); }
+    .event-tag.league { background: rgba(125, 211, 252, 0.10); color: #7dd3fc; border-color: rgba(125, 211, 252, 0.30); }
+    .event-tag.tournament { background: rgba(245, 158, 11, 0.12); color: var(--vt-gold-light); border-color: var(--vt-border-gold); }
 
     .match-result {
       font-weight: 700;
     }
 
-    .match-result.win { color: #15803d; }
-    .match-result.loss { color: #b91c1c; }
+    .match-result.win { color: #4ade80; }
+    .match-result.loss { color: #f87171; }
 
     .match-score-block {
       display: inline-block;
@@ -252,8 +247,7 @@
     }
 
     @media (max-width: 720px) {
-      body { padding: 16px; }
-      .card { padding: 14px; }
+      .card { padding: var(--vt-md); }
       .page-header { align-items: flex-start; }
       .toolbar { align-items: stretch; }
       select { width: 100%; min-width: 0; }
@@ -291,7 +285,14 @@
   </style>
 </head>
 <body>
-  <div class="site">
+  <div class="vt-page">
+
+    <div style="text-align:center">
+      <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+      <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Jugadores</h1>
+      <span class="vt-label">Evolución del rating · Víboras Pádel</span>
+    </div>
+
     <div class="card">
 
       <div class="toolbar">
@@ -301,9 +302,9 @@
       </div>
 
       <div class="chart-toolbar">
-        <button id="prevWindowBtn" class="nav-btn" type="button" aria-label="Anterior">←</button>
+        <button id="prevWindowBtn" class="nav-btn" type="button" aria-label="Anterior"><span class="ms" aria-hidden="true">arrow_back</span></button>
         <button id="rangeLabel" class="range-label" type="button">Cargando…</button>
-        <button id="nextWindowBtn" class="nav-btn" type="button" aria-label="Siguiente">→</button>
+        <button id="nextWindowBtn" class="nav-btn" type="button" aria-label="Siguiente"><span class="ms" aria-hidden="true">arrow_forward</span></button>
       </div>
 
       <div class="chart-shell">
@@ -314,7 +315,7 @@
       <div id="matchList" class="match-list"></div>
 
       <div class="page-footer">
-        <button class="back-btn" type="button" onclick="window.location='/'">Atrás</button>
+        <button class="back-btn" type="button" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
       </div>
     </div>
   </div>
@@ -880,7 +881,7 @@
       return {
         diff,
         icon: diff > 0 ? '︽' : '︾',
-        color: diff > 0 ? '#16a34a' : '#dc2626'
+        color: diff > 0 ? '#4ade80' : '#f87171'
       };
     }
 

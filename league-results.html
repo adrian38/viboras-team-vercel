@@ -6,51 +6,164 @@
 <title>Resultados de ligas</title>
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 <style>
-body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:0;padding:28px 18px;background:linear-gradient(180deg,#f5f8ff,#eef4ff 60%);color:#0b1530}
-.site{max-width:980px;margin:0 auto}
-.block{background:#fff;border-radius:12px;padding:16px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 8px 30px rgba(16,24,40,0.04)}
-.block-title{font-weight:700;margin-bottom:10px}
-.controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.view-toggle{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;align-items:center}
-.view-btn{background:#fff;color:#6b7280;border:1px solid rgba(15,23,42,0.08);padding:8px 12px;border-radius:999px;cursor:pointer}
-.view-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
-.classification-mode-toggle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;margin-bottom:8px}
-.classification-mode-label{font-weight:600;color:#374151;line-height:1.2}
-.classification-mode-btn{background:#ffffff;color:#1d4ed8;border-color:#bfdbfe}
-.classification-mode-btn.active{background:#bfd7fe;color:#1e3a8a;border-color:#93c5fd;box-shadow:0 0 0 1px rgba(59,130,246,0.08)}
-.filter-box{background:linear-gradient(180deg,#eaf4ff,#e1f0ff);padding:12px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);margin-bottom:12px}
-.select{padding:8px;border-radius:8px;border:1px solid rgba(15,23,42,0.06)}
-.small-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 8px;border-radius:6px;cursor:pointer}
-.btn{background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
-.back-btn{background:#fff;color:#2563eb;border:1px solid rgba(37,99,235,0.12);padding:8px 12px;border-radius:8px;cursor:pointer}
-table{width:100%;border-collapse:collapse;margin-top:8px}
-th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
-.muted{color:#6b7280}
-.duration-line{color:#1f7a4d;background:rgba(34,197,94,0.09);padding:2px 6px;border-radius:6px;display:inline-block}
-.phase-limit{color:#7f1d1d;background:rgba(127,29,29,0.06);padding:2px 6px;border-radius:6px;display:inline-block}
-.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff;border:1px solid #eee;margin-right:6px;font-weight:600}
-.tag.win{background:#dcfce7;color:#065f46;border-color:rgba(16,185,129,0.12)}
-.tag.lose{background:#fff5f5;color:#7f1d1d;border-color:rgba(239,68,68,0.08)}
-.tag.tie{background:#ffffff;color:#374151;border-color:#e5e7eb}
+/* Mismas clases que historial y torneos, mas el modal de editar resultado,
+   que createEditModal() inyecta con su propio <style>: ver mas abajo. */
+
+.controls{display:flex;gap:var(--vt-md);flex-wrap:wrap}
+.controls label{font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--vt-muted);gap:var(--vt-xs)}
+.filter-box{
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  padding:var(--vt-md);
+  margin-bottom:var(--vt-md);
+}
+
+.view-toggle{display:flex;gap:var(--vt-sm);flex-wrap:wrap;margin:var(--vt-md) 0 var(--vt-sm);align-items:center}
+.view-btn{
+  padding:8px 16px;
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-full);
+  color:var(--vt-muted);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:600;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}
+.view-btn.active{background:var(--vt-gold);color:#121316;border-color:var(--vt-gold);font-weight:700}
+
+/* Sustituciones separadas o agrupadas: es un sub-modo de la clasificacion,
+   asi que va un escalon por debajo del oro. */
+.classification-mode-toggle{display:flex;align-items:center;gap:var(--vt-sm);flex-wrap:wrap;margin:var(--vt-sm) 0}
+.classification-mode-label{font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--vt-muted)}
+.classification-mode-btn{background:transparent;color:var(--vt-muted);border-color:var(--vt-border)}
+.classification-mode-btn.active{background:var(--vt-surface-4);color:var(--vt-gold-light);border-color:var(--vt-gold-dark);font-weight:600}
+
+.select{
+  padding:9px 30px 9px 12px;
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:14px;
+  appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--vt-muted) 50%),linear-gradient(135deg,var(--vt-muted) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+}
+.select:focus{outline:none;border-color:var(--vt-gold)}
+.select option{background:var(--vt-surface-2)}
+
+.small-btn{padding:6px 10px;background:transparent;border:1px solid var(--vt-border-strong);border-radius:var(--vt-r-sm);color:var(--vt-text);font-size:13px;cursor:pointer}
+.small-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+.btn{
+  padding:9px 16px;
+  background:var(--vt-gold);
+  border:none;border-radius:var(--vt-r);
+  color:#121316;
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;letter-spacing:0.02em;
+  cursor:pointer;
+  transition:background .15s ease,box-shadow .15s ease;
+}
+.btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
+.back-btn{
+  padding:9px 16px;
+  background:transparent;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;
+  cursor:pointer;
+}
+.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+
+table{width:100%;border-collapse:collapse;margin-top:var(--vt-sm)}
+th{
+  padding:10px 12px;
+  background:var(--vt-surface-3);
+  color:var(--vt-muted);
+  font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  text-align:left;white-space:nowrap;
+  border-bottom:1px solid var(--vt-border-strong);
+}
+td{padding:10px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--vt-surface-2)}
+.muted{color:var(--vt-muted)}
+
+/* Dos avisos de calendario: el plazo que corre y la fecha limite. */
+.duration-line{display:inline-block;padding:3px 10px;border-radius:var(--vt-r);background:rgba(74,222,128,0.10);color:#86efac}
+.phase-limit{display:inline-block;padding:3px 10px;border-radius:var(--vt-r);background:var(--vt-error-bg);color:var(--vt-error)}
+
+.tag{
+  display:inline-block;
+  padding:3px 10px;margin-right:6px;
+  border-radius:var(--vt-r-full);
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  color:var(--vt-text);
+  font-size:13px;font-weight:600;
+}
+.tag.win{background:rgba(74,222,128,0.12);color:#4ade80;border-color:rgba(74,222,128,0.35)}
+.tag.lose{background:rgba(248,113,113,0.10);color:#f87171;border-color:rgba(248,113,113,0.30)}
+.tag.tie{background:var(--vt-surface-3);color:var(--vt-muted);border-color:var(--vt-border-strong)}
 .desktop-only{display:inline}
 .mobile-only{display:none}
 @media(max-width:720px){.desktop-only{display:none}.mobile-only{display:inline-block;margin-right:8px}}
 .set-list{display:flex;gap:6px;flex-wrap:wrap}
 .set-item{display:inline-block}
 .set-item:not(:last-child)::after{content:", "}
-  .edit-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 8px;border-radius:6px;cursor:pointer}
-  /* modal */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(11,21,48,0.4);display:none;align-items:center;justify-content:center;z-index:1200}
-  .modal{background:#fff;border-radius:12px;padding:16px;max-width:760px;width:100%;box-shadow:0 12px 40px rgba(2,6,23,0.4)}
-  .modal .team-card.team-3{background:linear-gradient(180deg,#fff8f1,#fff6ee);border:1px solid rgba(251,146,60,0.06)}
-  .modal .controls{justify-content:flex-end;margin-top:12px}
+  .edit-btn{background:transparent;border:1px solid var(--vt-border-strong);padding:6px 10px;border-radius:var(--vt-r-sm);color:var(--vt-text);font-size:13px;cursor:pointer}
+  .edit-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+  /* El lapiz era un SVG escrito a mano con stroke="#0b1530", invisible sobre
+     carbono. Ahora es el icono edit_note, que hereda el color del boton. */
+
+  /* Modal de indicar resultado. */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.72);display:none;align-items:center;justify-content:center;z-index:1200;padding:var(--vt-md)}
+  .modal{
+    background:var(--vt-surface);
+    border:1px solid var(--vt-border-strong);
+    border-radius:var(--vt-r-lg);
+    padding:var(--vt-lg);
+    max-width:760px;width:100%;
+    box-shadow:var(--vt-shadow-float);
+  }
+  .modal .team-card.team-3{background:var(--vt-surface-2);border:1px solid var(--vt-border)}
+  .modal .controls{justify-content:flex-end;margin-top:var(--vt-md)}
+
+  /* createEditModal() inyecta su propio <style> al abrirse, y como entra en
+     el DOM despues que esta hoja, gana a igualdad de especificidad. De ahi
+     los !important: son para vencer a ese bloque y a sus estilos en linea,
+     no por descuido. */
+  #editModal .score-header{color:var(--vt-muted) !important;font-size:11px;letter-spacing:0.08em;text-transform:uppercase}
+  #editModal .score-label{color:var(--vt-text) !important}
+  #editModal input.score{
+    background:var(--vt-surface-deep) !important;
+    border:1px solid var(--vt-border-strong) !important;
+    border-radius:var(--vt-r) !important;
+    color:var(--vt-text-strong) !important;
+    font-family:var(--vt-font-head);
+    font-size:19px;font-weight:700;
+    padding:8px 4px !important;
+  }
+  #editModal input.score:focus{outline:none;border-color:var(--vt-gold) !important}
+  #editModal .team-card.team-3 > div:last-child{background:var(--vt-surface-3) !important;border:1px solid var(--vt-border) !important}
+  #editModal label[for="e_stb"]{color:var(--vt-text) !important}
 @media(max-width:720px){body{padding:16px}.table-wrap{overflow-x:auto}.set-list{display:block}.set-item{display:block;margin-bottom:6px}.set-item:not(:last-child)::after{content:""}}
 
 /* mobile sizing: match tournaments page */
@@ -68,11 +181,23 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
   #leagueViewToggle{margin-top:18px !important}
 }
 
-.pos-badge{display:inline-flex;width:34px;height:34px;border-radius:999px;align-items:center;justify-content:center;background:#fff;border:1px solid #e5e7eb;margin-right:10px;font-weight:700;color:#0b1530}
+/* Podio: los tres colores de DESIGN.md. */
+.pos-badge{
+  display:inline-flex;
+  width:34px;height:34px;
+  border-radius:var(--vt-r-full);
+  align-items:center;justify-content:center;
+  margin-right:10px;
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  color:var(--vt-muted);
+  font-family:var(--vt-font-head);
+  font-size:17px;font-weight:700;
+}
 .rating-name{display:flex;align-items:center}
-.pos-badge.pos-1{background:#FDE68A;border-color:#F6C84A}
-.pos-badge.pos-2{background:#E5E7EB;border-color:#BFC6CC}
-.pos-badge.pos-3{background:#F2C79D;border-color:#D69A6A}
+.pos-badge.pos-1{background:var(--vt-gold);border-color:var(--vt-gold-light);color:#121316;box-shadow:0 0 14px -2px rgba(245,158,11,0.5)}
+.pos-badge.pos-2{background:var(--vt-silver);border-color:#cbd5e1;color:#121316}
+.pos-badge.pos-3{background:var(--vt-bronze);border-color:#e8964a;color:#121316}
 
 @media(max-width:720px){
   .pos-badge{width:25.5px;height:25.5px;margin-right:8px}
@@ -81,9 +206,15 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 </head>
 <body>
 
-<div class="site">
-  <div class="block">
-    <div class="block-title">Resultados de ligas</div>
+<div class="vt-page">
+
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Resultados de ligas</h1>
+    <span class="vt-label">Panel oficial · Víboras Pádel</span>
+  </div>
+
+  <div class="vt-card vt-card--accent">
     <div class="filter-box">
       <div class="controls" role="toolbar" aria-label="Filtros">
         <label style="display:flex;flex-direction:column;min-width:220px;flex:1">
@@ -107,7 +238,7 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
         </label>
 
         <div style="display:flex;align-items:end;gap:8px">
-          <button class="btn" id="filterBtn">Filtrar</button>
+          <button class="btn" id="filterBtn"><span class="ms ms--sm" aria-hidden="true">filter_alt</span>Filtrar</button>
         </div>
       </div>
     </div>
@@ -134,10 +265,10 @@ th,td{padding:8px;border-bottom:1px solid #f0f0f0;text-align:left}
 
     <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
       <div style="flex:1;text-align:left">
-        <button class="btn" id="downloadBtn">Descargar resultados</button>
+        <button class="btn" id="downloadBtn"><span class="ms ms--sm" aria-hidden="true">download</span>Descargar resultados</button>
       </div>
       <div style="flex:0 0 auto;text-align:right">
-        <button class="back-btn" onclick="window.location='/'">Atrás</button>
+        <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
       </div>
     </div>
   </div>
@@ -565,7 +696,7 @@ function renderResults(pending, completed){
       edit.className = 'edit-btn'
       edit.setAttribute('type','button')
       edit.title = 'Editar marcador'
-      edit.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#0b1530" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="#0b1530" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      edit.innerHTML = '<span class="ms ms--sm" aria-hidden="true">edit_note</span>'
       edit.addEventListener('click', ()=> openEditModal(m))
       tdScore.appendChild(edit)
       tr.appendChild(tdPlayers); tr.appendChild(tdScore)

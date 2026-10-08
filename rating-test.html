@@ -6,51 +6,36 @@
 <title>Rating Test</title>
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121316">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 <style>
+/* Pagina de pruebas del motor, sin maqueta propia. Se deriva de rating.html:
+   mismos tokens y la misma tabla, con el banco de pruebas en monoespaciada.
+   Los controles de "Importar real" llevan su color en linea, de ahi los
+   selectores por id mas abajo. */
 :root {
-  --bg: #f5f8ff;
-  --card: #ffffff;
-  --muted: #6b7280;
-  --primary: #2563eb;
-  --border: rgba(15, 23, 42, 0.08);
-  --text: #0f172a;
-}
-
-* { box-sizing: border-box; }
-
-body {
-  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  margin: 0;
-  background: linear-gradient(180deg, var(--bg), #eef4ff 60%);
-  color: var(--text);
-  padding: 28px 18px;
-}
-
-.site {
-  max-width: 980px;
-  margin: 0 auto;
+  --muted: var(--vt-muted);
 }
 
 .block {
-  background: var(--card);
-  border-radius: 12px;
-  padding: 18px;
-  border: 1px solid var(--border);
-  box-shadow: 0 8px 30px rgba(16, 24, 40, 0.04);
+  background: var(--vt-surface);
+  border: 1px solid var(--vt-border);
+  border-radius: var(--vt-r-xl);
+  padding: var(--vt-lg);
+  box-shadow: var(--vt-shadow-card);
 }
 
-h1 {
-  margin: 0 0 14px;
-  font-size: clamp(1.4rem, 2vw, 2rem);
-}
+h1 { margin: 0 0 var(--vt-sm); }
 
 .description {
-  color: var(--muted);
-  margin: 0 0 16px;
+  color: var(--vt-muted);
+  margin: 0 0 var(--vt-md);
   line-height: 1.5;
 }
 
@@ -58,50 +43,63 @@ textarea {
   width: 100%;
   min-height: 220px;
   resize: vertical;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  border: 1px solid var(--vt-border-strong);
+  border-radius: var(--vt-r);
   padding: 14px 16px;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  font-size: 0.92rem;
-  line-height: 1.5;
-  background: #f8fafc;
-  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--vt-surface-deep);
+  color: var(--vt-text);
 }
+textarea:focus { outline: none; border-color: var(--vt-gold); }
 
 .controls {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  margin: 12px 0 18px;
+  margin: var(--vt-md) 0 var(--vt-lg);
 }
 
 button {
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--vt-r);
+  padding: 10px 18px;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  transition: filter 0.15s ease, transform 0.15s ease;
-}
-
-button:hover {
-  filter: brightness(0.98);
-  transform: translateY(-1px);
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
 
 .calculate-btn {
-  background: var(--primary);
-  color: white;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+  background: var(--vt-gold);
+  color: #121316;
+  letter-spacing: 0.02em;
 }
+.calculate-btn:hover { background: var(--vt-yellow); }
+
+/* "Importar real" y su selector de fecha traen color en linea desde el
+   marcado, asi que aqui hace falta !important para ganarles. */
+#importRealBtn {
+  background: var(--vt-surface-3) !important;
+  border: 1px solid var(--vt-border-strong) !important;
+  color: var(--vt-text) !important;
+}
+#importRealBtn:hover { border-color: var(--vt-gold) !important; color: var(--vt-gold-light) !important; }
+#importDate {
+  background: var(--vt-surface-deep) !important;
+  border: 1px solid var(--vt-border-strong) !important;
+  color: var(--vt-text) !important;
+}
+#importDate option { background: var(--vt-surface-2); }
+.controls label { color: var(--vt-muted) !important; }
 
 .result-box {
-  margin-top: 18px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  background: #f8fafc;
-  padding: 14px;
+  margin-top: var(--vt-lg);
+  border-radius: var(--vt-r-lg);
+  border: 1px solid var(--vt-border);
+  background: var(--vt-surface-2);
+  padding: var(--vt-md);
 }
 
 table {
@@ -109,50 +107,59 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th {
   padding: 10px 8px;
-  border-bottom: 1px solid rgba(0,0,0,0.04);
+  color: var(--vt-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  border-bottom: 1px solid var(--vt-border-strong);
+}
+
+td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--vt-border);
+  color: var(--vt-text);
   text-align: left;
 }
+tbody tr:last-child td { border-bottom: none; }
 
-th {
-  color: #475569;
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+td:nth-child(2), th:nth-child(2) { text-align: center; }
+td:nth-child(3), th:nth-child(3) { text-align: right; }
+/* Las columnas son Jugador, Rating y RD: el oro va en la segunda, que es el
+   rating, igual que en rating.html. La tercera es la incertidumbre y se
+   queda en gris. */
+td:nth-child(2) {
+  font-family: var(--vt-font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--vt-gold);
+  font-variant-numeric: tabular-nums;
 }
+td:nth-child(3) { color: var(--vt-muted); font-variant-numeric: tabular-nums; }
 
-td:nth-child(2), th:nth-child(2) {
-  text-align: center;
-}
+.name-cell { font-weight: 500; }
 
-td:nth-child(3), th:nth-child(3) {
-  text-align: right;
-}
-
-.name-cell {
-  font-weight: 600;
-}
-
-.muted {
-  color: var(--muted);
-}
+.muted { color: var(--vt-muted); }
 
 .empty-state {
-  color: var(--muted);
+  color: var(--vt-muted);
   margin: 0;
 }
 
 @media (max-width: 720px) {
-  body { padding: 16px; }
-  .block { padding: 14px; }
+  .block { padding: var(--vt-md); }
+  .controls { flex-direction: column; align-items: stretch; gap: var(--vt-sm); }
 }
 </style>
 </head>
 <body>
-<div class="site">
-  <div class="block">
-    <h1>Rating test</h1>
+<div class="vt-page">
+  <div class="block vt-card--accent" style="overflow:hidden">
+    <span class="vt-label vt-gold">Banco de pruebas del motor</span>
+    <h1 style="margin-top:var(--vt-xs)">Rating test</h1>
     <p class="description">
       Cada línea es un partido, cada línea en blanco indica un nuevo día. El formato es:<br>
       pareja1_a, pareja1_b, pareja2_a, pareja2_b, w1, set1, set2, set3
