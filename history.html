@@ -53,6 +53,11 @@ select.select{
 .select::placeholder{color:var(--vt-faint)}
 .select option{background:var(--vt-surface-2)}
 
+/* En modo administracion la tabla gana una cuarta columna, "Acciones", con
+   Guardar y Cancelar, y deja de caber: a 390 px se salia 63 px de la tarjeta,
+   que al llevar overflow:hidden la recortaba. Que scrollee dentro, como ya
+   hacen torneos y ranking con sus tablas. */
+#tableContainer{overflow-x:auto}
 table{width:100%;border-collapse:collapse;margin-top:var(--vt-sm)}
 th{
   padding:10px 12px;
