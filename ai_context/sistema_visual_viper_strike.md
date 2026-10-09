@@ -124,6 +124,46 @@ vive dentro de `renderTable`, que está perdonada y **sólo puede encoger**. Dos
 líneas de comentario la hicieron fallar. La explicación va en el CSS, que no se
 mide ([[tamano_del_codigo_y_trinquete]]).
 
+## Medir desbordes: `scrollWidth` de la página no basta
+
+Las tarjetas llevan `overflow: hidden` para recortar su barra dorada contra las
+esquinas redondeadas. Eso tiene una consecuencia que cuesta ver: **lo que se
+sale de una tarjeta no desborda la página, se corta**. El documento mide lo
+mismo que la ventana y la comprobación habitual —`scrollWidth` contra
+`clientWidth`— da verde mientras en el teléfono falta medio botón.
+
+Pasó con la fila de acciones del historial: a 390 px «Atrás» se salía 45 px y a
+320 px, 115. Todas las medidas de desborde de esta carpeta habían dado limpio.
+
+La comprobación correcta compara cada elemento con la caja de su **ancestro que
+recorta**, saltándose los que sí tienen scroll legítimo (`overflow-x: auto`,
+como la tabla de estadísticas o las fórmulas de MathJax) y los interiores de
+MathJax, que desbordan sus propias cajas por diseño:
+
+```js
+const recorta = (el) => {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const cs = getComputedStyle(p);
+    if (/auto|scroll/.test(cs.overflowX)) return null;          // scroll legitimo
+    if (/hidden|clip/.test(cs.overflowX + cs.overflowY)) return p;
+  }
+  return null;
+};
+[...document.querySelectorAll('body *')].filter(el => {
+  if (el.tagName.startsWith('MJX')) return false;
+  const cs = getComputedStyle(el);
+  if (cs.position === 'absolute' || cs.position === 'fixed') return false;
+  const anc = recorta(el);
+  return anc && el.getBoundingClientRect().right > anc.getBoundingClientRect().right + 1;
+});
+```
+
+Hay que correrlo a 320 px, no sólo a 375: ahí salió además el selector de fecha
+de `rating.html`, que se salía 13 px.
+
+Las filas de botones al pie de una tarjeta usan `.vt-acciones`, que envuelve y
+por debajo de 560 px apila a lo ancho completo.
+
 ## Las capas: usar `--vt-z-*`, nunca un número suelto
 
 Las tarjetas del rediseño llevan un resplandor dorado en un pseudoelemento

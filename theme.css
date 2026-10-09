@@ -422,6 +422,28 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 .vt-rank-2{color:var(--vt-silver);font-weight:700}
 .vt-rank-3{color:var(--vt-bronze);font-weight:700}
 
+/* Fila de acciones al pie de una tarjeta.
+ *
+ * Existe porque esas filas eran flex sin envolver, y en el historial los tres
+ * botones —Administracion, Descargar resultados y Atras— no caben en un
+ * telefono: "Atras" se salia 45 px a 390 y 115 a 320. Y no se notaba al medir
+ * el ancho del documento, porque la tarjeta lleva overflow:hidden para
+ * recortar su barra dorada, asi que el boton no desbordaba la pagina: se
+ * cortaba dentro. Por debajo de 560 px se apilan a lo ancho completo. */
+.vt-acciones{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--vt-sm);
+  margin-top:var(--vt-md);
+}
+.vt-acciones > *{min-width:0}
+@media(max-width:560px){
+  .vt-acciones{flex-direction:column;align-items:stretch}
+  .vt-acciones > *,.vt-acciones button{width:100%}
+}
+
 /* ----------------------------------------------------------- utilidades -- */
 
 .vt-row{display:flex;gap:var(--vt-md);align-items:center;flex-wrap:wrap}

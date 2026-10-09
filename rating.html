@@ -187,6 +187,11 @@ td.rating-col{
   .progress-segment{width:5px;height:10px}
   .controls{font-size:12px;gap:var(--vt-sm);padding:var(--vt-sm)}
 }
+/* A 320 px el selector de fecha no cabe junto a su etiqueta y se salia 13 px
+   de la tarjeta, que al llevar overflow:hidden lo cortaba en vez de
+   desbordar. Que la etiqueta envuelva y el selector pueda encoger. */
+.controls label{min-width:0;flex-wrap:wrap}
+.controls select{max-width:100%;min-width:0}
 </style>
 </head>
 <body>
@@ -235,13 +240,11 @@ td.rating-col{
       <div class="muted">Cargando ratings…</div>
     </div>
 
-    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+    <div class="vt-acciones">
       <button class="info-btn" onclick="window.location.href='/rating-info.html'">
         <span class="ms ms--sm" aria-hidden="true">lightbulb</span>¿Cómo funciona el rating?
       </button>
-      <div style="text-align:right">
-        <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
-      </div>
+      <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
     </div>
 
   </div>
