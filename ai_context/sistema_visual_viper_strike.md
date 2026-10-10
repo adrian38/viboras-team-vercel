@@ -164,6 +164,38 @@ de `rating.html`, que se salía 13 px.
 Las filas de botones al pie de una tarjeta usan `.vt-acciones`, que envuelve y
 por debajo de 560 px apila a lo ancho completo.
 
+## El traductor del navegador rompe los iconos
+
+Los iconos se pintan **por ligadura**: el contenido del elemento es el nombre
+(`arrow_back`) y la fuente lo convierte en flecha. Para un traductor automático
+eso es texto normal, así que lo reescribe —`arrow_back` → `flecha_atrás`—, deja
+de ser ligadura y se pinta la palabra. En un botón, además, se sale de la caja.
+
+Ocurrió de verdad en un teléfono: el botón «Atrás» de `submit-result.html` salía
+como `LECHA_ATRáS`, «SET 1» como «CONJUNTO 1» y «Fecha» como «CERCA».
+
+Son dos problemas distintos y hacen falta los dos arreglos:
+
+- **Que no se traduzca sola.** Nueve páginas no declaraban `lang`, así que el
+  navegador adivinaba; con `arrow_back`, `download` y «Set 1» por medio, decidía
+  que la página no estaba en español y la traducía. Ahora las 16 llevan
+  `<html lang="es">`.
+- **Que aguante si alguien la traduce a mano.** Cada icono lleva
+  `translate="no"` y `class="notranslate"`, que es lo que respeta Google
+  Translate. Al añadir un icono nuevo hay que ponérselos.
+
+Se comprueba simulando lo que hace el traductor —reescribir el texto de los
+nodos que no están marcados— y mirando que los iconos sigan midiendo ~24 px:
+
+```js
+const no = (n) => { for (let p = n.parentElement; p; p = p.parentElement)
+  if (p.getAttribute?.('translate') === 'no') return true; return false; };
+const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+const ns = []; while (w.nextNode()) ns.push(w.currentNode);
+ns.forEach(n => { if (n.textContent.trim() && !no(n)) n.textContent = n.textContent.toUpperCase(); });
+[...document.querySelectorAll('.ms')].filter(e => e.getBoundingClientRect().width > 44);  // vacio
+```
+
 ## Las capas: usar `--vt-z-*`, nunca un número suelto
 
 Las tarjetas del rediseño llevan un resplandor dorado en un pseudoelemento

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -153,13 +153,13 @@ tbody tr:hover td{background:var(--vt-surface-3)}
       <label class="event-checkbox"><input type="checkbox" value="pozo,compas,doble_ko" checked> Torneos</label>
       <label class="event-checkbox"><input type="checkbox" id="includePreToggle" value="legacy"> Incluir pre-09/2026</label>
       <label class="event-checkbox"><input type="checkbox" id="includeInactiveCheckbox"> Incluir no activos</label>
-      <button type="button" class="update-btn" id="refreshStatsBtn"><span class="ms ms--sm" aria-hidden="true">tune</span>Aplicar</button>
+      <button type="button" class="update-btn" id="refreshStatsBtn"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">tune</span>Aplicar</button>
     </div>
 
     <div id="tableContainer"></div>
 
     <div class="vt-acciones" style="justify-content:flex-end">
-      <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm" aria-hidden="true">arrow_back</span>Atrás</button>
+      <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
     </div>
 
   </div>
@@ -533,11 +533,11 @@ function renderTable(statsArr){
   const thead = document.createElement('thead')
   const nameLabel = currentView === 'teams' ? 'Pareja' : 'Jugador'
   thead.innerHTML = '<tr>'+
-    `<th class="name-col" data-key="name">${nameLabel}<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>`+
-    '<th class="center" data-key="played">Partidos<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
-    '<th class="metric-col" data-key="winPct">Victorias (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
-    '<th class="metric-col" data-key="setsPct">Sets (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
-    '<th class="metric-col" data-key="gamesPct">Juegos (%)<span class="ms sortable-ind" aria-hidden="true">swap_vert</span></th>'+
+    `<th class="name-col" data-key="name">${nameLabel}<span class="ms sortable-ind notranslate" translate="no" aria-hidden="true">swap_vert</span></th>`+
+    '<th class="center" data-key="played">Partidos<span class="ms sortable-ind notranslate" translate="no" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="winPct">Victorias (%)<span class="ms sortable-ind notranslate" translate="no" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="setsPct">Sets (%)<span class="ms sortable-ind notranslate" translate="no" aria-hidden="true">swap_vert</span></th>'+
+    '<th class="metric-col" data-key="gamesPct">Juegos (%)<span class="ms sortable-ind notranslate" translate="no" aria-hidden="true">swap_vert</span></th>'+
     '</tr>'
   table.appendChild(thead)
 
