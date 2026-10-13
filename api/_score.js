@@ -23,27 +23,31 @@ function toScore(value) {
   return parseInt(raw, 10);
 }
 
-// Un set termina en 6-0, 6-1, 6-2, 6-3, 6-4, 7-5 o 7-6, y en nada mas: aqui
-// siempre se juega el tie-break, asi que de 7 juegos no se pasa. Devuelve null
-// si el set esta terminado, o por que no lo esta.
-function setUnfinishedReason(a, b) {
-  if (a === b) return 'un set no puede quedar empatado';
+// Dos cosas distintas que la pagina decia igual: un 3-0 es un set **sin
+// terminar** y un 8-2 **no puede ser**, porque aqui siempre se juega el
+// tie-break y de 7 juegos no se pasa. Devuelve null si el set esta terminado,
+// o la frase que sigue a "El set 1 (8-2) ".
+function setProblema(a, b) {
   const w = Math.max(a, b);
   const l = Math.min(a, b);
-  if (w > 7) return 'un set no pasa de 7 juegos, que a 6-6 se juega el tie-break';
-  if (w < 6) return 'un set se gana con 6 juegos';
-  if (w === 6 && l > 4) return 'con 6-5 el set sigue: acaba en 7-5 o en 7-6';
-  if (w === 7 && l < 5) return 'un 7 solo vale contra 5 o contra 6';
+  if (a === b) {
+    if (w === 6) return 'no está terminado: a 6-6 se juega el tie-break, y el set acaba en 7-6';
+    return 'no puede ser: un set no acaba en empate';
+  }
+  if (w > 7) return 'no puede ser: un set no pasa de 7 juegos, que a 6-6 se juega el tie-break';
+  if (w === 7 && l < 5) return 'no puede ser: un 7 solo sale de un 7-5 o de un 7-6';
+  if (w < 6) return 'no está terminado: un set se gana con 6 juegos';
+  if (w === 6 && l > 4) return 'no está terminado: con 6-5 el set sigue, y acaba en 7-5 o en 7-6';
   return null;
 }
 
 // El super tie-break es otra cosa: 10 puntos y dos de diferencia, sin techo.
-function tiebreakUnfinishedReason(a, b) {
-  if (a === b) return 'un super tie-break no puede quedar empatado';
+function tiebreakProblema(a, b) {
+  if (a === b) return 'no puede ser: un super tie-break no acaba en empate';
   const w = Math.max(a, b);
   const l = Math.min(a, b);
-  if (w < 10) return 'el super tie-break se gana a 10 puntos';
-  if (w - l < 2) return 'el super tie-break se gana por dos puntos de diferencia';
+  if (w < 10) return 'no está terminado: el super tie-break se gana a 10 puntos';
+  if (w - l < 2) return 'no está terminado: el super tie-break se gana por dos puntos de diferencia';
   return null;
 }
 
@@ -73,8 +77,8 @@ export function validateBo3Score(data) {
 
   for (let i = 0; i < 2; i++) {
     const [a, b] = marcador[i];
-    const razon = setUnfinishedReason(a, b);
-    if (razon) return `El set ${i + 1} (${a}-${b}) no está terminado: ${razon}.`;
+    const problema = setProblema(a, b);
+    if (problema) return `El set ${i + 1} (${a}-${b}) ${problema}.`;
   }
 
   // Quien gana los dos primeros sets gana el partido: ahi se acaba. Un tercer
@@ -90,7 +94,7 @@ export function validateBo3Score(data) {
     return 'Cada pareja ganó un set: falta el tercero para que el partido esté terminado.';
   }
 
-  const razon = isStb ? tiebreakUnfinishedReason(a, b) : setUnfinishedReason(a, b);
-  if (razon) return `El set 3 (${a}-${b}) no está terminado: ${razon}.`;
+  const problema = isStb ? tiebreakProblema(a, b) : setProblema(a, b);
+  if (problema) return `El set 3 (${a}-${b}) ${problema}.`;
   return null;
 }
