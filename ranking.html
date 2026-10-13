@@ -80,17 +80,6 @@ th.points-col{text-align:right}
 /* Lógica visual de las columnas de detalle */
 .hide-detail .detail-col { display: none; }
 
-.back-btn{
-  padding:9px 16px;
-  background:transparent;
-  border:1px solid var(--vt-border-strong);
-  border-radius:var(--vt-r);
-  color:var(--vt-text);
-  font-family:var(--vt-font-body);
-  font-size:14px;font-weight:700;
-  cursor:pointer;
-}
-.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
 .muted{color:var(--vt-muted)}
 
 .info-btn{
@@ -129,7 +118,8 @@ th.points-col{text-align:right}
 
 <div class="vt-page">
 
-  <div style="text-align:center">
+  <div class="vt-cabecera">
+    <button class="vt-volver" type="button" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
     <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
     <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Ranking oficial de jugadores</h1>
     <span class="vt-label">Circuito oficial · Víboras Pádel</span>
@@ -174,7 +164,6 @@ th.points-col{text-align:right}
       <button class="info-btn" onclick="window.location.href='/ranking-info.html'">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">lightbulb</span>¿Cómo funciona el ranking?
       </button>
-      <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
     </div>
 
   </div>

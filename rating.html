@@ -161,18 +161,6 @@ td.rating-col{
 }
 .info-btn:hover{background:rgba(245,158,11,0.12);border-color:var(--vt-gold)}
 
-.back-btn{
-  padding:9px 16px;
-  background:transparent;
-  border:1px solid var(--vt-border-strong);
-  border-radius:var(--vt-r);
-  color:var(--vt-text);
-  font-family:var(--vt-font-body);
-  font-size:14px;font-weight:700;
-  cursor:pointer;
-}
-.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
-
 /* Movil: los anchos fijos de arriba no caben en 375px, se reducen aqui.
    Detalle en ai_context/tabla_de_rating_en_movil.md */
 @media(max-width:560px){
@@ -198,7 +186,8 @@ td.rating-col{
 
 <div class="vt-page">
 
-  <div style="text-align:center">
+  <div class="vt-cabecera">
+    <button class="vt-volver" type="button" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
     <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
     <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Rating</h1>
     <span class="vt-label">Víboras Ranking Circuit</span>
@@ -244,7 +233,6 @@ td.rating-col{
       <button class="info-btn" onclick="window.location.href='/rating-info.html'">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">lightbulb</span>¿Cómo funciona el rating?
       </button>
-      <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
     </div>
 
   </div>

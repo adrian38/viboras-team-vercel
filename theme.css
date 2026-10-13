@@ -444,6 +444,34 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   .vt-acciones > *,.vt-acciones button{width:100%}
 }
 
+/* Cabecera con el "Atras" arriba a la derecha.
+ *
+ * En las paginas de listado —ranking, rating, estadisticas— el unico "Atras"
+ * estaba al pie de la tarjeta, debajo de toda la tabla: para salir habia que
+ * bajar el listado entero. Aqui va absoluto sobre la cabecera, a la altura
+ * del escudo, que esta centrado y deja libre ese hueco: no empuja el titulo
+ * ni cambia la altura de la cabecera. A 320 px el escudo ocupa de 104 a 192
+ * y el boton entra de 210 en adelante. */
+.vt-cabecera{position:relative;text-align:center}
+.vt-volver{
+  position:absolute;
+  top:0;right:0;
+  display:inline-flex;
+  align-items:center;
+  gap:var(--vt-xs);
+  padding:6px 12px;
+  background:transparent;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:700;
+  cursor:pointer;
+  transition:border-color .15s ease,color .15s ease;
+}
+.vt-volver:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+.vt-volver:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
+
 /* ----------------------------------------------------------- utilidades -- */
 
 .vt-row{display:flex;gap:var(--vt-md);align-items:center;flex-wrap:wrap}
