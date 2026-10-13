@@ -70,3 +70,11 @@ Los 129 que no pasan no son historial roto, son filas que nunca van a volver por
 Las 57 de liga sí se abren desde `league-results.html`, pero su formulario pide
 los dos primeros sets antes de enviar, así que se guardan ya completas. La regla
 no deja atrás un historial que ya no se pueda editar.
+
+Las dos filas vacías se borraron ese mismo día (`id` 305 y 306), así que
+producción se queda en 262 partidos. **Las otras 127 siguen ahí y tienen que
+seguir**: las 57 de liga son el calendario de lo que aún no se ha jugado, y
+borrarlas se llevaría por delante los cuadros de octubre y noviembre.
+
+El `7-5 4-6 3-0` que destapó todo esto tampoco está: lo borró el grupo antes de
+que llegara la guarda. Si vuelve a aparecer un partido así, ya no entra.
