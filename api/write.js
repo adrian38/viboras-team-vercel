@@ -26,6 +26,71 @@ async function submitName(req, res) {
   }
 }
 
+// `_original` llega cuando se esta editando un partido que ya existe: la fila
+// se busca por la fecha y los cuatro jugadores de antes. El `event_id` entra en
+// la condicion solo si venia en la peticion; sin el, la fila se actualiza
+// pertenezca al evento que pertenezca.
+async function updateExistingMatch(original, m) {
+  const o_p1a = await getPlayerId(original.p1a);
+  const o_p1b = await getPlayerId(original.p1b);
+  const o_p2a = await getPlayerId(original.p2a);
+  const o_p2b = await getPlayerId(original.p2b);
+  const o_date = String(original.date || '').trim();
+  const o_event = original.event_id ? toInt(original.event_id) : null;
+
+  if (o_event !== null) {
+    const conEvento = await sql`
+      UPDATE matches SET
+        date = ${m.date},
+        format = ${m.format},
+        player1a_id = ${m.p1a_id}, player1b_id = ${m.p1b_id},
+        player2a_id = ${m.p2a_id}, player2b_id = ${m.p2b_id},
+        set1_team1 = ${m.s11}, set1_team2 = ${m.s21},
+        set2_team1 = ${m.s12}, set2_team2 = ${m.s22},
+        set3_team1 = ${m.s13}, set3_team2 = ${m.s23}
+      WHERE date = ${o_date}
+        AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
+        AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
+        AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
+        AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
+        AND event_id IS NOT DISTINCT FROM ${o_event}
+      RETURNING id`;
+    return conEvento.rowCount > 0;
+  }
+
+  const upd = await sql`
+    UPDATE matches SET
+      date = ${m.date},
+      format = ${m.format},
+      player1a_id = ${m.p1a_id}, player1b_id = ${m.p1b_id},
+      player2a_id = ${m.p2a_id}, player2b_id = ${m.p2b_id},
+      set1_team1 = ${m.s11}, set1_team2 = ${m.s21},
+      set2_team1 = ${m.s12}, set2_team2 = ${m.s22},
+      set3_team1 = ${m.s13}, set3_team2 = ${m.s23}
+    WHERE date = ${o_date}
+      AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
+      AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
+      AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
+      AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
+    RETURNING id`;
+  return upd.rowCount > 0;
+}
+
+// El partido nuevo entra siempre en el evento 1, el de los partidos sueltos;
+// los de liga y torneo los crea `league-admin`.
+async function insertMatch(m) {
+  await sql`
+    INSERT INTO matches (
+      date, player1a_id, player1b_id, player2a_id, player2b_id,
+      set1_team1, set1_team2, set2_team1, set2_team2, set3_team1, set3_team2,
+      format, event_id, round
+    ) VALUES (
+      ${m.date}, ${m.p1a_id}, ${m.p1b_id}, ${m.p2a_id}, ${m.p2b_id},
+      ${m.s11}, ${m.s21}, ${m.s12}, ${m.s22}, ${m.s13}, ${m.s23},
+      ${m.format}, 1, NULL
+    )`;
+}
+
 async function submitResult(req, res) {
   try {
     await ensureSchema();
@@ -35,78 +100,25 @@ async function submitResult(req, res) {
       return;
     }
 
-    const original = data && typeof data === 'object' ? data._original : null;
-    const p1a_id = await getOrCreatePlayerId(data.p1a);
-    const p1b_id = await getOrCreatePlayerId(data.p1b);
-    const p2a_id = await getOrCreatePlayerId(data.p2a);
-    const p2b_id = await getOrCreatePlayerId(data.p2b);
+    const m = {
+      date: String(data.date || '').trim(),
+      format: (String(data.format || '').trim() === 'bo3_stb') ? 'bo3_stb' : 'bo3_regular',
+      p1a_id: await getOrCreatePlayerId(data.p1a),
+      p1b_id: await getOrCreatePlayerId(data.p1b),
+      p2a_id: await getOrCreatePlayerId(data.p2a),
+      p2b_id: await getOrCreatePlayerId(data.p2b),
+      s11: toInt(data.s11), s21: toInt(data.s21),
+      s12: toInt(data.s12), s22: toInt(data.s22),
+      s13: toInt(data.s13), s23: toInt(data.s23)
+    };
 
-    const s11 = toInt(data.s11), s21 = toInt(data.s21);
-    const s12 = toInt(data.s12), s22 = toInt(data.s22);
-    const s13 = toInt(data.s13), s23 = toInt(data.s23);
-    const date = String(data.date || '').trim();
-    const format = (String(data.format || '').trim() === 'bo3_stb') ? 'bo3_stb' : 'bo3_regular';
-
-    if (original && typeof original === 'object') {
-      const o_p1a = await getPlayerId(original.p1a);
-      const o_p1b = await getPlayerId(original.p1b);
-      const o_p2a = await getPlayerId(original.p2a);
-      const o_p2b = await getPlayerId(original.p2b);
-      const o_date = String(original.date || '').trim();
-      const o_event = (original && original.event_id) ? toInt(original.event_id) : null;
-      let upd;
-
-      if (o_event !== null) {
-        upd = await sql`
-          UPDATE matches SET
-            date = ${date},
-            format = ${format},
-            player1a_id = ${p1a_id}, player1b_id = ${p1b_id},
-            player2a_id = ${p2a_id}, player2b_id = ${p2b_id},
-            set1_team1 = ${s11}, set1_team2 = ${s21},
-            set2_team1 = ${s12}, set2_team2 = ${s22},
-            set3_team1 = ${s13}, set3_team2 = ${s23}
-          WHERE date = ${o_date}
-            AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
-            AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
-            AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
-            AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
-            AND event_id IS NOT DISTINCT FROM ${o_event}
-          RETURNING id`;
-      } else {
-        upd = await sql`
-          UPDATE matches SET
-            date = ${date},
-            format = ${format},
-            player1a_id = ${p1a_id}, player1b_id = ${p1b_id},
-            player2a_id = ${p2a_id}, player2b_id = ${p2b_id},
-            set1_team1 = ${s11}, set1_team2 = ${s21},
-            set2_team1 = ${s12}, set2_team2 = ${s22},
-            set3_team1 = ${s13}, set3_team2 = ${s23}
-          WHERE date = ${o_date}
-            AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
-            AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
-            AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
-            AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
-          RETURNING id`;
-      }
-
-      if (upd.rowCount > 0) {
-        res.status(200).json({ ok: true });
-        return;
-      }
+    const original = data._original;
+    if (original && typeof original === 'object' && await updateExistingMatch(original, m)) {
+      res.status(200).json({ ok: true });
+      return;
     }
 
-    await sql`
-      INSERT INTO matches (
-        date, player1a_id, player1b_id, player2a_id, player2b_id,
-        set1_team1, set1_team2, set2_team1, set2_team2, set3_team1, set3_team2,
-        format, event_id, round
-      ) VALUES (
-        ${date}, ${p1a_id}, ${p1b_id}, ${p2a_id}, ${p2b_id},
-        ${s11}, ${s21}, ${s12}, ${s22}, ${s13}, ${s23},
-        ${format}, 1, NULL
-      )`;
+    await insertMatch(m);
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error('write:submitResult error', err);

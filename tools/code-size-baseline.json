@@ -7,7 +7,6 @@
     "api/league-admin.js:createPozoTournament": 95,
     "api/league-admin.js:createCompasTournament": 83,
     "api/read.js:getResults": 80,
-    "api/write.js:submitResult": 87,
     "history.html:renderTable": 136,
     "history.html:downloadCSV": 67,
     "index.html:showLeaguePanel": 69,
