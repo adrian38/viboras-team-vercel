@@ -47,6 +47,9 @@ que hay.
   restaura un volcado sin que aborte.
 - `api_sin_autenticacion.md`: ninguno de los endpoints de escritura comprueba
   nada, incluido `league-admin`, pese al nombre.
+- `marcador_incompleto_se_rechaza.md`: qué cuenta como partido terminado, por
+  qué la regla vive sólo en `api/_score.js` y no en las tres páginas que suben
+  resultados, por qué los torneos quedan fuera y qué pasa con lo ya guardado.
 
 ## Entorno y despliegue
 

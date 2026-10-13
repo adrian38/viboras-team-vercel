@@ -1072,7 +1072,7 @@ async function submitEditResult(){
   try{
     const res = await fetch('/api/write?action=submitResult',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
     const j = await res.json().catch(()=>({}))
-    if(!res.ok || !j.ok){ throw new Error('save_failed') }
+    if(!res.ok || !j.ok){ alert(j.message || 'Error al guardar marcador'); return }
     closeEditModal()
     // refresh data and reapply filter
     await loadInitial()

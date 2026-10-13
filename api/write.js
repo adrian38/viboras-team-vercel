@@ -1,5 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, getOrCreatePlayerId, getPlayerId, readBody, toInt } from './_db.js';
+import { validateBo3Score } from './_score.js';
 
 async function submitName(req, res) {
   try {
@@ -97,6 +98,14 @@ async function submitResult(req, res) {
     const data = await readBody(req);
     if (!data || typeof data !== 'object') {
       res.status(400).json({ ok: false, error: 'Invalid request' });
+      return;
+    }
+
+    // Antes de tocar la base, y antes de crear jugadores: un partido a medias
+    // no se guarda ni se arregla en silencio, se devuelve el motivo.
+    const scoreError = validateBo3Score(data);
+    if (scoreError) {
+      res.status(400).json({ ok: false, error: 'invalid_score', message: scoreError });
       return;
     }
 

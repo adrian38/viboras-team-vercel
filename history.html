@@ -549,17 +549,27 @@ document.getElementById('adminAddBtn').addEventListener('click', async ()=>{
   }
 
   try {
-    await fetch('/api/write?action=submitResult', {
+    const res = await fetch('/api/write?action=submitResult', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
+    if(!(await saved(res))) return
     loadData()
   } catch (e) {
     console.error(e)
     alert('Error al agregar')
   }
 })
+
+// El API rechaza los partidos a medias con el motivo escrito; sin esto la
+// pagina recargaba la tabla como si se hubiera guardado.
+async function saved(res){
+  const json = await res.json().catch(()=>({}))
+  if(json && json.error === 'invalid_score'){ alert(json.message || 'El partido no está terminado'); return false }
+  if(!res.ok || !json.ok){ alert('Error al guardar'); return false }
+  return true
+}
 
 async function deleteMatch(m){
   if(!confirm('¿Eliminar este partido?')) return
@@ -689,7 +699,8 @@ function startEditRow(tr,m){
       _original: { date: m.date, p1a: m.p1a, p1b: m.p1b, p2a: m.p2a, p2b: m.p2b }
     }
     try{
-      await fetch('/api/write?action=submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      const res = await fetch('/api/write?action=submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      if(!(await saved(res))) return
       loadData()
     }catch(e){ console.error(e); alert('Error al guardar') }
   })

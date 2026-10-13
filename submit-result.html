@@ -269,6 +269,9 @@ async function submitResult(){
   try{
     const res = await fetch('/api/write?action=submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     const json = await res.json().catch(() => ({}))
+    // El API rechaza los partidos a medias y dice por que; el motivo se enseña
+    // tal cual, que para eso lo escribe.
+    if(json && json.error === 'invalid_score'){ alert(json.message || 'El partido no está terminado'); return }
     if(!res.ok || !json.ok){ throw new Error('save_failed') }
     alert('Resultado guardado')
     window.location='/'
