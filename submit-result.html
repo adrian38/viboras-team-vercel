@@ -86,6 +86,22 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.55
   padding:8px 0;
 }
 
+/* El motivo del rechazo se enseña aqui dentro, no en un alert: el alert se
+   cierra de un toque y quien lo lee a medias vuelve a guardar lo mismo. */
+.aviso{
+  display:none;
+  align-items:flex-start;gap:10px;
+  margin-top:var(--vt-md);
+  padding:12px 14px;
+  background:var(--vt-error-bg);
+  border:1px solid rgba(255,180,171,0.35);
+  border-radius:var(--vt-r);
+  color:var(--vt-error);
+  font-size:14px;font-weight:500;line-height:1.45;
+}
+.aviso.visible{display:flex}
+.aviso .ms{margin-top:1px}
+
 .controls{display:flex;gap:var(--vt-sm);justify-content:flex-end;margin-top:var(--vt-lg)}
 .btn{
   padding:10px 20px;
@@ -189,6 +205,11 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.55
 
     </div>
 
+    <div id="aviso" class="aviso" role="alert" aria-live="assertive">
+      <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">error</span>
+      <span id="avisoTexto"></span>
+    </div>
+
     <div class="controls">
       <button class="btn ghost" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
       <button class="btn warn" onclick="submitResult()">Guardar resultado</button>
@@ -229,23 +250,32 @@ function isValidDateDDMMYYYY(str){ if(!/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return
 
 let submitInFlight = false
 
+function mostrarAviso(texto){
+  document.getElementById('avisoTexto').innerText = texto
+  const caja = document.getElementById('aviso')
+  caja.classList.add('visible')
+  caja.scrollIntoView({behavior:'smooth', block:'center'})
+}
+function limpiarAviso(){ document.getElementById('aviso').classList.remove('visible') }
+
 async function submitResult(){
   if (submitInFlight) return
+  limpiarAviso()
 
   // basic required
   const required = ['p1a','p1b','p2a','p2b','s11','s21']
-  for(const id of required){ const el=document.getElementById(id); if(!el || !el.value.trim()){ alert('Completa todos los campos obligatorios'); el && el.focus(); return } }
+  for(const id of required){ const el=document.getElementById(id); if(!el || !el.value.trim()){ mostrarAviso('Faltan campos por rellenar: los cuatro jugadores y el primer set.'); el && el.focus(); return } }
 
   const rawDate = document.getElementById('date').value.trim();
   const dateVal = normalizeDateInput(rawDate)
-  if(!isValidDateDDMMYYYY(dateVal)){ alert('Formato de fecha inválido. Usa DD/MM/YYYY'); return }
+  if(!isValidDateDDMMYYYY(dateVal)){ mostrarAviso('La fecha no vale. Tiene que ser DD/MM/AAAA.'); return }
 
   const setIds = ['s11','s12','s13','s21','s22','s23']
-  for(const id of setIds){ const v=document.getElementById(id).value.trim(); if(v!=='' && !isNonNegativeIntegerString(v)){ alert('Los sets deben ser números enteros no negativos'); document.getElementById(id).focus(); return } }
+  for(const id of setIds){ const v=document.getElementById(id).value.trim(); if(v!=='' && !isNonNegativeIntegerString(v)){ mostrarAviso('Los juegos se escriben con números enteros.'); document.getElementById(id).focus(); return } }
 
   // ensure names unique across both teams
   const names = ['p1a','p1b','p2a','p2b'].map(id=>document.getElementById(id).value.trim())
-  const set = new Set(); for(const n of names){ if(set.has(n)){ alert('Los nombres no pueden repetirse entre los equipos'); return } set.add(n) }
+  const set = new Set(); for(const n of names){ if(set.has(n)){ mostrarAviso('Hay un jugador repetido: cada uno juega en una sola pareja.'); return } set.add(n) }
 
   const payload = {
     date: dateVal,
@@ -271,11 +301,11 @@ async function submitResult(){
     const json = await res.json().catch(() => ({}))
     // El API rechaza los partidos a medias y dice por que; el motivo se enseña
     // tal cual, que para eso lo escribe.
-    if(json && json.error === 'invalid_score'){ alert(json.message || 'El partido no está terminado'); return }
+    if(json && json.error === 'invalid_score'){ mostrarAviso(json.message || 'El partido no está terminado.'); return }
     if(!res.ok || !json.ok){ throw new Error('save_failed') }
     alert('Resultado guardado')
     window.location='/'
-  }catch(e){ console.error(e); alert('Error al guardar resultado') } finally {
+  }catch(e){ console.error(e); mostrarAviso('No se pudo guardar. Mira la conexión y vuelve a intentarlo.') } finally {
     submitInFlight = false
     if(saveButton){
       saveButton.disabled = false

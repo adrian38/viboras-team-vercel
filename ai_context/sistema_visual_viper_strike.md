@@ -64,7 +64,7 @@ en la app**. Nada de esto se portó:
 Si alguien compara una captura con la página y echa algo de esto en falta, **es
 deliberado**.
 
-## Los iconos: Material Symbols recortada a 32 glifos
+## Los iconos: Material Symbols recortada a 33 glifos
 
 Las maquetas usan Material Symbols. La fuente entera son unos 300 KB, que en
 una PWA que carga red primero no se sostiene; pero Google Fonts acepta
