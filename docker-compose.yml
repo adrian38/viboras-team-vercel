@@ -66,6 +66,11 @@ services:
       # conexion si no aparece ("invalid_connection_string"). Es el mismo
       # motivo por el que en produccion hay que usar la URL pooled de Neon.
       POSTGRES_URL: "postgres://postgres:padel_local@padel-pooler.local:5432/padel"
+      # Vacias por defecto. Sin GOOGLE_CLIENT_ID la pagina de cuenta funciona
+      # igual con correo y contrasena, solo que no dibuja el boton de Google.
+      # En produccion se ponen en el panel de Vercel.
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      ADMIN_EMAILS: "${ADMIN_EMAILS:-}"
       USE_LOCAL_PG: "1"
       WS_PROXY: "wsproxy:80"
       HTTP_PROXY_NEON: "neon-http:4444"

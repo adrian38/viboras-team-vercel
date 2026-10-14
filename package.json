@@ -12,7 +12,7 @@
     "check:size": "node tools/code-size.mjs"
   },
   "dependencies": {
-    "@vercel/postgres": "^0.10.0"
-  },
-  "devDependencies": {}
+    "@vercel/postgres": "^0.10.0",
+    "jose": "^6.2.12"
+  }
 }

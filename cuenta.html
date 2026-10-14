@@ -38,7 +38,6 @@
   color:var(--vt-success);
 }
 
-.oculto{display:none}
 
 /* Las dos pestanas. Es el unico control que theme.css no tiene. */
 .pestanas{display:flex;gap:var(--vt-sm);margin-bottom:var(--vt-lg)}
@@ -61,6 +60,17 @@
 
 .campos{display:flex;flex-direction:column;gap:var(--vt-md)}
 
+/* El boton de Google lo dibuja su propia libreria dentro de este hueco: no se
+   puede estilar desde aqui, solo colocarlo. */
+.separador{
+  display:flex;align-items:center;gap:var(--vt-md);
+  margin:var(--vt-lg) 0 var(--vt-md);
+  color:var(--vt-faint);
+  font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+}
+.separador::before,.separador::after{content:"";flex:1;height:1px;background:var(--vt-border)}
+.google{display:flex;justify-content:center;min-height:44px}
+
 .pendiente{
   display:flex;align-items:center;justify-content:space-between;
   gap:var(--vt-md);flex-wrap:wrap;
@@ -70,6 +80,11 @@
 .pendiente:last-child{border-bottom:0}
 .pendiente__quien{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pendiente__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
+
+/* Al final del bloque y no al principio: .campos y .separador declaran su
+   propio display y, a igualdad de especificidad, gana la regla de abajo. Con
+   .oculto arriba, el formulario de alta se veia debajo del de entrar. */
+.oculto{display:none}
 </style>
 </head>
 
@@ -129,6 +144,8 @@
       <button class="vt-btn" type="submit" id="btnEntrar">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">login</span>Entrar
       </button>
+      <div class="separador oculto" id="sepEntrar">o</div>
+      <div class="google" id="googleEntrar"></div>
     </form>
 
     <form id="formAlta" class="campos oculto" autocomplete="on">
@@ -150,6 +167,8 @@
       <button class="vt-btn" type="submit" id="btnAlta">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">person</span>Crear cuenta
       </button>
+      <div class="separador oculto" id="sepAlta">o</div>
+      <div class="google" id="googleAlta"></div>
     </form>
   </section>
 
@@ -161,6 +180,7 @@
 
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="/auth-client.js" defer></script>
 <script>
 const $ = (id) => document.getElementById(id)
@@ -329,12 +349,77 @@ $('btnSalir').onclick = () => conBoton($('btnSalir'), 'Saliendo...', async () =>
   window.location.reload()
 })
 
+// La libreria de Google llega con async: puede no estar lista todavia cuando
+// esto corre, y no hay evento al que engancharse que sirva en los dos casos.
+function esperarGoogle(){
+  return new Promise((listo, falla) => {
+    const limite = Date.now() + 6000
+    const mirar = () => {
+      if(window.google && google.accounts && google.accounts.id) return listo()
+      if(Date.now() > limite) return falla(new Error('gsi_no_carga'))
+      setTimeout(mirar, 100)
+    }
+    mirar()
+  })
+}
+
+// Un solo callback para los dos botones: la libreria no admite uno por boton,
+// asi que se mira que pestana esta abierta.
+function alVolverDeGoogle(respuesta){
+  const esAlta = $('tabAlta').getAttribute('aria-selected') === 'true'
+  const boton = esAlta ? $('btnAlta') : $('btnEntrar')
+  conBoton(boton, 'Entrando...', async () => {
+    limpiarAviso()
+    if(!esAlta){
+      await llamar('googleLogin', {credential: respuesta.credential})
+      window.location.reload()
+      return
+    }
+    const json = await llamar('googleRegister', {
+      credential: respuesta.credential,
+      playerName: $('altaJugador').value
+    })
+    if(json.status === 'pending'){
+      $('formAlta').reset()
+      mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
+      return
+    }
+    window.location.reload()
+  })
+}
+
+// Sin GOOGLE_CLIENT_ID la pagina sigue entera: solo no aparece el boton. Es lo
+// que pasa en el entorno local, donde no hay credencial.
+async function montarGoogle(){
+  let clientId = ''
+  try{
+    const json = await fetch('/api/auth?action=config').then(r => r.json())
+    clientId = (json && json.googleClientId) || ''
+  }catch(e){ return }
+  if(!clientId) return
+  try{ await esperarGoogle() }catch(e){ console.error(e); return }
+  google.accounts.id.initialize({client_id: clientId, callback: alVolverDeGoogle, ux_mode: 'popup'})
+  dibujarBoton('googleEntrar', 'sepEntrar', 'signin_with')
+  dibujarBoton('googleAlta', 'sepAlta', 'signup_with')
+}
+
+function dibujarBoton(hueco, separador, texto){
+  const caja = $(hueco)
+  $(separador).classList.remove('oculto')
+  google.accounts.id.renderButton(caja, {
+    theme: 'filled_black', size: 'large', shape: 'rectangular',
+    text: texto, locale: 'es',
+    width: Math.max(220, Math.min(360, caja.clientWidth || 300))
+  })
+}
+
 // auth-client.js lleva defer: los scripts diferidos corren despues del parseo
 // y antes de DOMContentLoaded, asi que aqui window.vtMe ya existe. Este script
 // esta en linea y se ejecuta antes que el, de modo que fuera del listener no
 // existiria todavia.
 document.addEventListener('DOMContentLoaded', () => {
   cargarJugadores()
+  montarGoogle()
   window.vtMe.then(pintarSesion)
 })
 </script>

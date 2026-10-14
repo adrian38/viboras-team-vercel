@@ -17,8 +17,9 @@ import {
   crearSesion, cerrarSesionDeLaCookie, cerrarSesionesDe, limpiarSesionesCaducadas,
   usuarioDeLaPeticion, exigirAdmin, sinCache,
   normalizarCorreo, correoValido, passwordValida,
-  anotarFallo, limpiarFallos, bloqueoPendiente
+  anotarFallo, limpiarFallos, bloqueoPendiente, esCorreoDeAdmin
 } from './_auth.js';
+import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -282,8 +283,148 @@ async function blockUser(req, res) {
   res.status(200).json({ ok: true, blocked: hecho.rowCount > 0 });
 }
 
+// El sustituto del paso de build: aqui no hay forma de inyectar una variable
+// de entorno en un .html estatico, asi que el navegador pregunta por el
+// client_id. No es un secreto, el boton de Google lo publica igualmente.
+async function config(req, res) {
+  res.status(200).json({ ok: true, googleClientId: googleClientId() });
+}
+
+// Devuelve el usuario de ese Google, enlazandolo por correo la primera vez.
+async function usuarioDeGoogle(dato) {
+  const porIdentidad = await sql`
+    SELECT u.id, u.email, u.status, u.role, u.player_id, p.active AS player_active
+    FROM identities i
+    JOIN users u ON u.id = i.user_id
+    LEFT JOIN players p ON p.id = u.player_id
+    WHERE i.provider = 'google' AND i.subject = ${dato.sub}
+  `;
+  if (porIdentidad.rows.length) return porIdentidad.rows[0];
+
+  // Quien se registro con contrasena puede entrar luego con Google sin crear
+  // una cuenta duplicada. El correo esta verificado por Google, que es la
+  // unica razon por la que enlazar asi no es suplantar.
+  const porCorreo = await sql`
+    SELECT u.id, u.email, u.status, u.role, u.player_id, p.active AS player_active
+    FROM users u LEFT JOIN players p ON p.id = u.player_id
+    WHERE u.email = ${dato.email}
+  `;
+  if (!porCorreo.rows.length) return null;
+  const user = porCorreo.rows[0];
+  await sql`
+    INSERT INTO identities (user_id, provider, subject)
+    VALUES (${user.id}, 'google', ${dato.sub})
+    ON CONFLICT (provider, subject) DO NOTHING
+  `;
+  return user;
+}
+
+// ADMIN_EMAILS solo cuenta por aqui: el alta con contrasena no verifica el
+// correo, asi que por esa via bastaria con saber la direccion para hacerse
+// administrador.
+async function promocionarSiEsAdmin(user) {
+  if (user.status === 'active' && user.role === 'admin') return user;
+  if (!esCorreoDeAdmin(user.email)) return user;
+  if (await motivoParaNoAprobar(user)) return user;
+  await sql`
+    UPDATE users
+    SET status = 'active', role = 'admin', approved_at = COALESCE(approved_at, now())
+    WHERE id = ${user.id}
+  `;
+  return { ...user, status: 'active', role: 'admin' };
+}
+
+function contarErrorDeGoogle(res, err) {
+  if (!(err instanceof ErrorDeGoogle)) throw err;
+  const codigo = err.codigo === 'google_no_configurado' ? 503 : 401;
+  res.status(codigo).json({ ok: false, error: err.codigo, message: err.texto });
+}
+
+async function googleLogin(req, res) {
+  const data = await readBody(req);
+  let user;
+  try {
+    user = await usuarioDeGoogle(await verificarCredencial(data?.credential));
+  } catch (err) {
+    contarErrorDeGoogle(res, err);
+    return;
+  }
+  if (!user) {
+    res.status(404).json({
+      ok: false,
+      error: 'no_account',
+      message: 'No hay ninguna cuenta con ese correo. Créala en «Crear cuenta».'
+    });
+    return;
+  }
+  user = await promocionarSiEsAdmin(user);
+  if (user.status !== 'active') {
+    respuestaPorEstado(res, user.status);
+    return;
+  }
+  await abrirSesion(req, res, user.id);
+  res.status(200).json({ ok: true });
+}
+
+async function googleRegister(req, res) {
+  const data = await readBody(req);
+  let dato;
+  let existente;
+  try {
+    dato = await verificarCredencial(data?.credential);
+    existente = await usuarioDeGoogle(dato);
+  } catch (err) {
+    contarErrorDeGoogle(res, err);
+    return;
+  }
+  // Ya tenia cuenta: esto no es un alta, es una entrada.
+  if (existente) {
+    const user = await promocionarSiEsAdmin(existente);
+    if (user.status !== 'active') {
+      respuestaPorEstado(res, user.status);
+      return;
+    }
+    await abrirSesion(req, res, user.id);
+    res.status(200).json({ ok: true, status: 'active' });
+    return;
+  }
+  const alta = await comprobarAlta(dato.email, data?.playerName);
+  if (alta.error) {
+    res.status(400).json({ ok: false, ...alta });
+    return;
+  }
+  await crearCuentaDeGoogle(req, res, dato, alta.playerId);
+}
+
+async function crearCuentaDeGoogle(req, res, dato, playerId) {
+  const admin = esCorreoDeAdmin(dato.email);
+  const { rows } = await sql`
+    INSERT INTO users (email, player_id, status, role, approved_at)
+    VALUES (
+      ${dato.email}, ${playerId},
+      ${admin ? 'active' : 'pending'}, ${admin ? 'admin' : 'member'},
+      ${admin ? new Date().toISOString() : null}::timestamptz
+    )
+    RETURNING id
+  `;
+  const userId = rows[0].id;
+  await sql`
+    INSERT INTO identities (user_id, provider, subject)
+    VALUES (${userId}, 'google', ${dato.sub})
+  `;
+  if (!admin) {
+    res.status(200).json({ ok: true, status: 'pending' });
+    return;
+  }
+  await abrirSesion(req, res, userId);
+  res.status(200).json({ ok: true, status: 'active' });
+}
+
 const ACCIONES = {
   me,
+  config,
+  googleLogin,
+  googleRegister,
   register,
   login,
   logout,
@@ -294,7 +435,7 @@ const ACCIONES = {
   blockUser
 };
 
-const DE_LECTURA = new Set(['me', 'listPending']);
+const DE_LECTURA = new Set(['me', 'config', 'listPending']);
 
 export default async function handler(req, res) {
   const action = String(req.query?.action || '').trim();
