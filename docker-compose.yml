@@ -88,6 +88,8 @@ services:
       - ./tournaments.html:/app/tournaments.html
       - ./league-results.html:/app/league-results.html
       - ./submit-result.html:/app/submit-result.html
+      - ./cuenta.html:/app/cuenta.html
+      - ./auth-client.js:/app/auth-client.js
     depends_on:
       wsproxy:
         condition: service_started

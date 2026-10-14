@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
+<script src="/auth-client.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 <style>
@@ -145,7 +146,14 @@ label.small{
 .btn.black-top:hover{background:rgba(147,0,10,0.34);border-color:var(--vt-error);color:var(--vt-error)}
 
 /* Barra superior en el flujo del documento (no fija). Así el botón se desplaza al hacer scroll y desaparece. */
-.topbar{position:static;display:flex;align-items:center;justify-content:center;height:var(--topbar-height);pointer-events:auto}
+/* space-between desde que hay cuentas: normativa a la izquierda, el chip de
+   sesion a la derecha. */
+.topbar{position:static;display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);height:var(--topbar-height);padding:0 var(--vt-sm);pointer-events:auto}
+.topbar .vt-chip{flex:0 0 auto;white-space:nowrap;text-decoration:none}
+/* A 375 px los dos textos caben con 16 px de sobra; a 320 el chip desbordaba
+   29 px. Por debajo de 370 se queda en el icono, que sigue llevando a /cuenta
+   y conserva su aria-label. */
+@media (max-width:370px){ .topbar .vt-chip__nombre{display:none} }
 .topbar .btn.black-top{pointer-events:auto}
 .topbar-spacer{display:none}
 
@@ -240,6 +248,7 @@ label.small{
 <div class="hero">
   <div class="topbar">
     <button class="btn black-top" onclick="window.location='group-normativa.html'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">gavel</span>NORMATIVA DEL GRUPO</button>
+    <a class="vt-chip" id="vtSession" href="/cuenta" aria-label="Tu cuenta"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">login</span><span class="vt-chip__nombre">Cuenta</span></a>
   </div>
   <img src="/image.png" alt="Víboras Team" width="112" height="112" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 6px 24px rgba(245,158,11,0.3))">
   <h1 style="margin-top:var(--vt-md)"><span class="vt-gold-grad">Víboras Team</span></h1>

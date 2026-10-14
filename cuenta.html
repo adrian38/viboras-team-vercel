@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu cuenta · Viboras Team</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/pwa.js" defer></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+<style>
+/* Casi todo sale de theme.css. Lo unico que no esta alli es la caja de aviso,
+   que se copia de submit-result.html con su razon: el motivo del rechazo se
+   lee dentro de la pagina, no en un alert que se cierra de un toque. */
+.aviso{
+  display:none;
+  align-items:flex-start;gap:10px;
+  margin-top:var(--vt-md);
+  padding:12px 14px;
+  background:var(--vt-error-bg);
+  border:1px solid rgba(255,180,171,0.35);
+  border-radius:var(--vt-r);
+  color:var(--vt-error);
+  font-size:14px;font-weight:500;line-height:1.45;
+}
+.aviso.visible{display:flex}
+.aviso .ms{margin-top:1px}
+.aviso--ok{
+  background:rgba(34,197,94,0.12);
+  border-color:rgba(34,197,94,0.35);
+  color:var(--vt-success);
+}
+
+.oculto{display:none}
+
+/* Las dos pestanas. Es el unico control que theme.css no tiene. */
+.pestanas{display:flex;gap:var(--vt-sm);margin-bottom:var(--vt-lg)}
+.pestana{
+  flex:1;
+  padding:10px 12px;
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+  background:transparent;
+  color:var(--vt-muted);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
+  cursor:pointer;
+}
+.pestana[aria-selected="true"]{
+  border-color:var(--vt-border-gold);
+  background:var(--vt-surface-3);
+  color:var(--vt-gold);
+}
+
+.campos{display:flex;flex-direction:column;gap:var(--vt-md)}
+
+.pendiente{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--vt-md);flex-wrap:wrap;
+  padding:12px 0;
+  border-bottom:1px solid var(--vt-border);
+}
+.pendiente:last-child{border-bottom:0}
+.pendiente__quien{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pendiente__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
+</style>
+</head>
+
+<body>
+
+<div class="vt-page vt-page--narrow" style="padding:var(--vt-lg) var(--vt-md)">
+
+  <header class="vt-between" style="padding-bottom:var(--vt-md);border-bottom:1px solid var(--vt-border)">
+    <div class="vt-row" style="gap:var(--vt-md)">
+      <div class="vt-header__logo" style="width:64px;height:64px"><img src="/image.png" alt="Víboras Team"></div>
+      <div>
+        <span class="vt-label vt-gold">Tu cuenta</span>
+        <h3 style="margin-top:2px">Víboras <span class="vt-gold-grad">Team</span></h3>
+      </div>
+    </div>
+    <button class="vt-btn vt-btn--quiet vt-btn--sm" onclick="window.location.href='/'">
+      <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Volver
+    </button>
+  </header>
+
+  <p id="cargando" class="vt-small vt-muted">Cargando…</p>
+
+  <div id="aviso" class="aviso" role="alert" aria-live="assertive">
+    <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">error</span>
+    <span id="avisoTexto"></span>
+  </div>
+
+  <section id="panelSesion" class="vt-card vt-card--accent oculto">
+    <span class="vt-label vt-gold">Has entrado</span>
+    <h4 id="sesionJugador" style="margin-top:var(--vt-xs)"></h4>
+    <p class="vt-small vt-muted" id="sesionCorreo" style="margin-top:2px"></p>
+    <p class="vt-small vt-muted" style="margin-top:var(--vt-md)">
+      Tu nombre ya viene puesto al votar la disponibilidad y al subir un resultado.
+    </p>
+    <div class="vt-acciones" style="margin-top:var(--vt-lg)">
+      <button class="vt-btn vt-btn--quiet" id="btnSalir">
+        <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">logout</span>Cerrar sesión
+      </button>
+    </div>
+  </section>
+
+  <section id="panelAcceso" class="vt-card vt-card--accent oculto">
+    <div class="pestanas" role="tablist">
+      <button class="pestana" id="tabEntrar" role="tab" aria-selected="true" aria-controls="formEntrar">Entrar</button>
+      <button class="pestana" id="tabAlta" role="tab" aria-selected="false" aria-controls="formAlta">Crear cuenta</button>
+    </div>
+
+    <form id="formEntrar" class="campos" autocomplete="on">
+      <div class="vt-field">
+        <label for="entrarCorreo">Correo</label>
+        <input class="vt-input" type="email" id="entrarCorreo" name="email" autocomplete="username" required>
+      </div>
+      <div class="vt-field">
+        <label for="entrarPassword">Contraseña</label>
+        <input class="vt-input" type="password" id="entrarPassword" name="password" autocomplete="current-password" required>
+      </div>
+      <button class="vt-btn" type="submit" id="btnEntrar">
+        <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">login</span>Entrar
+      </button>
+    </form>
+
+    <form id="formAlta" class="campos oculto" autocomplete="on">
+      <p class="vt-small vt-muted">
+        El grupo es cerrado: la cuenta queda pendiente hasta que un administrador la aprueba.
+      </p>
+      <div class="vt-field">
+        <label for="altaJugador">¿Quién eres?</label>
+        <select class="vt-select" id="altaJugador" required></select>
+      </div>
+      <div class="vt-field">
+        <label for="altaCorreo">Correo</label>
+        <input class="vt-input" type="email" id="altaCorreo" name="email" autocomplete="username" required>
+      </div>
+      <div class="vt-field">
+        <label for="altaPassword">Contraseña (mínimo 10 caracteres)</label>
+        <input class="vt-input" type="password" id="altaPassword" name="password" autocomplete="new-password" required minlength="10">
+      </div>
+      <button class="vt-btn" type="submit" id="btnAlta">
+        <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">person</span>Crear cuenta
+      </button>
+    </form>
+  </section>
+
+  <section id="panelAdmin" class="vt-card oculto">
+    <span class="vt-label vt-gold">Administración</span>
+    <h4 style="margin-top:var(--vt-xs)">Cuentas pendientes</h4>
+    <div id="listaPendientes" style="margin-top:var(--vt-md)"></div>
+  </section>
+
+</div>
+
+<script src="/auth-client.js" defer></script>
+<script>
+const $ = (id) => document.getElementById(id)
+let enVuelo = false
+
+function mostrarAviso(texto, ok){
+  $('avisoTexto').innerText = texto
+  const caja = $('aviso')
+  caja.classList.toggle('aviso--ok', ok === true)
+  caja.classList.add('visible')
+  caja.scrollIntoView({behavior:'smooth', block:'center'})
+}
+
+function limpiarAviso(){ $('aviso').classList.remove('visible') }
+
+function pintarSesion(user){
+  $('cargando').classList.add('oculto')
+  $('panelSesion').classList.toggle('oculto', !user)
+  $('panelAcceso').classList.toggle('oculto', !!user)
+  $('panelAdmin').classList.toggle('oculto', !user || user.role !== 'admin')
+  if(!user) return
+  $('sesionJugador').innerText = user.playerName || 'Sin jugador asignado'
+  $('sesionCorreo').innerText = user.email
+  if(user.playerName && !user.playerActive){
+    mostrarAviso('Tu jugador está dado de baja, así que tu nombre no saldrá en las listas. Avisa a un administrador.')
+  }
+  if(user.role === 'admin') cargarPendientes()
+}
+
+// El API devuelve {error, message}: el motivo se enseña tal cual, que para eso
+// lo escribe en castellano.
+async function llamar(action, payload){
+  const opciones = payload
+    ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}
+    : {headers:{accept:'application/json'}}
+  const res = await fetch('/api/auth?action=' + action, opciones)
+  const json = await res.json().catch(() => ({}))
+  if(!res.ok || !json.ok){
+    const err = new Error(json.error || 'error')
+    err.texto = json.message || 'No se pudo completar la operación. Mira la conexión y vuelve a intentarlo.'
+    throw err
+  }
+  return json
+}
+
+async function conBoton(boton, textoOcupado, tarea){
+  if(enVuelo) return
+  enVuelo = true
+  const original = boton.innerHTML
+  boton.disabled = true
+  boton.textContent = textoOcupado
+  try{ await tarea() }
+  catch(e){ mostrarAviso(e.texto || 'No se pudo completar la operación.') }
+  finally{ enVuelo = false; boton.disabled = false; boton.innerHTML = original }
+}
+
+function elegirPestana(alta){
+  $('tabEntrar').setAttribute('aria-selected', String(!alta))
+  $('tabAlta').setAttribute('aria-selected', String(alta))
+  $('formEntrar').classList.toggle('oculto', alta)
+  $('formAlta').classList.toggle('oculto', !alta)
+  limpiarAviso()
+}
+
+async function cargarJugadores(){
+  const sel = $('altaJugador')
+  sel.innerHTML = '<option value="">-- Selecciona tu nombre --</option>'
+  try{
+    const res = await fetch('/api/read?action=getNames')
+    if(!res.ok) throw new Error('HTTP ' + res.status)
+    const db = await res.json()
+    for(const n of (db && db.names) ? db.names : []){
+      const o = document.createElement('option')
+      o.value = n; o.textContent = n
+      sel.appendChild(o)
+    }
+  }catch(e){
+    console.error(e)
+    mostrarAviso('No se pudo cargar la lista de jugadores.')
+  }
+}
+
+function pintarPendientes(filas){
+  const caja = $('listaPendientes')
+  caja.innerHTML = ''
+  if(filas.length === 0){
+    caja.innerHTML = '<p class="vt-small vt-muted">No hay ninguna cuenta esperando.</p>'
+    return
+  }
+  for(const f of filas){
+    const fila = document.createElement('div')
+    fila.className = 'pendiente'
+    const aviso = f.player_active === false ? ' · jugador dado de baja' : ''
+    fila.innerHTML =
+      '<div class="pendiente__quien">' +
+        '<strong>' + (f.player_name || 'Sin jugador') + aviso + '</strong>' +
+        '<span class="pendiente__correo">' + f.email + '</span>' +
+      '</div>'
+    fila.appendChild(botonesDePendiente(f.id))
+    caja.appendChild(fila)
+  }
+}
+
+function botonesDePendiente(id){
+  const acciones = document.createElement('div')
+  acciones.className = 'vt-row'
+  acciones.style.gap = 'var(--vt-sm)'
+  const aprobar = document.createElement('button')
+  aprobar.className = 'vt-btn vt-btn--sm'
+  aprobar.textContent = 'Aprobar'
+  aprobar.onclick = () => conBoton(aprobar, 'Aprobando...', async () => {
+    limpiarAviso()
+    await llamar('approveUser', {id})
+    await cargarPendientes()
+  })
+  const rechazar = document.createElement('button')
+  rechazar.className = 'vt-btn vt-btn--danger vt-btn--sm'
+  rechazar.textContent = 'Rechazar'
+  rechazar.onclick = () => conBoton(rechazar, 'Rechazando...', async () => {
+    limpiarAviso()
+    await llamar('rejectUser', {id})
+    await cargarPendientes()
+  })
+  acciones.appendChild(aprobar)
+  acciones.appendChild(rechazar)
+  return acciones
+}
+
+async function cargarPendientes(){
+  try{
+    const json = await llamar('listPending')
+    pintarPendientes(json.pending || [])
+  }catch(e){
+    $('listaPendientes').innerHTML = '<p class="vt-small vt-muted">No se pudo cargar la lista.</p>'
+  }
+}
+
+$('tabEntrar').onclick = () => elegirPestana(false)
+$('tabAlta').onclick = () => elegirPestana(true)
+
+$('formEntrar').onsubmit = (ev) => {
+  ev.preventDefault()
+  conBoton($('btnEntrar'), 'Entrando...', async () => {
+    limpiarAviso()
+    await llamar('login', {email:$('entrarCorreo').value, password:$('entrarPassword').value})
+    window.location.reload()
+  })
+}
+
+$('formAlta').onsubmit = (ev) => {
+  ev.preventDefault()
+  conBoton($('btnAlta'), 'Creando...', async () => {
+    limpiarAviso()
+    await llamar('register', {
+      email: $('altaCorreo').value,
+      password: $('altaPassword').value,
+      playerName: $('altaJugador').value
+    })
+    $('formAlta').reset()
+    mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
+  })
+}
+
+$('btnSalir').onclick = () => conBoton($('btnSalir'), 'Saliendo...', async () => {
+  await llamar('logout', {})
+  window.location.reload()
+})
+
+// auth-client.js lleva defer: los scripts diferidos corren despues del parseo
+// y antes de DOMContentLoaded, asi que aqui window.vtMe ya existe. Este script
+// esta en linea y se ejecuta antes que el, de modo que fuera del listener no
+// existiria todavia.
+document.addEventListener('DOMContentLoaded', () => {
+  cargarJugadores()
+  window.vtMe.then(pintarSesion)
+})
+</script>
+
+</body>
+</html>
