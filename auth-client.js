@@ -42,5 +42,27 @@
     chip.classList.add('vt-chip--gold');
   }
 
+  // Pone tu nombre en un <select> de jugadores. Se llama DESPUES de rellenarlo:
+  // loadNames() es asincrona y hace sel.innerHTML = '', asi que cualquier valor
+  // puesto antes se pierde.
+  //
+  // Si tu jugador esta dado de baja no sale en la lista, y asignar un valor que
+  // no existe deja el <select> en cadena vacia sin dar error: el envio fallaria
+  // despues con "missing data" y nadie sabria por que. Por eso se comprueba.
+  window.vtPreseleccionarJugador = function (select) {
+    return window.vtMe.then(function (user) {
+      if (!user || !user.playerName) return false;
+      var el = typeof select === 'string' ? document.getElementById(select) : select;
+      if (!el) return false;
+      var existe = Array.prototype.some.call(el.options, function (o) {
+        return o.value === user.playerName;
+      });
+      if (!existe) return false;
+      el.value = user.playerName;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    });
+  };
+
   window.vtMe.then(pintarChip);
 })();

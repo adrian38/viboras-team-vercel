@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
+<script src="/auth-client.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -375,6 +376,11 @@ async function loadNamesIntoSelects(){
     const names = (db && db.names) ? (db.names.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))) : []
     const ids = ['p1a','p1b','p2a','p2b']
     for(const id of ids){ const sel=document.getElementById(id); if(!sel) continue; sel.innerHTML=''; const empty=document.createElement('option'); empty.value=''; empty.innerText='-- Nombre --'; sel.appendChild(empty); for(const n of names){ const opt=document.createElement('option'); opt.value=n; opt.innerText=n; sel.appendChild(opt) } }
+    // Con sesion abierta, el primer hueco ya viene con tu nombre. Va aqui y no
+    // en auth-client.js porque los <select> acaban de rellenarse.
+    // auth-client.js lleva defer: si el fetch volvio antes que el, se espera.
+    const poner = () => window.vtPreseleccionarJugador && window.vtPreseleccionarJugador('p1a')
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poner); else poner()
   }catch(e){ console.error('Could not load names',e) }
 }
 loadNamesIntoSelects()

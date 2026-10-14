@@ -8,6 +8,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/pwa.js" defer></script>
+<script src="/auth-client.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -205,6 +206,14 @@ async function loadNames(){
       o.innerText = n
       sel.appendChild(o)
     }
+    // Con sesion abierta, tu nombre ya viene puesto. Va aqui y no en
+    // auth-client.js porque el <select> acaba de rellenarse: antes no habia
+    // ninguna <option> que elegir.
+    // auth-client.js lleva defer, asi que normalmente ya ha corrido cuando el
+    // fetch vuelve; si no, se espera, que los diferidos corren antes de
+    // DOMContentLoaded.
+    const poner = () => window.vtPreseleccionarJugador && window.vtPreseleccionarJugador(sel)
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poner); else poner()
   }catch(e){
     console.error('Could not load names',e)
   }
