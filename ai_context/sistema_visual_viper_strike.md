@@ -49,8 +49,9 @@ en la app**. Nada de esto se portó:
 - **La barra lateral «Víboras · Command Hub»** (maquetas 09, 11, 12, 15, 16):
   seis entradas en inglés —Overview, Tournaments, Ratings & Ranks, Statistics,
   Club History, Squad Roster— que no corresponden a las páginas reales, una
-  cabecera fija con avatar de usuario en una app sin usuarios
-  ([[api_sin_autenticacion]]) y un chip «Live Feed Online» que no refleja nada.
+  cabecera fija con avatar de usuario, que entonces era una app sin usuarios
+  (desde el 2026-10-14 sí los hay: [[cuentas_y_sesiones]], y la portada lleva
+  un chip de sesión arriba a la derecha, no un avatar ni una barra fija) y un chip «Live Feed Online» que no refleja nada.
 - **La barra de navegación superior** (maquetas 01, 09, 10) y su pie de página.
 - **Toda la capa de federación** (maquetas 01 y 10): «Circuito federado FEP»,
   «FEP puntos activos», «Puntos FEP», «Validación FEP activa», una temporada

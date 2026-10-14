@@ -1,7 +1,14 @@
 # Los endpoints de escritura no tienen autenticación
 
-Comprobado el 2026-10-08: no hay contraseña, token, cabecera ni comprobación de
-sesión en ninguna de las tres funciones de `api/`.
+Comprobado el 2026-10-08 y **confirmado el 2026-10-14**: no hay contraseña,
+token, cabecera ni comprobación de sesión en ninguna de las tres funciones de
+`api/`.
+
+> Desde el 2026-10-14 la app tiene cuentas y sesiones
+> ([[cuentas_y_sesiones]]), y eso **no cambia nada de este documento**. La
+> sesión sólo dice quién eres: `api/read.js`, `api/write.js` y
+> `api/league-admin.js` siguen sin mirarla. Si has visto `/cuenta` y has
+> supuesto que detrás hay permisos, no los hay.
 
 | Endpoint | Acciones |
 | --- | --- |
@@ -23,7 +30,8 @@ permiso detrás, y no lo hay. Al tocar esa zona:
 - No escribir código que dé por supuesto que `req` viene de un administrador.
 - No mover una comprobación «al sitio donde ya se valida», porque no existe.
 - Si se añade autenticación, entra por los tres ficheros a la vez: comparten el
-  patrón de enrutado pero no una capa común.
+  patrón de enrutado pero no una capa común. La pieza para hacerlo ya existe:
+  `usuarioDeLaPeticion(req)` y `exigirAdmin(req, res)` en `api/_auth.js`.
 
 ## Decisión actual
 

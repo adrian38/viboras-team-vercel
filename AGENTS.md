@@ -3,7 +3,7 @@
 ## Alcance
 
 - Este repositorio es `viboras-team-vercel`: la web del grupo de pádel Viboras
-  Team. Estático (16 páginas HTML) más tres funciones serverless en `api/`,
+  Team. Estático (17 páginas HTML) más cuatro funciones serverless en `api/`,
   desplegado en Vercel sobre Neon Postgres.
 - **`viboras` es la rama por defecto y la de producción.** Un push despliega al
   grupo sin paso intermedio. `master` existe y está obsoleta. Detalle en
@@ -74,7 +74,7 @@ frío. `scripts/schema.sql` es una copia manual **desfasada** que hoy rechaza
 datos existentes en producción. Para cambiar el esquema se edita `_db.js`.
 Detalle: `ai_context/esquema_duplicado_y_desfasado.md`.
 
-## Invariante: el `<head>` se cambia en las 16 páginas
+## Invariante: el `<head>` se cambia en las 17 páginas
 
 No hay plantilla ni layout compartido: cada `.html` repite su `<head>`. Los
 cinco elementos de la PWA —favicon, `apple-touch-icon`, `manifest`,
@@ -82,7 +82,7 @@ cinco elementos de la PWA —favicon, `apple-touch-icon`, `manifest`,
 copiados dieciséis veces.
 
 Añadir uno a una sola página no da error: simplemente no funciona en las otras
-quince. Al tocar el `<head>`, recorrer todas y comprobar el resultado:
+dieciséis. Al tocar el `<head>`, recorrer todas y comprobar el resultado:
 
 ```bash
 grep -c '<etiqueta que sea>' *.html

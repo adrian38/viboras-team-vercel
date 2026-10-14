@@ -47,6 +47,10 @@ que hay.
   restaura un volcado sin que aborte.
 - `api_sin_autenticacion.md`: ninguno de los endpoints de escritura comprueba
   nada, incluido `league-admin`, pese al nombre.
+- `cuentas_y_sesiones.md`: hay cuentas y sesiones desde el 2026-10-14, con
+  correo o con Google, y no protegen ningún endpoint; por qué las tablas no
+  están en `ensureSchema()`, de dónde sale el primer administrador y qué pasa
+  con una contraseña olvidada.
 - `marcador_incompleto_se_rechaza.md`: qué cuenta como partido terminado, por
   qué la regla vive sólo en `api/_score.js` y no en las tres páginas que suben
   resultados, por qué los torneos quedan fuera y qué pasa con lo ya guardado.
