@@ -27,7 +27,7 @@
     "rating.html:updatePeriod": 66,
     "rating.html:calculateEngineRatings": 70,
     "rating.html:fetchMatches": 103,
-    "rating.html:renderTable": 106,
+    "rating.html:renderTable": 102,
     "scripts/apply-schema.js:main": 83,
     "statistics.html:computeStats": 218,
     "statistics.html:renderTable": 116,
@@ -40,7 +40,6 @@
     "index.html": 813,
     "league-results.html": 809,
     "players.html": 738,
-    "rating-test.html": 790,
-    "rating.html": 604
+    "rating-test.html": 790
   }
 }

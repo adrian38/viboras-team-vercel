@@ -16,9 +16,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/theme.css">
 <style>
-/* Las seis categorias y sus clases .tier-<key> estan descritas en
+/* Las cuatro categorias y sus clases .tier-<key> estan descritas en
    ai_context/categorias_de_rating.md: cada una necesita su pareja de reglas
-   o sale gris sin dar error. Siguen siendo seis. */
+   o sale gris sin dar error. Siguen siendo cuatro. */
 
 .controls{
   display:flex;
@@ -91,10 +91,8 @@
 /* Escalera de intensidad: mas oro cuanto mas alta la categoria. El nombre y
    el rango ya dicen cual es; el tono solo ordena. */
 .tier-entreno .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.30),transparent 70%);color:#ffd79a}
-.tier-avanzado-alto .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.24),transparent 70%);color:#ffc97f}
-.tier-avanzado-medio .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.18),transparent 70%);color:#f0b670}
-.tier-intermedio-alto .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.13),transparent 70%);color:#dca564}
-.tier-intermedio-medio .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.09),transparent 70%);color:#c69459}
+.tier-avanzado .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.22),transparent 70%);color:#f5c37a}
+.tier-intermedio .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.14),transparent 70%);color:#d9a263}
 .tier-iniciacion .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.06),transparent 70%);color:#b0854f}
 
 table{width:100%;border-collapse:collapse;margin-top:0;table-layout:fixed}
@@ -724,13 +722,9 @@ function renderTable(rows) {
   const TIER_DEFINITIONS = [
     { key: 'entreno', title: 'Entreno', rangeText: '> 1900,00 pts', min: 1900, max: Infinity },
 
-    { key: 'avanzado-alto', title: 'Avanzado alto', rangeText: '1800,01 – 1900,00 pts', min: 1800, max: 1900 },
+    { key: 'avanzado', title: 'Avanzado', rangeText: '1550,01 – 1900,00 pts', min: 1550, max: 1900 },
 
-    { key: 'avanzado-medio', title: 'Avanzado medio', rangeText: '1600,01 – 1800,00 pts', min: 1600, max: 1800 },
-
-    { key: 'intermedio-alto', title: 'Intermedio alto', rangeText: '1400,01 – 1600,00 pts', min: 1400, max: 1600 },
-
-    { key: 'intermedio-medio', title: 'Intermedio medio', rangeText: '1200,01 – 1400,00 pts', min: 1200, max: 1400 },
+    { key: 'intermedio', title: 'Intermedio', rangeText: '1200,01 – 1550,00 pts', min: 1200, max: 1550 },
 
     { key: 'iniciacion', title: 'Iniciación', rangeText: '≤ 1200,00 pts', min: -Infinity, max: 1200 }
   ];
