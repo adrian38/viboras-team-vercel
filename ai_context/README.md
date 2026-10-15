@@ -45,12 +45,11 @@ que hay.
 - `neon_en_produccion.md`: por qué tiene que ser Neon y no otro Postgres, el
   prefijo de variables que no se rellena, la región de las funciones y cómo se
   restaura un volcado sin que aborte.
-- `api_sin_autenticacion.md`: ninguno de los endpoints de escritura comprueba
-  nada, incluido `league-admin`, pese al nombre.
-- `cuentas_y_sesiones.md`: hay cuentas y sesiones desde el 2026-10-14, con
-  correo o con Google, y no protegen ningún endpoint; por qué las tablas no
-  están en `ensureSchema()`, de dónde sale el primer administrador y qué pasa
-  con una contraseña olvidada.
+- `cuentas_y_sesiones.md`: la app entera va detrás de la sesión desde el
+  2026-10-16, con correo o con Google; qué está cerrado y qué no, por qué el
+  redirect del navegador no es la cerradura, por qué las tablas no están en
+  `ensureSchema()`, por qué `league-admin.js` no admite ni una línea más, de
+  dónde sale el primer administrador y qué pasa con una contraseña olvidada.
 - `marcador_incompleto_se_rechaza.md`: qué cuenta como partido terminado, por
   qué la regla vive sólo en `api/_score.js` y no en las tres páginas que suben
   resultados, por qué los torneos quedan fuera y qué pasa con lo ya guardado.

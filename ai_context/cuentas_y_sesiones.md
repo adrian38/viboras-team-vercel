@@ -1,15 +1,52 @@
-# Cuentas y sesiones: una identidad que no protege nada
+# Cuentas y sesiones: la app entera va detrás de la sesión
 
 Desde el 2026-10-14 hay cuentas: `/cuenta` registra y entra, con correo y
-contraseña o con Google. **Lo que hay que saber antes de tocar nada es lo que
-NO hace**: ningún endpoint de `api/read.js`, `api/write.js` ni
-`api/league-admin.js` comprueba la sesión. Subir un resultado, borrar uno y
-votar la disponibilidad siguen abiertos a cualquiera con la URL, exactamente
-igual que antes ([[api_sin_autenticacion]]).
+contraseña o con Google. Desde el **2026-10-16 no se ve nada sin entrar**.
 
-Fue una decisión, no un olvido: exigir cuenta para subir un resultado rompe el
-flujo de todo el grupo de golpe. La sesión sólo sirve para que la app sepa
-quién eres y te ponga el nombre en el `<select>`.
+Nació al revés —la sesión sólo decía quién eras y no impedía nada— y duró dos
+días: con la portada visible sin estar logueado, la cuenta no tenía sentido.
+Si encuentras un comentario o una nota que diga que los endpoints están
+abiertos, es de esos dos días.
+
+## Qué está cerrado y qué no
+
+| | |
+| --- | --- |
+| `api/read.js`, `api/write.js`, `api/league-admin.js` | **Cerrado.** Sesión activa o 401, antes de mirar el `action`. |
+| `api/auth.js` | Abierto, obviamente: es por donde se entra. |
+| `?action=players` | **Abierto a propósito.** Quien se registra no tiene sesión con la que pedir la lista de jugadores. Enseña lo mismo que `getNames` enseñaba a cualquiera hasta el 2026-10-16. |
+| Las 17 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
+
+El redirect de `auth-client.js` a `/cuenta` es **comodidad, no seguridad**.
+Lo único que cierra la app es el 401. Si alguna vez se quita el guardia de los
+handlers «porque ya redirige la página», la app queda abierta otra vez y nada
+lo avisa.
+
+## El guardia
+
+`exigirSesion(req, res)` en `api/_auth.js`. **No lanza nunca**: los tres
+handlers no tienen `try/catch` propio —cada acción monta el suyo por dentro— y
+una excepción saldría como un 500 sin cuerpo. Devuelve el usuario o `null`,
+habiendo respondido ya.
+
+Crea el esquema él mismo (`ensureSchema` y `ensureAuthSchema`, las dos
+memoizadas) porque corre **antes** del `switch`, y las acciones lo hacían por
+dentro, después.
+
+## `league-admin.js` no tiene ni una línea de margen
+
+Mide **626 líneas** y `tools/code-size-baseline.json` lo tiene registrado
+exactamente ahí: el trinquete sólo deja encoger
+([[tamano_del_codigo_y_trinquete]]). El guardia entró ocupando las dos líneas
+en blanco que había —la de después de los `import` y la de dentro del
+`handler`—, de modo que el fichero no creció.
+
+**Quien quiera añadir algo ahí tiene que sacar algo primero.** El arreglo de
+verdad es partirlo: `createLeague` (91), `createPozoTournament` (95),
+`createCompasTournament` (83) y `createLeagueBracket` (64) son 333 líneas que
+cabrían en un `api/_torneos.js`. Es un refactor sin pruebas que lo respalden,
+así que va solo, en su commit, y se verifica creando una liga y un pozo de
+verdad contra el Postgres local.
 
 ## Las piezas
 
@@ -129,6 +166,13 @@ docker compose exec -T app node -e "import('./api/_auth.js').then(async m => con
 
 Y luego `UPDATE users SET password_hash='scrypt$...' WHERE email='...'`. Quien
 entre con Google no tiene este problema.
+
+## El día que se despliegue, el grupo se queda fuera
+
+En producción las cuentas empiezan a cero. En cuanto el 401 llega al grupo,
+**nadie puede hacer nada** hasta registrarse y que un administrador lo apruebe.
+No es un fallo, es lo que significa cerrar la app, pero hay que avisar antes y
+estar disponible para aprobar.
 
 ## Dos puertas de administración, y por qué
 
