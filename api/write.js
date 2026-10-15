@@ -160,13 +160,14 @@ async function deleteResult(req, res) {
   }
 }
 
-async function deleteName(req, res) {
+async function deleteName(req, res, user) {
   try {
     await ensureSchema();
     const data = await readBody(req);
     const providedKey = data && data.adminKey ? String(data.adminKey) : '';
     const ADMIN_KEY = '4F7K9Q2Z';
-    if (providedKey !== ADMIN_KEY) {
+    // La clave publicada sigue valiendo hasta que el panel use la sesion.
+    if (user.role !== 'admin' && providedKey !== ADMIN_KEY) {
       res.status(401).json({ ok: false, error: 'unauthorized' });
       return;
     }
@@ -222,7 +223,8 @@ async function submitVote(req, res) {
 export default async function handler(req, res) {
   // Desde el 2026-10-16 ninguna escritura es anonima:
   // ai_context/cuentas_y_sesiones.md
-  if (!await exigirSesion(req, res)) return;
+  const user = await exigirSesion(req, res);
+  if (!user) return;
   const action = String(req.query?.action || req.body?.action || '').trim();
 
   switch (action) {
@@ -233,7 +235,7 @@ export default async function handler(req, res) {
     case 'deleteResult':
       return deleteResult(req, res);
     case 'deleteName':
-      return deleteName(req, res);
+      return deleteName(req, res, user);
     case 'submitVote':
       return submitVote(req, res);
     default:
