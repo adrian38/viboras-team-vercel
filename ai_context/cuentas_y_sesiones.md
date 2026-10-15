@@ -76,10 +76,23 @@ no en el primer arranque en frío. Y el orden importa, porque `users.player_id`
 referencia `players(id)`: `ensureSchema()` primero, `ensureAuthSchema()`
 después. El handler de `api/auth.js` las llama en ese orden.
 
-## Quien no está en la lista pide su nombre, y la ficha nace al aprobar
+## Antiguo pirata elige de la lista; el resto escribe su nombre
 
-El desplegable del registro lista a quien ya juega. Quien no está elige «No
-estoy en la lista» y escribe su nombre, que se guarda en
+La lista de nombres es **sólo para los antiguos piratas**, los que ya jugaban
+antes de que hubiera cuentas. Por eso el alta abre con el campo de nombre
+libre, y la lista sólo aparece al marcar «Soy antiguo pirata». Hasta el
+2026-10-16 era al revés: un desplegable obligatorio con «No estoy en la lista»
+escondido al final, y quien era nuevo no encontraba por dónde entrar. Lo pidió
+así Adrián.
+
+**La lista no enseña a quien ya tiene cuenta activa** (`?action=players`
+filtra con `NOT EXISTS` sobre `users.status = 'active'`). Los pendientes **sí**
+salen, a propósito: el alta es pública, y si un pendiente ocultase el nombre,
+cualquiera podría apartar el de otro hasta que un administrador lo rechazase.
+Con el nombre visible, los dos compiten y decide quien aprueba (ver el índice
+parcial, más abajo).
+
+Quien es nuevo escribe su nombre, que se guarda en
 `users.requested_player_name` **sin crear la fila en `players`**: un alta que
 nadie apruebe no debe dejar un jugador suelto en las tablas, y el registro es
 la única puerta abierta de la app.
@@ -93,8 +106,8 @@ persona lo intentase otra vez igual:
 
 | Caso | Qué dice |
 | --- | --- |
-| El nombre del desplegable ya tiene cuenta activa | «Ese jugador ya tiene una cuenta.» |
-| Escribe un nombre que ya está en la lista | «Ese nombre ya está en la lista: elígelo del desplegable.» |
+| El nombre de la lista ya tiene cuenta activa (ya no sale, pero una página abierta de antes aún lo tiene) | «Ese jugador ya tiene una cuenta.» |
+| Escribe un nombre que ya está en la lista | «Ese nombre ya está en la lista: marca «Soy antiguo pirata» y elígelo.» |
 | Escribe el nombre de un jugador dado de baja | «Ese nombre existe pero está dado de baja.» |
 | Otro pendiente pidió ya ese nombre | «Ya hay una cuenta esperando con ese nombre.» |
 

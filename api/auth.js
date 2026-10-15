@@ -41,13 +41,13 @@ async function filaDeJugador(nombre) {
 async function comprobarNombreNuevo(nombre) {
   const limpio = String(nombre || '').trim().replace(/\s+/g, ' ');
   if (limpio.length < 2 || limpio.length > 60) {
-    return { error: 'bad_name', message: 'Escribe tu nombre, entre 2 y 60 caracteres.' };
+    return { error: 'bad_name', message: 'Escribe tu nombre, entre 2 y 60 caracteres, o si eres antiguo pirata elígelo de la lista.' };
   }
   const { rows } = await sql`
     SELECT active FROM players WHERE LOWER(name) = LOWER(${limpio})
   `;
   if (rows.length && rows[0].active === true) {
-    return { error: 'name_exists', message: 'Ese nombre ya está en la lista: elígelo del desplegable.' };
+    return { error: 'name_exists', message: 'Ese nombre ya está en la lista: marca «Soy antiguo pirata» y elígelo.' };
   }
   if (rows.length) {
     return { error: 'name_inactive', message: 'Ese nombre existe pero está dado de baja. Habla con un administrador.' };
@@ -342,9 +342,15 @@ async function blockUser(req, res) {
 // quien se registra todavia no tiene sesion con la que pedirla a read.js, que
 // desde el 2026-10-16 la exige. Es lo unico que la app ensena sin haber
 // entrado, y es exactamente lo que `getNames` daba antes a cualquiera.
+// Sin los que ya tienen cuenta activa: nadie mas puede ser ellos. Los
+// pendientes siguen saliendo porque el alta es publica y ocultarlos dejaria
+// a cualquiera apartar el nombre de otro hasta que un admin lo rechace.
 async function players(req, res) {
   const { rows } = await sql`
-    SELECT name FROM players WHERE active = TRUE ORDER BY LOWER(name), name
+    SELECT p.name FROM players p
+    WHERE p.active = TRUE
+      AND NOT EXISTS (SELECT 1 FROM users u WHERE u.player_id = p.id AND u.status = 'active')
+    ORDER BY LOWER(p.name), p.name
   `;
   res.status(200).json({ ok: true, names: rows.map((r) => r.name) });
 }

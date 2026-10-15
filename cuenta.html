@@ -85,6 +85,7 @@
    propio display y, a igualdad de especificidad, gana la regla de abajo. Con
    .oculto arriba, el formulario de alta se veia debajo del de entrar. */
 .oculto{display:none}
+.pirata{display:flex;align-items:center;gap:var(--vt-sm);cursor:pointer}
 </style>
 </head>
 
@@ -152,13 +153,17 @@
       <p class="vt-small vt-muted">
         El grupo es cerrado: la cuenta queda pendiente hasta que un administrador la aprueba.
       </p>
-      <div class="vt-field">
+      <label class="pirata">
+        <input type="checkbox" id="altaPirata">
+        Soy antiguo pirata: ya jugaba y mi nombre está en la lista
+      </label>
+      <div class="vt-field oculto" id="campoPirata">
         <label for="altaJugador">¿Quién eres?</label>
-        <select class="vt-select" id="altaJugador" required></select>
+        <select class="vt-select" id="altaJugador"></select>
       </div>
-      <div class="vt-field oculto" id="campoNuevo">
+      <div class="vt-field" id="campoNuevo">
         <label for="altaNombre">Tu nombre, como quieres que salga en las tablas</label>
-        <input class="vt-input" type="text" id="altaNombre" maxlength="60" autocomplete="name">
+        <input class="vt-input" type="text" id="altaNombre" maxlength="60" autocomplete="name" required>
         <p class="vt-small vt-muted">
           Tu ficha de jugador la creará el administrador al aprobar la cuenta.
         </p>
@@ -276,24 +281,19 @@ async function cargarJugadores(){
     console.error(e)
     mostrarAviso('No se pudo cargar la lista de jugadores.')
   }
-  const nuevo = document.createElement('option')
-  nuevo.value = NUEVO
-  nuevo.textContent = 'No estoy en la lista — soy nuevo'
-  sel.appendChild(nuevo)
 }
 
-// El desplegable lista a quien ya juega; esta opcion es la salida para quien
-// no esta. El servidor rechaza un nombre que ya exista, para que nadie se
-// cuele por aqui con el nombre de otro.
-const NUEVO = '__nuevo__'
-
-function esNuevo(){ return $('altaJugador').value === NUEVO }
+// La lista es solo para los antiguos piratas, los que ya jugaban; el resto
+// escribe su nombre. El servidor rechaza un nombre que ya exista, para que
+// nadie se cuele por el campo libre con el nombre de otro.
+function esNuevo(){ return !$('altaPirata').checked }
 
 function alCambiarJugador(){
   const nuevo = esNuevo()
   $('campoNuevo').classList.toggle('oculto', !nuevo)
+  $('campoPirata').classList.toggle('oculto', nuevo)
   $('altaNombre').required = nuevo
-  if(nuevo) $('altaNombre').focus()
+  $('altaJugador').required = !nuevo
 }
 
 // Lo que identifica al que se registra: o uno de la lista, o un nombre nuevo.
@@ -361,7 +361,7 @@ async function cargarPendientes(){
   }
 }
 
-$('altaJugador').onchange = alCambiarJugador
+$('altaPirata').onchange = alCambiarJugador
 $('tabEntrar').onclick = () => elegirPestana(false)
 $('tabAlta').onclick = () => elegirPestana(true)
 

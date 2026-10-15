@@ -48,7 +48,8 @@ que hay.
 - `cuentas_y_sesiones.md`: la app entera va detrás de la sesión desde el
   2026-10-16, con correo o con Google; qué está cerrado y qué no, por qué el
   redirect del navegador no es la cerradura, por qué las tablas no están en
-  `ensureSchema()`, por qué `league-admin.js` no admite ni una línea más, de
+  `ensureSchema()`, por qué la lista del alta es sólo para antiguos piratas y
+  oculta a quien ya tiene cuenta, por qué `league-admin.js` no admite ni una línea más, de
   dónde sale el primer administrador y qué pasa con una contraseña olvidada.
 - `marcador_incompleto_se_rechaza.md`: qué cuenta como partido terminado, por
   qué la regla vive sólo en `api/_score.js` y no en las tres páginas que suben
