@@ -164,11 +164,8 @@ async function deleteName(req, res, user) {
   try {
     await ensureSchema();
     const data = await readBody(req);
-    const providedKey = data && data.adminKey ? String(data.adminKey) : '';
-    const ADMIN_KEY = '4F7K9Q2Z';
-    // La clave publicada sigue valiendo hasta que el panel use la sesion.
-    if (user.role !== 'admin' && providedKey !== ADMIN_KEY) {
-      res.status(401).json({ ok: false, error: 'unauthorized' });
+    if (user.role !== 'admin') {
+      res.status(403).json({ ok: false, error: 'forbidden' });
       return;
     }
     const name = data && data.name ? String(data.name).trim() : '';

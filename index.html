@@ -354,13 +354,12 @@ label.small{
 <script>
 // Administration overlay for managing registered names
 async function openAdmin(){
-  // prompt for admin key before opening admin panel
-  const key = prompt('Clave de administrador:')
-  if(key !== '4F7K9Q2Z'){
-    alert('Clave incorrecta')
+  // Lo decide la sesion; el servidor lo vuelve a comprobar en deleteName.
+  const me = await window.vtMe
+  if(!me || me.role !== 'admin'){
+    alert('Solo para administradores')
     return
   }
-  window._adminKey = key
 
   let overlay = document.getElementById('adminOverlay')
   if(!overlay){
@@ -1146,7 +1145,7 @@ async function loadAdminNames(){
           const r = await fetch(endpoint,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({name:n, adminKey: window._adminKey})
+            body:JSON.stringify({name:n})
           })
           const j = await r.json()
           if(j && j.ok){

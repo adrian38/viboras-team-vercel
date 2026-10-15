@@ -14,7 +14,7 @@ The UI (HTML/CSS/JS) and all business logic are preserved. Only the fetch URLs c
 │   ├── _db.js                 # Shared SQL helpers (schema bootstrap + player upsert)
 │   ├── getNames.js            # GET  → { names: [...] }
 │   ├── submitName.js          # POST { name } → { ok, added }
-│   ├── deleteName.js          # POST { name, adminKey } → { ok, deleted }
+│   ├── deleteName.js          # POST { name } → { ok, deleted }  (admin session)
 │   ├── getResults.js          # GET  → { matches: [...] }
 │   ├── submitResult.js        # POST { date, p1a..p2b, s11..s23, _original? } → { ok }
 │   ├── deleteResult.js        # POST { date, p1a..p2b } → { ok }
@@ -176,7 +176,7 @@ vercel deploy --prod
 | Storage              | Netlify Blobs (JSON blobs)                   | Vercel Postgres (normalized tables)         |
 | Concurrency          | Read-modify-write blob → race conditions     | Single-statement SQL, unique constraints    |
 | Frontend URLs        | `/.netlify/functions/<name>`                 | `/api/<name>`                               |
-| Admin key            | `4F7K9Q2Z` (unchanged, in deleteName.js)     | `4F7K9Q2Z` (unchanged, in api/deleteName.js)|
+| Admin key            | `4F7K9Q2Z` (unchanged, in deleteName.js)     | Retired: admin session (`role = 'admin'`)   |
 | WhatsApp sharing     | Preserved                                    | Preserved                                   |
 | Organizer flow       | Preserved                                    | Preserved                                   |
 | History/edit/delete  | Preserved                                    | Preserved                                   |

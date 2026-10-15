@@ -283,7 +283,6 @@ const monthsNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','A
 
 let parsedMatches = []
 let lastFiltered = []
-const ADMIN_KEY = '4F7K9Q2Z'
 let isAdmin = false
 
 function parseMatches(raw){
@@ -522,12 +521,10 @@ document.getElementById('adminBtn').addEventListener('click', ()=>{
     toggleAdmin(false)
     return
   }
-  const key = prompt('Clave de administrador:')
-  if(key===ADMIN_KEY){
-    toggleAdmin(true)
-  }else{
-    alert('Clave incorrecta')
-  }
+  window.vtMe.then(me=>{
+    if(me && me.role === 'admin') toggleAdmin(true)
+    else alert('Solo para administradores')
+  })
 })
 
 document.getElementById('adminAddBtn').addEventListener('click', async ()=>{

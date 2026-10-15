@@ -199,16 +199,21 @@ En producción las cuentas empiezan a cero. En cuanto el 401 llega al grupo,
 No es un fallo, es lo que significa cerrar la app, pero hay que avisar antes y
 estar disponible para aprobar.
 
-## Dos puertas de administración, y por qué
+## La administración va por la sesión, no por una clave
 
-El panel de `index.html` sigue abriéndose con la clave `'4F7K9Q2Z'`, que está
-**publicada en el HTML** (`index.html:350`, `history.html:285`) y sólo protege
-de verdad una acción en el servidor, `deleteName` (`api/write.js:167`).
+Hasta el 2026-10-16 los paneles de `index.html` y `history.html` se abrían con
+una clave escrita en el propio HTML, y `deleteName` la comprobaba en el
+servidor. Estaba publicada: cualquiera que abriese el código fuente la tenía.
+Ahora los dos paneles miran `window.vtMe` y `deleteName` exige
+`role = 'admin'` (403 si no). Si encuentras `adminKey` en algún sitio, es
+anterior.
 
-Las aprobaciones de cuentas **no** están ahí, están en `/cuenta`, y
-`api/auth.js` no acepta `adminKey` en ninguna acción. Poner `approveUser`
-detrás de una clave pública permitiría a cualquiera aprobarse solo y atarse a
-la identidad de otro miembro.
+El botón de «Administración» se sigue viendo para todos; a quien no es admin
+le dice que no y no abre nada.
 
-Pendiente, cada cosa en su commit: que `deleteName` acepte sesión de
-administrador, y retirar la clave de los tres ficheros.
+**Lo que el panel de `history.html` no protege.** Ahí se borran y editan
+resultados, pero `deleteResult` y `submitResult` sólo exigen sesión, no rol:
+cualquier miembro puede llamarlas directamente. `submitResult` no puede ser
+sólo de admin, porque es como cualquiera sube su partido desde la portada.
+Si se quiere cerrar `deleteResult`, es pasarle `user` igual que a
+`deleteName`, en su propio commit.
