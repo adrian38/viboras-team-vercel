@@ -154,15 +154,29 @@ manual y está descrita aquí.
    Ejecuta `tools/ai-context-index.mjs`, `tools/rating-parity.mjs` y
    `tools/code-size.mjs`.
 
-2. **Entorno local**, que replica Vercel con Postgres propio:
+2. **Entorno local**, que replica Vercel con Postgres propio. **Se actualiza
+   al terminar cada corrección, antes de comprobar nada**:
 
    ```bash
    docker compose up -d --build
    # -> http://localhost:3000   /health dice si la base responde
    ```
 
-   Un fichero estático nuevo necesita `--build`; si no, da 404 sólo en local
-   (`ai_context/entorno_local_docker_y_proxies_neon.md`).
+   No es ceremonia. `docker-compose.yml` monta unos cuantos ficheros uno a
+   uno y el resto —`theme.css`, `sw.js`, `pwa.js`, los iconos y las páginas
+   que no estén en esa lista— vive dentro de la imagen. Editas uno de esos y
+   el contenedor sigue sirviendo la copia vieja **sin dar ningún error**.
+
+   Eso no es una molestia, es una comprobación que miente. Pasó el
+   2026-10-16: `/group-normativa` no redirigía al cerrar la app y el fichero
+   en disco estaba bien; lo que respondía era la copia de la imagen. Medir
+   contra un contenedor desactualizado da por roto lo que funciona, o al
+   revés, que es peor.
+
+   Un fichero estático nuevo también necesita `--build`; si no, da 404 sólo
+   en local (`ai_context/entorno_local_docker_y_proxies_neon.md`). Y para que
+   un fichero nuevo recargue en caliente hay que darle su línea en
+   `volumes:`, además de reconstruir.
 
 3. **Comprobar en el navegador, midiendo, no mirando.** Para layout, medir
    desbordes en el DOM; para datos, contrastar la respuesta del API contra un
@@ -177,8 +191,9 @@ buena por parecerlo.
 
 ## Definición de terminado y entrega
 
-Una tarea no está terminada hasta que `npm run check` queda verde, el diff se ha
-leído y cada cambio está en su commit. La entrega indica:
+Una tarea no está terminada hasta que `npm run check` queda verde, el entorno
+local se ha reconstruido con lo que se acaba de cambiar, el diff se ha leído y
+cada cambio está en su commit. La entrega indica:
 
 - commits creados, y **si se hizo push o no** — recordando que push es desplegar;
 - qué se comprobó y cómo, con los números concretos;
