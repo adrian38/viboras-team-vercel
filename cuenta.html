@@ -156,6 +156,13 @@
         <label for="altaJugador">¿Quién eres?</label>
         <select class="vt-select" id="altaJugador" required></select>
       </div>
+      <div class="vt-field oculto" id="campoNuevo">
+        <label for="altaNombre">Tu nombre, como quieres que salga en las tablas</label>
+        <input class="vt-input" type="text" id="altaNombre" maxlength="60" autocomplete="name">
+        <p class="vt-small vt-muted">
+          Tu ficha de jugador la creará el administrador al aprobar la cuenta.
+        </p>
+      </div>
       <div class="vt-field">
         <label for="altaCorreo">Correo</label>
         <input class="vt-input" type="email" id="altaCorreo" name="email" autocomplete="username" required>
@@ -269,6 +276,31 @@ async function cargarJugadores(){
     console.error(e)
     mostrarAviso('No se pudo cargar la lista de jugadores.')
   }
+  const nuevo = document.createElement('option')
+  nuevo.value = NUEVO
+  nuevo.textContent = 'No estoy en la lista — soy nuevo'
+  sel.appendChild(nuevo)
+}
+
+// El desplegable lista a quien ya juega; esta opcion es la salida para quien
+// no esta. El servidor rechaza un nombre que ya exista, para que nadie se
+// cuele por aqui con el nombre de otro.
+const NUEVO = '__nuevo__'
+
+function esNuevo(){ return $('altaJugador').value === NUEVO }
+
+function alCambiarJugador(){
+  const nuevo = esNuevo()
+  $('campoNuevo').classList.toggle('oculto', !nuevo)
+  $('altaNombre').required = nuevo
+  if(nuevo) $('altaNombre').focus()
+}
+
+// Lo que identifica al que se registra: o uno de la lista, o un nombre nuevo.
+function quienSoy(){
+  return esNuevo()
+    ? { newPlayerName: $('altaNombre').value }
+    : { playerName: $('altaJugador').value }
 }
 
 function pintarPendientes(filas){
@@ -282,9 +314,12 @@ function pintarPendientes(filas){
     const fila = document.createElement('div')
     fila.className = 'pendiente'
     const aviso = f.player_active === false ? ' · jugador dado de baja' : ''
+    const quien = f.player_name
+      ? f.player_name + aviso
+      : (f.requested_player_name || 'Sin jugador') + ' · jugador nuevo'
     fila.innerHTML =
       '<div class="pendiente__quien">' +
-        '<strong>' + (f.player_name || 'Sin jugador') + aviso + '</strong>' +
+        '<strong>' + quien + '</strong>' +
         '<span class="pendiente__correo">' + f.email + '</span>' +
       '</div>'
     fila.appendChild(botonesDePendiente(f.id))
@@ -326,6 +361,7 @@ async function cargarPendientes(){
   }
 }
 
+$('altaJugador').onchange = alCambiarJugador
 $('tabEntrar').onclick = () => elegirPestana(false)
 $('tabAlta').onclick = () => elegirPestana(true)
 
@@ -342,12 +378,11 @@ $('formAlta').onsubmit = (ev) => {
   ev.preventDefault()
   conBoton($('btnAlta'), 'Creando...', async () => {
     limpiarAviso()
-    await llamar('register', {
+    await llamar('register', Object.assign({
       email: $('altaCorreo').value,
-      password: $('altaPassword').value,
-      playerName: $('altaJugador').value
-    })
-    $('formAlta').reset()
+      password: $('altaPassword').value
+    }, quienSoy()))
+    $('formAlta').reset(); alCambiarJugador()
     mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
   })
 }
@@ -383,12 +418,11 @@ function alVolverDeGoogle(respuesta){
       window.location.replace(destino())
       return
     }
-    const json = await llamar('googleRegister', {
-      credential: respuesta.credential,
-      playerName: $('altaJugador').value
-    })
+    const json = await llamar('googleRegister', Object.assign({
+      credential: respuesta.credential
+    }, quienSoy()))
     if(json.status === 'pending'){
-      $('formAlta').reset()
+      $('formAlta').reset(); alCambiarJugador()
       mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
       return
     }

@@ -76,6 +76,31 @@ no en el primer arranque en frío. Y el orden importa, porque `users.player_id`
 referencia `players(id)`: `ensureSchema()` primero, `ensureAuthSchema()`
 después. El handler de `api/auth.js` las llama en ese orden.
 
+## Quien no está en la lista pide su nombre, y la ficha nace al aprobar
+
+El desplegable del registro lista a quien ya juega. Quien no está elige «No
+estoy en la lista» y escribe su nombre, que se guarda en
+`users.requested_player_name` **sin crear la fila en `players`**: un alta que
+nadie apruebe no debe dejar un jugador suelto en las tablas, y el registro es
+la única puerta abierta de la app.
+
+La ficha la crea `approveUser` con `getOrCreatePlayerId`. Si entre medias
+alguien creó ese nombre a mano o subiendo un resultado, devuelve el que ya
+existe y deciden las comprobaciones de siempre.
+
+Cuatro negativas, cada una con su motivo, porque «error» a secas haría que la
+persona lo intentase otra vez igual:
+
+| Caso | Qué dice |
+| --- | --- |
+| El nombre del desplegable ya tiene cuenta activa | «Ese jugador ya tiene una cuenta.» |
+| Escribe un nombre que ya está en la lista | «Ese nombre ya está en la lista: elígelo del desplegable.» |
+| Escribe el nombre de un jugador dado de baja | «Ese nombre existe pero está dado de baja.» |
+| Otro pendiente pidió ya ese nombre | «Ya hay una cuenta esperando con ese nombre.» |
+
+El correo se comprueba **antes** que el nombre: si ya tiene cuenta, el nombre
+da igual y decirlo primero evita el mensaje equivocado.
+
 ## El límite del jugador es un índice parcial, no un `UNIQUE`
 
 ```sql

@@ -42,6 +42,7 @@ async function tablaUsuarios() {
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT,
       player_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
+      requested_player_name TEXT,
       status TEXT NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'active', 'blocked')),
       role TEXT NOT NULL DEFAULT 'member'
@@ -52,6 +53,15 @@ async function tablaUsuarios() {
       locked_until TIMESTAMPTZ
     )
   `;
+
+  // Quien se registra sin estar en la lista de jugadores deja aqui el nombre
+  // que pide; la ficha no se crea hasta que un administrador aprueba, para que
+  // un alta que nadie aprueba no ensucie `players`.
+  //
+  // El ALTER no sobra: CREATE TABLE IF NOT EXISTS no migra una tabla que ya
+  // existe, asi que sin esto la columna no aparece donde la tabla ya estaba
+  // creada. Mismo caso que leagues.substitution_groups en _db.js:27.
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS requested_player_name TEXT`;
 
   // Parcial y no UNIQUE a secas: con UNIQUE, cualquiera registra una cuenta
   // reclamando el jugador de otro y lo deja fuera para siempre, aunque su

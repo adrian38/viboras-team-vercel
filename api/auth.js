@@ -7,11 +7,12 @@
 //   - El `action` se lee solo de req.query, nunca del cuerpo: si no, un POST
 //     podria invocar una accion de lectura y al reves.
 //
-// Esto NO protege ningun endpoint existente: subir un resultado y votar siguen
-// abiertos, igual que antes. La sesion solo dice quien eres.
+// Es la unica puerta abierta: desde el 2026-10-16 read.js, write.js y
+// league-admin.js responden 401 sin sesion. Aqui solo `config`, `players` y
+// las dos entradas pueden usarse sin cookie.
 // Detalle: ai_context/cuentas_y_sesiones.md
 import { sql } from '@vercel/postgres';
-import { ensureSchema, readBody, toInt } from './_db.js';
+import { ensureSchema, getOrCreatePlayerId, readBody, toInt } from './_db.js';
 import {
   ensureAuthSchema, hashPassword, verifyPassword, gastarTiempoDeHash,
   crearSesion, cerrarSesionDeLaCookie, cerrarSesionesDe, limpiarSesionesCaducadas,
@@ -34,11 +35,44 @@ async function filaDeJugador(nombre) {
   return rows.length ? rows[0] : null;
 }
 
+// Quien no esta en la lista pide un nombre. No se crea la ficha aqui: se
+// guarda la peticion y la crea approveUser, para que un alta que nadie apruebe
+// no deje un jugador suelto en las tablas.
+async function comprobarNombreNuevo(nombre) {
+  const limpio = String(nombre || '').trim().replace(/\s+/g, ' ');
+  if (limpio.length < 2 || limpio.length > 60) {
+    return { error: 'bad_name', message: 'Escribe tu nombre, entre 2 y 60 caracteres.' };
+  }
+  const { rows } = await sql`
+    SELECT active FROM players WHERE LOWER(name) = LOWER(${limpio})
+  `;
+  if (rows.length && rows[0].active === true) {
+    return { error: 'name_exists', message: 'Ese nombre ya está en la lista: elígelo del desplegable.' };
+  }
+  if (rows.length) {
+    return { error: 'name_inactive', message: 'Ese nombre existe pero está dado de baja. Habla con un administrador.' };
+  }
+  const pedido = await sql`
+    SELECT 1 FROM users
+    WHERE LOWER(requested_player_name) = LOWER(${limpio}) AND status <> 'blocked'
+  `;
+  if (pedido.rows.length) {
+    return { error: 'name_requested', message: 'Ya hay una cuenta esperando con ese nombre.' };
+  }
+  return { requestedName: limpio };
+}
+
 // Lo que comparten el alta con contrasena y el alta con Google. Devuelve
-// { playerId } o { error, message }.
-async function comprobarAlta(email, playerName) {
+// { playerId, requestedName } o { error, message }.
+async function comprobarAlta(email, playerName, newPlayerName) {
   if (!correoValido(email)) {
     return { error: 'invalid_email', message: 'Ese correo no parece válido.' };
+  }
+  const repeChequeo = await correoLibre(email);
+  if (repeChequeo) return repeChequeo;
+  if (!String(playerName || '').trim()) {
+    const nuevo = await comprobarNombreNuevo(newPlayerName);
+    return nuevo.error ? nuevo : { playerId: null, requestedName: nuevo.requestedName };
   }
   const player = await filaDeJugador(playerName);
   if (!player) {
@@ -51,11 +85,15 @@ async function comprobarAlta(email, playerName) {
   if (ocupado.rows.length) {
     return { error: 'player_taken', message: 'Ese jugador ya tiene una cuenta.' };
   }
-  const repetido = await sql`SELECT 1 FROM users WHERE email = ${email}`;
-  if (repetido.rows.length) {
-    return { error: 'email_taken', message: 'Ya hay una cuenta con ese correo.' };
-  }
-  return { playerId: player.id };
+  return { playerId: player.id, requestedName: null };
+}
+
+// Se comprueba antes que el jugador: si el correo ya tiene cuenta, el nombre
+// da igual, y decirlo primero evita el mensaje equivocado.
+async function correoLibre(email) {
+  const { rows } = await sql`SELECT 1 FROM users WHERE email = ${email}`;
+  if (!rows.length) return null;
+  return { error: 'email_taken', message: 'Ya hay una cuenta con ese correo.' };
 }
 
 async function register(req, res) {
@@ -70,15 +108,15 @@ async function register(req, res) {
     });
     return;
   }
-  const alta = await comprobarAlta(email, data?.playerName);
+  const alta = await comprobarAlta(email, data?.playerName, data?.newPlayerName);
   if (alta.error) {
     res.status(400).json({ ok: false, ...alta });
     return;
   }
   const hash = await hashPassword(password);
   await sql`
-    INSERT INTO users (email, password_hash, player_id)
-    VALUES (${email}, ${hash}, ${alta.playerId})
+    INSERT INTO users (email, password_hash, player_id, requested_player_name)
+    VALUES (${email}, ${hash}, ${alta.playerId}, ${alta.requestedName})
   `;
   res.status(200).json({ ok: true, status: 'pending' });
 }
@@ -199,7 +237,7 @@ async function changePassword(req, res) {
 async function listPending(req, res) {
   if (!await exigirAdmin(req, res)) return;
   const { rows } = await sql`
-    SELECT u.id, u.email, u.created_at,
+    SELECT u.id, u.email, u.created_at, u.requested_player_name,
            p.name AS player_name, p.active AS player_active
     FROM users u
     LEFT JOIN players p ON p.id = u.player_id
@@ -215,15 +253,17 @@ async function approveUser(req, res) {
   const data = await readBody(req);
   const id = toInt(data?.id);
   const { rows } = await sql`
-    SELECT u.id, u.status, u.player_id, p.active AS player_active
+    SELECT u.id, u.status, u.player_id, u.requested_player_name,
+           p.active AS player_active
     FROM users u LEFT JOIN players p ON p.id = u.player_id
     WHERE u.id = ${id}
   `;
-  const user = rows[0];
+  let user = rows[0];
   if (!user || user.status !== 'pending') {
     res.status(404).json({ ok: false, error: 'not_pending', message: 'Esa cuenta ya no está pendiente.' });
     return;
   }
+  user = await crearFichaSiHaceFalta(user);
   const fallo = await motivoParaNoAprobar(user);
   if (fallo) {
     res.status(409).json({ ok: false, ...fallo });
@@ -231,6 +271,21 @@ async function approveUser(req, res) {
   }
   await sql`UPDATE users SET status = 'active', approved_at = now() WHERE id = ${user.id}`;
   res.status(200).json({ ok: true });
+}
+
+// Aqui, y no al registrarse: un alta que nadie apruebe no debe dejar un
+// jugador suelto en las tablas. Si entre medias alguien creo ese nombre a mano
+// o subiendo un resultado, getOrCreatePlayerId devuelve el que ya existe y las
+// comprobaciones de abajo deciden.
+async function crearFichaSiHaceFalta(user) {
+  if (user.player_id || !user.requested_player_name) return user;
+  const playerId = await getOrCreatePlayerId(user.requested_player_name);
+  if (!playerId) return user;
+  const { rows } = await sql`
+    UPDATE users SET player_id = ${playerId} WHERE id = ${user.id}
+    RETURNING (SELECT active FROM players WHERE id = ${playerId}) AS player_active
+  `;
+  return { ...user, player_id: playerId, player_active: rows[0]?.player_active };
 }
 
 // El indice unico parcial rechazaria el UPDATE igual, pero con un error de
@@ -399,20 +454,20 @@ async function googleRegister(req, res) {
     res.status(200).json({ ok: true, status: 'active' });
     return;
   }
-  const alta = await comprobarAlta(dato.email, data?.playerName);
+  const alta = await comprobarAlta(dato.email, data?.playerName, data?.newPlayerName);
   if (alta.error) {
     res.status(400).json({ ok: false, ...alta });
     return;
   }
-  await crearCuentaDeGoogle(req, res, dato, alta.playerId);
+  await crearCuentaDeGoogle(req, res, dato, alta);
 }
 
-async function crearCuentaDeGoogle(req, res, dato, playerId) {
+async function crearCuentaDeGoogle(req, res, dato, alta) {
   const admin = esCorreoDeAdmin(dato.email);
   const { rows } = await sql`
-    INSERT INTO users (email, player_id, status, role, approved_at)
+    INSERT INTO users (email, player_id, requested_player_name, status, role, approved_at)
     VALUES (
-      ${dato.email}, ${playerId},
+      ${dato.email}, ${alta.playerId}, ${alta.requestedName},
       ${admin ? 'active' : 'pending'}, ${admin ? 'admin' : 'member'},
       ${admin ? new Date().toISOString() : null}::timestamptz
     )
