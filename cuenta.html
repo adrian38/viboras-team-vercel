@@ -186,6 +186,14 @@
 const $ = (id) => document.getElementById(id)
 let enVuelo = false
 
+// A donde volver despues de entrar. auth-client.js manda aqui con ?volver=
+// cuando intentas abrir una pagina sin sesion. Solo se aceptan rutas de este
+// sitio: un "volver" que empiece por // o por http seria un redirect abierto.
+function destino(){
+  const v = new URLSearchParams(location.search).get('volver') || '/'
+  return (v.startsWith('/') && !v.startsWith('//')) ? v : '/'
+}
+
 function mostrarAviso(texto, ok){
   $('avisoTexto').innerText = texto
   const caja = $('aviso')
@@ -249,7 +257,7 @@ async function cargarJugadores(){
   const sel = $('altaJugador')
   sel.innerHTML = '<option value="">-- Selecciona tu nombre --</option>'
   try{
-    const res = await fetch('/api/read?action=getNames')
+    const res = await fetch('/api/auth?action=players')
     if(!res.ok) throw new Error('HTTP ' + res.status)
     const db = await res.json()
     for(const n of (db && db.names) ? db.names : []){
@@ -326,7 +334,7 @@ $('formEntrar').onsubmit = (ev) => {
   conBoton($('btnEntrar'), 'Entrando...', async () => {
     limpiarAviso()
     await llamar('login', {email:$('entrarCorreo').value, password:$('entrarPassword').value})
-    window.location.reload()
+    window.location.replace(destino())
   })
 }
 
@@ -372,7 +380,7 @@ function alVolverDeGoogle(respuesta){
     limpiarAviso()
     if(!esAlta){
       await llamar('googleLogin', {credential: respuesta.credential})
-      window.location.reload()
+      window.location.replace(destino())
       return
     }
     const json = await llamar('googleRegister', {
@@ -384,7 +392,7 @@ function alVolverDeGoogle(respuesta){
       mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
       return
     }
-    window.location.reload()
+    window.location.replace(destino())
   })
 }
 

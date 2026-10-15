@@ -64,5 +64,23 @@
     });
   };
 
-  window.vtMe.then(pintarChip);
+  // Sin sesion no se ve nada: desde el 2026-10-16 la app entera esta detras de
+  // /cuenta.
+  //
+  // Esto es comodidad, NO seguridad. El HTML es estatico y cualquiera puede
+  // descargarlo; lo que de verdad cierra la app es que read.js, write.js y
+  // league-admin.js responden 401 sin cookie, asi que la pagina llegaria vacia
+  // de todos modos. Esto solo evita que alguien se quede mirando tablas en
+  // blanco sin saber por que.
+  function exigirEntrar(user) {
+    if (user) return;
+    var donde = location.pathname;
+    if (donde === '/cuenta' || donde === '/cuenta.html') return;
+    location.replace('/cuenta?volver=' + encodeURIComponent(donde + location.search));
+  }
+
+  window.vtMe.then(function (user) {
+    pintarChip(user);
+    exigirEntrar(user);
+  });
 })();
