@@ -283,6 +283,17 @@ async function blockUser(req, res) {
   res.status(200).json({ ok: true, blocked: hecho.rowCount > 0 });
 }
 
+// La lista de jugadores para el formulario de alta. Tiene que estar abierta:
+// quien se registra todavia no tiene sesion con la que pedirla a read.js, que
+// desde el 2026-10-16 la exige. Es lo unico que la app ensena sin haber
+// entrado, y es exactamente lo que `getNames` daba antes a cualquiera.
+async function players(req, res) {
+  const { rows } = await sql`
+    SELECT name FROM players WHERE active = TRUE ORDER BY LOWER(name), name
+  `;
+  res.status(200).json({ ok: true, names: rows.map((r) => r.name) });
+}
+
 // El sustituto del paso de build: aqui no hay forma de inyectar una variable
 // de entorno en un .html estatico, asi que el navegador pregunta por el
 // client_id. No es un secreto, el boton de Google lo publica igualmente.
@@ -423,6 +434,7 @@ async function crearCuentaDeGoogle(req, res, dato, playerId) {
 const ACCIONES = {
   me,
   config,
+  players,
   googleLogin,
   googleRegister,
   register,
@@ -435,7 +447,7 @@ const ACCIONES = {
   blockUser
 };
 
-const DE_LECTURA = new Set(['me', 'config', 'listPending']);
+const DE_LECTURA = new Set(['me', 'config', 'players', 'listPending']);
 
 export default async function handler(req, res) {
   const action = String(req.query?.action || '').trim();

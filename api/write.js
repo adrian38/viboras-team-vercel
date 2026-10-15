@@ -1,6 +1,7 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, getOrCreatePlayerId, getPlayerId, readBody, toInt } from './_db.js';
 import { validateBo3Score } from './_score.js';
+import { exigirSesion } from './_auth.js';
 
 async function submitName(req, res) {
   try {
@@ -219,6 +220,9 @@ async function submitVote(req, res) {
 }
 
 export default async function handler(req, res) {
+  // Desde el 2026-10-16 ninguna escritura es anonima:
+  // ai_context/cuentas_y_sesiones.md
+  if (!await exigirSesion(req, res)) return;
   const action = String(req.query?.action || req.body?.action || '').trim();
 
   switch (action) {

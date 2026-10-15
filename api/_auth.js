@@ -15,6 +15,7 @@
 // Detalle: ai_context/cuentas_y_sesiones.md
 import { sql } from '@vercel/postgres';
 import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto';
+import { ensureSchema } from './_db.js';
 
 const COOKIE = 'vt_session';
 const DIAS_DE_SESION = 30;
@@ -240,6 +241,32 @@ export async function usuarioDeLaPeticion(req) {
       AND u.status = 'active'
   `;
   return rows.length ? rows[0] : null;
+}
+
+// El guardia de toda la app desde el 2026-10-16. Lo llaman los handlers de
+// read.js, write.js y league-admin.js antes de mirar el `action`, asi que crea
+// el esquema el mismo: sus acciones lo hacian por dentro, despues del switch,
+// y para entonces ya hace falta la tabla sessions. Las dos son memoizadas.
+// No lanza nunca: los tres handlers que lo llaman no tienen try/catch propio
+// —cada accion monta el suyo por dentro— y una excepcion aqui saldria como un
+// 500 sin cuerpo. Devolver null en los dos casos deja la llamada en una linea,
+// que es todo el presupuesto que hay en league-admin.js.
+export async function exigirSesion(req, res) {
+  try {
+    await ensureSchema();
+    await ensureAuthSchema();
+    const user = await usuarioDeLaPeticion(req);
+    if (user) return user;
+    res.status(401).json({
+      ok: false,
+      error: 'unauthorized',
+      message: 'Entra en /cuenta para usar la aplicación.'
+    });
+  } catch (err) {
+    console.error('auth:exigirSesion error', err);
+    res.status(500).json({ ok: false, error: 'server_error' });
+  }
+  return null;
 }
 
 export async function exigirAdmin(req, res) {

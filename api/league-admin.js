@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, readBody } from './_db.js';
-
+import { exigirSesion } from './_auth.js';
 const MAX_GROUPS = 20;
 const MAX_PHASES = 10;
 
@@ -605,8 +605,8 @@ async function updateLeagueSubstitutions(req, res) {
 }
 
 export default async function handler(req, res) {
+  if (!await exigirSesion(req, res)) return;
   const action = String(req.query?.action || req.body?.action || '').trim();
-
   switch (action) {
     case 'createLeague':
       return createLeague(req, res);

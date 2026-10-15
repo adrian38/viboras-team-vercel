@@ -1,5 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, formatSet } from './_db.js';
+import { exigirSesion } from './_auth.js';
 
 async function getNames(req, res) {
   try {
@@ -150,6 +151,9 @@ async function getSlots(req, res) {
 }
 
 export default async function handler(req, res) {
+  // Desde el 2026-10-16 la app entera va detras de la sesion, lecturas
+  // incluidas: ai_context/cuentas_y_sesiones.md
+  if (!await exigirSesion(req, res)) return;
   const action = String(req.query?.action || req.body?.action || '').trim();
 
   switch (action) {
