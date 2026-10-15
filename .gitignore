@@ -26,3 +26,8 @@ backups/
 # ai_context/sistema_visual_viper_strike.md, y los tokens en theme.css.
 stitch_*/
 stitch_*.zip
+
+# credenciales de Google descargadas del panel: el JSON lleva client_secret.
+# Nuestro flujo (Identity Services) no lo necesita, solo el client_id, que va
+# en la variable de entorno GOOGLE_CLIENT_ID.
+client_secret_*.json
