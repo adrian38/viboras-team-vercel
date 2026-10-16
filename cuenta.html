@@ -81,6 +81,13 @@
 .pendiente__quien{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pendiente__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
 .pirata a{color:var(--vt-gold-light)}
+/* El boton de Google es un iframe: su clic no se puede frenar. Mientras el
+   alta este incompleta, una capa transparente encima recibe el clic y dice
+   que falta; el boton se ve atenuado, como inhabilitado. */
+.google-alta{position:relative}
+.google-alta.bloqueado .google{opacity:0.45;filter:grayscale(0.6)}
+.tapa-google{display:none;position:absolute;inset:0;width:100%;border:0;background:transparent;cursor:not-allowed}
+.google-alta.bloqueado .tapa-google{display:block}
 .pendiente__form{margin-top:6px;font-size:13px;line-height:20px;color:var(--vt-text)}
 .pendiente__form summary{cursor:pointer;color:var(--vt-gold-light)}
 .inscripcion-estado{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);flex-wrap:wrap;padding:10px 12px;border:1px solid var(--vt-border);border-radius:var(--vt-r);background:var(--vt-surface-2);font-size:14px}
@@ -219,11 +226,10 @@
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">person</span>Crear cuenta
       </button>
       <div class="separador oculto" id="sepAlta">o</div>
-      <div class="google oculto" id="googleAlta"></div>
-      <p class="vt-small vt-muted oculto" id="pistaGoogleAlta" style="text-align:center">
-        Para registrarte con Google, primero pon tu nombre, guarda el formulario
-        de inscripción y acepta la normativa.
-      </p>
+      <div class="google-alta bloqueado" id="cajaGoogleAlta">
+        <div class="google" id="googleAlta"></div>
+        <button type="button" class="tapa-google" id="tapaGoogleAlta" aria-label="Registrarse con Google"></button>
+      </div>
     </form>
   </section>
 
@@ -516,6 +522,7 @@ $('altaPirata').onchange = alCambiarJugador
 $('formAlta').addEventListener('input', pintarGoogleAlta)
 $('formAlta').addEventListener('change', pintarGoogleAlta)
 $('formAlta').addEventListener('input', guardarBorrador)
+$('tapaGoogleAlta').onclick = avisarFaltasGoogle
 $('formAlta').addEventListener('change', guardarBorrador)
 window.addEventListener('storage', (ev) => { if(ev.key === CLAVE_INSCRIPCION) pintarInscripcion() })
 // Algun movil congela la pestana de fondo: al volver a ella se mira otra vez.
@@ -606,26 +613,37 @@ async function montarGoogle(){
   pintarGoogleAlta()
 }
 
-// var y no let: pintarGoogleAlta() puede llegar a dibujarBotonesGoogle()
-// desde codigo que corre antes de esta linea, y un let daria ReferenceError.
-var googleListo = false
+let googleListo = false
 
-// El boton de Google es un iframe de Google: su clic no se puede frenar. Si se
-// ensenase siempre, cualquiera abriria el alta con Google sin nombre, sin
-// formulario y sin normativa (el servidor lo rechazaria, pero despues de
-// pasar por Google). Asi que no se ensena hasta que todo eso esta; correo y
-// contrasena no hacen falta, porque los pone Google.
-function altaListaParaGoogle(){
-  const quien = esNuevo() ? $('altaNombre').value.trim() : $('altaJugador').value
-  return !!quien && !!respuestasInscripcion() && $('altaNormativa').checked
+// El boton de Google es un iframe de Google: su clic no se puede frenar.
+// Mientras falte algo, una capa encima (.tapa-google) recibe el clic y dice
+// que falta, como hace «Crear cuenta»; sin ella, el alta con Google arrancaria
+// sin nombre, sin formulario y sin normativa. Correo y contrasena no hacen
+// falta: los pone Google. Devuelve lo que falta, en orden, con su campo.
+function faltasParaGoogle(){
+  const faltas = []
+  if(esNuevo() ? !$('altaNombre').value.trim() : !$('altaJugador').value){
+    faltas.push({ texto: esNuevo() ? 'tu nombre' : 'elegir tu nombre de la lista', campo: esNuevo() ? 'altaNombre' : 'altaJugador' })
+  }
+  if(!respuestasInscripcion()) faltas.push({ texto: 'rellenar el formulario de inscripción', campo: 'enlaceInscripcion' })
+  if(!$('altaNormativa').checked) faltas.push({ texto: 'aceptar la normativa', campo: 'altaNormativa' })
+  return faltas
 }
 
 function pintarGoogleAlta(){
-  const listo = altaListaParaGoogle()
-  $('googleAlta').classList.toggle('oculto', !listo)
-  // La pista solo si hay boton de Google que esperar: sin client_id no sale.
-  $('pistaGoogleAlta').classList.toggle('oculto', listo || $('sepAlta').classList.contains('oculto'))
-  if(listo) dibujarBotonesGoogle()
+  $('cajaGoogleAlta').classList.toggle('bloqueado', faltasParaGoogle().length > 0)
+}
+
+// "Te falta: tu nombre, el formulario y aceptar la normativa", y el foco al
+// primer campo pendiente. Sin desplazar: mostrarAviso ya lleva la vista al
+// aviso, y dos scrollIntoView seguidos se pisan.
+function avisarFaltasGoogle(){
+  const faltas = faltasParaGoogle()
+  if(!faltas.length) return
+  const lista = faltas.map((f) => f.texto)
+  const texto = lista.length > 1 ? lista.slice(0, -1).join(', ') + ' y ' + lista[lista.length - 1] : lista[0]
+  mostrarAviso('Para registrarte con Google te falta ' + texto + '.')
+  $(faltas[0].campo).focus({preventScroll:true})
 }
 
 // Google fija el ancho del boton en pixeles al dibujarlo y no lo recalcula.

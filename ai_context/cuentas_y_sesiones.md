@@ -223,13 +223,18 @@ suplantación: Google emite el token igualmente para un correo sin confirmar.
   contraseña**) y los enlaces de vuelta van a **`/cuenta?alta`**. Ese
   parámetro, o un borrador a medias, abren «Crear cuenta» y no «Entrar».
   El borrador se borra al crear la cuenta.
-- **El botón «Registrarse con Google» no aparece hasta tener nombre,
-  formulario y normativa.** Es un iframe de Google y su clic no se puede
-  frenar: si estuviera siempre, el alta con Google arrancaría sin nada (el
-  servidor lo rechazaría, pero después de pasar por Google). Mientras falta
-  algo, sale una pista. `googleListo` es `var` a propósito: con `let`, la
-  llamada que se hace al cargar la página daría `ReferenceError` y la
-  rompería entera. Sustituye al
+- **El botón «Registrarse con Google» está inhabilitado hasta tener nombre,
+  formulario y normativa**, pero se ve siempre: así lo quiso Adrián, igual
+  que «Crear cuenta», que avisa de lo que falta. Como es un iframe de Google
+  y su clic no se puede frenar, mientras falte algo lleva una capa
+  transparente encima (`.tapa-google`). La capa recibe el clic, dice «te
+  falta …» y pone el foco en el primer campo pendiente. Sin la capa, el alta
+  con Google arrancaría sin nada (el servidor lo rechazaría, pero después de
+  pasar por Google).
+- **Cuidado al tocar este script**: `pintarInscripcion()` se ejecuta al
+  cargar, antes de que se declaren las variables del final del fichero. Si
+  algo que llama pasa a usar un `let` declarado más abajo, la página entera
+  cae con `ReferenceError`. Sustituye al
   Google Form que el grupo usaba antes, con las mismas preguntas menos tres:
   el correo (ya lo tiene la cuenta), el nombre para el grupo (es el de la
   ficha) y la normativa (es la casilla de arriba). Las respuestas se guardan
