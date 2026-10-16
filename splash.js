@@ -65,8 +65,8 @@
       if (empezada) return;
       empezada = true;
       capa.classList.add('vt-splash__capa--animando');
-      // El destello acaba a los 1,8 s; un respiro y se funde (0,4 s mas).
-      setTimeout(cerrar, reducido ? 700 : 2100);
+      // El brillo acaba a los 2,45 s; un respiro y se funde (0,4 s mas).
+      setTimeout(cerrar, reducido ? 700 : 2800);
     }
     if (logo.complete) empezar();
     logo.addEventListener('load', empezar);

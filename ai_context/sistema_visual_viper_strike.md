@@ -260,10 +260,18 @@ a `viboras-v2`): sin él la portada abre sin estilos cuando no hay cobertura.
 ## La pantalla de bienvenida
 
 `splash.js` + las reglas `.vt-splash*` de `theme.css`, desde el 2026-10-16.
-**Pelota + brillo**: una pelota de pádel sube botando hasta el centro
-(0–0,62 s); al botar sale una onda dorada y el logo se revela desde el punto
-del bote (0,6–1,15 s), y un destello barre las letras (1,12–1,8 s). A los
-2,1 s se funde.
+**Pelota + brillo**, una cosa detrás de otra y sin pisarse, como lo pidió
+Adrián: negro (0–0,3 s); la pelota sube y da dos botes (0,3–1,1 s); estalla
+en una onda dorada y desaparece (1,1–1,2 s); aparece el icono (1,2–1,7 s), y
+el brillo lo barre (1,75–2,45 s). A los 2,8 s se funde.
+
+**Todo lo que espera su turno tiene que esperar invisible.** Con
+`animation-fill-mode: both`, durante el retraso cada elemento se queda en el
+0 % de su animación. La onda empezaba con `opacity: .95` y se veía un anillo
+en el centro desde el instante 0; el icono, igual. Las dos animaciones
+empiezan ahora en `opacity: 0`. Se comprueba llevando la capa a cada instante
+(de 25 en 25 ms) y leyendo qué es visible. No con capturas ni con
+`requestAnimationFrame`, que en el panel del navegador apenas da fotogramas.
 
 Se eligió el mismo día entre tres pruebas (pelota + brillo, sólo brillo, y
 «mordida», con dos colmillos). Sustituyó a una primera versión que imitaba un
