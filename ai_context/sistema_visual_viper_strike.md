@@ -272,6 +272,13 @@ cada arranque y no tenía nada de pádel.
 
 - **Es CSS sobre `image.png`.** Pesa nada, se ve nítido, y `image.png` ya está
   en el `PRECACHE` de `sw.js`, así que sale sin conexión.
+- **El logo espera su turno transparente, no sólo recortado.** Durante los
+  0,6 s de retraso se queda en el 0 % de su animación. Ahí estaba con
+  `opacity: 1` y lo escondía sólo `clip-path: circle(0%)`. En un navegador que
+  no aplicaba el recorte durante la espera, el logo salía entero antes que la
+  pelota (lo vio Adrián el 2026-10-16). Simulándolo en local, anulando el
+  `clip-path` con `!important`: con la animación vieja el logo salía en el
+  instante 0; con `opacity: 0` en el 0 %, a los 614 ms, como debe.
 - **El destello usa `mix-blend-mode: overlay`**: sólo aclara lo que ya es
   claro (el oro), y sobre el negro del fondo no se ve. Con un blanco normal
   pintaría una franja sobre todo el cuadrado del logo.

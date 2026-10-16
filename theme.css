@@ -362,7 +362,15 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 @keyframes vt-splash-gira{from{rotate:0deg}to{rotate:540deg}}
 @keyframes vt-splash-sale{to{opacity:0;transform:scale(.4)}}
 @keyframes vt-splash-onda{0%{opacity:.95;transform:scale(.2);border-width:4px}100%{opacity:0;transform:scale(9);border-width:1px}}
-@keyframes vt-splash-revela{0%{opacity:1;clip-path:circle(0% at 50% 50%);transform:scale(.88);filter:brightness(1.6)}100%{opacity:1;clip-path:circle(75% at 50% 50%);transform:scale(1);filter:brightness(1)}}
+/* Mientras espera su turno (0,6 s) el logo se queda en el 0 % de esta
+   animacion: ahi tiene que ser transparente, y no solo estar recortado. Si un
+   navegador no aplica el clip-path durante la espera (Safari), con opacidad 1
+   el logo se veia entero antes que la pelota. */
+@keyframes vt-splash-revela{
+  0%{opacity:0;clip-path:circle(0% at 50% 50%);-webkit-clip-path:circle(0% at 50% 50%);transform:scale(.88);filter:brightness(1.6)}
+  6%{opacity:1}
+  100%{opacity:1;clip-path:circle(75% at 50% 50%);-webkit-clip-path:circle(75% at 50% 50%);transform:scale(1);filter:brightness(1)}
+}
 @keyframes vt-splash-aparece{to{opacity:1}}
 @keyframes vt-splash-barre{from{left:-60%}to{left:115%}}
 @media (prefers-reduced-motion:reduce){
