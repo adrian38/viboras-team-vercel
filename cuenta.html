@@ -219,6 +219,7 @@
       <div class="vt-field">
         <label for="altaCorreo">Correo</label>
         <input class="vt-input" type="email" id="altaCorreo" name="email" autocomplete="username" required>
+        <p class="vt-small vt-muted">Recibirás un correo para confirmar que esta dirección es tuya.</p>
       </div>
       <div class="vt-field">
         <label for="altaPassword">Contraseña (mínimo 6 caracteres)</label>
@@ -523,7 +524,6 @@ async function cargarPendientes(){
   }
 }
 
-$('altaPirata').onchange = alCambiarJugador
 // Un ojo en cada contrasena para verla mientras se escribe (lo pidio Silvia:
 // en el movil es facil equivocarse). Se anade aqui y no en el marcado para
 // no repetirlo en los tres campos.
@@ -548,6 +548,7 @@ function botonesVerContrasena(){
   }
 }
 botonesVerContrasena()
+$('altaPirata').onchange = alCambiarJugador
 // Nombre, casilla de pirata o normativa: cualquier cambio puede dejar listo el alta con Google.
 $('formAlta').addEventListener('input', pintarGoogleAlta)
 $('formAlta').addEventListener('change', pintarGoogleAlta)
@@ -580,7 +581,7 @@ $('formAlta').onsubmit = (ev) => {
       password: $('altaPassword').value
     }, quienSoy()))
     $('formAlta').reset(); alCambiarJugador(); olvidarInscripcion()
-    mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
+    mostrarAviso('Cuenta creada. Te hemos enviado un correo para confirmar tu dirección: ábrelo (mira también en spam). Un administrador tiene que aprobar la cuenta antes de que puedas entrar.', true)
   })
 }
 
