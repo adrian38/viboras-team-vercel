@@ -38,25 +38,40 @@ async function filaDeJugador(nombre) {
 // Quien no esta en la lista pide un nombre. No se crea la ficha aqui: se
 // guarda la peticion y la crea approveUser, para que un alta que nadie apruebe
 // no deje un jugador suelto en las tablas.
+//
+// Se compara sin mayusculas, tildes ni espacios de mas: "adrian  c" es
+// "Adrián C", y dejarlo pasar pondria a dos personas casi iguales en las tablas.
+// Por eso se compara en JavaScript y no en SQL: LOWER() no quita tildes y
+// unaccent es una extension que habria que instalar en Neon y en local.
+const claveDeNombre = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/\s+/g, ' ').trim();
+
 async function comprobarNombreNuevo(nombre) {
   const limpio = String(nombre || '').trim().replace(/\s+/g, ' ');
   if (limpio.length < 2 || limpio.length > 60) {
     return { error: 'bad_name', message: 'Escribe tu nombre, entre 2 y 60 caracteres, o si eres antiguo pirata elígelo de la lista.' };
   }
+  const clave = claveDeNombre(limpio);
   const { rows } = await sql`
-    SELECT active FROM players WHERE LOWER(name) = LOWER(${limpio})
+    SELECT p.name, p.active,
+      EXISTS (SELECT 1 FROM users u WHERE u.player_id = p.id AND u.status = 'active') AS con_cuenta
+    FROM players p
   `;
-  if (rows.length && rows[0].active === true) {
-    return { error: 'name_exists', message: 'Ese nombre ya está en la lista: marca «Soy antiguo pirata» y elígelo.' };
+  const igual = rows.find((r) => claveDeNombre(r.name) === clave);
+  if (igual && igual.con_cuenta) {
+    return { error: 'name_taken', message: `Ese nombre ya es de otro usuario (${igual.name}). Elige otro.` };
   }
-  if (rows.length) {
+  if (igual && igual.active === true) {
+    return { error: 'name_exists', message: `Ese nombre ya está en la lista como «${igual.name}»: marca «Soy antiguo pirata» y elígelo.` };
+  }
+  if (igual) {
     return { error: 'name_inactive', message: 'Ese nombre existe pero está dado de baja. Habla con un administrador.' };
   }
-  const pedido = await sql`
-    SELECT 1 FROM users
-    WHERE LOWER(requested_player_name) = LOWER(${limpio}) AND status <> 'blocked'
+  const pedidos = await sql`
+    SELECT requested_player_name AS nombre FROM users
+    WHERE requested_player_name IS NOT NULL AND status <> 'blocked'
   `;
-  if (pedido.rows.length) {
+  if (pedidos.rows.some((r) => claveDeNombre(r.nombre) === clave)) {
     return { error: 'name_requested', message: 'Ya hay una cuenta esperando con ese nombre.' };
   }
   return { requestedName: limpio };

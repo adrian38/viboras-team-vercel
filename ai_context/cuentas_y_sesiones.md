@@ -101,13 +101,22 @@ La ficha la crea `approveUser` con `getOrCreatePlayerId`. Si entre medias
 alguien creó ese nombre a mano o subiendo un resultado, devuelve el que ya
 existe y deciden las comprobaciones de siempre.
 
-Cuatro negativas, cada una con su motivo, porque «error» a secas haría que la
+El nombre escrito se compara con **todos** los jugadores y con los nombres
+pedidos por cuentas pendientes, **sin mayúsculas, tildes ni espacios de más**
+(`claveDeNombre` en `api/auth.js`): «adrian  c» choca con «Adrián C». Se
+compara en JavaScript porque `LOWER()` no quita tildes y `unaccent` habría que
+instalarlo en Neon y en local. Al probarlo con `curl` desde Git Bash, las
+tildes llegan mal codificadas y el caso parece fallar: hay que escaparlas en
+el JSON (`ó`).
+
+Cinco negativas, cada una con su motivo, porque «error» a secas haría que la
 persona lo intentase otra vez igual:
 
 | Caso | Qué dice |
 | --- | --- |
 | El nombre de la lista ya tiene cuenta activa (ya no sale, pero una página abierta de antes aún lo tiene) | «Ese jugador ya tiene una cuenta.» |
-| Escribe un nombre que ya está en la lista | «Ese nombre ya está en la lista: marca «Soy antiguo pirata» y elígelo.» |
+| Escribe el nombre de alguien que ya tiene cuenta | «Ese nombre ya es de otro usuario (…). Elige otro.» |
+| Escribe un nombre que ya está en la lista | «Ese nombre ya está en la lista como «…»: marca «Soy antiguo pirata» y elígelo.» |
 | Escribe el nombre de un jugador dado de baja | «Ese nombre existe pero está dado de baja.» |
 | Otro pendiente pidió ya ese nombre | «Ya hay una cuenta esperando con ese nombre.» |
 
