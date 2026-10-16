@@ -1,13 +1,13 @@
-// Pantalla de bienvenida: el logo sale del negro dentro de un circulo que se
-// abre, crece y se ilumina, como en el video del grupo (2026-10-13). Los
-// estilos estan en theme.css (.vt-splash*).
+// Pantalla de bienvenida: una pelota de padel sube botando, al botar el logo
+// sale de una onda dorada y un destello barre las letras. Los estilos y los
+// tiempos estan en theme.css (.vt-splash*).
 //
 // Una vez por sesion: al abrir la app instalada (cada arranque es una sesion
 // nueva) o la web en una pestana nueva, no en cada cambio de pagina. Tocar la
 // pantalla la salta. Con «reducir movimiento» el logo sale quieto y se va
 // enseguida.
 //
-// Va SIN defer y en el <head> de las 18 paginas: tiene que decidir antes de
+// Va SIN defer y en el <head> de las 16 paginas: tiene que decidir antes de
 // que se pinte nada, o la pagina asomaria un instante antes del negro.
 (function () {
   try {
@@ -25,11 +25,24 @@
     var capa = document.createElement('div');
     capa.className = 'vt-splash__capa';
     capa.setAttribute('aria-hidden', 'true');
+    // La onda y la pelota, centradas en la capa; el logo con su destello
+    // encima, en una caja propia para que el destello no se salga de el.
+    var onda = document.createElement('div');
+    onda.className = 'vt-splash__onda';
+    var caja = document.createElement('div');
+    caja.className = 'vt-splash__logo';
     var logo = document.createElement('img');
-    logo.className = 'vt-splash__logo';
     logo.alt = '';
     logo.src = '/image.png';
-    capa.appendChild(logo);
+    var brillo = document.createElement('div');
+    brillo.className = 'vt-splash__brillo';
+    caja.appendChild(logo);
+    caja.appendChild(brillo);
+    var pelota = document.createElement('div');
+    pelota.className = 'vt-splash__pelota';
+    capa.appendChild(onda);
+    capa.appendChild(caja);
+    capa.appendChild(pelota);
     document.body.appendChild(capa);
     // La pagina ya puede pintarse: queda debajo de la capa.
     raiz.classList.add('vt-splash--lista');
@@ -52,8 +65,8 @@
       if (empezada) return;
       empezada = true;
       capa.classList.add('vt-splash__capa--animando');
-      // Entra hasta los 2,1 s y se queda casi un segundo, como el video.
-      setTimeout(cerrar, reducido ? 700 : 3000);
+      // El destello acaba a los 1,8 s; un respiro y se funde (0,4 s mas).
+      setTimeout(cerrar, reducido ? 700 : 2100);
     }
     if (logo.complete) empezar();
     logo.addEventListener('load', empezar);

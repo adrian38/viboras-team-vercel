@@ -260,21 +260,29 @@ a `viboras-v2`): sin él la portada abre sin estilos cuando no hay cobertura.
 ## La pantalla de bienvenida
 
 `splash.js` + las reglas `.vt-splash*` de `theme.css`, desde el 2026-10-16.
-Imita un vídeo que pasó el grupo: el logo sale del negro pequeño, oscuro y
-recortado en un círculo, crece mientras el círculo se abre y se ilumina, y a
-los 2,1 s está entero. Se queda casi un segundo y se funde.
+**Pelota + brillo**: una pelota de pádel sube botando hasta el centro
+(0–0,62 s); al botar sale una onda dorada y el logo se revela desde el punto
+del bote (0,6–1,15 s), y un destello barre las letras (1,12–1,8 s). A los
+2,1 s se funde.
 
-- **Es CSS sobre `image.png`, no el vídeo.** Pesa nada, se ve nítido y
-  `image.png` ya está en el `PRECACHE` de `sw.js`, así que sale sin conexión.
-- **Los fotogramas clave están calcados del vídeo**, y la animación es
-  **lineal** a propósito: con una curva *ease-out* todo el crecimiento se
-  adelantaba y a 1,3 s ya estaba entero, cuando en el vídeo sigue dentro del
-  círculo. Para comprobarla se pausa con `getAnimations()` y se lleva a un
-  instante (`a.currentTime = 1300`), en vez de hacer capturas al vuelo.
+Se eligió el mismo día entre tres pruebas (pelota + brillo, sólo brillo, y
+«mordida», con dos colmillos). Sustituyó a una primera versión que imitaba un
+vídeo del grupo, con el logo creciendo dentro de un círculo: duraba 3 s en
+cada arranque y no tenía nada de pádel.
+
+- **Es CSS sobre `image.png`.** Pesa nada, se ve nítido, y `image.png` ya está
+  en el `PRECACHE` de `sw.js`, así que sale sin conexión.
+- **El destello usa `mix-blend-mode: overlay`**: sólo aclara lo que ya es
+  claro (el oro), y sobre el negro del fondo no se ve. Con un blanco normal
+  pintaría una franja sobre todo el cuadrado del logo.
+- **Para comprobarla se pausa** con `getAnimations({subtree:true})` y se lleva
+  a un instante (`a.currentTime = 780`), en vez de hacer capturas al vuelo. La
+  capa real se cierra sola a los 2,1 s: para mirarla con calma, se clona antes
+  y se anima la copia.
 - **Una vez por sesión** (`sessionStorage`): al abrir la app instalada, cada
   arranque es una sesión nueva; navegar entre páginas no la repite. Sin
   `sessionStorage` no sale nunca, para no salir en cada página.
-- **Va sin `defer` en el `<head>` de las 18 páginas.** Tiene que poner la
+- **Va sin `defer` en el `<head>` de las 16 páginas.** Tiene que poner la
   clase `vt-splash` antes de que se pinte nada; con `defer` la página asoma un
   instante antes del negro. Mientras la capa no está montada, el `body` va con
   `visibility: hidden`.

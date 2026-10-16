@@ -334,22 +334,41 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
   background:#000;cursor:pointer;transition:opacity .4s ease;
 }
 .vt-splash__capa--fuera{opacity:0}
-.vt-splash__logo{width:min(78vmin,360px);height:auto;opacity:0}
-.vt-splash__capa--animando .vt-splash__logo{animation:vt-splash-entra 1.7s linear .4s both}
-/* Calcado del video, fotograma a fotograma: pequeno, oscuro y recortado en un
-   circulo; crece, el circulo se abre (al 75 % ya cubre las esquinas del
-   cuadrado) y se ilumina. Entero hacia los 2,1 s. Lineal a proposito: con una
-   curva ease-out todo el crecimiento se adelantaba y a 1,3 s ya estaba entero. */
-@keyframes vt-splash-entra{
-  0%{opacity:0;transform:scale(.05);clip-path:circle(30% at 50% 50%);filter:brightness(.3)}   /* 0,4 s */
-  30%{opacity:1;transform:scale(.3);clip-path:circle(32% at 50% 50%);filter:brightness(.45)}  /* 0,9 s */
-  53%{transform:scale(.6);clip-path:circle(45% at 50% 50%);filter:brightness(.6)}             /* 1,3 s */
-  65%{transform:scale(.78);clip-path:circle(57% at 50% 50%);filter:brightness(.75)}           /* 1,5 s */
-  76%{transform:scale(.88);clip-path:circle(68% at 50% 50%);filter:brightness(.9)}            /* 1,7 s */
-  100%{opacity:1;transform:scale(1);clip-path:circle(75% at 50% 50%);filter:brightness(1)}    /* 2,1 s */
-}
+/* Pelota + brillo (elegida el 2026-10-16 entre tres pruebas): una pelota de
+   padel sube botando hasta el centro (0-0,62 s), al botar sale una onda dorada
+   y el logo se revela desde el punto del bote (0,6-1,15 s), y un destello
+   barre las letras (1,12-1,8 s). */
+.vt-splash__logo{position:relative;width:min(78vmin,360px);aspect-ratio:1}
+.vt-splash__logo img{display:block;width:100%;height:100%;opacity:0}
+.vt-splash__pelota{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;opacity:0;
+  background:radial-gradient(circle at 35% 30%,#fbffd0 0 18%,#e4f53a 45%,#b6c51c 100%);box-shadow:0 0 12px rgba(228,245,58,.45)}
+/* Las dos costuras de la pelota. */
+.vt-splash__pelota::before,.vt-splash__pelota::after{content:'';position:absolute;inset:3px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.85);border-color:rgba(255,255,255,.85) transparent transparent transparent}
+.vt-splash__pelota::after{transform:rotate(180deg)}
+.vt-splash__onda{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid var(--vt-gold);opacity:0}
+/* Con mix-blend-mode overlay el destello solo aclara lo que ya es claro (el
+   oro del logo); sobre el negro del fondo no se ve. */
+.vt-splash__brillo{position:absolute;inset:0;overflow:hidden;pointer-events:none;mix-blend-mode:overlay;opacity:0}
+.vt-splash__brillo::after{content:'';position:absolute;top:-20%;bottom:-20%;width:45%;left:-60%;
+  background:linear-gradient(105deg,transparent 0%,rgba(255,244,214,0) 20%,rgba(255,244,214,.95) 50%,rgba(255,244,214,0) 80%,transparent 100%)}
+
+.vt-splash__capa--animando .vt-splash__pelota{animation:vt-splash-sube .62s cubic-bezier(.25,.6,.35,1) both,vt-splash-gira .62s linear both,vt-splash-sale .12s .6s ease-out forwards}
+.vt-splash__capa--animando .vt-splash__onda{animation:vt-splash-onda .7s .58s cubic-bezier(.1,.6,.3,1) both}
+.vt-splash__capa--animando .vt-splash__logo img{animation:vt-splash-revela .55s .6s cubic-bezier(.2,.8,.2,1) both}
+.vt-splash__capa--animando .vt-splash__brillo{animation:vt-splash-aparece .01s 1.1s forwards}
+.vt-splash__capa--animando .vt-splash__brillo::after{animation:vt-splash-barre .7s 1.12s ease-in-out both}
+@keyframes vt-splash-sube{0%{opacity:1;transform:translateY(55vh) scale(1.1)}70%{transform:translateY(-18px) scale(1)}88%{transform:translateY(0) scale(1.15,.82)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes vt-splash-gira{from{rotate:0deg}to{rotate:540deg}}
+@keyframes vt-splash-sale{to{opacity:0;transform:scale(.4)}}
+@keyframes vt-splash-onda{0%{opacity:.95;transform:scale(.2);border-width:4px}100%{opacity:0;transform:scale(9);border-width:1px}}
+@keyframes vt-splash-revela{0%{opacity:1;clip-path:circle(0% at 50% 50%);transform:scale(.88);filter:brightness(1.6)}100%{opacity:1;clip-path:circle(75% at 50% 50%);transform:scale(1);filter:brightness(1)}}
+@keyframes vt-splash-aparece{to{opacity:1}}
+@keyframes vt-splash-barre{from{left:-60%}to{left:115%}}
 @media (prefers-reduced-motion:reduce){
-  .vt-splash__capa--animando .vt-splash__logo{animation:none;opacity:1}
+  .vt-splash__capa--animando .vt-splash__pelota,.vt-splash__capa--animando .vt-splash__onda,
+  .vt-splash__capa--animando .vt-splash__brillo{animation:none;opacity:0}
+  .vt-splash__capa--animando .vt-splash__logo img{animation:none;opacity:1}
 }
 
 /* Campanita de avisos. La rellena auth-client.js en cualquier pagina que
