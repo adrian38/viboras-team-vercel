@@ -297,7 +297,8 @@ export function normalizarCorreo(valor) {
 }
 
 export function correoValido(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) && email.length <= 180;
+  // Sin < > " ' `: el correo se ensena en el panel del administrador.
+  return /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]{2,}$/.test(email) && email.length <= 180;
 }
 
 // Minimo 6 por decision del grupo (2026-10-16); antes era 10. Contra un

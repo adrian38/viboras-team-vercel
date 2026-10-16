@@ -319,11 +319,17 @@ function pintarPendientes(filas){
     const quien = f.player_name
       ? f.player_name + aviso
       : (f.requested_player_name || 'Sin jugador') + ' · jugador nuevo'
-    fila.innerHTML =
-      '<div class="pendiente__quien">' +
-        '<strong>' + quien + '</strong>' +
-        '<span class="pendiente__correo">' + f.email + '</span>' +
-      '</div>'
+    // Con textContent y no innerHTML: el correo y el nombre pedido los escribe
+    // quien se registra, el alta es publica, y esto lo abre un administrador.
+    const datos = document.createElement('div')
+    datos.className = 'pendiente__quien'
+    const nombre = document.createElement('strong')
+    nombre.textContent = quien
+    const correo = document.createElement('span')
+    correo.className = 'pendiente__correo'
+    correo.textContent = f.email
+    datos.append(nombre, correo)
+    fila.appendChild(datos)
     fila.appendChild(botonesDePendiente(f.id))
     caja.appendChild(fila)
   }

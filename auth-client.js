@@ -24,8 +24,12 @@
   }
 
   // En index.html el nombre se esconde por debajo de 400 px; el icono no.
+  // Escapado: el nombre y el correo los escribe quien se registra.
   function nombre(texto) {
-    return '<span class="vt-chip__nombre">' + texto + '</span>';
+    var span = document.createElement('span');
+    span.className = 'vt-chip__nombre';
+    span.textContent = texto;
+    return span.outerHTML;
   }
 
   function pintarChip(user) {

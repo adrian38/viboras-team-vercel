@@ -51,6 +51,11 @@ async function comprobarNombreNuevo(nombre) {
   if (limpio.length < 2 || limpio.length > 60) {
     return { error: 'bad_name', message: 'Escribe tu nombre, entre 2 y 60 caracteres, o si eres antiguo pirata elígelo de la lista.' };
   }
+  // Al aprobar, este nombre pasa a las tablas de todas las paginas, que lo
+  // pintan con innerHTML: con < o > seria codigo ejecutandose para todo el grupo.
+  if (/[<>"'`&]/.test(limpio)) {
+    return { error: 'bad_name', message: 'El nombre no puede llevar < > " \' ` ni &.' };
+  }
   const clave = claveDeNombre(limpio);
   const { rows } = await sql`
     SELECT p.name, p.active,
