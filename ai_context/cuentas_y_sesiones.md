@@ -314,8 +314,8 @@ Desde el 2026-10-16 la app manda cuatro correos (`api/_correo.js`):
 
 El de rechazo sólo sale si el `DELETE` borró de verdad una cuenta pendiente:
 rechazar dos veces, o rechazar a alguien ya aprobado, no manda nada. No
-inventa motivos ni condiciones para volver a pedirlo: dice que no se aprobó,
-que hable con un administrador y que sus datos se han borrado, que es lo que
+inventa motivos ni condiciones para volver a pedirlo: dice que no se aprobó
+y que sus datos se han borrado, que es lo que
 pasa.
 
 Restablecer y confirmar, los endpoints de las filas primera y última, viven en **`api/correo.js`**, no en `auth.js`, que
