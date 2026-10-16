@@ -300,11 +300,10 @@ export function correoValido(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) && email.length <= 180;
 }
 
-// Sin servicio de correo no hay forma de recuperar una contrasena, asi que el
-// minimo es largo a proposito: es lo unico que para un ataque por diccionario
-// repartido entre las veinte cuentas del grupo.
+// Minimo 6 por decision del grupo (2026-10-16); antes era 10. Contra un
+// ataque por diccionario queda el bloqueo por intentos fallidos.
 export function passwordValida(password) {
-  return typeof password === 'string' && password.length >= 10 && password.length <= 200;
+  return typeof password === 'string' && password.length >= 6 && password.length <= 200;
 }
 
 // Quien esta en ADMIN_EMAILS nace administrador, pero solo por Google: el

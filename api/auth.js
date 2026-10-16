@@ -104,7 +104,7 @@ async function register(req, res) {
     res.status(400).json({
       ok: false,
       error: 'weak_password',
-      message: 'La contraseña tiene que tener al menos 10 caracteres.'
+      message: 'La contraseña tiene que tener al menos 6 caracteres.'
     });
     return;
   }
@@ -216,7 +216,7 @@ async function changePassword(req, res) {
     res.status(400).json({
       ok: false,
       error: 'weak_password',
-      message: 'La contraseña tiene que tener al menos 10 caracteres.'
+      message: 'La contraseña tiene que tener al menos 6 caracteres.'
     });
     return;
   }
