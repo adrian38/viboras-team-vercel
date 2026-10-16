@@ -80,8 +80,14 @@
 .pendiente:last-child{border-bottom:0}
 .pendiente__quien{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pendiente__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
-.paso{padding:10px 12px;border-radius:var(--vt-r);background:rgba(245,158,11,0.10);border:1px solid var(--vt-border-gold);color:var(--vt-text)}
-.paso a,.pirata a{color:var(--vt-gold-light)}
+.pirata a{color:var(--vt-gold-light)}
+.pendiente__form{margin-top:6px;font-size:13px;line-height:20px;color:var(--vt-text)}
+.pendiente__form summary{cursor:pointer;color:var(--vt-gold-light)}
+.inscripcion{display:flex;flex-direction:column;gap:var(--vt-md);margin:0;padding:var(--vt-md);border:1px solid var(--vt-border-gold);border-radius:var(--vt-r);background:rgba(245,158,11,0.05);min-width:0}
+.inscripcion legend{padding:0 6px;color:var(--vt-gold-light);font-weight:700;font-size:13px;letter-spacing:0.05em;text-transform:uppercase}
+.opciones{display:flex;flex-wrap:wrap;gap:var(--vt-sm)}
+.opciones label{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--vt-border);border-radius:var(--vt-r);background:var(--vt-surface-2);cursor:pointer;font-size:14px}
+.opciones label:has(input:checked){border-color:var(--vt-gold);color:var(--vt-gold-light)}
 .enlace{background:none;border:0;padding:4px 0;color:var(--vt-gold-light);font:inherit;font-size:13px;cursor:pointer;align-self:center;text-decoration:underline}
 .pendiente .vt-select{width:auto;min-height:0;padding-top:6px;padding-bottom:6px;font-size:13px}
 
@@ -194,10 +200,6 @@
         <p class="vt-small vt-muted">
           Tu ficha de jugador la creará el administrador al aprobar la cuenta.
         </p>
-        <p class="vt-small paso">
-          <strong>Imprescindible para entrar:</strong> rellena también el
-          <a href="https://forms.gle/CzcqxMKQcwoS8DeA6" target="_blank" rel="noopener">formulario de acceso</a>.
-        </p>
       </div>
       <div class="vt-field">
         <label for="altaCorreo">Correo</label>
@@ -207,6 +209,72 @@
         <label for="altaPassword">Contraseña (mínimo 6 caracteres)</label>
         <input class="vt-input" type="password" id="altaPassword" name="password" autocomplete="new-password" required minlength="6">
       </div>
+      <!-- Formulario de inscripcion: las opciones tienen que coincidir con
+           OPCIONES de api/_inscripcion.js, que es quien las valida. -->
+      <fieldset class="inscripcion" id="inscripcion">
+        <legend>Formulario de inscripción</legend>
+        <div class="vt-field">
+          <label for="fFullName">Nombre y apellidos</label>
+          <input class="vt-input" type="text" id="fFullName" name="fullName" maxlength="100" autocomplete="name" required>
+        </div>
+        <div class="vt-field">
+          <label for="fPhone">Teléfono (para el grupo de WhatsApp)</label>
+          <input class="vt-input" type="tel" id="fPhone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel" required>
+        </div>
+        <div class="vt-field">
+          <span class="vt-label">¿Hiciste la prueba de nivel en BK?</span>
+          <div class="opciones">
+            <label><input type="radio" name="bkTest" value="si" required> Sí</label>
+            <label><input type="radio" name="bkTest" value="no"> No</label>
+          </div>
+        </div>
+        <div class="vt-field">
+          <label for="fBkLevel">Nivel Bilbao Kirolak</label>
+          <select class="vt-select" id="fBkLevel" name="bkLevel" required>
+            <option value="">-- Elige --</option>
+            <option value="iniciacion">Iniciación</option>
+            <option value="intermedio">Intermedio</option>
+            <option value="avanzado">Avanzado</option>
+            <option value="entreno">Entreno</option>
+          </select>
+        </div>
+        <div class="vt-field">
+          <span class="vt-label">¿Te interesa jugar liga?</span>
+          <div class="opciones">
+            <label><input type="radio" name="league" value="si" required> Sí</label>
+            <label><input type="radio" name="league" value="no"> No</label>
+          </div>
+        </div>
+        <div class="vt-field">
+          <span class="vt-label">¿Te interesa jugar torneos?</span>
+          <div class="opciones">
+            <label><input type="radio" name="tournaments" value="si" required> Sí</label>
+            <label><input type="radio" name="tournaments" value="no"> No</label>
+          </div>
+        </div>
+        <div class="vt-field">
+          <span class="vt-label">¿Cuántos partidos de ranking jugarías a la semana?</span>
+          <div class="opciones">
+            <label><input type="radio" name="rankingPerWeek" value="ninguno" required> Ninguno</label>
+            <label><input type="radio" name="rankingPerWeek" value="1-2"> 1-2</label>
+            <label><input type="radio" name="rankingPerWeek" value="3-4"> 3-4</label>
+            <label><input type="radio" name="rankingPerWeek" value="+4"> +4</label>
+          </div>
+        </div>
+        <div class="vt-field">
+          <label for="fAvailability">Disponibilidad para jugar</label>
+          <select class="vt-select" id="fAvailability" name="availability" required>
+            <option value="">-- Elige --</option>
+            <option value="mananas">Solamente mañanas</option>
+            <option value="tardes">Solamente tardes</option>
+            <option value="turnos">Turnos mañana/tarde</option>
+            <option value="findes">Solamente findes</option>
+            <option value="mananas-findes">Mañanas + findes</option>
+            <option value="tardes-findes">Tardes + findes</option>
+            <option value="turnos-findes">Turnos mañana/tarde + findes</option>
+          </select>
+        </div>
+      </fieldset>
       <label class="pirata">
         <input type="checkbox" id="altaNormativa" required>
         <span>He leído y acepto la <a href="/group-normativa" target="_blank" rel="noopener">normativa del grupo</a></span>
@@ -335,18 +403,20 @@ function alCambiarJugador(){
 }
 
 // Lo que identifica al que se registra: o uno de la lista, o un nombre nuevo.
-// Al nuevo se le recuerda el formulario de acceso justo al terminar, que es
-// cuando se olvida. Se mira antes del reset(), que desmarca la casilla.
-function avisoDeAlta(eraNuevo){
-  const base = 'Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.'
-  return eraNuevo ? base + ' No olvides rellenar el formulario de acceso: sin él no se aprueba.' : base
+const CAMPOS_INSCRIPCION = ['fullName', 'phone', 'bkTest', 'bkLevel', 'league', 'tournaments', 'rankingPerWeek', 'availability']
+
+function respuestasInscripcion(){
+  const datos = new FormData($('formAlta'))
+  const r = {}
+  for(const campo of CAMPOS_INSCRIPCION) r[campo] = String(datos.get(campo) || '')
+  return r
 }
 
 function quienSoy(){
   const quien = esNuevo()
     ? { newPlayerName: $('altaNombre').value }
     : { playerName: $('altaJugador').value }
-  return Object.assign(quien, { acceptRules: $('altaNormativa').checked })
+  return Object.assign(quien, { acceptRules: $('altaNormativa').checked, signupForm: respuestasInscripcion() })
 }
 
 function pintarPendientes(filas){
@@ -373,10 +443,40 @@ function pintarPendientes(filas){
     correo.className = 'pendiente__correo'
     correo.textContent = f.email + (f.email_verified_at ? ' · confirmado' : ' · sin confirmar')
     datos.append(nombre, correo)
+    if(f.signup_form) datos.appendChild(respuestasDePendiente(f.signup_form))
     fila.appendChild(datos)
     fila.appendChild(botonesDePendiente(f.id))
     caja.appendChild(fila)
   }
+}
+
+const TEXTO_INSCRIPCION = {
+  si: 'Sí', no: 'No', ninguno: 'Ninguno', iniciacion: 'Iniciación', intermedio: 'Intermedio',
+  avanzado: 'Avanzado', entreno: 'Entreno', mananas: 'Solo mañanas', tardes: 'Solo tardes',
+  turnos: 'Turnos mañana/tarde', findes: 'Solo findes', 'mananas-findes': 'Mañanas + findes',
+  'tardes-findes': 'Tardes + findes', 'turnos-findes': 'Turnos + findes'
+}
+
+// Las respuestas del formulario de inscripcion, plegadas. Con textContent: las
+// escribe quien se registra.
+function respuestasDePendiente(r){
+  const caja = document.createElement('details')
+  caja.className = 'pendiente__form'
+  const titulo = document.createElement('summary')
+  titulo.textContent = 'Formulario de inscripción'
+  caja.appendChild(titulo)
+  const t = (v) => TEXTO_INSCRIPCION[v] || v || '—'
+  const filas = [
+    ['Nombre y apellidos', r.fullName], ['Teléfono', r.phone], ['Prueba BK', t(r.bkTest)],
+    ['Nivel BK', t(r.bkLevel)], ['Liga', t(r.league)], ['Torneos', t(r.tournaments)],
+    ['Ranking/semana', t(r.rankingPerWeek)], ['Disponibilidad', t(r.availability)]
+  ]
+  for(const [pregunta, respuesta] of filas){
+    const linea = document.createElement('div')
+    linea.textContent = pregunta + ': ' + (respuesta || '—')
+    caja.appendChild(linea)
+  }
+  return caja
 }
 
 function botonesDePendiente(id){
@@ -439,9 +539,8 @@ $('formAlta').onsubmit = (ev) => {
       email: $('altaCorreo').value,
       password: $('altaPassword').value
     }, quienSoy()))
-    const eraNuevo = esNuevo()
     $('formAlta').reset(); alCambiarJugador()
-    mostrarAviso(avisoDeAlta(eraNuevo), true)
+    mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
   })
 }
 
@@ -480,9 +579,8 @@ function alVolverDeGoogle(respuesta){
       credential: respuesta.credential
     }, quienSoy()))
     if(json.status === 'pending'){
-      const eraNuevo = esNuevo()
       $('formAlta').reset(); alCambiarJugador()
-      mostrarAviso(avisoDeAlta(eraNuevo), true)
+      mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
       return
     }
     window.location.replace(destino())

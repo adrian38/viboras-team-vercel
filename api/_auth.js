@@ -68,6 +68,9 @@ async function tablaUsuarios() {
   // Cuando acepto la normativa del grupo al registrarse. NULL en las cuentas
   // creadas antes del 2026-10-16, que no la pedian.
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS rules_accepted_at TIMESTAMPTZ`;
+  // Las respuestas del formulario de inscripcion (api/_inscripcion.js). JSONB
+  // y no columnas: las preguntas las decide el grupo y cambiaran.
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_form JSONB`;
 
   // Parcial y no UNIQUE a secas: con UNIQUE, cualquiera registra una cuenta
   // reclamando el jugador de otro y lo deja fuera para siempre, aunque su

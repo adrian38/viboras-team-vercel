@@ -208,13 +208,39 @@ suplantación: Google emite el token igualmente para un correo sin confirmar.
   `acceptRules === true`), porque el alta con Google no pasa por la validación
   del formulario. La fecha queda en `users.rules_accepted_at`; las cuentas
   anteriores al 2026-10-16 la tienen a NULL.
-- **Los nuevos**, no los antiguos piratas, ven el aviso del **formulario de
-  acceso** (`https://forms.gle/CzcqxMKQcwoS8DeA6`), que la normativa de nuevas
-  incorporaciones da por imprescindible, y se les recuerda al terminar el alta.
-  **La app no puede saber si lo rellenaron**: es un Google Form externo, y eso
-  lo comprueba el administrador antes de aprobar.
-- El enlace está en dos sitios: `cuenta.html` y `group-normativa.html`. Si
-  cambia el formulario, se cambian los dos.
+- **El formulario de inscripción está dentro del alta y es obligatorio para
+  todos**, también para los antiguos piratas (lo dijo Adrián). Sustituye al
+  Google Form que el grupo usaba antes, con las mismas preguntas menos tres:
+  el correo (ya lo tiene la cuenta), el nombre para el grupo (es el de la
+  ficha) y la normativa (es la casilla de arriba). Las respuestas se guardan
+  en `users.signup_form` (JSONB, porque las preguntas las decide el grupo y
+  cambiarán) y el administrador las ve plegadas en cada pendiente.
+- **Las opciones están en dos sitios**: `OPCIONES` en `api/_inscripcion.js`,
+  que es quien valida y rechaza lo que no esté en la lista, y el marcado de
+  `cuenta.html`. Si se añade una opción sólo en la página, el servidor la
+  rechaza con «Falta …».
+
+## El correo tiene que existir
+
+Además de la forma (`correoValido`), el alta comprueba el correo con
+`problemaDeCorreo` en `api/_correo.js`:
+
+- **Erratas de proveedores conocidos.** `gmial.com`, `gmail.co`, `hotmial.es`,
+  `outlok.com`… se rechazan sugiriendo el bueno. Esto no lo caza el DNS:
+  **`gmial.com` existe y tiene MX**, como muchos dominios registrados justo
+  para recoger el correo mal escrito. Se considera errata lo que está a una
+  letra, o a dos letras cambiadas de sitio, de un dominio de la lista
+  `PROVEEDORES`.
+- **Que el dominio reciba correo**: registros MX o, a falta de ellos, una
+  dirección A o AAAA. Un MX «.» es el dominio diciendo que no recibe correo
+  (le pasa a `example.com`). Sólo se rechaza con una respuesta clara del DNS:
+  si falla o tarda más de 3 s, se deja pasar.
+- **Que la dirección concreta exista no se puede saber** sin mandar un
+  correo. Para eso está el enlace de confirmar.
+
+**En el host de Windows el DNS no responde a Node** y todo pasa por el «deja
+pasar». Para probar esto, hazlo dentro del contenedor:
+`docker compose exec -T app node --input-type=module -e "…"`.
 
 ## La campanita de avisos
 

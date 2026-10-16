@@ -21,7 +21,8 @@ import {
   anotarFallo, limpiarFallos, bloqueoPendiente, esCorreoDeAdmin
 } from './_auth.js';
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
-import { crearEnlace, correoDeVerificacion, correoDeAprobacion } from './_correo.js';
+import { crearEnlace, correoDeVerificacion, correoDeAprobacion, problemaDeCorreo } from './_correo.js';
+import { validarInscripcion } from './_inscripcion.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -85,16 +86,20 @@ async function comprobarNombreNuevo(nombre) {
 
 // Lo que comparten el alta con contrasena y el alta con Google. Devuelve
 // { playerId, requestedName } o { error, message }.
-async function comprobarAlta(email, playerName, newPlayerName, aceptaNormativa) {
-  if (aceptaNormativa !== true) return { error: 'rules_not_accepted', message: 'Tienes que aceptar la normativa del grupo.' };
+async function comprobarAlta(email, playerName, newPlayerName, data) {
+  if (data?.acceptRules !== true) return { error: 'rules_not_accepted', message: 'Tienes que aceptar la normativa del grupo.' };
+  const insc = validarInscripcion(data?.signupForm);
+  if (insc.error) return insc;
   if (!correoValido(email)) {
     return { error: 'invalid_email', message: 'Ese correo no parece válido.' };
   }
+  const problema = await problemaDeCorreo(email);
+  if (problema) return { error: 'invalid_email', message: problema };
   const repeChequeo = await correoLibre(email);
   if (repeChequeo) return repeChequeo;
   if (!String(playerName || '').trim()) {
     const nuevo = await comprobarNombreNuevo(newPlayerName);
-    return nuevo.error ? nuevo : { playerId: null, requestedName: nuevo.requestedName };
+    return nuevo.error ? nuevo : { playerId: null, requestedName: nuevo.requestedName, form: insc.form };
   }
   const player = await filaDeJugador(playerName);
   if (!player) {
@@ -107,7 +112,7 @@ async function comprobarAlta(email, playerName, newPlayerName, aceptaNormativa) 
   if (ocupado.rows.length) {
     return { error: 'player_taken', message: 'Ese jugador ya tiene una cuenta.' };
   }
-  return { playerId: player.id, requestedName: null };
+  return { playerId: player.id, requestedName: null, form: insc.form };
 }
 
 // Se comprueba antes que el jugador: si el correo ya tiene cuenta, el nombre
@@ -130,15 +135,15 @@ async function register(req, res) {
     });
     return;
   }
-  const alta = await comprobarAlta(email, data?.playerName, data?.newPlayerName, data?.acceptRules);
+  const alta = await comprobarAlta(email, data?.playerName, data?.newPlayerName, data);
   if (alta.error) {
     res.status(400).json({ ok: false, ...alta });
     return;
   }
   const hash = await hashPassword(password);
   const { rows } = await sql`
-    INSERT INTO users (email, password_hash, player_id, requested_player_name, rules_accepted_at)
-    VALUES (${email}, ${hash}, ${alta.playerId}, ${alta.requestedName}, now()) RETURNING id
+    INSERT INTO users (email, password_hash, player_id, requested_player_name, rules_accepted_at, signup_form)
+    VALUES (${email}, ${hash}, ${alta.playerId}, ${alta.requestedName}, now(), ${JSON.stringify(alta.form)}::jsonb) RETURNING id
   `;
   await correoDeVerificacion(email, await crearEnlace(rows[0].id, 'verify', 60 * 24 * 7));
   res.status(200).json({ ok: true, status: 'pending' });
@@ -282,7 +287,7 @@ async function notifications(req, res) {
 async function listPending(req, res) {
   if (!await exigirAdmin(req, res)) return;
   const { rows } = await sql`
-    SELECT u.id, u.email, u.created_at, u.requested_player_name, u.email_verified_at, u.rules_accepted_at,
+    SELECT u.id, u.email, u.created_at, u.requested_player_name, u.email_verified_at, u.rules_accepted_at, u.signup_form,
            p.name AS player_name, p.active AS player_active
     FROM users u
     LEFT JOIN players p ON p.id = u.player_id
@@ -511,7 +516,7 @@ async function googleRegister(req, res) {
     res.status(200).json({ ok: true, status: 'active' });
     return;
   }
-  const alta = await comprobarAlta(dato.email, data?.playerName, data?.newPlayerName, data?.acceptRules);
+  const alta = await comprobarAlta(dato.email, data?.playerName, data?.newPlayerName, data);
   if (alta.error) {
     res.status(400).json({ ok: false, ...alta });
     return;
@@ -522,11 +527,11 @@ async function googleRegister(req, res) {
 async function crearCuentaDeGoogle(req, res, dato, alta) {
   const admin = esCorreoDeAdmin(dato.email);
   const { rows } = await sql`
-    INSERT INTO users (email, player_id, requested_player_name, status, role, approved_at, email_verified_at, rules_accepted_at)
+    INSERT INTO users (email, player_id, requested_player_name, status, role, approved_at, email_verified_at, rules_accepted_at, signup_form)
     VALUES (
       ${dato.email}, ${alta.playerId}, ${alta.requestedName},
       ${admin ? 'active' : 'pending'}, ${admin ? 'admin' : 'member'},
-      ${admin ? new Date().toISOString() : null}::timestamptz, now(), now()
+      ${admin ? new Date().toISOString() : null}::timestamptz, now(), now(), ${JSON.stringify(alta.form)}::jsonb
     )
     RETURNING id
   `;

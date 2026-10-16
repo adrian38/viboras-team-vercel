@@ -12,6 +12,7 @@
 // Detalle: ai_context/cuentas_y_sesiones.md
 import { sql } from '@vercel/postgres';
 import { randomBytes, createHash } from 'node:crypto';
+import dns from 'node:dns/promises';
 import nodemailer from 'nodemailer';
 import { LOGO_PNG_BASE64 } from './_logo.js';
 
@@ -67,6 +68,72 @@ export async function enviarCorreo(para, asunto, mensaje) {
 }
 
 const sha256 = (t) => createHash('sha256').update(String(t)).digest('hex');
+
+// Que el dominio del correo exista y reciba correo: caza "gmial.com" y
+// dominios inventados en el alta, antes de que el enlace de confirmar se
+// pierda. Solo dice "no" con una respuesta clara del DNS (el dominio no
+// existe, o no tiene MX ni direccion). Si el DNS falla o tarda, deja pasar:
+// no se bloquea a nadie por un problema que no es suyo.
+const SIN_DOMINIO = new Set(['ENOTFOUND', 'ENODATA', 'NXDOMAIN']);
+
+async function consultaDns(fn, dominio) {
+  const limite = new Promise((resolve) => setTimeout(() => resolve('tiempo'), 3000));
+  try {
+    return await Promise.race([fn(dominio), limite]);
+  } catch (err) {
+    return SIN_DOMINIO.has(err && err.code) ? [] : 'tiempo';
+  }
+}
+
+// El DNS no caza las erratas: "gmial.com" existe y tiene MX, como muchos
+// dominios registrados justo para recoger el correo mal escrito. Lo que esta a
+// una letra (o dos cambiadas de sitio) de un proveedor conocido, sin serlo, se
+// toma por errata.
+const PROVEEDORES = [
+  'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.es', 'outlook.com', 'outlook.es',
+  'live.com', 'live.es', 'msn.com', 'yahoo.com', 'yahoo.es', 'ymail.com', 'icloud.com',
+  'me.com', 'mail.com', 'gmx.com', 'gmx.es', 'protonmail.com', 'proton.me', 'telefonica.net'
+];
+
+// Distancia de edicion con trasposiciones (OSA), cortada en 2.
+function distancia(a, b) {
+  if (Math.abs(a.length - b.length) > 1) return 2;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const coste = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + coste);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  }
+  return d[a.length][b.length];
+}
+
+// El motivo por el que ese correo no vale, o null si vale.
+export async function problemaDeCorreo(email) {
+  const dominio = String(email || '').split('@')[1] || '';
+  if (!PROVEEDORES.includes(dominio)) {
+    const parecido = PROVEEDORES.find((p) => distancia(dominio, p) === 1);
+    if (parecido) return `¿Querías decir @${parecido}? Revisa lo que va detrás de la @.`;
+  }
+  if (!await dominioRecibeCorreo(dominio)) return 'Ese correo no existe: revisa lo que va detrás de la @.';
+  return null;
+}
+
+async function dominioRecibeCorreo(dominio) {
+  if (!dominio) return false;
+  const mx = await consultaDns(dns.resolveMx, dominio);
+  if (mx === 'tiempo') return true;
+  // Un MX "." (RFC 7505) es el dominio diciendo que no recibe correo.
+  if (mx.some((r) => r.exchange && r.exchange !== '.')) return true;
+  if (mx.length) return false;
+  // Sin MX, el correo va a la direccion del dominio (RFC 5321).
+  const ip = await consultaDns(dns.resolve4, dominio);
+  if (ip === 'tiempo' || ip.length) return true;
+  const ip6 = await consultaDns(dns.resolve6, dominio);
+  return ip6 === 'tiempo' || ip6.length > 0;
+}
 
 // Un enlace nuevo invalida los anteriores del mismo tipo: si alguien pide dos
 // veces restablecer, solo vale el ultimo correo.
