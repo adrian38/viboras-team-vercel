@@ -266,15 +266,29 @@ en una onda dorada y desaparece (1,1–1,2 s); aparece el icono (1,2–1,7 s), y
 el brillo lo barre (1,75–2,45 s). A los 2,8 s se funde.
 
 **La pantalla de arranque de Android va antes y no se puede quitar.** Con la
-app instalada, Android pinta su pantalla (fondo negro del manifiesto e icono
-quieto) antes de que exista la página, y después sale la nuestra. Se probó el
-2026-10-16 a que la nuestra empezase con el icono quieto al tamaño del de
-Android, para enlazar las dos. **Se descartó**: ese tamaño depende del móvil y
-de la versión de Android, y no se puede saber desde la página. Con un tamaño
-estimado (150 px), en el móvil de Adrián el icono cambiaba de tamaño dos
-veces, y quedaba peor que empezar en negro. Para volver a intentarlo hace falta
-medir el icono en una captura de esa pantalla en el móvil concreto, y aun así
-sólo valdría para ese modelo.
+app instalada, Chrome pinta su pantalla (fondo negro del manifiesto e icono)
+antes de que exista la página, y después sale la nuestra. Si la nuestra
+repetía el icono, salía dos veces.
+
+- **No se puede enlazar copiando el icono.** El tamaño con que lo pinta Chrome
+  no es fijo. El «ideal» es 128 px, pero desde Chrome 71 sale más grande si
+  hay un icono de 512 px. Chrome prefiere el *maskable* (el nuestro es el logo
+  al 72 %), puede recortarlo en círculo, y la página no puede leer nada de
+  esto. Se probó con un tamaño estimado (150 px) y en el móvil de Adrián el
+  icono saltaba dos veces. Fuentes: aviso de Chromium 40244503 y el código de
+  PWACompat, que imita esa pantalla.
+- **Solución (la habitual, de un desarrollador de Google en Stack Overflow
+  46106126): no repetir el icono y animar desde el color de fondo hacia la
+  app.** En Android y en modo `standalone`, `splash.js` pone
+  `vt-splash__capa--instalada`: sin icono ni brillo; negro, la pelota bota,
+  estalla en la onda y un agujero que crece desde el centro descubre la app
+  (de 1,12 a 1,67 s; se cierra a los 1,75 s). El negro lo pone la sombra
+  enorme de un círculo transparente (`.vt-splash__hueco`), así que al crecer
+  el círculo aparece la app. No depende del tamaño de nada que pinte el
+  sistema, así que vale igual en cualquier móvil.
+- Para verla en el navegador: `/cuenta?splash=instalada` en una pestaña nueva.
+- Ojo al medir con el panel del navegador: si está oculto, la ventana mide
+  0×0 y todo sale mal. Antes de medir, `resize_window` a móvil.
 
 **Todo lo que espera su turno tiene que esperar invisible.** Con
 `animation-fill-mode: both`, durante el retraso cada elemento se queda en el

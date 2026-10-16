@@ -394,6 +394,18 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 }
 @keyframes vt-splash-aparece{to{opacity:1}}
 @keyframes vt-splash-barre{from{left:-60%}to{left:115%}}
+/* App instalada en Android (splash.js pone --instalada). Android ya ha
+   ensenado su pantalla con el icono, asi que aqui no se repite: negro, la
+   pelota bota (0,3-1,1 s), estalla en la onda y un agujero que crece desde el
+   centro descubre la app (1,12-1,67 s). El negro lo pone la sombra del
+   agujero, no el fondo de la capa. */
+.vt-splash__hueco{display:none}
+.vt-splash__capa--instalada{background:transparent}
+.vt-splash__capa--instalada .vt-splash__logo{display:none}
+.vt-splash__capa--instalada .vt-splash__hueco{display:block;position:absolute;left:50%;top:50%;width:0;height:0;
+  border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 150vmax #000}
+.vt-splash__capa--instalada.vt-splash__capa--animando .vt-splash__hueco{animation:vt-splash-abre .55s 1.12s cubic-bezier(.55,0,.8,.4) both}
+@keyframes vt-splash-abre{from{width:0;height:0}to{width:300vmax;height:300vmax}}
 @media (prefers-reduced-motion:reduce){
   .vt-splash__capa--animando .vt-splash__pelota,.vt-splash__capa--animando .vt-splash__onda,
   .vt-splash__capa--animando .vt-splash__brillo{animation:none;opacity:0}
