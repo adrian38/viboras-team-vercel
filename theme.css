@@ -394,10 +394,18 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 }
 @keyframes vt-splash-aparece{to{opacity:1}}
 @keyframes vt-splash-barre{from{left:-60%}to{left:115%}}
+/* Con la app instalada en Android (splash.js pone --instalada): se empieza
+   donde acaba la pantalla de arranque del sistema, con el icono ya quieto en
+   el centro y a su tamano (--vt-splash-ini). La pelota y la onda van igual;
+   en vez de aparecer, el icono crece hasta su tamano al estallar la pelota. */
+.vt-splash__capa--instalada .vt-splash__logo img{opacity:1;transform:scale(var(--vt-splash-ini,.42))}
+.vt-splash__capa--instalada.vt-splash__capa--animando .vt-splash__logo img{animation:vt-splash-crece .5s 1.15s cubic-bezier(.2,.8,.2,1) both}
+@keyframes vt-splash-crece{0%{opacity:1;transform:scale(var(--vt-splash-ini,.42))}100%{opacity:1;transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){
   .vt-splash__capa--animando .vt-splash__pelota,.vt-splash__capa--animando .vt-splash__onda,
   .vt-splash__capa--animando .vt-splash__brillo{animation:none;opacity:0}
-  .vt-splash__capa--animando .vt-splash__logo img{animation:none;opacity:1}
+  .vt-splash__capa--animando .vt-splash__logo img,
+  .vt-splash__capa--instalada.vt-splash__capa--animando .vt-splash__logo img{animation:none;opacity:1;transform:none}
 }
 
 /* Campanita de avisos. La rellena auth-client.js en cualquier pagina que
