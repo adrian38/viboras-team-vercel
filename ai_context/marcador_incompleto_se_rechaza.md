@@ -19,9 +19,10 @@ nuevos sembrados por un envío rechazado.
 La respuesta del rechazo es `400` con
 `{ ok:false, error:'invalid_score', message:'…' }`.
 
-**Está sólo en el servidor a propósito.** Las tres páginas que escriben
-resultados —`submit-result.html`, `history.html` (añadir y editar) y
-`league-results.html`— pasan por el mismo endpoint, y en este repositorio el
+**Está sólo en el servidor a propósito.** Las páginas que escriben
+resultados —`submit-result.html` e `history.html` (añadir y editar); hasta el
+2026-10-16 también `league-results.html`, que se retiró con las ligas— pasan
+por el mismo endpoint, y en este repositorio el
 motor de rating ya enseña lo que cuesta tener la misma regla escrita tres veces
 (`motor_de_rating_duplicado.md`). Las tres se limitan a enseñar `message` en un
 `alert`. Si mañana se añade otra página que escriba resultados, hereda la regla
@@ -73,9 +74,15 @@ Los otros 127 rechazados no son historial roto, son filas que no vuelven por
 `submitResult`: 70 de `pozo` y `compas`, que guardan juegos y se editan por
 `league-admin`, y 57 partidos de liga aún sin jugar, con el 0-0 que les puso el
 cuadro. **Esos 57 son el calendario**: borrarlos se llevaría por delante los
-cuadros de octubre y noviembre. Se abren desde `league-results.html`, pero su
-formulario pide los dos primeros sets antes de enviar, así que se guardan ya
-completos.
+cuadros de octubre y noviembre. Se abrían desde `league-results.html`, cuyo
+formulario pedía los dos primeros sets antes de enviar.
+
+**Desde el 2026-10-16 no hay ligas en la app**: se quitaron sus páginas y sus
+opciones del panel de administración. Esos 57 partidos siguen en la base,
+porque no se borró ningún dato, pero ya nadie puede ponerles resultado. El
+rating los ignora, porque un 0-0 no es un partido terminado. El API de ligas
+(`api/league-admin.js`, `api/read.js`) sigue ahí; los torneos usan el mismo
+`league-admin.js`.
 
 También había dos filas `ranked` sin fecha, sin jugadores y sin marcador
 (`id` 305 y 306): se borraron ese día; la cuenta de 263 ya las descuenta.

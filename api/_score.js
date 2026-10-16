@@ -6,10 +6,10 @@
 // sets para quien lo "gano" y el partido pasa a decidido. Por eso esto
 // rechaza, en vez de corregir por detras.
 //
-// Vive en el servidor y no en las paginas a proposito: `submit-result.html`,
-// `history.html` y `league-results.html` escriben por el mismo endpoint, y el
-// motor de rating ya esta triplicado en este repositorio. Las tres enseñan el
-// mensaje que devuelve el API.
+// Vive en el servidor y no en las paginas a proposito: `submit-result.html` e
+// `history.html` escriben por el mismo endpoint (tambien lo hacia
+// `league-results.html`, retirada el 2026-10-16), y el motor de rating ya esta
+// triplicado en este repositorio. Las paginas ensenan el mensaje del API.
 //
 // Fuera de aqui quedan los torneos (`timed_games`, pozo y cuadros), que se
 // cargan por `api/league-admin.js` y si admiten marcadores a juegos.

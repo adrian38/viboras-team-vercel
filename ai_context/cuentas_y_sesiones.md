@@ -15,7 +15,7 @@ abiertos, es de esos dos días.
 | `api/read.js`, `api/write.js`, `api/league-admin.js` | **Cerrado.** Sesión activa o 401, antes de mirar el `action`. |
 | `api/auth.js` | Abierto, obviamente: es por donde se entra. |
 | `?action=players` | **Abierto a propósito.** Quien se registra no tiene sesión con la que pedir la lista de jugadores. Enseña lo mismo que `getNames` enseñaba a cualquiera hasta el 2026-10-16. |
-| Las 18 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
+| Las 16 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
 
 `/group-normativa` **no** redirige a `/cuenta`: el alta pide aceptar la
 normativa, así que tiene que poder leerse antes de tener cuenta. No llama al

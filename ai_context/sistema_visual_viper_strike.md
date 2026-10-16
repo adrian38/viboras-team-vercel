@@ -116,7 +116,8 @@ no siempre gana. Tres casos, de menos a más molesto:
   `rating.html`, el delta de `players.html`, el modal de `league-results.html`):
   no hay forma desde la hoja, se cambia el literal.
 
-El modal de `league-results.html` inyecta su propio `<style>` al abrirse, y
+El modal de `league-results.html` (retirada con las ligas el 2026-10-16)
+inyectaba su propio `<style>` al abrirse, y
 como entra en el DOM después, gana a igualdad de especificidad: sus reglas
 llevan `!important` a propósito.
 
@@ -220,8 +221,9 @@ Hay cuatro variables en `theme.css` y cualquier capa usa una de ellas:
 | `--vt-z-velo` | 2000 | el velo oscuro de un overlay |
 | `--vt-z-modal` | 2001 | el panel que va dentro del velo |
 
-Los dos overlays de la app son el panel de administración de `index.html` y el
-modal de indicar resultado de `league-results.html`.
+El overlay de la app es el panel de administración de `index.html`. Hasta el
+2026-10-16 también estaba el modal de indicar resultado de
+`league-results.html`, retirada con las ligas.
 
 Mirarlo no basta, porque un panel medio tapado sigue pareciendo un panel. Se
 comprueba preguntándole al navegador **qué elemento está realmente arriba** en

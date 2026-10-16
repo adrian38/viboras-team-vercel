@@ -35,9 +35,13 @@ CSS. Medir el total empujaría a trocear el marcado, que no abarata nada —
 propio. Midiendo sólo el JavaScript de los `<script>` en línea, el número baja
 exactamente cuando se hace ese refactor y no cuando se mueve un `<div>`.
 
-Los seis ficheros perdonados, en líneas de JavaScript: `index.html` 813,
-`league-results.html` 809, `rating-test.html` 790, `players.html` 738,
+Los seis ficheros perdonados al nacer, en líneas de JavaScript: `index.html`
+813, `league-results.html` 809, `rating-test.html` 790, `players.html` 738,
 `api/league-admin.js` 626, `rating.html` 604.
+
+El 2026-10-16 quedan tres: `rating-test.html` 790, `players.html` 738 y
+`api/league-admin.js` 626. `index.html` bajó a 323 al quitarle el panel de
+ligas, y `league-results.html` se borró con las ligas.
 
 ## Lo que la guarda no ve
 
