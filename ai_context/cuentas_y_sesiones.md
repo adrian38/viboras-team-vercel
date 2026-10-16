@@ -17,6 +17,10 @@ abiertos, es de esos dos días.
 | `?action=players` | **Abierto a propósito.** Quien se registra no tiene sesión con la que pedir la lista de jugadores. Enseña lo mismo que `getNames` enseñaba a cualquiera hasta el 2026-10-16. |
 | Las 17 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
 
+`/group-normativa` **no** redirige a `/cuenta`: el alta pide aceptar la
+normativa, así que tiene que poder leerse antes de tener cuenta. No llama al
+API, de modo que no enseña nada del grupo.
+
 El redirect de `auth-client.js` a `/cuenta` es **comodidad, no seguridad**.
 Lo único que cierra la app es el 401. Si alguna vez se quita el guardia de los
 handlers «porque ya redirige la página», la app queda abierta otra vez y nada
@@ -196,6 +200,21 @@ build que lo inyecte en un `.html` estático, y no es un secreto.
 El enlace por correo (quien se registró con contraseña y luego entra con
 Google) **exige `email_verified === true`**. Sin esa comprobación sería
 suplantación: Google emite el token igualmente para un correo sin confirmar.
+
+## Normativa y formulario de acceso en el alta
+
+- **Todos aceptan la normativa** con una casilla obligatoria que enlaza a
+  `/group-normativa`. Quien la exige es el **servidor** (`comprobarAlta`,
+  `acceptRules === true`), porque el alta con Google no pasa por la validación
+  del formulario. La fecha queda en `users.rules_accepted_at`; las cuentas
+  anteriores al 2026-10-16 la tienen a NULL.
+- **Los nuevos**, no los antiguos piratas, ven el aviso del **formulario de
+  acceso** (`https://forms.gle/CzcqxMKQcwoS8DeA6`), que la normativa de nuevas
+  incorporaciones da por imprescindible, y se les recuerda al terminar el alta.
+  **La app no puede saber si lo rellenaron**: es un Google Form externo, y eso
+  lo comprueba el administrador antes de aprobar.
+- El enlace está en dos sitios: `cuenta.html` y `group-normativa.html`. Si
+  cambia el formulario, se cambian los dos.
 
 ## La campanita de avisos
 

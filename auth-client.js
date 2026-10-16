@@ -80,6 +80,9 @@
     if (user) return;
     var donde = location.pathname;
     if (donde === '/cuenta' || donde === '/cuenta.html') return;
+    // La normativa se lee ANTES de registrarse: el alta pide aceptarla. No
+    // carga datos del API, asi que no ensena nada del grupo.
+    if (donde === '/group-normativa' || donde === '/group-normativa.html') return;
     location.replace('/cuenta?volver=' + encodeURIComponent(donde + location.search));
   }
 

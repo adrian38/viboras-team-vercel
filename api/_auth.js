@@ -65,6 +65,9 @@ async function tablaUsuarios() {
   // Cuando demostro que el correo es suyo: con el enlace del alta, al
   // restablecer la contrasena, o porque Google lo dio por verificado.
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ`;
+  // Cuando acepto la normativa del grupo al registrarse. NULL en las cuentas
+  // creadas antes del 2026-10-16, que no la pedian.
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS rules_accepted_at TIMESTAMPTZ`;
 
   // Parcial y no UNIQUE a secas: con UNIQUE, cualquiera registra una cuenta
   // reclamando el jugador de otro y lo deja fuera para siempre, aunque su

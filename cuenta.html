@@ -80,6 +80,8 @@
 .pendiente:last-child{border-bottom:0}
 .pendiente__quien{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pendiente__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
+.paso{padding:10px 12px;border-radius:var(--vt-r);background:rgba(245,158,11,0.10);border:1px solid var(--vt-border-gold);color:var(--vt-text)}
+.paso a,.pirata a{color:var(--vt-gold-light)}
 .enlace{background:none;border:0;padding:4px 0;color:var(--vt-gold-light);font:inherit;font-size:13px;cursor:pointer;align-self:center;text-decoration:underline}
 .pendiente .vt-select{width:auto;min-height:0;padding-top:6px;padding-bottom:6px;font-size:13px}
 
@@ -192,6 +194,10 @@
         <p class="vt-small vt-muted">
           Tu ficha de jugador la creará el administrador al aprobar la cuenta.
         </p>
+        <p class="vt-small paso">
+          <strong>Imprescindible para entrar:</strong> rellena también el
+          <a href="https://forms.gle/CzcqxMKQcwoS8DeA6" target="_blank" rel="noopener">formulario de acceso</a>.
+        </p>
       </div>
       <div class="vt-field">
         <label for="altaCorreo">Correo</label>
@@ -201,6 +207,10 @@
         <label for="altaPassword">Contraseña (mínimo 6 caracteres)</label>
         <input class="vt-input" type="password" id="altaPassword" name="password" autocomplete="new-password" required minlength="6">
       </div>
+      <label class="pirata">
+        <input type="checkbox" id="altaNormativa" required>
+        <span>He leído y acepto la <a href="/group-normativa" target="_blank" rel="noopener">normativa del grupo</a></span>
+      </label>
       <button class="vt-btn" type="submit" id="btnAlta">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">person</span>Crear cuenta
       </button>
@@ -325,10 +335,18 @@ function alCambiarJugador(){
 }
 
 // Lo que identifica al que se registra: o uno de la lista, o un nombre nuevo.
+// Al nuevo se le recuerda el formulario de acceso justo al terminar, que es
+// cuando se olvida. Se mira antes del reset(), que desmarca la casilla.
+function avisoDeAlta(eraNuevo){
+  const base = 'Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.'
+  return eraNuevo ? base + ' No olvides rellenar el formulario de acceso: sin él no se aprueba.' : base
+}
+
 function quienSoy(){
-  return esNuevo()
+  const quien = esNuevo()
     ? { newPlayerName: $('altaNombre').value }
     : { playerName: $('altaJugador').value }
+  return Object.assign(quien, { acceptRules: $('altaNormativa').checked })
 }
 
 function pintarPendientes(filas){
@@ -421,8 +439,9 @@ $('formAlta').onsubmit = (ev) => {
       email: $('altaCorreo').value,
       password: $('altaPassword').value
     }, quienSoy()))
+    const eraNuevo = esNuevo()
     $('formAlta').reset(); alCambiarJugador()
-    mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
+    mostrarAviso(avisoDeAlta(eraNuevo), true)
   })
 }
 
@@ -461,8 +480,9 @@ function alVolverDeGoogle(respuesta){
       credential: respuesta.credential
     }, quienSoy()))
     if(json.status === 'pending'){
+      const eraNuevo = esNuevo()
       $('formAlta').reset(); alCambiarJugador()
-      mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
+      mostrarAviso(avisoDeAlta(eraNuevo), true)
       return
     }
     window.location.replace(destino())
