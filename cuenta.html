@@ -219,7 +219,11 @@
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">person</span>Crear cuenta
       </button>
       <div class="separador oculto" id="sepAlta">o</div>
-      <div class="google" id="googleAlta"></div>
+      <div class="google oculto" id="googleAlta"></div>
+      <p class="vt-small vt-muted oculto" id="pistaGoogleAlta" style="text-align:center">
+        Para registrarte con Google, primero pon tu nombre, guarda el formulario
+        de inscripción y acepta la normativa.
+      </p>
     </form>
   </section>
 
@@ -354,6 +358,7 @@ function pintarInscripcion(){
   $('estadoInscripcionTexto').textContent = hecho ? 'Formulario de inscripción: rellenado ✓' : 'Formulario de inscripción: sin rellenar'
   $('enlaceInscripcion').textContent = hecho ? 'Revisar' : 'Rellenar'
   $('estadoInscripcion').classList.toggle('hecho', hecho)
+  pintarGoogleAlta()
 }
 
 // Con la cuenta creada ya estan en el servidor: no se quedan en el navegador.
@@ -469,6 +474,9 @@ async function cargarPendientes(){
 }
 
 $('altaPirata').onchange = alCambiarJugador
+// Nombre, casilla de pirata o normativa: cualquier cambio puede dejar listo el alta con Google.
+$('formAlta').addEventListener('input', pintarGoogleAlta)
+$('formAlta').addEventListener('change', pintarGoogleAlta)
 window.addEventListener('storage', (ev) => { if(ev.key === CLAVE_INSCRIPCION) pintarInscripcion() })
 // Algun movil congela la pestana de fondo: al volver a ella se mira otra vez.
 document.addEventListener('visibilitychange', () => { if(!document.hidden) pintarInscripcion() })
@@ -555,9 +563,30 @@ async function montarGoogle(){
   google.accounts.id.initialize({client_id: clientId, callback: alVolverDeGoogle, ux_mode: 'popup'})
   googleListo = true
   dibujarBotonesGoogle()
+  pintarGoogleAlta()
 }
 
-let googleListo = false
+// var y no let: pintarGoogleAlta() puede llegar a dibujarBotonesGoogle()
+// desde codigo que corre antes de esta linea, y un let daria ReferenceError.
+var googleListo = false
+
+// El boton de Google es un iframe de Google: su clic no se puede frenar. Si se
+// ensenase siempre, cualquiera abriria el alta con Google sin nombre, sin
+// formulario y sin normativa (el servidor lo rechazaria, pero despues de
+// pasar por Google). Asi que no se ensena hasta que todo eso esta; correo y
+// contrasena no hacen falta, porque los pone Google.
+function altaListaParaGoogle(){
+  const quien = esNuevo() ? $('altaNombre').value.trim() : $('altaJugador').value
+  return !!quien && !!respuestasInscripcion() && $('altaNormativa').checked
+}
+
+function pintarGoogleAlta(){
+  const listo = altaListaParaGoogle()
+  $('googleAlta').classList.toggle('oculto', !listo)
+  // La pista solo si hay boton de Google que esperar: sin client_id no sale.
+  $('pistaGoogleAlta').classList.toggle('oculto', listo || $('sepAlta').classList.contains('oculto'))
+  if(listo) dibujarBotonesGoogle()
+}
 
 // Google fija el ancho del boton en pixeles al dibujarlo y no lo recalcula.
 // Dibujado con la caja oculta (la otra pestana, o el panel aun cargando)
