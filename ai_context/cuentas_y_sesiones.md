@@ -201,8 +201,14 @@ El enlace por correo (quien se registró con contraseña y luego entra con
 Google) **exige `email_verified === true`**. Sin esa comprobación sería
 suplantación: Google emite el token igualmente para un correo sin confirmar.
 
-## Normativa y formulario de acceso en el alta
+## Normativa y formulario de inscripción en el alta
 
+- **El texto de la normativa está en un solo sitio: `group-normativa.html`.**
+  Todo lo demás (la casilla del alta, el correo de rechazo, el botón de la
+  portada) sólo enlaza a esa página. Comprobado el 2026-10-16 al cambiar el
+  texto: ninguna otra página, script, correo ni tabla de la base repite sus
+  reglas. («Inactividad» en `rating-info.html` es la pérdida de fiabilidad del
+  rating, no la regla del grupo.)
 - **Todos aceptan la normativa** con una casilla obligatoria que enlaza a
   `/group-normativa`. Quien la exige es el **servidor** (`comprobarAlta`,
   `acceptRules === true`), porque el alta con Google no pasa por la validación
