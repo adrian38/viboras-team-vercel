@@ -303,15 +303,22 @@ UPDATE users SET status='active', role='admin', approved_at=now() WHERE email='.
 
 ## Correo: aprobada, restablecer y confirmar
 
-Desde el 2026-10-16 la app manda tres correos (`api/_correo.js`):
+Desde el 2026-10-16 la app manda cuatro correos (`api/_correo.js`):
 
 | Cuándo | Qué | Enlace |
 | --- | --- | --- |
 | Alta con contraseña | «Confirma tu correo» | `/cuenta?verificar=…`, vale 7 días |
 | Un admin aprueba la cuenta | «Tu cuenta está aprobada» | `/cuenta` |
+| Un admin rechaza la cuenta | «Tu solicitud no ha sido aprobada» | `/group-normativa` |
 | «¿Has olvidado la contraseña?» | «Restablecer tu contraseña» | `/cuenta?restablecer=…`, vale 1 hora |
 
-Los dos últimos endpoints viven en **`api/correo.js`**, no en `auth.js`, que
+El de rechazo sólo sale si el `DELETE` borró de verdad una cuenta pendiente:
+rechazar dos veces, o rechazar a alguien ya aprobado, no manda nada. No
+inventa motivos ni condiciones para volver a pedirlo: dice que no se aprobó,
+que hable con un administrador y que sus datos se han borrado, que es lo que
+pasa.
+
+Restablecer y confirmar, los endpoints de las filas primera y última, viven en **`api/correo.js`**, no en `auth.js`, que
 está a pocas líneas del techo de 600. En la página, la lógica está en
 `cuenta-correo.js` por lo mismo.
 

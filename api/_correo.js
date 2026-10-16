@@ -223,6 +223,20 @@ export function correoDeAprobacion(email) {
   });
 }
 
+// Al rechazar, la cuenta se borra entera (api/auth.js, rejectUser), con su
+// formulario de inscripcion: por eso la nota lo dice.
+export function correoDeRechazo(email) {
+  return enviarCorreo(email, 'Tu solicitud en Víboras Team', {
+    titulo: 'Tu solicitud no ha sido aprobada',
+    parrafos: [
+      'Gracias por tu interés en Víboras Team. Un administrador ha revisado tu solicitud y, por ahora, no ha sido aprobada.',
+      'Si crees que es un error o quieres saber más, habla con un administrador del grupo.'
+    ],
+    boton: { texto: 'Ver la normativa del grupo', url: `${urlDeLaApp()}/group-normativa` },
+    nota: 'Hemos borrado tu cuenta y los datos de tu formulario de inscripción.'
+  });
+}
+
 export function correoDeRestablecer(email, token) {
   return enviarCorreo(email, 'Restablecer tu contraseña de Víboras Team', {
     titulo: 'Restablecer tu contraseña',

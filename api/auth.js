@@ -21,7 +21,7 @@ import {
   anotarFallo, limpiarFallos, bloqueoPendiente, esCorreoDeAdmin
 } from './_auth.js';
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
-import { crearEnlace, correoDeVerificacion, correoDeAprobacion, problemaDeCorreo } from './_correo.js';
+import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
 import { validarInscripcion } from './_inscripcion.js';
 
 const CREDENCIALES_MAL = {
@@ -374,7 +374,8 @@ async function rejectUser(req, res) {
   // Se borra la fila, no se marca: marcada, el jugador quedaria ocupado para
   // siempre y nadie podria reclamarlo. La cascada se lleva sesiones e
   // identidades.
-  const hecho = await sql`DELETE FROM users WHERE id = ${id} AND status = 'pending' RETURNING id`;
+  const hecho = await sql`DELETE FROM users WHERE id = ${id} AND status = 'pending' RETURNING email`;
+  if (hecho.rowCount > 0) await correoDeRechazo(hecho.rows[0].email);
   res.status(200).json({ ok: true, deleted: hecho.rowCount > 0 });
 }
 
