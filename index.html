@@ -236,8 +236,7 @@ label.small{
   .block-row{align-items:center}
 
   /* Desktop-only 2-column layout for main blocks */
-  .site{ display:grid; grid-template-columns: 1fr 1fr; grid-template-areas: "leagues upload" "consult performance" "organization organization"; gap:18px }
-  .block--leagues{ grid-area: leagues }
+  .site{ display:grid; grid-template-columns: 1fr 1fr; grid-template-areas: "upload consult" "performance performance" "organization organization"; gap:18px }
   .block--upload{ grid-area: upload }
   .block--consult{ grid-area: consult }
   .block--performance{ grid-area: performance }
@@ -265,28 +264,6 @@ label.small{
 </div>
 
 <div class="site">
-
-  <div class="block block--leagues">
-    <div class="block-head">
-      <div>
-        <span class="ms block-icon notranslate" translate="no">emoji_events</span>
-        <div>
-          <div class="block-title">Ligas</div>
-        </div>
-      </div>
-      <span class="ms ms--lg block-marca notranslate" translate="no" aria-hidden="true">trophy</span>
-    </div>
-    <div class="block-row">
-      <div style="flex:1">
-        <label class="small">Gestiona tus partidos de liga y mira resultados</label>
-        <div class="controls">
-          <button class="btn secondary-green" onclick="window.location='league-results.html'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">format_list_bulleted</span>Ligas</button>
-          <button class="btn normativa" onclick="window.location='league-info.html'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">menu_book</span>Normativa</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
 
   <div class="block block--upload">
     <div class="block-head">
