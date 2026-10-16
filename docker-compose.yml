@@ -52,6 +52,14 @@ services:
       postgres:
         condition: service_healthy
 
+  # Buzon de pruebas: recoge todo lo que la app envia por SMTP y no lo manda
+  # fuera. Se lee en http://localhost:8025. En produccion es Gmail.
+  mailpit:
+    image: axllent/mailpit:v1.21.8
+    container_name: padel-mailpit
+    ports:
+      - "8025:8025"
+
   app:
     build:
       context: .
@@ -71,6 +79,15 @@ services:
       # En produccion se ponen en el panel de Vercel.
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
       ADMIN_EMAILS: "${ADMIN_EMAILS:-}"
+      # Correo: por defecto al Mailpit de arriba. Para probar con Gmail de
+      # verdad, SMTP_HOST=smtp.gmail.com, SMTP_PORT=465, SMTP_USER y SMTP_PASS
+      # en .env. APP_URL es de donde salen los enlaces de los correos.
+      SMTP_HOST: "${SMTP_HOST:-mailpit}"
+      SMTP_PORT: "${SMTP_PORT:-1025}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASS: "${SMTP_PASS:-}"
+      MAIL_FROM: "${MAIL_FROM:-Víboras Team <no-responder@viboras.local>}"
+      APP_URL: "${APP_URL:-http://localhost:3000}"
       USE_LOCAL_PG: "1"
       WS_PROXY: "wsproxy:80"
       HTTP_PROXY_NEON: "neon-http:4444"
@@ -95,6 +112,7 @@ services:
       - ./submit-result.html:/app/submit-result.html
       - ./cuenta.html:/app/cuenta.html
       - ./auth-client.js:/app/auth-client.js
+      - ./cuenta-correo.js:/app/cuenta-correo.js
     depends_on:
       wsproxy:
         condition: service_started

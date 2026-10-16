@@ -1,6 +1,6 @@
 # El entorno local necesita dos proxies para imitar a Neon
 
-`docker compose up -d --build` levanta cuatro contenedores, y dos de ellos
+`docker compose up -d --build` levanta cinco contenedores, y dos de ellos
 existen sólo porque `@vercel/postgres` **no habla con un Postgres normal**:
 
 | Servicio | Para qué |
@@ -8,7 +8,8 @@ existen sólo porque `@vercel/postgres` **no habla con un Postgres normal**:
 | `postgres` | Postgres 17 de verdad. Puerto **5433** en el host, para no chocar con uno instalado. |
 | `wsproxy` | Traduce WebSocket (protocolo Neon) a TCP. |
 | `neon-http` | Implementa el API HTTP de Neon (`POST /sql`) sobre ese Postgres. **Es el que de verdad usa la app**: el tag `sql` de `@vercel/postgres` va por HTTP, no por WebSocket. |
-| `app` | Express que imita a Vercel: sirve los `.html` y enruta `api/*.js` como si fueran funciones. |
+| `app` | Express que imita a Vercel: sirve los `.html` y enruta `api/*.js` como si fueran funciones. Cada endpoint nuevo necesita su línea en `FUNCTIONS` de `docker/server.js`. |
+| `mailpit` | Buzón de pruebas: recoge los correos de la app y no los manda fuera. Se leen en `http://localhost:8025`, y por API en `/api/v1/search?query=to:…` ([[cuentas_y_sesiones]]). |
 
 El servidor local está en `docker/server.js` y **no modifica** los ficheros de
 `api/`: los importa tal cual, replicando el contrato que esperan

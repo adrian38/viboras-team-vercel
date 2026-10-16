@@ -231,18 +231,60 @@ En local, donde no hay credencial de Google, se promociona a mano:
 UPDATE users SET status='active', role='admin', approved_at=now() WHERE email='...';
 ```
 
-## Lo que falta, y que va a hacer falta
+## Correo: aprobada, restablecer y confirmar
 
-**No hay forma de recuperar una contraseña olvidada.** Sin servicio de correo,
-el único camino es `changePassword` con la sesión abierta, o un `UPDATE` manual
-con un hash generado a mano:
+Desde el 2026-10-16 la app manda tres correos (`api/_correo.js`):
+
+| Cuándo | Qué | Enlace |
+| --- | --- | --- |
+| Alta con contraseña | «Confirma tu correo» | `/cuenta?verificar=…`, vale 7 días |
+| Un admin aprueba la cuenta | «Tu cuenta está aprobada» | `/cuenta` |
+| «¿Has olvidado la contraseña?» | «Restablecer tu contraseña» | `/cuenta?restablecer=…`, vale 1 hora |
+
+Los dos últimos endpoints viven en **`api/correo.js`**, no en `auth.js`, que
+está a pocas líneas del techo de 600. En la página, la lógica está en
+`cuenta-correo.js` por lo mismo.
+
+**SMTP genérico.** En producción, una cuenta de Gmail del grupo con contraseña
+de aplicación: basta `SMTP_USER` y `SMTP_PASS` en Vercel, porque el host cae
+en `smtp.gmail.com:465`. En local, `docker-compose.yml` levanta **Mailpit**
+(`http://localhost:8025`), que recoge todo y no envía nada fuera. **Sin SMTP
+configurado no falla nada**: registra un aviso y sigue. Aprobar o registrarse
+no pueden romperse porque Gmail no conteste.
+
+Lo que cada decisión evita:
+
+- **Los enlaces salen de `APP_URL`**, o de `VERCEL_PROJECT_PRODUCTION_URL`,
+  **nunca de la cabecera `Host`**. Si salieran de ella, cualquiera pediría un
+  restablecimiento para otro con `Host: su-dominio` y el token le llegaría a él.
+  Probado: con `Host: malo.example` el enlace sigue saliendo de `APP_URL`.
+- **«Si ese correo tiene cuenta, te hemos enviado…»** es la misma respuesta
+  exista o no la cuenta, para no revelar qué correos son del grupo. Lo que
+  todavía se nota es el **tiempo**: con cuenta, la respuesta espera al SMTP.
+- **En `email_tokens` se guarda el SHA-256, no el token**, y se gasta con un
+  solo `UPDATE … WHERE used_at IS NULL AND expires_at > now()`: dos peticiones
+  a la vez no pueden usar el mismo enlace las dos.
+- **Pedir otro enlace invalida el anterior**, y en dos minutos no se manda un
+  segundo correo aunque se pulse diez veces.
+- **Restablecer cierra todas las sesiones** de esa cuenta y la marca
+  verificada, porque abrir el enlace prueba que el correo es suyo.
+- **La página borra el token de la barra** (`history.replaceState`) nada más
+  leerlo.
+- **nodemailer va fijado a 10.0.13.** Todas las versiones hasta la 10.0.5
+  tienen avisos de seguridad, y algunos son justo de interpretar direcciones,
+  que aquí escribe quien se registra.
+
+**Confirmar el correo no bloquea nada.** El administrador ve «confirmado» o
+«sin confirmar» junto al correo de cada pendiente, y decide. Si fuese
+obligatorio, mientras no haya SMTP en producción nadie podría entrar. Las
+altas con Google nacen confirmadas.
+
+Mientras no haya SMTP en producción, la vía manual para una contraseña
+olvidada sigue siendo un `UPDATE` con un hash generado a mano:
 
 ```bash
 docker compose exec -T app node -e "import('./api/_auth.js').then(async m => console.log(await m.hashPassword('la-nueva')))"
 ```
-
-Y luego `UPDATE users SET password_hash='scrypt$...' WHERE email='...'`. Quien
-entre con Google no tiene este problema.
 
 ## El día que se despliegue, el grupo se queda fuera
 

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
-    "jose": "^6.2.12"
+    "jose": "^6.2.12",
+    "nodemailer": "10.0.13"
   }
 }

@@ -80,6 +80,7 @@
 .pendiente:last-child{border-bottom:0}
 .pendiente__quien{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pendiente__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
+.enlace{background:none;border:0;padding:4px 0;color:var(--vt-gold-light);font:inherit;font-size:13px;cursor:pointer;align-self:center;text-decoration:underline}
 .pendiente .vt-select{width:auto;min-height:0;padding-top:6px;padding-bottom:6px;font-size:13px}
 
 /* Al final del bloque y no al principio: .campos y .separador declaran su
@@ -146,8 +147,31 @@
       <button class="vt-btn" type="submit" id="btnEntrar">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">login</span>Entrar
       </button>
+      <button class="enlace" type="button" id="btnOlvido">¿Has olvidado la contraseña?</button>
       <div class="separador oculto" id="sepEntrar">o</div>
       <div class="google" id="googleEntrar"></div>
+    </form>
+
+    <!-- La logica de estos dos formularios esta en cuenta-correo.js. -->
+    <form id="formOlvido" class="campos oculto" autocomplete="on">
+      <p class="vt-small vt-muted">
+        Escribe el correo de tu cuenta y te mandamos un enlace para poner una contraseña nueva.
+      </p>
+      <div class="vt-field">
+        <label for="olvidoCorreo">Correo</label>
+        <input class="vt-input" type="email" id="olvidoCorreo" autocomplete="username" required>
+      </div>
+      <button class="vt-btn" type="submit" id="btnOlvidoEnviar">Enviar enlace</button>
+      <button class="enlace" type="button" id="btnOlvidoVolver">Volver a entrar</button>
+    </form>
+
+    <form id="formRestablecer" class="campos oculto" autocomplete="on">
+      <p class="vt-small vt-muted">Elige tu contraseña nueva.</p>
+      <div class="vt-field">
+        <label for="restablecerPassword">Contraseña nueva (mínimo 6 caracteres)</label>
+        <input class="vt-input" type="password" id="restablecerPassword" autocomplete="new-password" required minlength="6">
+      </div>
+      <button class="vt-btn" type="submit" id="btnRestablecer">Guardar contraseña</button>
     </form>
 
     <form id="formAlta" class="campos oculto" autocomplete="on">
@@ -195,6 +219,7 @@
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="/auth-client.js" defer></script>
+<script src="/cuenta-correo.js" defer></script>
 <script>
 const $ = (id) => document.getElementById(id)
 let enVuelo = false
@@ -328,7 +353,7 @@ function pintarPendientes(filas){
     nombre.textContent = quien
     const correo = document.createElement('span')
     correo.className = 'pendiente__correo'
-    correo.textContent = f.email
+    correo.textContent = f.email + (f.email_verified_at ? ' · confirmado' : ' · sin confirmar')
     datos.append(nombre, correo)
     fila.appendChild(datos)
     fila.appendChild(botonesDePendiente(f.id))

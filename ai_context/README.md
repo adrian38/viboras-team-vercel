@@ -50,7 +50,8 @@ que hay.
   redirect del navegador no es la cerradura, por qué las tablas no están en
   `ensureSchema()`, por qué la lista del alta es sólo para antiguos piratas y
   oculta a quien ya tiene cuenta, por qué `league-admin.js` no admite ni una línea más, de
-  dónde sale el primer administrador y qué pasa con una contraseña olvidada.
+  dónde sale el primer administrador, la campanita, y los correos de aprobar,
+  restablecer y confirmar (y por qué los enlaces nunca salen de la cabecera Host).
 - `marcador_incompleto_se_rechaza.md`: qué cuenta como partido terminado, por
   qué la regla vive sólo en `api/_score.js` y no en las tres páginas que suben
   resultados, por qué los torneos quedan fuera y qué pasa con lo ya guardado.

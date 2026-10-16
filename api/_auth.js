@@ -62,6 +62,9 @@ async function tablaUsuarios() {
   // existe, asi que sin esto la columna no aparece donde la tabla ya estaba
   // creada. Mismo caso que leagues.substitution_groups en _db.js:27.
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS requested_player_name TEXT`;
+  // Cuando demostro que el correo es suyo: con el enlace del alta, al
+  // restablecer la contrasena, o porque Google lo dio por verificado.
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ`;
 
   // Parcial y no UNIQUE a secas: con UNIQUE, cualquiera registra una cuenta
   // reclamando el jugador de otro y lo deja fuera para siempre, aunque su
@@ -104,10 +107,27 @@ async function tablaSesiones() {
   await sql`CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions(user_id)`;
 }
 
+async function tablaEnlaces() {
+  // Los enlaces de un solo uso que van por correo (restablecer contrasena,
+  // verificar correo). Igual que las sesiones, se guarda el SHA-256: quien lea
+  // la tabla no puede usar un enlace que no le llego.
+  await sql`
+    CREATE TABLE IF NOT EXISTS email_tokens (
+      token_hash TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ
+    )
+  `;
+}
+
 async function crearTablas() {
   await tablaUsuarios();
   await tablaIdentidades();
   await tablaSesiones();
+  await tablaEnlaces();
 }
 
 export function ensureAuthSchema() {

@@ -3,7 +3,7 @@
 ## Alcance
 
 - Este repositorio es `viboras-team-vercel`: la web del grupo de pádel Viboras
-  Team. Estático (17 páginas HTML) más cuatro funciones serverless en `api/`,
+  Team. Estático (17 páginas HTML) más cinco funciones serverless en `api/`,
   desplegado en Vercel sobre Neon Postgres.
 - **`viboras` es la rama por defecto y la de producción.** Un push despliega al
   grupo sin paso intermedio. `master` existe y está obsoleta. Detalle en

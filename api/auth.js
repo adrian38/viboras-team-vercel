@@ -21,6 +21,7 @@ import {
   anotarFallo, limpiarFallos, bloqueoPendiente, esCorreoDeAdmin
 } from './_auth.js';
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
+import { crearEnlace, correoDeVerificacion, correoDeAprobacion } from './_correo.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -134,10 +135,11 @@ async function register(req, res) {
     return;
   }
   const hash = await hashPassword(password);
-  await sql`
+  const { rows } = await sql`
     INSERT INTO users (email, password_hash, player_id, requested_player_name)
-    VALUES (${email}, ${hash}, ${alta.playerId}, ${alta.requestedName})
+    VALUES (${email}, ${hash}, ${alta.playerId}, ${alta.requestedName}) RETURNING id
   `;
+  await correoDeVerificacion(email, await crearEnlace(rows[0].id, 'verify', 60 * 24 * 7));
   res.status(200).json({ ok: true, status: 'pending' });
 }
 
@@ -279,7 +281,7 @@ async function notifications(req, res) {
 async function listPending(req, res) {
   if (!await exigirAdmin(req, res)) return;
   const { rows } = await sql`
-    SELECT u.id, u.email, u.created_at, u.requested_player_name,
+    SELECT u.id, u.email, u.created_at, u.requested_player_name, u.email_verified_at,
            p.name AS player_name, p.active AS player_active
     FROM users u
     LEFT JOIN players p ON p.id = u.player_id
@@ -295,7 +297,7 @@ async function approveUser(req, res) {
   const data = await readBody(req);
   const id = toInt(data?.id);
   const { rows } = await sql`
-    SELECT u.id, u.status, u.player_id, u.requested_player_name,
+    SELECT u.id, u.email, u.status, u.player_id, u.requested_player_name,
            p.active AS player_active
     FROM users u LEFT JOIN players p ON p.id = u.player_id
     WHERE u.id = ${id}
@@ -317,6 +319,7 @@ async function approveUser(req, res) {
   await sql`
     UPDATE users SET status = 'active', role = ${role}, approved_at = now() WHERE id = ${user.id}
   `;
+  await correoDeAprobacion(user.email);
   res.status(200).json({ ok: true, role });
 }
 
@@ -518,11 +521,11 @@ async function googleRegister(req, res) {
 async function crearCuentaDeGoogle(req, res, dato, alta) {
   const admin = esCorreoDeAdmin(dato.email);
   const { rows } = await sql`
-    INSERT INTO users (email, player_id, requested_player_name, status, role, approved_at)
+    INSERT INTO users (email, player_id, requested_player_name, status, role, approved_at, email_verified_at)
     VALUES (
       ${dato.email}, ${alta.playerId}, ${alta.requestedName},
       ${admin ? 'active' : 'pending'}, ${admin ? 'admin' : 'member'},
-      ${admin ? new Date().toISOString() : null}::timestamptz
+      ${admin ? new Date().toISOString() : null}::timestamptz, now()
     )
     RETURNING id
   `;
