@@ -243,6 +243,16 @@
       display: inline-block;
     }
 
+    /* Lo que aporto cada partido al cambio del dia (players-aportes.js). */
+    .match-delta {
+      display: inline-block;
+      margin-left: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .match-delta.sube { color: #4ade80; }
+    .match-delta.baja { color: #f87171; }
+
     .match-score-separator {
       display: inline-block;
       margin: 0 6px;
@@ -1061,5 +1071,9 @@
       await loadData();
     });
   </script>
+  <!-- Despues del script de la pagina y antes de DOMContentLoaded: envuelve
+       updatePeriod y buildMatchLineHtml para poner al lado de cada partido
+       lo que aporto al cambio del dia. -->
+  <script src="/players-aportes.js"></script>
 </body>
 </html>

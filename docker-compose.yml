@@ -115,6 +115,7 @@ services:
       - ./cuenta-correo.js:/app/cuenta-correo.js
       - ./inscripcion.html:/app/inscripcion.html
       - ./splash.js:/app/splash.js
+      - ./players-aportes.js:/app/players-aportes.js
     depends_on:
       wsproxy:
         condition: service_started
