@@ -81,6 +81,10 @@
 .pendiente__quien{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pendiente__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
 .pirata a{color:var(--vt-gold-light)}
+.clave{position:relative}
+.clave .vt-input{width:100%;padding-right:46px}
+.ver-clave{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:38px;height:38px;border:0;border-radius:var(--vt-r);background:none;color:var(--vt-muted);cursor:pointer}
+.ver-clave:hover,.ver-clave:focus-visible{color:var(--vt-gold-light)}
 /* El boton de Google es un iframe: su clic no se puede frenar. Mientras el
    alta este incompleta, una capa transparente encima recibe el clic y dice
    que falta; el boton se ve atenuado, como inhabilitado. */
@@ -520,6 +524,30 @@ async function cargarPendientes(){
 }
 
 $('altaPirata').onchange = alCambiarJugador
+// Un ojo en cada contrasena para verla mientras se escribe (lo pidio Silvia:
+// en el movil es facil equivocarse). Se anade aqui y no en el marcado para
+// no repetirlo en los tres campos.
+function botonesVerContrasena(){
+  for(const input of document.querySelectorAll('input[type=password]')){
+    const caja = document.createElement('div')
+    caja.className = 'clave'
+    input.parentNode.insertBefore(caja, input)
+    caja.appendChild(input)
+    const boton = document.createElement('button')
+    boton.type = 'button'
+    boton.className = 'ver-clave'
+    boton.setAttribute('aria-label', 'Mostrar contraseña')
+    boton.innerHTML = '<span class="ms notranslate" translate="no" aria-hidden="true">visibility</span>'
+    boton.onclick = () => {
+      const ver = input.type === 'password'
+      input.type = ver ? 'text' : 'password'
+      boton.setAttribute('aria-label', ver ? 'Ocultar contraseña' : 'Mostrar contraseña')
+      boton.firstChild.textContent = ver ? 'visibility_off' : 'visibility'
+    }
+    caja.appendChild(boton)
+  }
+}
+botonesVerContrasena()
 // Nombre, casilla de pirata o normativa: cualquier cambio puede dejar listo el alta con Google.
 $('formAlta').addEventListener('input', pintarGoogleAlta)
 $('formAlta').addEventListener('change', pintarGoogleAlta)
