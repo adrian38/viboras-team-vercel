@@ -221,6 +221,7 @@ function pintarSesion(user){
   $('panelSesion').classList.toggle('oculto', !user)
   $('panelAcceso').classList.toggle('oculto', !!user)
   $('panelAdmin').classList.toggle('oculto', !user || user.role !== 'admin')
+  dibujarBotonesGoogle()
   if(!user) return
   $('sesionJugador').innerText = user.playerName || 'Sin jugador asignado'
   $('sesionCorreo').innerText = user.email
@@ -263,6 +264,7 @@ function elegirPestana(alta){
   $('formEntrar').classList.toggle('oculto', alta)
   $('formAlta').classList.toggle('oculto', !alta)
   limpiarAviso()
+  dibujarBotonesGoogle()
 }
 
 async function cargarJugadores(){
@@ -441,6 +443,19 @@ async function montarGoogle(){
   if(!clientId) return
   try{ await esperarGoogle() }catch(e){ console.error(e); return }
   google.accounts.id.initialize({client_id: clientId, callback: alVolverDeGoogle, ux_mode: 'popup'})
+  googleListo = true
+  dibujarBotonesGoogle()
+}
+
+let googleListo = false
+
+// Google fija el ancho del boton en pixeles al dibujarlo y no lo recalcula.
+// Dibujado con la caja oculta (la otra pestana, o el panel aun cargando)
+// clientWidth era 0, salia de 300 px, mas ancho que la tarjeta en un movil,
+// y su overflow:hidden lo cortaba. Por eso se dibuja cada caja cuando se ve,
+// con su ancho real, y otra vez si ese ancho cambia.
+function dibujarBotonesGoogle(){
+  if(!googleListo) return
   dibujarBoton('googleEntrar', 'sepEntrar', 'signin_with')
   dibujarBoton('googleAlta', 'sepAlta', 'signup_with')
 }
@@ -448,10 +463,13 @@ async function montarGoogle(){
 function dibujarBoton(hueco, separador, texto){
   const caja = $(hueco)
   $(separador).classList.remove('oculto')
+  const ancho = Math.min(400, Math.floor(caja.clientWidth))
+  if(ancho < 200 || caja.dataset.ancho === String(ancho)) return
+  caja.dataset.ancho = String(ancho)
+  caja.innerHTML = ''
   google.accounts.id.renderButton(caja, {
     theme: 'filled_black', size: 'large', shape: 'rectangular',
-    text: texto, locale: 'es',
-    width: Math.max(220, Math.min(360, caja.clientWidth || 300))
+    text: texto, locale: 'es', width: ancho
   })
 }
 
@@ -462,6 +480,7 @@ function dibujarBoton(hueco, separador, texto){
 document.addEventListener('DOMContentLoaded', () => {
   cargarJugadores()
   montarGoogle()
+  window.addEventListener('resize', dibujarBotonesGoogle)
   window.vtMe.then(pintarSesion)
 })
 </script>

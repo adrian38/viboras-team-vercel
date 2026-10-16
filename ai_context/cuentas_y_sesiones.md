@@ -175,7 +175,20 @@ Dos consecuencias que no se ven en el código:
   `viboras` desplegando directo a producción ([[rama_viboras_es_produccion]])
   da igual, pero conviene no perseguir el fantasma.
 - **Sin `GOOGLE_CLIENT_ID` la página funciona igual**, sólo que no dibuja el
-  botón. Es lo que pasa en el entorno local.
+  botón. En local depende de que `.env` (ignorado por git, lo lee
+  `docker-compose.yml`) defina `GOOGLE_CLIENT_ID`; desde el 2026-10-16 lo define.
+
+**El botón se dibuja con un ancho fijo en píxeles** que Google no recalcula.
+Si se dibuja con su caja oculta —la otra pestaña, o el panel mientras se
+comprueba la sesión— la caja mide 0 y el botón salía de 300 px: en un móvil,
+más ancho que la tarjeta, cuyo `overflow: hidden` lo cortaba por los dos
+lados. `dibujarBotonesGoogle()` sólo dibuja la caja visible, con su ancho, y
+repite al cambiar de pestaña o de tamaño.
+
+En local, aun con el `client_id` en `.env`, **el botón mide
+0**: Google responde 400 a `localhost` mientras no esté entre los orígenes
+autorizados del cliente OAuth. Lo que sí se puede medir es el `width=` de la
+URL del iframe contra el ancho de la caja.
 
 El `client_id` llega por `GET /api/auth?action=config`: aquí no hay paso de
 build que lo inyecte en un `.html` estático, y no es un secreto.
