@@ -13,6 +13,7 @@
 import { sql } from '@vercel/postgres';
 import { randomBytes, createHash } from 'node:crypto';
 import nodemailer from 'nodemailer';
+import { LOGO_PNG_BASE64 } from './_logo.js';
 
 let transporte = null;
 
@@ -39,7 +40,11 @@ export function urlDeLaApp() {
   return 'http://localhost:3000';
 }
 
-export async function enviarCorreo(para, asunto, texto) {
+// El logo va adjunto e incrustado (cid), no enlazado a la web: asi se ve igual
+// en local que en produccion y Gmail no lo esconde como imagen externa.
+const LOGO = { filename: 'viboras-team.png', content: Buffer.from(LOGO_PNG_BASE64, 'base64'), cid: 'logo@viboras' };
+
+export async function enviarCorreo(para, asunto, mensaje) {
   const conf = configuracion();
   if (!conf) {
     console.warn(`correo: sin SMTP configurado, no se envia "${asunto}"`);
@@ -50,7 +55,10 @@ export async function enviarCorreo(para, asunto, texto) {
       const { from, ...opciones } = conf;
       transporte = nodemailer.createTransport(opciones);
     }
-    await transporte.sendMail({ from: conf.from, to: para, subject: asunto, text: texto });
+    await transporte.sendMail({
+      from: conf.from, to: para, subject: asunto,
+      text: textoPlano(mensaje), html: plantilla(mensaje), attachments: [LOGO]
+    });
     return true;
   } catch (err) {
     console.error('correo: fallo al enviar', asunto, err && err.message);
@@ -94,40 +102,77 @@ export async function enlaceReciente(userId, tipo) {
   return rows.length > 0;
 }
 
+// Un mensaje es { titulo, parrafos[], boton: { texto, url }, nota }. De ahi
+// salen las dos versiones: HTML para quien lo ve y texto para quien no.
+
+const escapar = (t) => String(t).replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
+
+function textoPlano({ titulo, parrafos, boton, nota }) {
+  return [titulo, ...parrafos, `${boton.texto}: ${boton.url}`, nota, '— Víboras Team']
+    .filter(Boolean).join('\n\n');
+}
+
+// HTML de correo: tablas y estilos en linea, que es lo unico que respetan
+// Gmail y Outlook. Cabecera oscura y oro como la app; cuerpo claro, que se
+// lee bien en cualquier cliente.
+function plantilla({ titulo, parrafos, boton, nota }) {
+  const p = (t) => `<p style="margin:0 0 16px;font-size:15px;line-height:24px;color:#33343a">${escapar(t)}</p>`;
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapar(titulo)}</title></head>
+<body style="margin:0;padding:0;background:#ececee">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ececee;padding:24px 12px">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;border-radius:14px;overflow:hidden;font-family:Arial,Helvetica,sans-serif">
+<tr><td align="center" style="background:#121316;padding:28px 24px 22px;border-bottom:3px solid #f59e0b">
+<img src="cid:${LOGO.cid}" width="72" height="72" alt="Víboras Team" style="display:block;border:0;border-radius:12px">
+<div style="margin-top:12px;font-size:20px;font-weight:800;letter-spacing:2px;color:#ffffff">VÍBORAS <span style="color:#f59e0b">TEAM</span></div>
+</td></tr>
+<tr><td style="background:#ffffff;padding:32px 32px 16px">
+<h1 style="margin:0 0 20px;font-size:22px;line-height:30px;color:#121316">${escapar(titulo)}</h1>
+${parrafos.map(p).join('\n')}
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px"><tr>
+<td style="background:#f59e0b;border-radius:10px">
+<a href="${escapar(boton.url)}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#121316;text-decoration:none">${escapar(boton.texto)}</a>
+</td></tr></table>
+${nota ? `<p style="margin:0 0 16px;font-size:13px;line-height:20px;color:#6b6d75">${escapar(nota)}</p>` : ''}
+</td></tr>
+<tr><td style="background:#f6f6f7;padding:18px 32px;font-size:12px;line-height:18px;color:#8a8c93">
+Si el botón no funciona, copia este enlace en el navegador:<br>
+<a href="${escapar(boton.url)}" style="color:#b7791f;word-break:break-all">${escapar(boton.url)}</a>
+<div style="margin-top:12px">Víboras Team · grupo de pádel</div>
+</td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
 export function correoDeAprobacion(email) {
-  return enviarCorreo(email, 'Tu cuenta de Víboras Team está aprobada', [
-    'Hola,',
-    '',
-    'Un administrador ha aprobado tu cuenta. Ya puedes entrar:',
-    `${urlDeLaApp()}/cuenta`,
-    '',
-    'Víboras Team'
-  ].join('\n'));
+  return enviarCorreo(email, 'Tu cuenta de Víboras Team está aprobada', {
+    titulo: '¡Ya estás dentro!',
+    parrafos: ['Un administrador ha aprobado tu cuenta. Ya puedes entrar en la app del grupo: resultados, rating, ligas y torneos.'],
+    boton: { texto: 'Entrar en Víboras Team', url: `${urlDeLaApp()}/cuenta` }
+  });
 }
 
 export function correoDeRestablecer(email, token) {
-  return enviarCorreo(email, 'Restablecer tu contraseña de Víboras Team', [
-    'Hola,',
-    '',
-    'Alguien ha pedido restablecer la contraseña de esta cuenta. Si has sido tú,',
-    'abre este enlace en la próxima hora:',
-    `${urlDeLaApp()}/cuenta?restablecer=${token}`,
-    '',
-    'Si no lo has pedido tú, ignora este correo: tu contraseña no cambia.',
-    '',
-    'Víboras Team'
-  ].join('\n'));
+  return enviarCorreo(email, 'Restablecer tu contraseña de Víboras Team', {
+    titulo: 'Restablecer tu contraseña',
+    parrafos: ['Alguien ha pedido una contraseña nueva para esta cuenta. Si has sido tú, pulsa el botón y elígela.'],
+    boton: { texto: 'Elegir contraseña nueva', url: `${urlDeLaApp()}/cuenta?restablecer=${token}` },
+    nota: 'El enlace vale una hora y se puede usar una sola vez. Si no lo has pedido tú, ignora este correo: tu contraseña no cambia.'
+  });
 }
 
 export function correoDeVerificacion(email, token) {
-  return enviarCorreo(email, 'Confirma tu correo en Víboras Team', [
-    'Hola,',
-    '',
-    'Para confirmar que este correo es tuyo, abre este enlace:',
-    `${urlDeLaApp()}/cuenta?verificar=${token}`,
-    '',
-    'Tu cuenta sigue pendiente hasta que un administrador la apruebe.',
-    '',
-    'Víboras Team'
-  ].join('\n'));
+  return enviarCorreo(email, 'Confirma tu correo en Víboras Team', {
+    titulo: 'Confirma tu correo',
+    parrafos: [
+      'Gracias por registrarte en Víboras Team.',
+      'Pulsa el botón para confirmar que este correo es tuyo. Tu cuenta seguirá pendiente hasta que un administrador la apruebe; te avisaremos por aquí.'
+    ],
+    boton: { texto: 'Confirmar mi correo', url: `${urlDeLaApp()}/cuenta?verificar=${token}` },
+    nota: 'El enlace vale 7 días. Si no te has registrado tú, ignora este correo.'
+  });
 }

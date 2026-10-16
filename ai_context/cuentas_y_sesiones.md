@@ -252,6 +252,16 @@ en `smtp.gmail.com:465`. En local, `docker-compose.yml` levanta **Mailpit**
 configurado no falla nada**: registra un aviso y sigue. Aprobar o registrarse
 no pueden romperse porque Gmail no conteste.
 
+**Cómo se ven.** HTML con tablas y estilos en línea, que es lo único que
+respetan Gmail y Outlook, más una versión en texto plano sacada del mismo
+mensaje. Cabecera oscura con el logo y botón dorado, como la app. El logo va
+**incrustado** (adjunto con `cid`), no enlazado a la web: se ve igual en local
+y en producción, y Gmail no lo esconde como imagen externa. Sale de
+`api/_logo.js`, que es `image.png` en base64 **generado**: si cambia el logo,
+se regenera con la orden que lleva en la cabecera. Para ver un correo sin
+mandarlo fuera, se envía a Mailpit y se abre en
+`http://localhost:8025/view/<ID>.html`.
+
 Lo que cada decisión evita:
 
 - **Los enlaces salen de `APP_URL`**, o de `VERCEL_PROJECT_PRODUCTION_URL`,
