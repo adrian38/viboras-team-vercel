@@ -254,3 +254,28 @@ grep -l 'content="#000000"' *.html          # tiene que estar vacio
 
 `theme.css` también entró en el `PRECACHE` de `sw.js` (y con él, `CACHE` subió
 a `viboras-v2`): sin él la portada abre sin estilos cuando no hay cobertura.
+
+## La pantalla de bienvenida
+
+`splash.js` + las reglas `.vt-splash*` de `theme.css`, desde el 2026-10-16.
+Imita un vídeo que pasó el grupo: el logo sale del negro pequeño, oscuro y
+recortado en un círculo, crece mientras el círculo se abre y se ilumina, y a
+los 2,1 s está entero. Se queda casi un segundo y se funde.
+
+- **Es CSS sobre `image.png`, no el vídeo.** Pesa nada, se ve nítido y
+  `image.png` ya está en el `PRECACHE` de `sw.js`, así que sale sin conexión.
+- **Los fotogramas clave están calcados del vídeo**, y la animación es
+  **lineal** a propósito: con una curva *ease-out* todo el crecimiento se
+  adelantaba y a 1,3 s ya estaba entero, cuando en el vídeo sigue dentro del
+  círculo. Para comprobarla se pausa con `getAnimations()` y se lleva a un
+  instante (`a.currentTime = 1300`), en vez de hacer capturas al vuelo.
+- **Una vez por sesión** (`sessionStorage`): al abrir la app instalada, cada
+  arranque es una sesión nueva; navegar entre páginas no la repite. Sin
+  `sessionStorage` no sale nunca, para no salir en cada página.
+- **Va sin `defer` en el `<head>` de las 18 páginas.** Tiene que poner la
+  clase `vt-splash` antes de que se pinte nada; con `defer` la página asoma un
+  instante antes del negro. Mientras la capa no está montada, el `body` va con
+  `visibility: hidden`.
+- **Tocar la pantalla la salta**, y con «reducir movimiento» el logo sale
+  quieto y se va a los 0,7 s.
+- La capa usa `--vt-z-splash` (3000), por encima de todo lo demás.

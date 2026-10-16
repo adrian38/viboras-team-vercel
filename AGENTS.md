@@ -79,7 +79,8 @@ Detalle: `ai_context/esquema_duplicado_y_desfasado.md`.
 No hay plantilla ni layout compartido: cada `.html` repite su `<head>`. Los
 cinco elementos de la PWA —favicon, `apple-touch-icon`, `manifest`,
 `apple-mobile-web-app-title`, `theme-color`— y el `<script src="/pwa.js">` están
-copiados en las 18 páginas (y `/auth-client.js` también).
+copiados en las 18 páginas (y `/auth-client.js` y `/splash.js` también; este
+último **sin** `defer`, a propósito: ver `ai_context/sistema_visual_viper_strike.md`).
 
 Añadir uno a una sola página no da error: simplemente no funciona en las otras
 diecisiete. Al tocar el `<head>`, recorrer todas y comprobar el resultado:

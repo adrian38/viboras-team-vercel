@@ -114,6 +114,7 @@ services:
       - ./auth-client.js:/app/auth-client.js
       - ./cuenta-correo.js:/app/cuenta-correo.js
       - ./inscripcion.html:/app/inscripcion.html
+      - ./splash.js:/app/splash.js
     depends_on:
       wsproxy:
         condition: service_started

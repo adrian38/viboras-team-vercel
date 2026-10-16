@@ -23,7 +23,7 @@ que hay.
   tokens del tema oscuro y por qué no se tomaron de las maquetas, que se
   contradicen entre sí; qué trae la exportación de Stitch que se descartó a
   propósito —una barra lateral inventada en inglés— y qué páginas se quedaron
-  sin maqueta.
+  sin maqueta; y cómo está hecha la pantalla de bienvenida del logo.
 
 ## El rating
 
