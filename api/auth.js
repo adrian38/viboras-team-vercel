@@ -289,8 +289,13 @@ async function approveUser(req, res) {
     res.status(409).json({ ok: false, ...fallo });
     return;
   }
-  await sql`UPDATE users SET status = 'active', approved_at = now() WHERE id = ${user.id}`;
-  res.status(200).json({ ok: true });
+  // Solo dos roles, y lo que no sea 'admin' es jugador: un valor raro no debe
+  // poder colarse como un tercer rol que nadie comprueba.
+  const role = data?.role === 'admin' ? 'admin' : 'member';
+  await sql`
+    UPDATE users SET status = 'active', role = ${role}, approved_at = now() WHERE id = ${user.id}
+  `;
+  res.status(200).json({ ok: true, role });
 }
 
 // Aqui, y no al registrarse: un alta que nadie apruebe no debe dejar un

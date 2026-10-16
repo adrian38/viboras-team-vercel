@@ -80,6 +80,7 @@
 .pendiente:last-child{border-bottom:0}
 .pendiente__quien{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pendiente__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
+.pendiente .vt-select{width:auto;min-height:0;padding-top:6px;padding-bottom:6px;font-size:13px}
 
 /* Al final del bloque y no al principio: .campos y .separador declaran su
    propio display y, a igualdad de especificidad, gana la regla de abajo. Con
@@ -339,14 +340,19 @@ function botonesDePendiente(id){
   const acciones = document.createElement('div')
   acciones.className = 'vt-row'
   acciones.style.gap = 'var(--vt-sm)'
+  const rol = document.createElement('select')
+  rol.className = 'vt-select'
+  rol.setAttribute('aria-label', 'Tipo de usuario')
+  rol.innerHTML = '<option value="member">Jugador</option><option value="admin">Admin</option>'
   const aprobar = document.createElement('button')
   aprobar.className = 'vt-btn vt-btn--sm'
   aprobar.textContent = 'Aprobar'
   aprobar.onclick = () => conBoton(aprobar, 'Aprobando...', async () => {
     limpiarAviso()
-    await llamar('approveUser', {id})
+    await llamar('approveUser', {id, role: rol.value})
     await cargarPendientes()
   })
+  acciones.appendChild(rol)
   const rechazar = document.createElement('button')
   rechazar.className = 'vt-btn vt-btn--danger vt-btn--sm'
   rechazar.textContent = 'Rechazar'
