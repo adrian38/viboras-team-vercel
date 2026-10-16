@@ -19,19 +19,6 @@
 
   var raiz = document.documentElement;
   var reducido = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // Con la app instalada en Android, antes de esto el sistema ya ha ensenado
-  // su propia pantalla de arranque: fondo negro (background_color del
-  // manifiesto) y el icono quieto en el centro. Empezar en negro hacia que el
-  // icono saliera, desapareciera y volviera. Asi que ahi se empieza donde
-  // acaba Android, con el icono ya quieto, y se sigue desde ese punto.
-  // ?splash=instalada fuerza esta variante para probarla en el navegador.
-  var instalada = /[?&]splash=instalada\b/.test(location.search) ||
-    (/Android/i.test(navigator.userAgent) && window.matchMedia &&
-      matchMedia('(display-mode: standalone)').matches);
-  // Tamano del icono en la pantalla de Android, en px de CSS (≈ dp). Es una
-  // estimacion: depende de la version de Android y del movil.
-  var ICONO_ANDROID = 150;
   raiz.classList.add('vt-splash');
 
   function montar() {
@@ -56,13 +43,7 @@
     capa.appendChild(onda);
     capa.appendChild(caja);
     capa.appendChild(pelota);
-    if (instalada) capa.classList.add('vt-splash__capa--instalada');
     document.body.appendChild(capa);
-    if (instalada) {
-      // El icono empieza al tamano del de Android y crece hasta el suyo.
-      var ancho = caja.getBoundingClientRect().width || 360;
-      capa.style.setProperty('--vt-splash-ini', String(Math.min(1, ICONO_ANDROID / ancho)));
-    }
     // La pagina ya puede pintarse: queda debajo de la capa.
     raiz.classList.add('vt-splash--lista');
 

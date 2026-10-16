@@ -265,19 +265,16 @@ Adrián: negro (0–0,3 s); la pelota sube y da dos botes (0,3–1,1 s); estalla
 en una onda dorada y desaparece (1,1–1,2 s); aparece el icono (1,2–1,7 s), y
 el brillo lo barre (1,75–2,45 s). A los 2,8 s se funde.
 
-**Con la app instalada en Android, la splash empieza donde acaba la del
-sistema.** Antes de cargar nada, Android pinta su propia pantalla de arranque
-con el manifiesto: fondo negro (`background_color`) y el icono quieto en el
-centro. No se puede quitar desde la página. Si después la nuestra empezaba
-en negro, el icono salía, desaparecía y volvía (lo vio Adrián). Por eso, en
-Android y en modo `standalone`, `splash.js` pone `vt-splash__capa--instalada`:
-el icono está quieto desde el instante 0 al tamaño del de Android
-(`ICONO_ANDROID = 150` px, una estimación) y, en vez de aparecer, crece hasta
-el suyo cuando estalla la pelota. La pelota y el brillo van igual. Para
-verla en el navegador: `/cuenta?splash=instalada` en una pestaña nueva. Si en
-algún móvil se nota un salto de tamaño entre las dos pantallas, se ajusta
-`ICONO_ANDROID`. Tampoco está comprobado si queda un instante en negro entre
-la pantalla de Android y la nuestra.
+**La pantalla de arranque de Android va antes y no se puede quitar.** Con la
+app instalada, Android pinta su pantalla (fondo negro del manifiesto e icono
+quieto) antes de que exista la página, y después sale la nuestra. Se probó el
+2026-10-16 a que la nuestra empezase con el icono quieto al tamaño del de
+Android, para enlazar las dos. **Se descartó**: ese tamaño depende del móvil y
+de la versión de Android, y no se puede saber desde la página. Con un tamaño
+estimado (150 px), en el móvil de Adrián el icono cambiaba de tamaño dos
+veces, y quedaba peor que empezar en negro. Para volver a intentarlo hace falta
+medir el icono en una captura de esa pantalla en el móvil concreto, y aun así
+sólo valdría para ese modelo.
 
 **Todo lo que espera su turno tiene que esperar invisible.** Con
 `animation-fill-mode: both`, durante el retraso cada elemento se queda en el
