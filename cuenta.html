@@ -361,10 +361,48 @@ function pintarInscripcion(){
   pintarGoogleAlta()
 }
 
-// Con la cuenta creada ya estan en el servidor: no se quedan en el navegador.
+// Con la cuenta creada ya estan en el servidor: no se quedan en el navegador,
+// ni el formulario ni el borrador del alta.
 function olvidarInscripcion(){
-  try{ localStorage.removeItem(CLAVE_INSCRIPCION) }catch(e){}
+  try{ localStorage.removeItem(CLAVE_INSCRIPCION); localStorage.removeItem(CLAVE_BORRADOR) }catch(e){}
   pintarInscripcion()
+}
+
+// Borrador del alta. Ir a /inscripcion puede sacarte de esta pagina (en el
+// movil, o con «Ir a crear cuenta»), y al volver lo escrito se perdia y la
+// pagina abria en «Entrar». Se guarda todo MENOS la contrasena, que nunca
+// toca el almacenamiento del navegador.
+const CLAVE_BORRADOR = 'vt-alta-borrador'
+const CAMPOS_BORRADOR = ['altaPirata', 'altaJugador', 'altaNombre', 'altaCorreo', 'altaNormativa']
+
+function guardarBorrador(){
+  const b = {}
+  for(const id of CAMPOS_BORRADOR) b[id] = $(id).type === 'checkbox' ? $(id).checked : $(id).value
+  try{ localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(b)) }catch(e){}
+}
+
+function leerBorrador(){
+  try{ return JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null') }catch(e){ return null }
+}
+
+// Despues de cargarJugadores(): el valor de un <select> sin sus opciones se
+// queda vacio sin dar error.
+function restaurarBorrador(){
+  const b = leerBorrador()
+  if(!b) return
+  for(const id of CAMPOS_BORRADOR){
+    if(!(id in b)) continue
+    if($(id).type === 'checkbox') $(id).checked = !!b[id]
+    else $(id).value = b[id]
+  }
+  alCambiarJugador()
+  pintarGoogleAlta()
+}
+
+// /cuenta?alta (el enlace de vuelta de /inscripcion), o un alta a medias,
+// abren directamente «Crear cuenta».
+function quiereAlta(){
+  return new URLSearchParams(location.search).has('alta') || !!leerBorrador()
 }
 
 function quienSoy(){
@@ -477,6 +515,8 @@ $('altaPirata').onchange = alCambiarJugador
 // Nombre, casilla de pirata o normativa: cualquier cambio puede dejar listo el alta con Google.
 $('formAlta').addEventListener('input', pintarGoogleAlta)
 $('formAlta').addEventListener('change', pintarGoogleAlta)
+$('formAlta').addEventListener('input', guardarBorrador)
+$('formAlta').addEventListener('change', guardarBorrador)
 window.addEventListener('storage', (ev) => { if(ev.key === CLAVE_INSCRIPCION) pintarInscripcion() })
 // Algun movil congela la pestana de fondo: al volver a ella se mira otra vez.
 document.addEventListener('visibilitychange', () => { if(!document.hidden) pintarInscripcion() })
@@ -617,7 +657,8 @@ function dibujarBoton(hueco, separador, texto){
 // esta en linea y se ejecuta antes que el, de modo que fuera del listener no
 // existiria todavia.
 document.addEventListener('DOMContentLoaded', () => {
-  cargarJugadores()
+  cargarJugadores().then(restaurarBorrador)
+  if(quiereAlta()) elegirPestana(true)
   montarGoogle()
   window.addEventListener('resize', dibujarBotonesGoogle)
   window.vtMe.then(pintarSesion)

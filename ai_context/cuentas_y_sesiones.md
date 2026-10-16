@@ -216,7 +216,20 @@ suplantación: Google emite el token igualmente para un correo sin confirmar.
   al volver a ella, y las manda con el registro. Se borran del navegador en
   cuanto la cuenta existe. En modo privado el `localStorage` puede fallar: la
   página lo dice. El navegador integrado del panel abre los `target="_blank"`
-  en la misma pestaña, así que ahí no se ve el paso de una a otra. Sustituye al
+  en la misma pestaña, así que ahí no se ve el paso de una a otra.
+- **Ir al formulario puede sacarte del alta**: en el móvil, o con el botón
+  «Ir a crear cuenta». Por eso el alta guarda un **borrador**
+  (`vt-alta-borrador`: pirata, jugador, nombre, correo, normativa; **nunca la
+  contraseña**) y los enlaces de vuelta van a **`/cuenta?alta`**. Ese
+  parámetro, o un borrador a medias, abren «Crear cuenta» y no «Entrar».
+  El borrador se borra al crear la cuenta.
+- **El botón «Registrarse con Google» no aparece hasta tener nombre,
+  formulario y normativa.** Es un iframe de Google y su clic no se puede
+  frenar: si estuviera siempre, el alta con Google arrancaría sin nada (el
+  servidor lo rechazaría, pero después de pasar por Google). Mientras falta
+  algo, sale una pista. `googleListo` es `var` a propósito: con `let`, la
+  llamada que se hace al cargar la página daría `ReferenceError` y la
+  rompería entera. Sustituye al
   Google Form que el grupo usaba antes, con las mismas preguntas menos tres:
   el correo (ya lo tiene la cuenta), el nombre para el grupo (es el de la
   ficha) y la normativa (es la casilla de arriba). Las respuestas se guardan
