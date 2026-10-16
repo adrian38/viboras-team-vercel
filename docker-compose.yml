@@ -113,6 +113,7 @@ services:
       - ./cuenta.html:/app/cuenta.html
       - ./auth-client.js:/app/auth-client.js
       - ./cuenta-correo.js:/app/cuenta-correo.js
+      - ./inscripcion.html:/app/inscripcion.html
     depends_on:
       wsproxy:
         condition: service_started

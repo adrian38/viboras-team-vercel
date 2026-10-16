@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulario de inscripción</title>
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/pwa.js" defer></script>
+<script src="/auth-client.js" defer></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+
+<style>
+.campos{display:flex;flex-direction:column;gap:var(--vt-md);margin-top:var(--vt-lg)}
+.opciones{display:flex;flex-wrap:wrap;gap:var(--vt-sm)}
+.opciones label{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--vt-border);border-radius:var(--vt-r);background:var(--vt-surface-2);cursor:pointer;font-size:14px}
+.opciones label:has(input:checked){border-color:var(--vt-gold);color:var(--vt-gold-light)}
+.listo{display:none;margin-top:var(--vt-lg);padding:var(--vt-md);border:1px solid var(--vt-border-gold);border-radius:var(--vt-r);background:rgba(245,158,11,0.08)}
+.listo.visible{display:block}
+.error{display:none;margin-top:var(--vt-md);color:var(--vt-error)}
+.error.visible{display:block}
+</style>
+</head>
+<body>
+
+<div class="vt-page vt-page--narrow">
+  <div class="vt-card vt-card--accent vt-card--glow">
+
+    <header class="vt-header">
+      <div class="vt-header__logo"><img src="/image.png" alt="Víboras Team"></div>
+      <div class="vt-header__text">
+        <span class="vt-badge"><span class="vt-badge__dot"></span>Para crear tu cuenta</span>
+        <h1 style="margin-top:var(--vt-sm)">Formulario de <span class="vt-gold">inscripción</span></h1>
+      </div>
+    </header>
+
+    <p class="vt-small vt-muted" style="margin-top:var(--vt-md)">
+      Es obligatorio para crear la cuenta, también si ya jugabas en el grupo. Al
+      guardarlo, vuelve a la pestaña de «Crear cuenta»: lo verá relleno.
+    </p>
+
+    <!-- Las opciones tienen que coincidir con OPCIONES de
+         api/_inscripcion.js, que es quien las valida. -->
+    <form id="formInscripcion" class="campos" autocomplete="on">
+      <div class="vt-field">
+        <label for="fFullName">Nombre y apellidos</label>
+        <input class="vt-input" type="text" id="fFullName" name="fullName" maxlength="100" autocomplete="name" required>
+      </div>
+      <div class="vt-field">
+        <label for="fPhone">Teléfono (para el grupo de WhatsApp)</label>
+        <input class="vt-input" type="tel" id="fPhone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel" required>
+      </div>
+      <div class="vt-field">
+        <span class="vt-label">¿Hiciste la prueba de nivel en BK?</span>
+        <div class="opciones">
+          <label><input type="radio" name="bkTest" value="si" required> Sí</label>
+          <label><input type="radio" name="bkTest" value="no"> No</label>
+        </div>
+      </div>
+      <div class="vt-field">
+        <label for="fBkLevel">Nivel Bilbao Kirolak</label>
+        <select class="vt-select" id="fBkLevel" name="bkLevel" required>
+          <option value="">-- Elige --</option>
+          <option value="iniciacion">Iniciación</option>
+          <option value="intermedio">Intermedio</option>
+          <option value="avanzado">Avanzado</option>
+          <option value="entreno">Entreno</option>
+        </select>
+      </div>
+      <div class="vt-field">
+        <span class="vt-label">¿Te interesa jugar liga?</span>
+        <div class="opciones">
+          <label><input type="radio" name="league" value="si" required> Sí</label>
+          <label><input type="radio" name="league" value="no"> No</label>
+        </div>
+      </div>
+      <div class="vt-field">
+        <span class="vt-label">¿Te interesa jugar torneos?</span>
+        <div class="opciones">
+          <label><input type="radio" name="tournaments" value="si" required> Sí</label>
+          <label><input type="radio" name="tournaments" value="no"> No</label>
+        </div>
+      </div>
+      <div class="vt-field">
+        <span class="vt-label">¿Cuántos partidos de ranking jugarías a la semana?</span>
+        <div class="opciones">
+          <label><input type="radio" name="rankingPerWeek" value="ninguno" required> Ninguno</label>
+          <label><input type="radio" name="rankingPerWeek" value="1-2"> 1-2</label>
+          <label><input type="radio" name="rankingPerWeek" value="3-4"> 3-4</label>
+          <label><input type="radio" name="rankingPerWeek" value="+4"> +4</label>
+        </div>
+      </div>
+      <div class="vt-field">
+        <label for="fAvailability">Disponibilidad para jugar</label>
+        <select class="vt-select" id="fAvailability" name="availability" required>
+          <option value="">-- Elige --</option>
+          <option value="mananas">Solamente mañanas</option>
+          <option value="tardes">Solamente tardes</option>
+          <option value="turnos">Turnos mañana/tarde</option>
+          <option value="findes">Solamente findes</option>
+          <option value="mananas-findes">Mañanas + findes</option>
+          <option value="tardes-findes">Tardes + findes</option>
+          <option value="turnos-findes">Turnos mañana/tarde + findes</option>
+        </select>
+      </div>
+      <button class="vt-btn" type="submit">Guardar formulario</button>
+    </form>
+
+    <p class="error" id="error" role="alert">
+      Tu navegador no deja guardar el formulario (¿modo privado?). Ábrelo en una
+      ventana normal para poder crear la cuenta.
+    </p>
+
+    <div class="listo" id="listo" role="status">
+      <strong>Formulario guardado.</strong>
+      <p class="vt-small" style="margin-top:6px">
+        Vuelve a la pestaña de «Crear cuenta» y termina el alta. Si cierras esta
+        pestaña no se pierde nada.
+      </p>
+      <a class="vt-btn vt-btn--ghost" href="/cuenta" style="margin-top:var(--vt-md)">Ir a crear cuenta</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Las respuestas se guardan en este navegador (localStorage) y /cuenta las
+// manda con el alta. Por eso este formulario puede vivir en su propia pestana,
+// como la normativa: la pestana del alta se entera por el evento `storage`.
+// No hay nada que enviar desde aqui; quien valida es el servidor al crear la
+// cuenta (api/_inscripcion.js). /cuenta las borra en cuanto la cuenta existe.
+//
+// Detalle: ai_context/cuentas_y_sesiones.md
+const CLAVE = 'vt-inscripcion'
+const CAMPOS = ['fullName', 'phone', 'bkTest', 'bkLevel', 'league', 'tournaments', 'rankingPerWeek', 'availability']
+const form = document.getElementById('formInscripcion')
+
+function guardadas(){
+  try{ const g = JSON.parse(localStorage.getItem(CLAVE) || 'null'); return g && g.respuestas }
+  catch(e){ return null }
+}
+
+// Si ya lo rellenaron, se ve lo que pusieron para poder corregirlo.
+function rellenar(r){
+  if(!r) return
+  for(const campo of CAMPOS){
+    const el = form.elements[campo]
+    if(!el || !r[campo]) continue
+    if(el instanceof RadioNodeList){
+      for(const opcion of el) opcion.checked = opcion.value === r[campo]
+    } else {
+      el.value = r[campo]
+    }
+  }
+}
+
+form.onsubmit = (ev) => {
+  ev.preventDefault()
+  const datos = new FormData(form)
+  const respuestas = {}
+  for(const campo of CAMPOS) respuestas[campo] = String(datos.get(campo) || '').trim()
+  try{
+    localStorage.setItem(CLAVE, JSON.stringify({ respuestas, guardado: Date.now() }))
+  }catch(e){
+    document.getElementById('error').classList.add('visible')
+    return
+  }
+  const listo = document.getElementById('listo')
+  listo.classList.add('visible')
+  listo.scrollIntoView({behavior:'smooth', block:'center'})
+}
+
+rellenar(guardadas())
+</script>
+
+</body>
+</html>

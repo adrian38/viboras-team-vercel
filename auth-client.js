@@ -83,6 +83,8 @@
     // La normativa se lee ANTES de registrarse: el alta pide aceptarla. No
     // carga datos del API, asi que no ensena nada del grupo.
     if (donde === '/group-normativa' || donde === '/group-normativa.html') return;
+    // El formulario de inscripcion tambien: se rellena antes de tener cuenta.
+    if (donde === '/inscripcion' || donde === '/inscripcion.html') return;
     location.replace('/cuenta?volver=' + encodeURIComponent(donde + location.search));
   }
 

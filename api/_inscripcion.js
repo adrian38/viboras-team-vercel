@@ -33,7 +33,8 @@ const fallo = (message) => ({ error: 'bad_form', message });
 
 // Devuelve { form } con lo que se guarda, o { error, message }.
 export function validarInscripcion(datos) {
-  const d = datos && typeof datos === 'object' ? datos : {};
+  if (!datos || typeof datos !== 'object') return fallo('Rellena el formulario de inscripción antes de crear la cuenta.');
+  const d = datos;
   const fullName = String(d.fullName || '').trim().replace(/\s+/g, ' ');
   if (fullName.length < 3 || fullName.length > 100 || /[<>"'`&]/.test(fullName)) {
     return fallo('Escribe tu nombre y apellidos.');

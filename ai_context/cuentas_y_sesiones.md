@@ -15,7 +15,7 @@ abiertos, es de esos dos días.
 | `api/read.js`, `api/write.js`, `api/league-admin.js` | **Cerrado.** Sesión activa o 401, antes de mirar el `action`. |
 | `api/auth.js` | Abierto, obviamente: es por donde se entra. |
 | `?action=players` | **Abierto a propósito.** Quien se registra no tiene sesión con la que pedir la lista de jugadores. Enseña lo mismo que `getNames` enseñaba a cualquiera hasta el 2026-10-16. |
-| Las 17 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
+| Las 18 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
 
 `/group-normativa` **no** redirige a `/cuenta`: el alta pide aceptar la
 normativa, así que tiene que poder leerse antes de tener cuenta. No llama al
@@ -208,8 +208,15 @@ suplantación: Google emite el token igualmente para un correo sin confirmar.
   `acceptRules === true`), porque el alta con Google no pasa por la validación
   del formulario. La fecha queda en `users.rules_accepted_at`; las cuentas
   anteriores al 2026-10-16 la tienen a NULL.
-- **El formulario de inscripción está dentro del alta y es obligatorio para
-  todos**, también para los antiguos piratas (lo dijo Adrián). Sustituye al
+- **El formulario de inscripción es obligatorio para todos**, también para
+  los antiguos piratas (lo dijo Adrián). Vive en su propia página,
+  **`/inscripcion`**, que se abre en otra pestaña como la normativa y se puede
+  ver sin sesión. Al guardarlo, las respuestas quedan en `localStorage`
+  (`vt-inscripcion`). La pestaña del alta se entera por el evento `storage` y
+  al volver a ella, y las manda con el registro. Se borran del navegador en
+  cuanto la cuenta existe. En modo privado el `localStorage` puede fallar: la
+  página lo dice. El navegador integrado del panel abre los `target="_blank"`
+  en la misma pestaña, así que ahí no se ve el paso de una a otra. Sustituye al
   Google Form que el grupo usaba antes, con las mismas preguntas menos tres:
   el correo (ya lo tiene la cuenta), el nombre para el grupo (es el de la
   ficha) y la normativa (es la casilla de arriba). Las respuestas se guardan

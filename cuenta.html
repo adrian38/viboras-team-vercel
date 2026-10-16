@@ -83,11 +83,9 @@
 .pirata a{color:var(--vt-gold-light)}
 .pendiente__form{margin-top:6px;font-size:13px;line-height:20px;color:var(--vt-text)}
 .pendiente__form summary{cursor:pointer;color:var(--vt-gold-light)}
-.inscripcion{display:flex;flex-direction:column;gap:var(--vt-md);margin:0;padding:var(--vt-md);border:1px solid var(--vt-border-gold);border-radius:var(--vt-r);background:rgba(245,158,11,0.05);min-width:0}
-.inscripcion legend{padding:0 6px;color:var(--vt-gold-light);font-weight:700;font-size:13px;letter-spacing:0.05em;text-transform:uppercase}
-.opciones{display:flex;flex-wrap:wrap;gap:var(--vt-sm)}
-.opciones label{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--vt-border);border-radius:var(--vt-r);background:var(--vt-surface-2);cursor:pointer;font-size:14px}
-.opciones label:has(input:checked){border-color:var(--vt-gold);color:var(--vt-gold-light)}
+.inscripcion-estado{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);flex-wrap:wrap;padding:10px 12px;border:1px solid var(--vt-border);border-radius:var(--vt-r);background:var(--vt-surface-2);font-size:14px}
+.inscripcion-estado a{color:var(--vt-gold-light);font-weight:600}
+.inscripcion-estado.hecho{border-color:var(--vt-border-gold);color:var(--vt-gold-light)}
 .enlace{background:none;border:0;padding:4px 0;color:var(--vt-gold-light);font:inherit;font-size:13px;cursor:pointer;align-self:center;text-decoration:underline}
 .pendiente .vt-select{width:auto;min-height:0;padding-top:6px;padding-bottom:6px;font-size:13px}
 
@@ -209,72 +207,10 @@
         <label for="altaPassword">Contraseña (mínimo 6 caracteres)</label>
         <input class="vt-input" type="password" id="altaPassword" name="password" autocomplete="new-password" required minlength="6">
       </div>
-      <!-- Formulario de inscripcion: las opciones tienen que coincidir con
-           OPCIONES de api/_inscripcion.js, que es quien las valida. -->
-      <fieldset class="inscripcion" id="inscripcion">
-        <legend>Formulario de inscripción</legend>
-        <div class="vt-field">
-          <label for="fFullName">Nombre y apellidos</label>
-          <input class="vt-input" type="text" id="fFullName" name="fullName" maxlength="100" autocomplete="name" required>
-        </div>
-        <div class="vt-field">
-          <label for="fPhone">Teléfono (para el grupo de WhatsApp)</label>
-          <input class="vt-input" type="tel" id="fPhone" name="phone" maxlength="20" autocomplete="tel" inputmode="tel" required>
-        </div>
-        <div class="vt-field">
-          <span class="vt-label">¿Hiciste la prueba de nivel en BK?</span>
-          <div class="opciones">
-            <label><input type="radio" name="bkTest" value="si" required> Sí</label>
-            <label><input type="radio" name="bkTest" value="no"> No</label>
-          </div>
-        </div>
-        <div class="vt-field">
-          <label for="fBkLevel">Nivel Bilbao Kirolak</label>
-          <select class="vt-select" id="fBkLevel" name="bkLevel" required>
-            <option value="">-- Elige --</option>
-            <option value="iniciacion">Iniciación</option>
-            <option value="intermedio">Intermedio</option>
-            <option value="avanzado">Avanzado</option>
-            <option value="entreno">Entreno</option>
-          </select>
-        </div>
-        <div class="vt-field">
-          <span class="vt-label">¿Te interesa jugar liga?</span>
-          <div class="opciones">
-            <label><input type="radio" name="league" value="si" required> Sí</label>
-            <label><input type="radio" name="league" value="no"> No</label>
-          </div>
-        </div>
-        <div class="vt-field">
-          <span class="vt-label">¿Te interesa jugar torneos?</span>
-          <div class="opciones">
-            <label><input type="radio" name="tournaments" value="si" required> Sí</label>
-            <label><input type="radio" name="tournaments" value="no"> No</label>
-          </div>
-        </div>
-        <div class="vt-field">
-          <span class="vt-label">¿Cuántos partidos de ranking jugarías a la semana?</span>
-          <div class="opciones">
-            <label><input type="radio" name="rankingPerWeek" value="ninguno" required> Ninguno</label>
-            <label><input type="radio" name="rankingPerWeek" value="1-2"> 1-2</label>
-            <label><input type="radio" name="rankingPerWeek" value="3-4"> 3-4</label>
-            <label><input type="radio" name="rankingPerWeek" value="+4"> +4</label>
-          </div>
-        </div>
-        <div class="vt-field">
-          <label for="fAvailability">Disponibilidad para jugar</label>
-          <select class="vt-select" id="fAvailability" name="availability" required>
-            <option value="">-- Elige --</option>
-            <option value="mananas">Solamente mañanas</option>
-            <option value="tardes">Solamente tardes</option>
-            <option value="turnos">Turnos mañana/tarde</option>
-            <option value="findes">Solamente findes</option>
-            <option value="mananas-findes">Mañanas + findes</option>
-            <option value="tardes-findes">Tardes + findes</option>
-            <option value="turnos-findes">Turnos mañana/tarde + findes</option>
-          </select>
-        </div>
-      </fieldset>
+      <div class="inscripcion-estado" id="estadoInscripcion">
+        <span id="estadoInscripcionTexto">Formulario de inscripción: sin rellenar</span>
+        <a href="/inscripcion" target="_blank" rel="noopener" id="enlaceInscripcion">Rellenar</a>
+      </div>
       <label class="pirata">
         <input type="checkbox" id="altaNormativa" required>
         <span>He leído y acepto la <a href="/group-normativa" target="_blank" rel="noopener">normativa del grupo</a></span>
@@ -403,13 +339,27 @@ function alCambiarJugador(){
 }
 
 // Lo que identifica al que se registra: o uno de la lista, o un nombre nuevo.
-const CAMPOS_INSCRIPCION = ['fullName', 'phone', 'bkTest', 'bkLevel', 'league', 'tournaments', 'rankingPerWeek', 'availability']
+// El formulario de inscripcion se rellena en /inscripcion, en otra pestana, y
+// deja las respuestas en localStorage; aqui se leen y van con el alta. El
+// evento `storage` avisa cuando la otra pestana las guarda.
+const CLAVE_INSCRIPCION = 'vt-inscripcion'
 
 function respuestasInscripcion(){
-  const datos = new FormData($('formAlta'))
-  const r = {}
-  for(const campo of CAMPOS_INSCRIPCION) r[campo] = String(datos.get(campo) || '')
-  return r
+  try{ const g = JSON.parse(localStorage.getItem(CLAVE_INSCRIPCION) || 'null'); return (g && g.respuestas) || null }
+  catch(e){ return null }
+}
+
+function pintarInscripcion(){
+  const hecho = !!respuestasInscripcion()
+  $('estadoInscripcionTexto').textContent = hecho ? 'Formulario de inscripción: rellenado ✓' : 'Formulario de inscripción: sin rellenar'
+  $('enlaceInscripcion').textContent = hecho ? 'Revisar' : 'Rellenar'
+  $('estadoInscripcion').classList.toggle('hecho', hecho)
+}
+
+// Con la cuenta creada ya estan en el servidor: no se quedan en el navegador.
+function olvidarInscripcion(){
+  try{ localStorage.removeItem(CLAVE_INSCRIPCION) }catch(e){}
+  pintarInscripcion()
 }
 
 function quienSoy(){
@@ -519,6 +469,10 @@ async function cargarPendientes(){
 }
 
 $('altaPirata').onchange = alCambiarJugador
+window.addEventListener('storage', (ev) => { if(ev.key === CLAVE_INSCRIPCION) pintarInscripcion() })
+// Algun movil congela la pestana de fondo: al volver a ella se mira otra vez.
+document.addEventListener('visibilitychange', () => { if(!document.hidden) pintarInscripcion() })
+pintarInscripcion()
 $('tabEntrar').onclick = () => elegirPestana(false)
 $('tabAlta').onclick = () => elegirPestana(true)
 
@@ -535,11 +489,12 @@ $('formAlta').onsubmit = (ev) => {
   ev.preventDefault()
   conBoton($('btnAlta'), 'Creando...', async () => {
     limpiarAviso()
+    if(!respuestasInscripcion()){ mostrarAviso('Rellena el formulario de inscripción antes de crear la cuenta.'); return }
     await llamar('register', Object.assign({
       email: $('altaCorreo').value,
       password: $('altaPassword').value
     }, quienSoy()))
-    $('formAlta').reset(); alCambiarJugador()
+    $('formAlta').reset(); alCambiarJugador(); olvidarInscripcion()
     mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
   })
 }
@@ -579,7 +534,7 @@ function alVolverDeGoogle(respuesta){
       credential: respuesta.credential
     }, quienSoy()))
     if(json.status === 'pending'){
-      $('formAlta').reset(); alCambiarJugador()
+      $('formAlta').reset(); alCambiarJugador(); olvidarInscripcion()
       mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
       return
     }
