@@ -9,8 +9,6 @@
     "api/read.js:getResults": 80,
     "history.html:renderTable": 136,
     "history.html:downloadCSV": 67,
-    "index.html:showLeaguePanel": 69,
-    "index.html:submitLeague": 65,
     "league-results.html:computeRating": 61,
     "league-results.html:renderResults": 118,
     "league-results.html:createEditModal": 73,
@@ -37,7 +35,6 @@
   },
   "ficheros": {
     "api/league-admin.js": 626,
-    "index.html": 812,
     "league-results.html": 809,
     "players.html": 738,
     "rating-test.html": 790
