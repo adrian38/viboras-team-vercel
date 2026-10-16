@@ -206,6 +206,12 @@
           Tu ficha de jugador la creará el administrador al aprobar la cuenta.
         </p>
       </div>
+      <!-- Justo despues de «quien eres», para rellenar en orden (lo pidio
+           Silvia el 2026-10-16). -->
+      <div class="inscripcion-estado" id="estadoInscripcion">
+        <span id="estadoInscripcionTexto">Formulario de inscripción: sin rellenar</span>
+        <a href="/inscripcion" target="_blank" rel="noopener" id="enlaceInscripcion">Rellenar</a>
+      </div>
       <div class="vt-field">
         <label for="altaCorreo">Correo</label>
         <input class="vt-input" type="email" id="altaCorreo" name="email" autocomplete="username" required>
@@ -213,10 +219,6 @@
       <div class="vt-field">
         <label for="altaPassword">Contraseña (mínimo 6 caracteres)</label>
         <input class="vt-input" type="password" id="altaPassword" name="password" autocomplete="new-password" required minlength="6">
-      </div>
-      <div class="inscripcion-estado" id="estadoInscripcion">
-        <span id="estadoInscripcionTexto">Formulario de inscripción: sin rellenar</span>
-        <a href="/inscripcion" target="_blank" rel="noopener" id="enlaceInscripcion">Rellenar</a>
       </div>
       <label class="pirata">
         <input type="checkbox" id="altaNormativa" required>
