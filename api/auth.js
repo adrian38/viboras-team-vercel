@@ -254,6 +254,28 @@ async function changePassword(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// Lo que pinta la campanita (auth-client.js). Una lista generica para que
+// quepan otros avisos; hoy solo la llenan las altas pendientes, y solo para
+// administradores. Sin sesion responde vacio, no 401: la campanita no es
+// motivo para que una pagina falle.
+async function notifications(req, res) {
+  const user = await usuarioDeLaPeticion(req);
+  const items = [];
+  if (user && user.role === 'admin') {
+    const { rows } = await sql`
+      SELECT COALESCE(p.name, u.requested_player_name, u.email) AS quien, u.created_at
+      FROM users u LEFT JOIN players p ON p.id = u.player_id
+      WHERE u.status = 'pending'
+      ORDER BY u.created_at DESC
+      LIMIT 20
+    `;
+    for (const r of rows) {
+      items.push({ tipo: 'alta', texto: `${r.quien} pide entrar`, cuando: r.created_at, enlace: '/cuenta' });
+    }
+  }
+  res.status(200).json({ ok: true, items });
+}
+
 async function listPending(req, res) {
   if (!await exigirAdmin(req, res)) return;
   const { rows } = await sql`
@@ -528,12 +550,13 @@ const ACCIONES = {
   logout,
   changePassword,
   listPending,
+  notifications,
   approveUser,
   rejectUser,
   blockUser
 };
 
-const DE_LECTURA = new Set(['me', 'config', 'players', 'listPending']);
+const DE_LECTURA = new Set(['me', 'config', 'players', 'listPending', 'notifications']);
 
 export default async function handler(req, res) {
   const action = String(req.query?.action || '').trim();

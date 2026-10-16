@@ -83,8 +83,55 @@
     location.replace('/cuenta?volver=' + encodeURIComponent(donde + location.search));
   }
 
+  // La campanita: solo en las paginas que tengan #vtCampana, y solo con sesion.
+  // Todo con textContent: los avisos llevan nombres que escribio quien se
+  // registro.
+  function pintarAvisos(caja, items) {
+    var num = caja.querySelector('.vt-campana__num');
+    var panel = caja.querySelector('.vt-campana__panel');
+    num.textContent = items.length > 9 ? '9+' : String(items.length);
+    num.hidden = items.length === 0;
+    panel.textContent = '';
+    if (!items.length) {
+      var vacio = document.createElement('div');
+      vacio.className = 'vt-campana__vacio';
+      vacio.textContent = 'No tienes avisos.';
+      panel.appendChild(vacio);
+    }
+    items.forEach(function (it) {
+      var a = document.createElement('a');
+      a.className = 'vt-campana__item';
+      a.href = it.enlace || '/cuenta';
+      a.textContent = it.texto;
+      panel.appendChild(a);
+    });
+  }
+
+  function montarCampana(user) {
+    var caja = document.getElementById('vtCampana');
+    if (!caja || !user) return;
+    var boton = caja.querySelector('button');
+    var panel = caja.querySelector('.vt-campana__panel');
+    caja.hidden = false;
+    boton.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      panel.hidden = !panel.hidden;
+      boton.setAttribute('aria-expanded', String(!panel.hidden));
+    });
+    document.addEventListener('click', function (ev) {
+      if (panel.hidden || caja.contains(ev.target)) return;
+      panel.hidden = true;
+      boton.setAttribute('aria-expanded', 'false');
+    });
+    fetch('/api/auth?action=notifications', { headers: { accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { pintarAvisos(caja, (j && j.items) || []); })
+      .catch(function () { pintarAvisos(caja, []); });
+  }
+
   window.vtMe.then(function (user) {
     pintarChip(user);
     exigirEntrar(user);
+    montarCampana(user);
   });
 })();

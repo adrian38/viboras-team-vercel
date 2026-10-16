@@ -24,7 +24,7 @@
  * de 400 caracteres dieciseis veces: cambiar la lista es una linea. Cuesta un
  * viaje extra, que con font-display:block solo retrasa los iconos.
  */
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=admin_panel_settings,arrow_back,arrow_forward,calendar_month,cloud_upload,download,edit_note,emoji_events,emoji_symbols,error,fact_check,filter_alt,format_list_bulleted,gavel,group,history,leaderboard,lightbulb,login,logout,menu_book,military_tech,monitoring,person,publish,query_stats,scoreboard,shield_person,speed,sports_tennis,swap_vert,trending_up,trophy,tune,verified_user,workspace_premium&display=block');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=admin_panel_settings,arrow_back,arrow_forward,calendar_month,cloud_upload,download,edit_note,emoji_events,emoji_symbols,error,fact_check,filter_alt,format_list_bulleted,gavel,group,history,leaderboard,lightbulb,login,logout,menu_book,military_tech,monitoring,notifications,person,publish,query_stats,scoreboard,shield_person,speed,sports_tennis,swap_vert,trending_up,trophy,tune,verified_user,workspace_premium&display=block');
 
 :root{
   /* Superficies: negro carbono y sus elevaciones. */
@@ -322,6 +322,36 @@ small,.vt-small{font-size:13px;line-height:18px;color:var(--vt-muted)}
   letter-spacing:0.05em;
 }
 .vt-chip--gold{border-color:var(--vt-border-gold);color:var(--vt-gold-light)}
+
+/* Campanita de avisos. La rellena auth-client.js en cualquier pagina que
+   tenga un #vtCampana; hoy solo index.html. */
+.vt-campana{position:relative;flex:0 0 auto}
+.vt-campana[hidden]{display:none}
+.vt-campana > .vt-chip{cursor:pointer;font:inherit;font-size:12px;line-height:16px}
+/* El numero va sobre la esquina y no al lado: en la barra de index.html a
+   320 px no queda sitio para que la campana crezca. */
+.vt-campana__num{
+  position:absolute;top:-6px;right:-6px;
+  min-width:16px;height:16px;padding:0 4px;border-radius:var(--vt-r-full);
+  background:var(--vt-gold);color:var(--vt-surface-deep);
+  font-size:11px;line-height:16px;font-weight:800;text-align:center;
+}
+.vt-campana__num[hidden]{display:none}
+.vt-campana__panel{
+  position:absolute;right:0;top:calc(100% + 6px);z-index:var(--vt-z-flotante);
+  width:min(280px, calc(100vw - 32px));max-height:60vh;overflow:auto;
+  background:var(--vt-surface-2);border:1px solid var(--vt-border);border-radius:var(--vt-r);
+  box-shadow:0 12px 32px rgba(0,0,0,0.5);
+  text-align:left; /* en index.html hereda el center del .hero */
+}
+.vt-campana__panel[hidden]{display:none}
+.vt-campana__item{
+  display:block;padding:10px 12px;border-bottom:1px solid var(--vt-border);
+  color:var(--vt-text);text-decoration:none;font-size:13px;line-height:18px;
+}
+.vt-campana__item:last-child{border-bottom:0}
+.vt-campana__item:hover{background:var(--vt-surface-3)}
+.vt-campana__vacio{padding:12px;color:var(--vt-muted);font-size:13px}
 
 /* -------------------------------------------------------------- botones -- */
 

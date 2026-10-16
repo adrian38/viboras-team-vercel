@@ -197,6 +197,23 @@ El enlace por correo (quien se registró con contraseña y luego entra con
 Google) **exige `email_verified === true`**. Sin esa comprobación sería
 suplantación: Google emite el token igualmente para un correo sin confirmar.
 
+## La campanita de avisos
+
+`GET /api/auth?action=notifications` devuelve `{ items: [{tipo, texto,
+cuando, enlace}] }`. Es una lista genérica a propósito, para que quepan otros
+avisos; hoy sólo la llenan las altas pendientes, y sólo para administradores.
+Un jugador ve la campana sin número y «No tienes avisos». Sin sesión
+responde vacío, no 401.
+
+La pinta `auth-client.js` en cualquier página con un `#vtCampana`, que hoy
+sólo tiene `index.html`. Con ella la barra de la portada no cabía: por debajo
+de 420 px el botón dice sólo «Normativa» y el chip se queda en el icono
+(medido a 320, 375, 421 y 1024 px). El icono `notifications` está en la lista
+recortada de `theme.css` ([[sistema_visual_viper_strike]]).
+
+Al aprobar, el administrador elige el rol: Jugador (`member`) o Admin.
+Cualquier valor que no sea `admin` se guarda como `member`.
+
 ## El primer administrador
 
 `ADMIN_EMAILS` es una lista de correos separados por comas, en las variables de
