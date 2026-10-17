@@ -20,7 +20,7 @@
 
   var CABECERA = [
     'Jugador', 'Estado', 'Rating', 'RD', 'Fiabilidad', 'Categoría', 'Partidos',
-    'Correo', 'Correo confirmado', 'Rol', 'Alta', 'Aprobada',
+    'Correo', 'Correo confirmado', 'Rol', 'Alta', 'Aprobada', 'Rechazada',
     'Nombre completo', 'Teléfono', 'Prueba BK', 'Nivel BK', 'Liga', 'Torneos',
     'Ranking/semana', 'Disponibilidad'
   ];
@@ -68,7 +68,7 @@
       j.name, j.estado, numero(rating, 2), numero(r ? r.rd : NaN, 0),
       r ? getFiabilidadConfig(r.rd).label : '', categoria(rating), r ? r.partidos : '',
       j.email, j.email ? (j.emailVerified ? 'si' : 'no') : '', j.role,
-      fecha(j.createdAt), fecha(j.approvedAt),
+      fecha(j.createdAt), fecha(j.approvedAt), fecha(j.rejectedAt),
       f.fullName, f.phone, f.bkTest, f.bkLevel, f.league, f.tournaments,
       f.rankingPerWeek, f.availability
     ];

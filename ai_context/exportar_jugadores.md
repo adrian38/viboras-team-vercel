@@ -41,14 +41,15 @@ Una fila por cuenta, más una por cada jugador sin cuenta. La columna `estado`:
 
 | Estado | Cuándo |
 | --- | --- |
-| De baja | El jugador tiene `active = false`. Gana sobre lo demás. |
+| Rechazado | Cuenta rechazada por un administrador. Gana sobre lo demás. La columna «Rechazada» lleva la fecha. |
+| De baja | El jugador tiene `active = false`. |
 | Activo / Pendiente / Bloqueado | El `status` de la cuenta. |
-| Sin cuenta | Jugador sin ninguna cuenta: los antiguos piratas que aún no se han registrado. |
+| Sin cuenta | Jugador sin ninguna cuenta (o sólo con una rechazada): los antiguos piratas que aún no se han registrado. |
 
-**No hay «Rechazado»**: rechazar **borra** la cuenta
-([[cuentas_y_sesiones]]), así que no queda nada que exportar. Para tenerlo
-habría que marcar en vez de borrar, y eso choca con el correo de rechazo, que
-dice que sus datos se han borrado.
+**«Rechazado» existe desde el 2026-10-17**, cuando rechazar pasó a marcar la
+cuenta en vez de borrarla ([[cuentas_y_sesiones]]). Las rechazadas antes se
+borraron y no salen. Un rechazado que reclamaba un jugador no le cuenta como
+cuenta: el jugador sale además en su propia fila, como «Sin cuenta».
 
 Un jugador puede salir dos veces: su cuenta activa y otra pendiente que
 reclama el mismo nombre. Es lo que hay en la base.

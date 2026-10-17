@@ -150,11 +150,12 @@ async function getSlots(req, res) {
   }
 }
 
-// Estado de cada fila del Excel de jugadores. "Rechazado" no existe: rechazar
-// borra la cuenta (ai_context/cuentas_y_sesiones.md).
-const ESTADO_CUENTA = { active: 'Activo', pending: 'Pendiente', blocked: 'Bloqueado' };
+// Estado de cada fila del Excel de jugadores. "Rechazado" existe desde el
+// 2026-10-17; las cuentas rechazadas antes se borraron y no salen.
+const ESTADO_CUENTA = { active: 'Activo', pending: 'Pendiente', blocked: 'Bloqueado', rejected: 'Rechazado' };
 
 function estadoJugador(player, user) {
+  if (user && user.status === 'rejected') return ESTADO_CUENTA.rejected;
   if (player && player.active === false) return 'De baja';
   return user ? (ESTADO_CUENTA[user.status] || user.status) : 'Sin cuenta';
 }
@@ -176,13 +177,15 @@ async function filasDeJugadores() {
   const [{ rows: players }, { rows: users }] = await Promise.all([
     sql`SELECT id, name, active FROM players`,
     sql`SELECT email, status, role, player_id, requested_player_name, created_at, approved_at,
-               email_verified_at, signup_form FROM users ORDER BY created_at`
+               rejected_at, email_verified_at, signup_form FROM users ORDER BY created_at`
   ]);
   const porId = new Map(players.map((p) => [p.id, p]));
   const conCuenta = new Set();
   const filas = users.map((u) => {
     const p = porId.get(u.player_id);
-    if (p) conCuenta.add(p.id);
+    // Un rechazado que reclamaba un jugador no le da cuenta: el jugador sale
+    // aparte, como «Sin cuenta».
+    if (p && u.status !== 'rejected') conCuenta.add(p.id);
     return {
       name: p ? p.name : u.requested_player_name || '',
       estado: estadoJugador(p, u),
@@ -190,6 +193,7 @@ async function filasDeJugadores() {
       role: u.role,
       createdAt: u.created_at,
       approvedAt: u.approved_at,
+      rejectedAt: u.rejected_at,
       emailVerified: Boolean(u.email_verified_at),
       form: u.signup_form || {}
     };

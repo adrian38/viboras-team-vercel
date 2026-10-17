@@ -223,16 +223,16 @@ export function correoDeAprobacion(email) {
   });
 }
 
-// Al rechazar, la cuenta se borra entera (api/auth.js, rejectUser), con su
-// formulario de inscripcion: por eso la nota lo dice.
+// Hasta el 2026-10-17 llevaba la nota «Hemos borrado tu cuenta y los datos de
+// tu formulario». Ya no es verdad: rechazar marca la cuenta y la guarda
+// (api/auth.js, rejectUser), asi que la nota se quito.
 export function correoDeRechazo(email) {
   return enviarCorreo(email, 'Tu solicitud en Víboras Team', {
     titulo: 'Tu solicitud no ha sido aprobada',
     parrafos: [
       'Gracias por tu interés en Víboras Team. Un administrador ha revisado tu solicitud y, por ahora, no ha sido aprobada.'
     ],
-    boton: { texto: 'Ver la normativa del grupo', url: `${urlDeLaApp()}/group-normativa` },
-    nota: 'Hemos borrado tu cuenta y los datos de tu formulario de inscripción.'
+    boton: { texto: 'Ver la normativa del grupo', url: `${urlDeLaApp()}/group-normativa` }
   });
 }
 

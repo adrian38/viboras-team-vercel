@@ -76,7 +76,7 @@ async function comprobarNombreNuevo(nombre) {
   }
   const pedidos = await sql`
     SELECT requested_player_name AS nombre FROM users
-    WHERE requested_player_name IS NOT NULL AND status <> 'blocked'
+    WHERE requested_player_name IS NOT NULL AND status NOT IN ('blocked', 'rejected')
   `;
   if (pedidos.rows.some((r) => claveDeNombre(r.nombre) === clave)) {
     return { error: 'name_requested', message: 'Ya hay una cuenta esperando con ese nombre.' };
@@ -118,8 +118,9 @@ async function comprobarAlta(email, playerName, newPlayerName, data) {
 // Se comprueba antes que el jugador: si el correo ya tiene cuenta, el nombre
 // da igual, y decirlo primero evita el mensaje equivocado.
 async function correoLibre(email) {
-  const { rows } = await sql`SELECT 1 FROM users WHERE email = ${email}`;
+  const { rows } = await sql`SELECT status FROM users WHERE email = ${email}`;
   if (!rows.length) return null;
+  if (rows[0].status === 'rejected') return { error: 'email_rejected', message: 'Ese correo ya pidió entrar y no se aprobó. Habla con un administrador.' };
   return { error: 'email_taken', message: 'Ya hay una cuenta con ese correo.' };
 }
 
@@ -158,10 +159,11 @@ function respuestaPorEstado(res, status) {
     });
     return;
   }
+  const rechazada = status === 'rejected';
   res.status(403).json({
     ok: false,
-    error: 'blocked',
-    message: 'Esta cuenta está bloqueada. Habla con un administrador.'
+    error: rechazada ? 'rejected' : 'blocked',
+    message: rechazada ? 'Tu solicitud no fue aprobada. Habla con un administrador.' : 'Esta cuenta está bloqueada. Habla con un administrador.'
   });
 }
 
@@ -368,15 +370,15 @@ async function rejectUser(req, res) {
   const data = await readBody(req);
   const id = toInt(data?.id);
   if (id === admin.id) {
-    res.status(400).json({ ok: false, error: 'self', message: 'No puedes borrar tu propia cuenta.' });
+    res.status(400).json({ ok: false, error: 'self', message: 'No puedes rechazar tu propia cuenta.' });
     return;
   }
-  // Se borra la fila, no se marca: marcada, el jugador quedaria ocupado para
-  // siempre y nadie podria reclamarlo. La cascada se lleva sesiones e
-  // identidades.
-  const hecho = await sql`DELETE FROM users WHERE id = ${id} AND status = 'pending' RETURNING email`;
+  // Se marca, no se borra (desde el 2026-10-17): sus datos salen en la
+  // exportacion. No ocupa el jugador: el indice parcial solo cuenta 'active'.
+  const hecho = await sql`
+    UPDATE users SET status = 'rejected', rejected_at = now() WHERE id = ${id} AND status = 'pending' RETURNING email`;
   if (hecho.rowCount > 0) await correoDeRechazo(hecho.rows[0].email);
-  res.status(200).json({ ok: true, deleted: hecho.rowCount > 0 });
+  res.status(200).json({ ok: true, rejected: hecho.rowCount > 0 });
 }
 
 async function blockUser(req, res) {

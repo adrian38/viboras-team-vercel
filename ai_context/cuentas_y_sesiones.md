@@ -136,8 +136,28 @@ CREATE UNIQUE INDEX users_player_activo_idx ON users(player_id) WHERE status = '
 Con un `UNIQUE` liso, cualquiera registra una cuenta reclamando el jugador de
 otro —el alta es pública— y lo deja fuera para siempre aunque su cuenta no se
 apruebe nunca. Con el índice parcial, varios pendientes compiten por el mismo
-jugador y decide el administrador. Por lo mismo, **rechazar borra la fila**: si
-la marcase, el jugador quedaría ocupado.
+jugador y decide el administrador.
+
+## Rechazar marca la cuenta, no la borra (desde el 2026-10-17)
+
+Hasta el 2026-10-17 rechazar **borraba** la fila. Ahora la deja con
+`status = 'rejected'` y `rejected_at`, para que sus datos salgan en la
+exportación de jugadores ([[exportar_jugadores]]). Lo decidió Adrián. En la
+app no se ve en ningún otro sitio. Lo que cambia y por qué no rompe nada:
+
+- **El jugador no queda ocupado.** El índice parcial sólo cuenta `active`, y
+  el nombre pedido por un rechazado vuelve a quedar libre:
+  `comprobarNombreNuevo` ignora `blocked` y `rejected`.
+- **El `CHECK` de `status` se migra en `estadoRechazado()`** (`api/_auth.js`).
+  `CREATE TABLE IF NOT EXISTS` no lo cambia en una tabla que ya existe; el
+  `DO $$` lo cambia una sola vez, si al `CHECK` le falta `'rejected'`.
+- **Un rechazado no entra**: «Tu solicitud no fue aprobada», tanto con
+  contraseña como con Google. **No puede volver a darse de alta con el mismo
+  correo** («Ese correo ya pidió entrar y no se aprobó»): antes, como la fila
+  se borraba, sí podía. Tampoco recibe enlaces para restablecer la contraseña.
+- **No hay forma de deshacer un rechazo desde la app.** Para eso hace falta
+  un `UPDATE` a mano.
+- Los rechazados antes del 2026-10-17 se borraron y no se pueden recuperar.
 
 ## Lo que cada decisión evita
 
@@ -318,11 +338,11 @@ Desde el 2026-10-16 la app manda cuatro correos (`api/_correo.js`):
 | Un admin rechaza la cuenta | «Tu solicitud no ha sido aprobada» | `/group-normativa` |
 | «¿Has olvidado la contraseña?» | «Restablecer tu contraseña» | `/cuenta?restablecer=…`, vale 1 hora |
 
-El de rechazo sólo sale si el `DELETE` borró de verdad una cuenta pendiente:
+El de rechazo sólo sale si el `UPDATE` marcó de verdad una cuenta pendiente:
 rechazar dos veces, o rechazar a alguien ya aprobado, no manda nada. No
-inventa motivos ni condiciones para volver a pedirlo: dice que no se aprobó
-y que sus datos se han borrado, que es lo que
-pasa.
+inventa motivos ni condiciones para volver a pedirlo: dice que no se aprobó.
+Hasta el 2026-10-17 añadía que sus datos se habían borrado; desde que rechazar
+los guarda, esa nota se quitó.
 
 Restablecer y confirmar, los endpoints de las filas primera y última, viven en **`api/correo.js`**, no en `auth.js`, que
 está a pocas líneas del techo de 600. En la página, la lógica está en

@@ -29,7 +29,7 @@ async function requestReset(req, res) {
   const email = normalizarCorreo(data?.email);
   const { rows } = await sql`SELECT id, status FROM users WHERE email = ${email}`;
   const user = rows[0];
-  if (user && user.status !== 'blocked' && !await enlaceReciente(user.id, 'reset')) {
+  if (user && !['blocked', 'rejected'].includes(user.status) && !await enlaceReciente(user.id, 'reset')) {
     const token = await crearEnlace(user.id, 'reset', 60);
     await correoDeRestablecer(email, token);
   }

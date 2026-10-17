@@ -44,7 +44,7 @@ async function tablaUsuarios() {
       player_id INTEGER REFERENCES players(id) ON DELETE SET NULL,
       requested_player_name TEXT,
       status TEXT NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'active', 'blocked')),
+        CHECK (status IN ('pending', 'active', 'blocked', 'rejected')),
       role TEXT NOT NULL DEFAULT 'member'
         CHECK (role IN ('member', 'admin')),
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -129,8 +129,30 @@ async function tablaEnlaces() {
   `;
 }
 
+// Desde el 2026-10-17 rechazar marca la cuenta en vez de borrarla, para que
+// sus datos salgan en la exportacion de jugadores. CREATE TABLE IF NOT EXISTS
+// no migra el CHECK de una tabla que ya existe: se cambia aqui, una sola vez
+// (solo si al CHECK le falta 'rejected').
+async function estadoRechazado() {
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMPTZ`;
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'users'::regclass AND conname = 'users_status_check'
+          AND pg_get_constraintdef(oid) LIKE '%rejected%'
+      ) THEN
+        ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check;
+        ALTER TABLE users ADD CONSTRAINT users_status_check
+          CHECK (status IN ('pending', 'active', 'blocked', 'rejected'));
+      END IF;
+    END $$
+  `;
+}
+
 async function crearTablas() {
   await tablaUsuarios();
+  await estadoRechazado();
   await tablaIdentidades();
   await tablaSesiones();
   await tablaEnlaces();
