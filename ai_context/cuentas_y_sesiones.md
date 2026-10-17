@@ -14,7 +14,6 @@ abiertos, es de esos dos días.
 | --- | --- |
 | `api/read.js`, `api/write.js`, `api/league-admin.js` | **Cerrado.** Sesión activa o 401, antes de mirar el `action`. |
 | `api/auth.js` | Abierto, obviamente: es por donde se entra. |
-| `?action=players` | **Abierto a propósito.** Quien se registra no tiene sesión con la que pedir la lista de jugadores. Enseña lo mismo que `getNames` enseñaba a cualquiera hasta el 2026-10-16. |
 | Las 16 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
 
 `/group-normativa` **no** redirige a `/cuenta`: el alta pide aceptar la
@@ -80,21 +79,22 @@ no en el primer arranque en frío. Y el orden importa, porque `users.player_id`
 referencia `players(id)`: `ensureSchema()` primero, `ensureAuthSchema()`
 después. El handler de `api/auth.js` las llama en ese orden.
 
-## Antiguo pirata elige de la lista; el resto escribe su nombre
+## Todos escriben su nombre; el de un jugador antiguo se enlaza solo
 
-La lista de nombres es **sólo para los antiguos piratas**, los que ya jugaban
-antes de que hubiera cuentas. Por eso el alta abre con el campo de nombre
-libre, y la lista sólo aparece al marcar «Soy antiguo pirata». Hasta el
-2026-10-16 era al revés: un desplegable obligatorio con «No estoy en la lista»
-escondido al final, y quien era nuevo no encontraba por dónde entrar. Lo pidió
-así Adrián.
+Desde el 2026-10-17 **no hay casilla «Soy antiguo pirata» ni lista de
+nombres**: lo pidió Adrián. Se quitaron también el endpoint abierto
+`?action=players`, que sólo servía para esa lista, y `playerName` en la
+página (el servidor aún lo acepta, por si queda alguna pestaña antigua
+abierta).
 
-**La lista no enseña a quien ya tiene cuenta activa** (`?action=players`
-filtra con `NOT EXISTS` sobre `users.status = 'active'`). Los pendientes **sí**
-salen, a propósito: el alta es pública, y si un pendiente ocultase el nombre,
-cualquiera podría apartar el de otro hasta que un administrador lo rechazase.
-Con el nombre visible, los dos compiten y decide quien aprueba (ver el índice
-parcial, más abajo).
+Quien ya jugaba escribe su nombre como sale en las tablas. Si coincide
+(sin mayúsculas, tildes ni espacios de más) con un jugador activo **que aún no
+tiene cuenta activa**, `comprobarNombreNuevo` devuelve su `playerId` y la
+cuenta queda enlazada a esa ficha, igual que cuando lo elegía de la lista.
+Varios pendientes pueden reclamar el mismo jugador: compiten y decide quien
+aprueba (ver el índice parcial, más abajo). Antes del 2026-10-16 era un
+desplegable obligatorio, y del 16 al 17 un campo libre con la lista detrás de
+la casilla.
 
 Quien es nuevo escribe su nombre, que se guarda en
 `users.requested_player_name` **sin crear la fila en `players`**: un alta que
@@ -113,14 +113,12 @@ instalarlo en Neon y en local. Al probarlo con `curl` desde Git Bash, las
 tildes llegan mal codificadas y el caso parece fallar: hay que escaparlas en
 el JSON (`ó`).
 
-Cinco negativas, cada una con su motivo, porque «error» a secas haría que la
-persona lo intentase otra vez igual:
+Tres negativas por el nombre, cada una con su motivo, porque «error» a secas
+haría que la persona lo intentase otra vez igual:
 
 | Caso | Qué dice |
 | --- | --- |
-| El nombre de la lista ya tiene cuenta activa (ya no sale, pero una página abierta de antes aún lo tiene) | «Ese jugador ya tiene una cuenta.» |
 | Escribe el nombre de alguien que ya tiene cuenta | «Ese nombre ya es de otro usuario (…). Elige otro.» |
-| Escribe un nombre que ya está en la lista | «Ese nombre ya está en la lista como «…»: marca «Soy antiguo pirata» y elígelo.» |
 | Escribe el nombre de un jugador dado de baja | «Ese nombre existe pero está dado de baja.» |
 | Otro pendiente pidió ya ese nombre | «Ya hay una cuenta esperando con ese nombre.» |
 
@@ -253,7 +251,7 @@ suplantación: Google emite el token igualmente para un correo sin confirmar.
   en la misma pestaña, así que ahí no se ve el paso de una a otra.
 - **Ir al formulario puede sacarte del alta**: en el móvil, o con el botón
   «Ir a crear cuenta». Por eso el alta guarda un **borrador**
-  (`vt-alta-borrador`: pirata, jugador, nombre, correo, normativa; **nunca la
+  (`vt-alta-borrador`: nombre, correo, normativa; **nunca la
   contraseña**) y los enlaces de vuelta van a **`/cuenta?alta`**. Ese
   parámetro, o un borrador a medias, abren «Crear cuenta» y no «Entrar».
   El borrador se borra al crear la cuenta.

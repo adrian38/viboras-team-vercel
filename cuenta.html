@@ -196,19 +196,11 @@
       <p class="vt-small vt-muted">
         El grupo es cerrado: la cuenta queda pendiente hasta que un administrador la aprueba.
       </p>
-      <label class="pirata">
-        <input type="checkbox" id="altaPirata">
-        Soy antiguo pirata: ya jugaba y mi nombre está en la lista
-      </label>
-      <div class="vt-field oculto" id="campoPirata">
-        <label for="altaJugador">¿Quién eres?</label>
-        <select class="vt-select" id="altaJugador"></select>
-      </div>
       <div class="vt-field" id="campoNuevo">
         <label for="altaNombre">Tu nombre, como quieres que salga en las tablas</label>
         <input class="vt-input" type="text" id="altaNombre" maxlength="60" autocomplete="name" required>
         <p class="vt-small vt-muted">
-          Tu ficha de jugador la creará el administrador al aprobar la cuenta.
+          Si ya jugabas, escribe el nombre con el que sales en las tablas: al aprobar la cuenta se enlaza con tu historial.
         </p>
       </div>
       <!-- Justo despues de «quien eres», para rellenar en orden (lo pidio
@@ -325,38 +317,8 @@ function elegirPestana(alta){
   dibujarBotonesGoogle()
 }
 
-async function cargarJugadores(){
-  const sel = $('altaJugador')
-  sel.innerHTML = '<option value="">-- Selecciona tu nombre --</option>'
-  try{
-    const res = await fetch('/api/auth?action=players')
-    if(!res.ok) throw new Error('HTTP ' + res.status)
-    const db = await res.json()
-    for(const n of (db && db.names) ? db.names : []){
-      const o = document.createElement('option')
-      o.value = n; o.textContent = n
-      sel.appendChild(o)
-    }
-  }catch(e){
-    console.error(e)
-    mostrarAviso('No se pudo cargar la lista de jugadores.')
-  }
-}
-
-// La lista es solo para los antiguos piratas, los que ya jugaban; el resto
-// escribe su nombre. El servidor rechaza un nombre que ya exista, para que
-// nadie se cuele por el campo libre con el nombre de otro.
-function esNuevo(){ return !$('altaPirata').checked }
-
-function alCambiarJugador(){
-  const nuevo = esNuevo()
-  $('campoNuevo').classList.toggle('oculto', !nuevo)
-  $('campoPirata').classList.toggle('oculto', nuevo)
-  $('altaNombre').required = nuevo
-  $('altaJugador').required = !nuevo
-}
-
-// Lo que identifica al que se registra: o uno de la lista, o un nombre nuevo.
+// Todos escriben su nombre; si ya jugaba, el servidor lo enlaza con su ficha.
+// La casilla «Soy antiguo pirata» y su lista se quitaron el 2026-10-17.
 // El formulario de inscripcion se rellena en /inscripcion, en otra pestana, y
 // deja las respuestas en localStorage; aqui se leen y van con el alta. El
 // evento `storage` avisa cuando la otra pestana las guarda.
@@ -387,7 +349,7 @@ function olvidarInscripcion(){
 // pagina abria en «Entrar». Se guarda todo MENOS la contrasena, que nunca
 // toca el almacenamiento del navegador.
 const CLAVE_BORRADOR = 'vt-alta-borrador'
-const CAMPOS_BORRADOR = ['altaPirata', 'altaJugador', 'altaNombre', 'altaCorreo', 'altaNormativa']
+const CAMPOS_BORRADOR = ['altaNombre', 'altaCorreo', 'altaNormativa']
 
 function guardarBorrador(){
   const b = {}
@@ -399,8 +361,6 @@ function leerBorrador(){
   try{ return JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null') }catch(e){ return null }
 }
 
-// Despues de cargarJugadores(): el valor de un <select> sin sus opciones se
-// queda vacio sin dar error.
 function restaurarBorrador(){
   const b = leerBorrador()
   if(!b) return
@@ -409,7 +369,6 @@ function restaurarBorrador(){
     if($(id).type === 'checkbox') $(id).checked = !!b[id]
     else $(id).value = b[id]
   }
-  alCambiarJugador()
   pintarGoogleAlta()
 }
 
@@ -420,9 +379,7 @@ function quiereAlta(){
 }
 
 function quienSoy(){
-  const quien = esNuevo()
-    ? { newPlayerName: $('altaNombre').value }
-    : { playerName: $('altaJugador').value }
+  const quien = { newPlayerName: $('altaNombre').value }
   return Object.assign(quien, { acceptRules: $('altaNormativa').checked, signupForm: respuestasInscripcion() })
 }
 
@@ -549,8 +506,7 @@ function botonesVerContrasena(){
   }
 }
 botonesVerContrasena()
-$('altaPirata').onchange = alCambiarJugador
-// Nombre, casilla de pirata o normativa: cualquier cambio puede dejar listo el alta con Google.
+// Nombre o normativa: cualquier cambio puede dejar listo el alta con Google.
 $('formAlta').addEventListener('input', pintarGoogleAlta)
 $('formAlta').addEventListener('change', pintarGoogleAlta)
 $('formAlta').addEventListener('input', guardarBorrador)
@@ -581,7 +537,7 @@ $('formAlta').onsubmit = (ev) => {
       email: $('altaCorreo').value,
       password: $('altaPassword').value
     }, quienSoy()))
-    $('formAlta').reset(); alCambiarJugador(); olvidarInscripcion()
+    $('formAlta').reset(); olvidarInscripcion()
     mostrarAviso('Cuenta creada. Te hemos enviado un correo para confirmar tu dirección: ábrelo (mira también en spam). Un administrador tiene que aprobar la cuenta antes de que puedas entrar.', true)
   })
 }
@@ -621,7 +577,7 @@ function alVolverDeGoogle(respuesta){
       credential: respuesta.credential
     }, quienSoy()))
     if(json.status === 'pending'){
-      $('formAlta').reset(); alCambiarJugador(); olvidarInscripcion()
+      $('formAlta').reset(); olvidarInscripcion()
       mostrarAviso('Cuenta creada. Un administrador tiene que aprobarla antes de que puedas entrar.', true)
       return
     }
@@ -654,8 +610,8 @@ let googleListo = false
 // falta: los pone Google. Devuelve lo que falta, en orden, con su campo.
 function faltasParaGoogle(){
   const faltas = []
-  if(esNuevo() ? !$('altaNombre').value.trim() : !$('altaJugador').value){
-    faltas.push({ texto: esNuevo() ? 'tu nombre' : 'elegir tu nombre de la lista', campo: esNuevo() ? 'altaNombre' : 'altaJugador' })
+  if(!$('altaNombre').value.trim()){
+    faltas.push({ texto: 'tu nombre', campo: 'altaNombre' })
   }
   if(!respuestasInscripcion()) faltas.push({ texto: 'rellenar el formulario de inscripción', campo: 'enlaceInscripcion' })
   if(!$('altaNormativa').checked) faltas.push({ texto: 'aceptar la normativa', campo: 'altaNormativa' })
@@ -707,7 +663,7 @@ function dibujarBoton(hueco, separador, texto){
 // esta en linea y se ejecuta antes que el, de modo que fuera del listener no
 // existiria todavia.
 document.addEventListener('DOMContentLoaded', () => {
-  cargarJugadores().then(restaurarBorrador)
+  restaurarBorrador()
   if(quiereAlta()) elegirPestana(true)
   montarGoogle()
   window.addEventListener('resize', dibujarBotonesGoogle)

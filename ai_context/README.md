@@ -52,8 +52,8 @@ que hay.
 - `cuentas_y_sesiones.md`: la app entera va detrás de la sesión desde el
   2026-10-16, con correo o con Google; qué está cerrado y qué no, por qué el
   redirect del navegador no es la cerradura, por qué las tablas no están en
-  `ensureSchema()`, por qué la lista del alta es sólo para antiguos piratas y
-  oculta a quien ya tiene cuenta, por qué `league-admin.js` no admite ni una línea más, de
+  `ensureSchema()`, cómo un jugador antiguo se enlaza escribiendo su nombre,
+  por qué rechazar marca la cuenta y no la borra, por qué `league-admin.js` no admite ni una línea más, de
   dónde sale el primer administrador, la campanita, y los correos de aprobar,
   restablecer y confirmar (y por qué los enlaces nunca salen de la cabecera Host).
 - `marcador_incompleto_se_rechaza.md`: qué cuenta como partido terminado, por

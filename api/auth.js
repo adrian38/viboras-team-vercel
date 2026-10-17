@@ -8,8 +8,9 @@
 //     podria invocar una accion de lectura y al reves.
 //
 // Es la unica puerta abierta: desde el 2026-10-16 read.js, write.js y
-// league-admin.js responden 401 sin sesion. Aqui solo `config`, `players` y
-// las dos entradas pueden usarse sin cookie.
+// league-admin.js responden 401 sin sesion. Aqui solo `config` y las dos
+// entradas pueden usarse sin cookie (`players`, la lista de nombres para el
+// alta, se quito el 2026-10-17 con la casilla «Soy antiguo pirata»).
 // Detalle: ai_context/cuentas_y_sesiones.md
 import { sql } from '@vercel/postgres';
 import { ensureSchema, getOrCreatePlayerId, readBody, toInt } from './_db.js';
@@ -51,7 +52,7 @@ const claveDeNombre = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\
 async function comprobarNombreNuevo(nombre) {
   const limpio = String(nombre || '').trim().replace(/\s+/g, ' ');
   if (limpio.length < 2 || limpio.length > 60) {
-    return { error: 'bad_name', message: 'Escribe tu nombre, entre 2 y 60 caracteres, o si eres antiguo pirata elígelo de la lista.' };
+    return { error: 'bad_name', message: 'Escribe tu nombre, entre 2 y 60 caracteres.' };
   }
   // Al aprobar, este nombre pasa a las tablas de todas las paginas, que lo
   // pintan con innerHTML: con < o > seria codigo ejecutandose para todo el grupo.
@@ -60,7 +61,7 @@ async function comprobarNombreNuevo(nombre) {
   }
   const clave = claveDeNombre(limpio);
   const { rows } = await sql`
-    SELECT p.name, p.active,
+    SELECT p.id, p.name, p.active,
       EXISTS (SELECT 1 FROM users u WHERE u.player_id = p.id AND u.status = 'active') AS con_cuenta
     FROM players p
   `;
@@ -68,9 +69,9 @@ async function comprobarNombreNuevo(nombre) {
   if (igual && igual.con_cuenta) {
     return { error: 'name_taken', message: `Ese nombre ya es de otro usuario (${igual.name}). Elige otro.` };
   }
-  if (igual && igual.active === true) {
-    return { error: 'name_exists', message: `Ese nombre ya está en la lista como «${igual.name}»: marca «Soy antiguo pirata» y elígelo.` };
-  }
+  // Ya jugaba y aun no tiene cuenta: se enlaza con su ficha, y el admin decide
+  // al aprobar. Sustituye a la casilla «Soy antiguo pirata» (2026-10-17).
+  if (igual && igual.active === true) return { playerId: igual.id };
   if (igual) {
     return { error: 'name_inactive', message: 'Ese nombre existe pero está dado de baja. Habla con un administrador.' };
   }
@@ -99,7 +100,7 @@ async function comprobarAlta(email, playerName, newPlayerName, data) {
   if (repeChequeo) return repeChequeo;
   if (!String(playerName || '').trim()) {
     const nuevo = await comprobarNombreNuevo(newPlayerName);
-    return nuevo.error ? nuevo : { playerId: null, requestedName: nuevo.requestedName, form: insc.form };
+    return nuevo.error ? nuevo : { playerId: nuevo.playerId || null, requestedName: nuevo.requestedName || null, form: insc.form };
   }
   const player = await filaDeJugador(playerName);
   if (!player) {
@@ -395,23 +396,6 @@ async function blockUser(req, res) {
   res.status(200).json({ ok: true, blocked: hecho.rowCount > 0 });
 }
 
-// La lista de jugadores para el formulario de alta. Tiene que estar abierta:
-// quien se registra todavia no tiene sesion con la que pedirla a read.js, que
-// desde el 2026-10-16 la exige. Es lo unico que la app ensena sin haber
-// entrado, y es exactamente lo que `getNames` daba antes a cualquiera.
-// Sin los que ya tienen cuenta activa: nadie mas puede ser ellos. Los
-// pendientes siguen saliendo porque el alta es publica y ocultarlos dejaria
-// a cualquiera apartar el nombre de otro hasta que un admin lo rechace.
-async function players(req, res) {
-  const { rows } = await sql`
-    SELECT p.name FROM players p
-    WHERE p.active = TRUE
-      AND NOT EXISTS (SELECT 1 FROM users u WHERE u.player_id = p.id AND u.status = 'active')
-    ORDER BY LOWER(p.name), p.name
-  `;
-  res.status(200).json({ ok: true, names: rows.map((r) => r.name) });
-}
-
 // El sustituto del paso de build: aqui no hay forma de inyectar una variable
 // de entorno en un .html estatico, asi que el navegador pregunta por el
 // client_id. No es un secreto, el boton de Google lo publica igualmente.
@@ -552,7 +536,6 @@ async function crearCuentaDeGoogle(req, res, dato, alta) {
 const ACCIONES = {
   me,
   config,
-  players,
   googleLogin,
   googleRegister,
   register,
@@ -566,7 +549,7 @@ const ACCIONES = {
   blockUser
 };
 
-const DE_LECTURA = new Set(['me', 'config', 'players', 'listPending', 'notifications']);
+const DE_LECTURA = new Set(['me', 'config', 'listPending', 'notifications']);
 
 export default async function handler(req, res) {
   const action = String(req.query?.action || '').trim();
