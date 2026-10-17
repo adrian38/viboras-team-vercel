@@ -341,20 +341,27 @@ function pintarInscripcion(){
 // ni el formulario ni el borrador del alta.
 function olvidarInscripcion(){
   try{ localStorage.removeItem(CLAVE_INSCRIPCION); localStorage.removeItem(CLAVE_BORRADOR) }catch(e){}
+  try{ sessionStorage.removeItem(CLAVE_CONTRASENA) }catch(e){}
   pintarInscripcion()
 }
 
 // Borrador del alta. Ir a /inscripcion puede sacarte de esta pagina (en el
 // movil, o con «Ir a crear cuenta»), y al volver lo escrito se perdia y la
-// pagina abria en «Entrar». Se guarda todo MENOS la contrasena, que nunca
-// toca el almacenamiento del navegador.
+// pagina abria en «Entrar». El resto va a localStorage; la contrasena, desde
+// el 2026-10-17 (lo pidio Adrian), a sessionStorage: muere al cerrar la
+// pestana y se borra en cuanto la cuenta existe.
 const CLAVE_BORRADOR = 'vt-alta-borrador'
+const CLAVE_CONTRASENA = 'vt-alta-contrasena'
 const CAMPOS_BORRADOR = ['altaNombre', 'altaCorreo', 'altaNormativa']
 
 function guardarBorrador(){
   const b = {}
   for(const id of CAMPOS_BORRADOR) b[id] = $(id).type === 'checkbox' ? $(id).checked : $(id).value
   try{ localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(b)) }catch(e){}
+  try{
+    if($('altaPassword').value) sessionStorage.setItem(CLAVE_CONTRASENA, $('altaPassword').value)
+    else sessionStorage.removeItem(CLAVE_CONTRASENA)
+  }catch(e){}
 }
 
 function leerBorrador(){
@@ -369,6 +376,7 @@ function restaurarBorrador(){
     if($(id).type === 'checkbox') $(id).checked = !!b[id]
     else $(id).value = b[id]
   }
+  try{ $('altaPassword').value = sessionStorage.getItem(CLAVE_CONTRASENA) || '' }catch(e){}
   pintarGoogleAlta()
 }
 

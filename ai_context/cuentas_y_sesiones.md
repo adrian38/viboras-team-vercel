@@ -251,10 +251,20 @@ suplantación: Google emite el token igualmente para un correo sin confirmar.
   en la misma pestaña, así que ahí no se ve el paso de una a otra.
 - **Ir al formulario puede sacarte del alta**: en el móvil, o con el botón
   «Ir a crear cuenta». Por eso el alta guarda un **borrador**
-  (`vt-alta-borrador`: nombre, correo, normativa; **nunca la
-  contraseña**) y los enlaces de vuelta van a **`/cuenta?alta`**. Ese
-  parámetro, o un borrador a medias, abren «Crear cuenta» y no «Entrar».
-  El borrador se borra al crear la cuenta.
+  (`vt-alta-borrador`: nombre, correo, normativa) y los enlaces de vuelta
+  van a **`/cuenta?alta`**. Ese parámetro, o un borrador a medias, abren
+  «Crear cuenta» y no «Entrar». El borrador se borra al crear la cuenta.
+- **La contraseña también se recuerda, pero sólo en `sessionStorage`**
+  (`vt-alta-contrasena`), desde el 2026-10-17. Hasta entonces no se guardaba
+  nunca, y quien iba a la normativa o al formulario volvía sin ella; Adrián
+  pidió guardarla hasta completar el alta. `sessionStorage` y no
+  `localStorage`: muere al cerrar la pestaña, no la ven otras pestañas y se
+  borra en cuanto la cuenta existe (`olvidarInscripcion`). El precio es que
+  queda en claro en esa pestaña mientras dura el alta. **Si la normativa o el
+  formulario se abren en otra pestaña** (con `noopener`, que no copia el
+  `sessionStorage`) **y se vuelve desde allí** con «Ir a crear cuenta», esa
+  pestaña nueva no la tiene; la pestaña original sigue con la contraseña
+  escrita.
 - **El botón «Registrarse con Google» está inhabilitado hasta tener nombre,
   formulario y normativa**, pero se ve siempre: así lo quiso Adrián, igual
   que «Crear cuenta», que avisa de lo que falta. Como es un iframe de Google
