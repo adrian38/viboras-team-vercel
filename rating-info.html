@@ -94,7 +94,15 @@ mjx-container{color:var(--vt-text)}
 
     <h2>Conceptos Clave</h2>
     <ul>
-      <li><strong>Puntuación de Nivel:</strong> Todos los jugadores comienzan con 1500 puntos. Si ganas partidos, tus puntos suben; si pierdes, bajan. Ganar a una pareja más fuerte te dará muchos más puntos que ganar a un equipo al que tenías fácil superar.</li>
+      <li><strong>Puntuación de Nivel:</strong> Todos los jugadores comienzan con fiabilidad 0 y en función de la prueba de nivel de BK los siguientes puntos:
+        <ul style="margin-top:8px">
+          <li>Entreno: 2.000 puntos</li>
+          <li>Avanzado: 1.800 puntos</li>
+          <li>Intermedio: 1.400 puntos</li>
+          <li>Iniciación: 1.200 puntos</li>
+        </ul>
+        Si ganas partidos, tus puntos suben; si pierdes, bajan. Ganar a una pareja más fuerte te proporcionará más puntos que ganar a una con menor media.
+      </li>
       <li><strong>Fiabilidad (Rating Deviation, RD):</strong> Mide qué tan consolidado está tu nivel en función de tu actividad reciente. Dicho de otro modo, mide la confianza, o incertidumbre, que el sistema tiene sobre tu nivel. A menor fiabilidad, más puntos ganas o pierdes en cada partido para ajustar tu nivel rápidamente:
         <ul style="margin-top:8px">
           <li><span class="badge badge-sin">Sin fiabilidad</span> Sin datos o ha pasado demasiado tiempo desde tu última actividad ($RD = 350$).
