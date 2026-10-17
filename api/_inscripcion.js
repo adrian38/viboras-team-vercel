@@ -8,6 +8,8 @@
 //
 // Detalle: ai_context/cuentas_y_sesiones.md
 
+import { sql } from '@vercel/postgres';
+
 export const OPCIONES = {
   bkTest: ['si', 'no'],
   bkLevel: ['iniciacion', 'intermedio', 'avanzado', 'entreno'],
@@ -51,4 +53,21 @@ export function validarInscripcion(datos) {
     form[campo] = valor;
   }
   return { form };
+}
+
+// Los nueve ultimos digitos: «+34 600 00 00 00», «0034600000000» y
+// «600-000-000» son el mismo telefono.
+function claveDeTelefono(phone) {
+  return String(phone || '').replace(/\D/g, '').slice(-9);
+}
+
+// Un telefono no puede estar en dos cuentas (lo pidio Adrian, 2026-10-17).
+// Cuentan todas, rechazadas incluidas: si no, quien fue rechazado volveria a
+// pedir entrar con otro correo. Se compara en JavaScript porque el telefono
+// vive dentro del JSONB y llega escrito de cualquier manera.
+export async function telefonoLibre(form) {
+  const clave = claveDeTelefono(form.phone);
+  const { rows } = await sql`SELECT signup_form->>'phone' AS phone FROM users WHERE signup_form ? 'phone'`;
+  if (!rows.some((r) => claveDeTelefono(r.phone) === clave)) return null;
+  return { error: 'phone_taken', message: 'Ese teléfono ya está en otra cuenta. Si es el tuyo, habla con un administrador.' };
 }

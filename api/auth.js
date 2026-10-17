@@ -22,7 +22,7 @@ import {
 } from './_auth.js';
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
-import { validarInscripcion } from './_inscripcion.js';
+import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -95,7 +95,7 @@ async function comprobarAlta(email, playerName, newPlayerName, data) {
   }
   const problema = await problemaDeCorreo(email);
   if (problema) return { error: 'invalid_email', message: problema };
-  const repeChequeo = await correoLibre(email);
+  const repeChequeo = await correoLibre(email) || await telefonoLibre(insc.form);
   if (repeChequeo) return repeChequeo;
   if (!String(playerName || '').trim()) {
     const nuevo = await comprobarNombreNuevo(newPlayerName);

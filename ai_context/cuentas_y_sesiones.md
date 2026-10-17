@@ -127,6 +127,14 @@ persona lo intentase otra vez igual:
 El correo se comprueba **antes** que el nombre: si ya tiene cuenta, el nombre
 da igual y decirlo primero evita el mensaje equivocado.
 
+**Tampoco puede repetirse el teléfono** (desde el 2026-10-17, lo pidió
+Adrián): `telefonoLibre` en `api/_inscripcion.js`, justo después del correo.
+Compara los **nueve últimos dígitos**, así que `+34 611 22 33 44`,
+`0034611223344` y `611223344` son el mismo. Cuentan todas las cuentas,
+**rechazadas incluidas**, para que quien fue rechazado no vuelva a pedir
+entrar con otro correo. Las cuentas anteriores al formulario no tienen
+teléfono y no cuentan.
+
 ## El límite del jugador es un índice parcial, no un `UNIQUE`
 
 ```sql
