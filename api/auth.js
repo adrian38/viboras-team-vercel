@@ -23,7 +23,7 @@ import {
 } from './_auth.js';
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
-import { validarInscripcion, telefonoLibre, mensajeDeSolicitud } from './_inscripcion.js';
+import { validarInscripcion, telefonoLibre, mensajeDeSolicitud, fijarRatingDePartida } from './_inscripcion.js';
 import { avisosDeJugador } from './_avisos.js';
 
 const CREDENCIALES_MAL = {
@@ -306,7 +306,7 @@ async function approveUser(req, res) {
   const data = await readBody(req);
   const id = toInt(data?.id);
   const { rows } = await sql`
-    SELECT u.id, u.email, u.status, u.player_id, u.requested_player_name,
+    SELECT u.id, u.email, u.status, u.player_id, u.requested_player_name, u.signup_form,
            p.active AS player_active
     FROM users u LEFT JOIN players p ON p.id = u.player_id
     WHERE u.id = ${id}
@@ -328,6 +328,7 @@ async function approveUser(req, res) {
   await sql`
     UPDATE users SET status = 'active', role = ${role}, approved_at = now() WHERE id = ${user.id}
   `;
+  await fijarRatingDePartida(user.player_id, user.signup_form);
   await correoDeAprobacion(user.email);
   res.status(200).json({ ok: true, role });
 }

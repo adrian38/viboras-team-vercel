@@ -150,9 +150,18 @@ async function estadoRechazado() {
   `;
 }
 
+// El rating con el que arranca un alta nueva, segun su nivel BK (se fija al
+// aprobarla: _inscripcion.js, fijarRatingDePartida). NULL para los que ya
+// jugaban: siguen partiendo de 1500. Va aqui y no en ensureSchema porque esa
+// funcion esta en el techo de tamano.
+async function ratingDePartida() {
+  await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS initial_rating DOUBLE PRECISION`;
+}
+
 async function crearTablas() {
   await tablaUsuarios();
   await estadoRechazado();
+  await ratingDePartida();
   await tablaIdentidades();
   await tablaSesiones();
   await tablaEnlaces();

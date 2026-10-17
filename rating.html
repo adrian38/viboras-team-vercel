@@ -244,6 +244,7 @@ td.rating-col{
 </div>
 
 <script src="/nivel-votos.js"></script>
+<script src="/rating-inicial.js"></script>
 <script>
 // ============================================================================
 // GLICKO ENGINE
@@ -284,7 +285,7 @@ function getPlayerOrCreate(playerMap, name) {
   const trimmed = (name || '').trim();
   if (!trimmed) return new GlickoPlayer();
   if (!playerMap.has(trimmed)) {
-    playerMap.set(trimmed, new GlickoPlayer());
+    playerMap.set(trimmed, window.vtInicial.crear(trimmed));
   }
   return playerMap.get(trimmed);
 }
@@ -397,7 +398,7 @@ function updatePeriod(playerMap, periodMatches) {
 function calculateEngineRatings(names, matches, cutoffDateIso) {
   const playerMap = new Map();
   names.forEach(n => {
-    if (n && n.trim()) playerMap.set(n.trim(), new GlickoPlayer());
+    if (n && n.trim()) playerMap.set(n.trim(), window.vtInicial.crear(n));
   });
 
   if (!matches || matches.length === 0) {
@@ -830,7 +831,7 @@ function escapeHtml(s) {
 async function init() {
   const [names, matches] = await Promise.all([
     loadNames(),
-    fetchMatches(), window.vtNivel.listo
+    fetchMatches(), window.vtNivel.listo, window.vtInicial.listo
   ]);
 
   window._registeredNames = new Set((names || []).map(n => String(n).trim()).filter(Boolean));

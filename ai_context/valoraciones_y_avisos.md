@@ -98,8 +98,10 @@ todo obliga a calcular el rating en el servidor.
   por fecha pasa por el `CASE` que convierte los dos y deja lo demás en NULL.
 - **No mandar nombres con tilde con `curl` desde Git Bash**: llegan mal
   codificados y `getOrCreatePlayerId` crea jugadores basura («�lvaro»). Los
-  cuerpos con nombres, desde Node. Hay dos jugadores así en la copia local
-  (549, 550) que no son de esta prueba.
+  cuerpos con nombres, desde Node. Hay tres jugadores así en la copia local
+  (549, 550, 551 «�lvaro») de antes de esta prueba. Ojo: un nombre mal
+  codificado **reutiliza** el basura que ya exista, así que antes de borrar
+  «lo que creó la prueba» hay que mirar si ya estaba (pasó con el 551).
 - Si la edición no encuentra la fila original (otro la editó mientras tanto,
   o un nombre cambió), el API responde **409** «Alguien ha editado este
   partido… vuelve a intentarlo» y `history.html` recarga la tabla. Hasta el

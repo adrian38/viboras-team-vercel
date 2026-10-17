@@ -120,6 +120,7 @@ services:
       - ./admin-jugadores.js:/app/admin-jugadores.js
       - ./valorar.html:/app/valorar.html
       - ./nivel-votos.js:/app/nivel-votos.js
+      - ./rating-inicial.js:/app/rating-inicial.js
     depends_on:
       wsproxy:
         condition: service_started

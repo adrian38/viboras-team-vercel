@@ -270,6 +270,19 @@ async function getAmbiente(req, res) {
   }
 }
 
+// El rating con el que arranca cada alta nueva (players.initial_rating, que
+// se fija al aprobarla), para el motor de rating (rating-inicial.js).
+async function getRatingsDePartida(req, res) {
+  try {
+    const { rows } = await sql`SELECT name, initial_rating FROM players WHERE initial_rating IS NOT NULL`;
+    res.setHeader('cache-control', 'no-store');
+    res.status(200).json({ ok: true, ratings: rows.map((r) => ({ jugador: r.name, rating: Number(r.initial_rating) })) });
+  } catch (err) {
+    console.error('read:getRatingsDePartida error', err);
+    res.status(500).json({ ok: false, ratings: [] });
+  }
+}
+
 export default async function handler(req, res) {
   // Desde el 2026-10-16 la app entera va detras de la sesion, lecturas
   // incluidas: ai_context/cuentas_y_sesiones.md
@@ -291,6 +304,8 @@ export default async function handler(req, res) {
       return getNivelVotos(req, res);
     case 'getAmbiente':
       return getAmbiente(req, res);
+    case 'getRatingsDePartida':
+      return getRatingsDePartida(req, res);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;

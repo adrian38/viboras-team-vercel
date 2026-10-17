@@ -45,6 +45,23 @@ const TEXTOS = {
   'tardes-findes': 'Tardes + findes', 'turnos-findes': 'Turnos mañana/tarde + findes'
 };
 
+// Puntos de salida por nivel BK, los que promete rating-info.html. Entreno va
+// a 2000,01 y no a 2000: la categoria Entreno es «mas de 2000» y con 2000
+// justos saldria en Avanzado (decidido por Adrian el 2026-10-17).
+export const RATING_DE_PARTIDA = { iniciacion: 1200, intermedio: 1400, avanzado: 1800, entreno: 2000.01 };
+
+// Al aprobar un alta. Solo si el jugador no tiene ningun partido ni rating de
+// partida: quien ya jugaba conserva su historia aunque rellenara el nivel.
+export async function fijarRatingDePartida(playerId, form) {
+  const rating = RATING_DE_PARTIDA[(form || {}).bkLevel];
+  if (!playerId || !rating) return;
+  await sql`
+    UPDATE players SET initial_rating = ${rating}
+    WHERE id = ${playerId} AND initial_rating IS NULL
+      AND NOT EXISTS (SELECT 1 FROM matches m
+        WHERE ${playerId} IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id))`;
+}
+
 export function describirInscripcion() {
   return Object.keys(TITULOS).map((campo) => ({
     campo,

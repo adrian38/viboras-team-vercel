@@ -333,6 +333,7 @@
   </div>
 
   <script src="/nivel-votos.js"></script>
+  <script src="/rating-inicial.js"></script>
   <script>
     const MIN_DATE = '2026-09-01';
     const DAILY_SNAPSHOT_LIMIT = 3650;
@@ -377,7 +378,7 @@
     function getPlayerOrCreate(playerMap, name) {
       const trimmed = (name || '').trim();
       if (!trimmed) return new GlickoPlayer();
-      if (!playerMap.has(trimmed)) playerMap.set(trimmed, new GlickoPlayer());
+      if (!playerMap.has(trimmed)) playerMap.set(trimmed, window.vtInicial.crear(trimmed));
       return playerMap.get(trimmed);
     }
 
@@ -583,7 +584,7 @@
       allNames.forEach((name) => {
         const clean = String(name || '').trim();
         if (!clean) return;
-        playerMap.set(clean, new GlickoPlayer());
+        playerMap.set(clean, window.vtInicial.crear(clean));
       });
 
       const byDate = new Map();
@@ -711,7 +712,7 @@
       const cleaned = String(playerName).trim();
       if (!cleaned) return [];
       return dailySeries.map((entry) => {
-        const value = entry.values.get(cleaned) || new GlickoPlayer();
+        const value = entry.values.get(cleaned) || window.vtInicial.crear(cleaned);
         return {
           date: entry.date,
           rating: value.rating,
@@ -1036,7 +1037,7 @@
       allNames = (namesData.names || []).map((n) => String(n).trim()).filter(Boolean);
 
       const matchesRes = await fetch('/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,compas,doble_ko,legacy&ts=' + Date.now());
-      const [matchesData] = await Promise.all([matchesRes.json(), window.vtNivel.listo]);
+      const [matchesData] = await Promise.all([matchesRes.json(), window.vtNivel.listo, window.vtInicial.listo]);
       allMatches = (matchesData.matches || []).filter((m) => {
         const date = toIsoDate(m.date) || toIsoDate(m.start_date);
         if (!date) return false;

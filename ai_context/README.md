@@ -34,6 +34,9 @@ que hay.
   (ambiente y nivel), cómo los votos de nivel mueven el RD sin tocar el motor
   por dentro, quién puede editar un resultado y el aviso a los demás, y por
   qué sus tablas no están en `ensureSchema()`.
+- `rating_de_partida.md`: las altas nuevas arrancan en el rating de su nivel BK
+  (Entreno en 2000,01, no 2000), sólo si no tenían partidos, y por qué un alta
+  sin partidos no sale en `/rating` por defecto.
 - `categorias_de_rating.md`: las cuatro categorías, a qué categoría pertenece un
   límite exacto y por qué una categoría nueva sin su CSS no falla, sólo se ve
   gris.
