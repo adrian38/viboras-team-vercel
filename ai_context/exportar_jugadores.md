@@ -54,6 +54,33 @@ cuenta: el jugador sale además en su propia fila, como «Sin cuenta».
 Un jugador puede salir dos veces: su cuenta activa y otra pendiente que
 reclama el mismo nombre. Es lo que hay en la base.
 
+## La pantalla «Jugadores» del panel lee la misma lista
+
+Desde el 2026-10-17, la pantalla «Jugadores» del panel de administración
+(`index.html`, botón «Nuevo jugador») la pinta `admin-jugadores.js` con
+`exportPlayers`. Por eso las filas llevan `userId`, `playerId`,
+`playerActive` y `status`. Muestra todas las cuentas, **rechazadas
+incluidas**, con el estado en color (verde activo, amarillo pendiente, rojo
+rechazado, naranja bloqueado, gris de baja o sin cuenta), un buscador por
+nombre, correo o nombre completo, y un filtro por estado. Los colores y los
+filtros los pidió Adrián.
+
+**«Editar»** guarda con `/api/write?action=updatePlayer`, sólo de admin:
+
+- **Ficha** (si hay jugador): el nombre en las tablas y «En activo» o «Dado de
+  baja». Al renombrar se rechaza un nombre que choque con otro jugador sin
+  mayúsculas, tildes ni espacios de más. `claveDeNombre` está copiada de
+  `auth.js` a `write.js`: si cambia una, cambia la otra.
+- **Cuenta** (si hay cuenta): «Activa» o «Bloqueada», y el tipo de usuario
+  (Jugador o Admin). Bloquear cierra sus sesiones. Una pendiente o una
+  rechazada no cambian de estado aquí: aprobar y rechazar siguen en
+  `/cuenta`, que crea la ficha y manda el correo.
+- **Nadie cambia el estado ni el tipo de su propia cuenta**: un admin podría
+  quedarse fuera.
+
+Sustituye al botón «Eliminar», que daba de baja: ahora eso es «Dado de baja»
+dentro de Editar. `deleteName` sigue en `write.js`, sin nadie que lo llame.
+
 ## Es un Excel, y lo escribe `excel-export.js`
 
 Desde el 2026-10-17 las dos descargas de la app son `.xlsx`: esta y

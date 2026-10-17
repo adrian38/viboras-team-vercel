@@ -117,6 +117,7 @@ services:
       - ./players-aportes.js:/app/players-aportes.js
       - ./rating-export.js:/app/rating-export.js
       - ./excel-export.js:/app/excel-export.js
+      - ./admin-jugadores.js:/app/admin-jugadores.js
     depends_on:
       wsproxy:
         condition: service_started

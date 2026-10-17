@@ -162,6 +162,7 @@ function estadoJugador(player, user) {
 
 // Solo admin. Una fila por cuenta, mas una por cada jugador sin cuenta. El
 // rating no esta aqui: lo calcula el navegador (rating-export.js lo cruza).
+// La usan el Excel de /rating y la pantalla de jugadores del panel.
 async function exportPlayers(req, res) {
   if (!await exigirAdmin(req, res)) return;
   try {
@@ -176,7 +177,7 @@ async function exportPlayers(req, res) {
 async function filasDeJugadores() {
   const [{ rows: players }, { rows: users }] = await Promise.all([
     sql`SELECT id, name, active FROM players`,
-    sql`SELECT email, status, role, player_id, requested_player_name, created_at, approved_at,
+    sql`SELECT id, email, status, role, player_id, requested_player_name, created_at, approved_at,
                rejected_at, email_verified_at, signup_form FROM users ORDER BY created_at`
   ]);
   const porId = new Map(players.map((p) => [p.id, p]));
@@ -185,8 +186,15 @@ async function filasDeJugadores() {
     const p = porId.get(u.player_id);
     // Un rechazado que reclamaba un jugador no le da cuenta: el jugador sale
     // aparte, como «Sin cuenta».
-    if (p && u.status !== 'rejected') conCuenta.add(p.id);
+    const suyo = p && u.status !== 'rejected' ? p : null;
+    if (suyo) conCuenta.add(p.id);
     return {
+      // Los id y el status los usa la pantalla de jugadores del panel de
+      // administracion (admin-jugadores.js), que lee esta misma lista.
+      userId: u.id,
+      playerId: suyo ? suyo.id : null,
+      playerActive: suyo ? suyo.active : null,
+      status: u.status,
       name: p ? p.name : u.requested_player_name || '',
       estado: estadoJugador(p, u),
       email: u.email,
@@ -199,7 +207,8 @@ async function filasDeJugadores() {
     };
   });
   for (const p of players) {
-    if (!conCuenta.has(p.id)) filas.push({ name: p.name, estado: estadoJugador(p, null), form: {} });
+    if (conCuenta.has(p.id)) continue;
+    filas.push({ userId: null, playerId: p.id, playerActive: p.active, name: p.name, estado: estadoJugador(p, null), form: {} });
   }
   return filas;
 }

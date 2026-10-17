@@ -1,7 +1,7 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, getOrCreatePlayerId, getPlayerId, readBody, toInt } from './_db.js';
 import { validateBo3Score } from './_score.js';
-import { exigirSesion } from './_auth.js';
+import { exigirSesion, cerrarSesionesDe } from './_auth.js';
 
 async function submitName(req, res) {
   try {
@@ -181,6 +181,72 @@ async function deleteName(req, res, user) {
   }
 }
 
+// «Editar» de la pantalla de jugadores (admin-jugadores.js). Desde el
+// 2026-10-17. Detalle: ai_context/exportar_jugadores.md
+const ROLES = ['member', 'admin'];
+// Solo se pasa de una a otra: aprobar o rechazar un pendiente sigue siendo
+// cosa de /cuenta, que crea la ficha y manda el correo.
+const ESTADOS_EDITABLES = ['active', 'blocked'];
+
+// Sin mayusculas, tildes ni espacios de mas, como claveDeNombre en auth.js.
+const claveDeNombre = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/\s+/g, ' ').trim();
+
+async function editarFicha(playerId, data) {
+  const name = String(data.name || '').trim().replace(/\s+/g, ' ');
+  if (name.length < 2 || name.length > 60 || /[<>"'`&]/.test(name)) {
+    return 'El nombre tiene que tener entre 2 y 60 caracteres, sin < > " \' ` ni &.';
+  }
+  const { rows } = await sql`SELECT id, name FROM players WHERE id <> ${playerId}`;
+  const otro = rows.find((r) => claveDeNombre(r.name) === claveDeNombre(name));
+  if (otro) return `Ya hay otro jugador con ese nombre (${otro.name}).`;
+  const hecho = await sql`UPDATE players SET name = ${name}, active = ${data.active !== false} WHERE id = ${playerId}`;
+  return hecho.rowCount ? null : 'Ese jugador ya no existe.';
+}
+
+async function editarCuenta(userId, data, admin) {
+  const { rows } = await sql`SELECT status, role FROM users WHERE id = ${userId}`;
+  if (!rows.length) return 'Esa cuenta ya no existe.';
+  const status = ESTADOS_EDITABLES.includes(rows[0].status) ? String(data.status || rows[0].status) : rows[0].status;
+  const role = String(data.role || rows[0].role);
+  if (!ROLES.includes(role) || (status !== rows[0].status && !ESTADOS_EDITABLES.includes(status))) return 'Estado o tipo de usuario no válido.';
+  if (userId === admin.id && (status !== rows[0].status || role !== rows[0].role)) {
+    return 'No puedes cambiar el estado ni el tipo de tu propia cuenta.';
+  }
+  try {
+    await sql`UPDATE users SET status = ${status}, role = ${role} WHERE id = ${userId}`;
+  } catch (err) {
+    // users_player_activo_idx: el jugador ya tiene otra cuenta activa.
+    if (err && err.code === '23505') return 'Ese jugador ya tiene otra cuenta activa.';
+    throw err;
+  }
+  if (status === 'blocked' && rows[0].status !== 'blocked') await cerrarSesionesDe(userId);
+  return null;
+}
+
+async function updatePlayer(req, res, user) {
+  if (user.role !== 'admin') {
+    res.status(403).json({ ok: false, error: 'forbidden' });
+    return;
+  }
+  try {
+    await ensureSchema();
+    const data = await readBody(req);
+    const playerId = toInt(data && data.playerId);
+    const userId = toInt(data && data.userId);
+    const fallo = (playerId ? await editarFicha(playerId, data) : null)
+      || (userId ? await editarCuenta(userId, data, user) : null);
+    if (fallo) {
+      res.status(400).json({ ok: false, error: 'bad_edit', message: fallo });
+      return;
+    }
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('write:updatePlayer error', err);
+    res.status(500).json({ ok: false, error: 'server_error' });
+  }
+}
+
 async function submitVote(req, res) {
   try {
     await ensureSchema();
@@ -233,6 +299,8 @@ export default async function handler(req, res) {
       return deleteResult(req, res);
     case 'deleteName':
       return deleteName(req, res, user);
+    case 'updatePlayer':
+      return updatePlayer(req, res, user);
     case 'submitVote':
       return submitVote(req, res);
     default:

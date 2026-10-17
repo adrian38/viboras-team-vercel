@@ -612,57 +612,15 @@ async function registerPlayer(){
 }
 function closeAdmin(){ const o=document.getElementById('adminOverlay'); if(o) o.style.display='none' }
 
+// La lista, los filtros y Editar viven en admin-jugadores.js (2026-10-17).
 async function loadAdminNames(){
-  const isLocal = location.hostname==='localhost' || location.hostname==='127.0.0.1'
-  try{
-    const res = await fetch('/api/read?action=getNames')
-    const db = await res.json()
-    const names = (db && db.names) ? (db.names.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))) : []
-    const container = document.getElementById('adminList')
-    if(!container) return
-    container.innerHTML = ''
-    for(const n of names){
-      const row = document.createElement('div')
-      row.style.display = 'flex'
-      row.style.alignItems = 'center'
-      row.style.justifyContent = 'space-between'
-      row.style.padding = '8px'
-      row.style.borderRadius = '8px'
-      row.style.background = 'var(--vt-surface-deep)'
-      row.style.border = '1px solid var(--vt-border)'
-      const span = document.createElement('div')
-      span.style.color = 'var(--vt-text)'
-      span.innerText = n
-      const btn = document.createElement('button')
-      btn.className = 'btn ghost'
-      btn.style.minWidth = '90px'
-      btn.innerText = 'Eliminar'
-      btn.onclick = (async ()=>{
-        if(!confirm(`Eliminar "${n}"?`)) return
-        try{
-          const endpoint = '/api/write?action=deleteName'
-          const r = await fetch(endpoint,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({name:n})
-          })
-          const j = await r.json()
-          if(j && j.ok){
-            await loadAdminNames()
-          } else {
-            alert('No se pudo eliminar')
-          }
-        }catch(e){ console.error(e); alert('Error al eliminar') }
-      })
-      row.appendChild(span)
-      row.appendChild(btn)
-      container.appendChild(row)
-    }
-  }catch(e){ console.error('Could not load names for admin',e) }
+  const container = document.getElementById('adminList')
+  if(container) await window.vtAdminJugadores.pintar(container)
 }
 
 
 </script>
 
+<script src="/admin-jugadores.js" defer></script>
 </body>
 </html>
