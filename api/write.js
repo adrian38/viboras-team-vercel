@@ -1,5 +1,5 @@
 import { sql } from '@vercel/postgres';
-import { ensureSchema, getOrCreatePlayerId, getPlayerId, nombreDeJugadorValido, readBody, toInt } from './_db.js';
+import { ensureSchema, getPlayerId, nombreDeJugadorValido, readBody, toInt } from './_db.js';
 import { validateBo3Score } from './_score.js';
 import { exigirSesion } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
@@ -321,7 +321,7 @@ async function updatePlayer(req, res, user) {
   }
 }
 
-async function submitVote(req, res) {
+async function submitVote(req, res, user) {
   try {
     await ensureSchema();
     const data = await readBody(req);
@@ -334,9 +334,16 @@ async function submitVote(req, res) {
       return;
     }
 
-    const playerId = await getOrCreatePlayerId(name);
+    // Desde el 2026-10-17 cada uno apunta solo su disponibilidad (un admin, la
+    // de cualquiera), y el jugador tiene que existir: antes cualquier nombre
+    // valia y se creaba como ficha.
+    const playerId = await getPlayerId(name);
     if (!playerId) {
       res.status(400).send('missing data');
+      return;
+    }
+    if (user.role !== 'admin' && playerId !== user.player_id) {
+      res.status(403).send('forbidden');
       return;
     }
 
@@ -376,7 +383,7 @@ export default async function handler(req, res) {
     case 'updatePlayer':
       return updatePlayer(req, res, user);
     case 'submitVote':
-      return submitVote(req, res);
+      return submitVote(req, res, user);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;

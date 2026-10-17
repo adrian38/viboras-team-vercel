@@ -158,14 +158,21 @@ async function submitVote(){
   const selected = [...document.querySelectorAll(".selected")]
       .map(e=>e.dataset.time)
 
-  await fetch("/api/write?action=submitVote",{
+  // Sin Content-Type el cuerpo sale como text/plain: Vercel lo deja pasar,
+  // pero el servidor local no lo lee y el voto se perdia sin aviso.
+  const res = await fetch("/api/write?action=submitVote",{
     method:"POST",
+    headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       date,
       name,
       slots:selected
     })
   })
+  if(!res.ok){
+    alert(res.status === 403 ? "Solo puedes apuntar tu propia disponibilidad." : "No se pudo guardar. Elige tu nombre y vuelve a intentarlo.")
+    return
+  }
 
   document.querySelectorAll(".slot").forEach(el=>{
     el.classList.remove("selected")

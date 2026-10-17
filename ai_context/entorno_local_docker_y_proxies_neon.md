@@ -48,6 +48,15 @@ una ruta mal escrita.
 Borrar un fichero montado sin quitar su línea del `docker-compose.yml` es peor:
 Docker crea un directorio vacío en su lugar.
 
+## Un POST sin `Content-Type` llega vacío en local
+
+`docker/server.js` sólo lee cuerpos `application/json` (`express.json()`).
+Vercel, en cambio, entrega como texto un `text/plain` y `readBody` lo parsea.
+Un `fetch` con `body: JSON.stringify(...)` y sin cabecera funciona en
+producción y en local llega vacío: hasta el 2026-10-17 votar desde `/day`
+fallaba en local con «missing data» sin que la página dijera nada. Todo
+`fetch` que mande JSON lleva `Content-Type: application/json`.
+
 ## Los service workers no se pueden probar en local
 
 El navegador integrado no registra service workers sobre `http://localhost`

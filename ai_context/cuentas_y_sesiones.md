@@ -479,6 +479,12 @@ le dice que no y no abre nada.
 A los demás les responde 403. Esconder un botón no cierra nada: un miembro
 podía crear un torneo con `curl` (comprobado en local antes del cambio).
 
+**La disponibilidad de `/day` es de cada uno** (desde el 2026-10-17):
+`submitVote` sólo acepta el jugador de tu cuenta, y un admin cualquiera. El
+nombre tiene que existir; antes cualquier nombre valía y se creaba la ficha.
+`/day` sigue enseñando la lista entera con tu nombre puesto: si eliges otro,
+avisa «Solo puedes apuntar tu propia disponibilidad».
+
 **Editar un resultado sí está cerrado** desde el 2026-10-17: `submitResult` con
 `_original` sólo deja a los cuatro jugadores del partido y a los admins (403 a
 los demás). Subir un partido nuevo sigue abierto a cualquier miembro. Detalle:
