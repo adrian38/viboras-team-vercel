@@ -1,0 +1,29 @@
+# Lo que NO se publica en Vercel. Sin este fichero, todo lo versionado se
+# sirve como estatico, sin sesion: /AGENTS.md, /ai_context/... (con el correo
+# del administrador y como esta cerrada la app), /docker-compose.yml, etc.
+# Lo que las paginas necesitan (los .html, sus .js, theme.css, iconos,
+# manifest, api/ y package.json) no esta aqui.
+# Detalle: ai_context/rama_viboras_es_produccion.md
+
+# documentacion y contexto para agentes
+ai_context/
+*.md
+.mcp.json
+
+# entorno local, guardas y scripts de mantenimiento
+docker/
+docker-compose.yml
+.dockerignore
+tools/
+scripts/
+verify-rating-date.js
+
+# restos de la version de Netlify; ninguna pagina los lee
+data/
+
+# nunca deberian estar, pero si un `vercel deploy` sube la carpeta local
+.env*
+backups/
+client_secret_*.json
+stitch_*
+*.zip

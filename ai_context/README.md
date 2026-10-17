@@ -72,7 +72,9 @@ que hay.
 - `entorno_local_docker_y_proxies_neon.md`: los dos proxies que imitan a Neon en
   local, la trampa del `-pooler.` en la cadena de conexión y por qué un fichero
   estático nuevo da 404 hasta reconstruir la imagen.
-- `rama_viboras_es_produccion.md`: `viboras` es la rama por defecto y un push
+- `rama_viboras_es_produccion.md`: qué publica Vercel (todo lo versionado,
+  salvo `.vercelignore`) y cómo comprobarlo tras desplegar;
+  `viboras` es la rama por defecto y un push
   despliega a producción sin paso intermedio; `master` está obsoleta.
 
 ## La app en el móvil
