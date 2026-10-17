@@ -341,27 +341,44 @@ function pintarInscripcion(){
 // ni el formulario ni el borrador del alta.
 function olvidarInscripcion(){
   try{ localStorage.removeItem(CLAVE_INSCRIPCION); localStorage.removeItem(CLAVE_BORRADOR) }catch(e){}
-  try{ sessionStorage.removeItem(CLAVE_CONTRASENA) }catch(e){}
+  try{ localStorage.removeItem(CLAVE_CONTRASENA) }catch(e){}
   pintarInscripcion()
 }
 
 // Borrador del alta. Ir a /inscripcion puede sacarte de esta pagina (en el
 // movil, o con «Ir a crear cuenta»), y al volver lo escrito se perdia y la
-// pagina abria en «Entrar». El resto va a localStorage; la contrasena, desde
-// el 2026-10-17 (lo pidio Adrian), a sessionStorage: muere al cerrar la
-// pestana y se borra en cuanto la cuenta existe.
+// pagina abria en «Entrar». Desde el 2026-10-17 (lo pidio Adrian) tambien la
+// contrasena, aparte y con caducidad: en localStorage, porque la vuelta puede
+// ser por otra pestana (sessionStorage no llega), y sólo 30 minutos desde la
+// ultima vez que se escribio. Se borra al crear la cuenta; auth-client.js
+// borra la caducada en cualquier pagina.
 const CLAVE_BORRADOR = 'vt-alta-borrador'
 const CLAVE_CONTRASENA = 'vt-alta-contrasena'
+const VIDA_CONTRASENA = 30 * 60 * 1000
 const CAMPOS_BORRADOR = ['altaNombre', 'altaCorreo', 'altaNormativa']
+
+function guardarContrasena(){
+  try{
+    const valor = $('altaPassword').value
+    if(valor) localStorage.setItem(CLAVE_CONTRASENA, JSON.stringify({ valor, hasta: Date.now() + VIDA_CONTRASENA }))
+    else localStorage.removeItem(CLAVE_CONTRASENA)
+  }catch(e){}
+}
+
+function leerContrasena(){
+  try{
+    const c = JSON.parse(localStorage.getItem(CLAVE_CONTRASENA) || 'null')
+    if(c && c.hasta > Date.now()) return c.valor
+    localStorage.removeItem(CLAVE_CONTRASENA)
+  }catch(e){}
+  return ''
+}
 
 function guardarBorrador(){
   const b = {}
   for(const id of CAMPOS_BORRADOR) b[id] = $(id).type === 'checkbox' ? $(id).checked : $(id).value
   try{ localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(b)) }catch(e){}
-  try{
-    if($('altaPassword').value) sessionStorage.setItem(CLAVE_CONTRASENA, $('altaPassword').value)
-    else sessionStorage.removeItem(CLAVE_CONTRASENA)
-  }catch(e){}
+  guardarContrasena()
 }
 
 function leerBorrador(){
@@ -376,7 +393,7 @@ function restaurarBorrador(){
     if($(id).type === 'checkbox') $(id).checked = !!b[id]
     else $(id).value = b[id]
   }
-  try{ $('altaPassword').value = sessionStorage.getItem(CLAVE_CONTRASENA) || '' }catch(e){}
+  if(!$('altaPassword').value) $('altaPassword').value = leerContrasena()
   pintarGoogleAlta()
 }
 

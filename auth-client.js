@@ -12,6 +12,14 @@
 //
 // Detalle: ai_context/cuentas_y_sesiones.md
 (function () {
+  // La contrasena que el alta recuerda (cuenta.html, guardarContrasena) caduca
+  // a los 30 minutos; aqui se borra caducada en cualquier pagina, no solo si
+  // se vuelve a /cuenta.
+  try {
+    var c = JSON.parse(localStorage.getItem('vt-alta-contrasena') || 'null');
+    if (c && !(c.hasta > Date.now())) localStorage.removeItem('vt-alta-contrasena');
+  } catch (e) { /* sin almacenamiento no hay nada que borrar */ }
+
   window.vtMe = fetch('/api/auth?action=me', { headers: { accept: 'application/json' } })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (j) { return (j && j.user) || null; })
