@@ -437,10 +437,18 @@ anterior.
 El botón de «Administración» se sigue viendo para todos; a quien no es admin
 le dice que no y no abre nada.
 
-**Lo que el panel de `history.html` no protege.** Ahí se borran resultados,
-pero `deleteResult` sólo exige sesión, no rol: cualquier miembro puede
-llamarlo directamente. Si se quiere cerrar, es pasarle `user` igual que a
-`deleteName`, en su propio commit.
+**Lo que sólo hace un administrador, comprobado en el servidor** (desde el
+2026-10-17; antes bastaba la sesión y las páginas sólo escondían el botón):
+
+| Acción | Dónde |
+| --- | --- |
+| Crear ligas, cuadros, pozos, compás y cambiar sustituciones | todo `api/league-admin.js`, en el `handler` |
+| Dar de alta o reactivar un jugador (`submitName`) | `api/write.js`, `esAdmin` |
+| Borrar un partido (`deleteResult`) | `api/write.js`, `esAdmin` |
+| Dar de baja (`deleteName`) y editar fichas (`updatePlayer`) | `api/write.js`, ya lo eran |
+
+A los demás les responde 403. Esconder un botón no cierra nada: un miembro
+podía crear un torneo con `curl` (comprobado en local antes del cambio).
 
 **Editar un resultado sí está cerrado** desde el 2026-10-17: `submitResult` con
 `_original` sólo deja a los cuatro jugadores del partido y a los admins (403 a

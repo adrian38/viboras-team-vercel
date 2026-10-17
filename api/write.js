@@ -5,7 +5,17 @@ import { exigirSesion } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
 import { avisarEdicion } from './_avisos.js';
 
-async function submitName(req, res) {
+// Dar de alta jugadores y borrar partidos es de administradores desde el
+// 2026-10-17: las paginas solo lo ensenaban a ellos, pero el API lo dejaba a
+// cualquiera con sesion. Responde 403 y devuelve false si no lo es.
+function esAdmin(user, res) {
+  if (user.role === 'admin') return true;
+  res.status(403).json({ ok: false, error: 'forbidden' });
+  return false;
+}
+
+async function submitName(req, res, user) {
+  if (!esAdmin(user, res)) return;
   try {
     await ensureSchema();
     const data = await readBody(req);
@@ -164,7 +174,8 @@ async function submitResult(req, res, user) {
   }
 }
 
-async function deleteResult(req, res) {
+async function deleteResult(req, res, user) {
+  if (!esAdmin(user, res)) return;
   try {
     await ensureSchema();
     const data = await readBody(req);
@@ -325,11 +336,11 @@ export default async function handler(req, res) {
 
   switch (action) {
     case 'submitName':
-      return submitName(req, res);
+      return submitName(req, res, user);
     case 'submitResult':
       return submitResult(req, res, user);
     case 'deleteResult':
-      return deleteResult(req, res);
+      return deleteResult(req, res, user);
     case 'deleteName':
       return deleteName(req, res, user);
     case 'updatePlayer':

@@ -371,7 +371,14 @@ async function updateLeagueSubstitutions(req, res) {
 }
 
 export default async function handler(req, res) {
-  if (!await exigirSesion(req, res)) return;
+  const user = await exigirSesion(req, res);
+  if (!user) return;
+  // Ligas y torneos los crean solo los administradores (2026-10-17). El panel
+  // de la portada ya se escondia a los demas, pero eso no cerraba nada.
+  if (user.role !== 'admin') {
+    res.status(403).json({ ok: false, error: 'forbidden' });
+    return;
+  }
   const action = String(req.query?.action || req.body?.action || '').trim();
   switch (action) {
     case 'createLeague':
