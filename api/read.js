@@ -150,7 +150,7 @@ async function getSlots(req, res) {
   }
 }
 
-// Estado de cada fila del CSV de jugadores. "Rechazado" no existe: rechazar
+// Estado de cada fila del Excel de jugadores. "Rechazado" no existe: rechazar
 // borra la cuenta (ai_context/cuentas_y_sesiones.md).
 const ESTADO_CUENTA = { active: 'Activo', pending: 'Pendiente', blocked: 'Bloqueado' };
 

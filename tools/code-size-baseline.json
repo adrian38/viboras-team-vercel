@@ -8,7 +8,6 @@
     "api/league-admin.js:createCompasTournament": 83,
     "api/read.js:getResults": 80,
     "history.html:renderTable": 136,
-    "history.html:downloadCSV": 67,
     "players.html:updatePeriod": 66,
     "players.html:buildDailyHistoricalSeries": 127,
     "players.html:renderChart": 106,

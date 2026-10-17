@@ -36,9 +36,10 @@ que hay.
 - `tabla_de_rating_en_movil.md`: por qué la tabla lleva `table-layout: fixed`,
   qué hace la media query de 560 px y cómo se mide un desborde en el DOM en vez
   de mirarlo a ojo.
-- `exportar_jugadores.md`: el CSV de jugadores de los administradores, por qué
-  sale de `/rating` y no de `/cuenta`, qué estados tiene (y por qué no hay
-  «Rechazado») y a qué fecha calcula el rating.
+- `exportar_jugadores.md`: el Excel de jugadores de los administradores, por
+  qué sale de `/rating` y no de `/cuenta`, qué estados tiene (y por qué no hay
+  «Rechazado») y a qué fecha calcula el rating. También cómo `excel-export.js`
+  escribe los `.xlsx` sin librerías, que usan las dos descargas de la app.
 
 ## Datos y base de datos
 

@@ -1,7 +1,7 @@
-# Exportar jugadores: el CSV de los administradores
+# Exportar jugadores (y las descargas a Excel)
 
 Desde el 2026-10-17, `/rating` tiene un botón «Exportar jugadores» que
-descarga `jugadores-AAAA-MM-DD.csv`. Lleva el rating, la fiabilidad, la
+descarga `jugadores-AAAA-MM-DD.xlsx`. Lleva el rating, la fiabilidad, la
 categoría y los partidos jugados de cada jugador, más su cuenta y lo que
 rellenó en la inscripción (nivel BK y demás). Las piezas:
 
@@ -31,7 +31,7 @@ tabla al abrir, con todos los jugadores, sin fijarse en la fiabilidad mínima.
 primera versión.
 
 Comprobado el 2026-10-17 en local: los 68 jugadores de la tabla («Incluir no
-activos», fiabilidad «Cualquiera») coinciden en rating y categoría con el CSV.
+activos», fiabilidad «Cualquiera») coinciden en rating y categoría con la exportación.
 Los demás no tienen rating porque no tienen partidos: altas pendientes,
 cuentas sin jugador y jugadores de baja que nunca jugaron.
 
@@ -53,14 +53,33 @@ dice que sus datos se han borrado.
 Un jugador puede salir dos veces: su cuenta activa y otra pendiente que
 reclama el mismo nombre. Es lo que hay en la base.
 
-## El CSV
+## Es un Excel, y lo escribe `excel-export.js`
 
-Separador `;`, con BOM, como el de resultados de `history.html`: así Excel en
-castellano lo abre en columnas y con las tildes bien. Las respuestas de la
-inscripción van con sus **códigos** (`avanzado`, `tardes-findes`), no con los
-textos de la página: los textos están copiados en `cuenta.html` y no hacía
-falta una tercera copia.
+Desde el 2026-10-17 las dos descargas de la app son `.xlsx`: esta y
+«Descargar resultados» de `history.html`. Las dos fueron CSV con `;` y BOM.
+Las dos usan `vtExcel.descargar(fichero, hoja, filas)` de `excel-export.js`.
 
-Lo que empieza por `= + - @` se exporta con un `'` delante, porque Excel lo
-ejecutaría como fórmula. Ese texto lo escribe quien se registra. Por eso los
-teléfonos salen como `'+34 …`.
+**Sin librerías.** Un `.xlsx` es un zip con seis XML. `excel-export.js` lo
+escribe a mano, sin comprimir (zip *store*, con su CRC32). Una librería como
+SheetJS ocuparía cientos de KB y vendría de un CDN ajeno.
+
+Lo que hace por su cuenta:
+
+- **Un número de JavaScript sale como número**, y cualquier otra cosa como
+  texto. Por eso `rating-export.js` pasa el rating como `Number` (con formato
+  `0.00`) y `history.html` convierte los juegos, que el API manda como texto.
+- **El texto nunca es fórmula** (`inlineStr`). Un nombre que empiece por `=`
+  sale tal cual y no se ejecuta, así que ya no hace falta el `'` delante que
+  llevaba el CSV.
+- Cabecera en negrita, fija al desplazarse y con filtros. Anchos de columna
+  según el contenido, con un tope de 50.
+
+Comprobado el 2026-10-17: un fichero generado con tildes, `<&>`, comillas,
+`=HYPERLINK(…)` y celdas vacías se abre con openpyxl sin avisos. Las descargas
+reales, leídas en el navegador, coinciden con la tabla (73 jugadores) y con
+`getResults` (35 partidos). **Excel de escritorio no se ha probado**: no hay
+uno en el equipo donde se hizo.
+
+Las respuestas de la inscripción van con sus **códigos** (`avanzado`,
+`tardes-findes`), no con los textos de la página: esos textos están copiados
+en `cuenta.html` y no hacía falta una tercera copia.

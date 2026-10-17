@@ -578,7 +578,7 @@ async function deleteMatch(m){
   }catch(e){ console.error(e); alert('Error al eliminar') }
 }
 
-// Descargar CSV de resultados (botón central)
+// Descargar Excel de resultados (botón central); el .xlsx lo hace excel-export.js
 document.getElementById('downloadBtn').addEventListener('click', ()=>{
   downloadCSV()
 })
@@ -638,17 +638,9 @@ async function downloadCSV(){
     m.format || ''
   ])
 
-  const csvContent = [header,...rowsWithFormat].map(r=>r.join(";")).join("\n")
-
-  const bom = '\uFEFF'
-  const blob = new Blob([bom + csvContent], {type:"text/csv;charset=utf-8"})
-  const url = URL.createObjectURL(blob)
-
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'resultados.csv'
-  a.click()
-  URL.revokeObjectURL(url)
+  // Los juegos llegan como texto; en Excel van como numero para poder sumarlos.
+  function comoNumero(v){ return /^\d+$/.test(String(v)) ? Number(v) : v }
+  vtExcel.descargar('resultados.xlsx', 'Resultados', [header, ...rowsWithFormat.map(r => r.map(comoNumero))])
 }
 
 
@@ -713,6 +705,7 @@ function startEditRow(tr,m){
   tr.appendChild(tdDate); tr.appendChild(tdPlayers); tr.appendChild(tdScore); tr.appendChild(tdAct)
 }
 </script>
+<script src="/excel-export.js" defer></script>
 
 </body>
 </html>

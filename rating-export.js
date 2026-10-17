@@ -1,4 +1,4 @@
-// "Exportar jugadores" de /rating: un CSV con cada jugador, su rating y lo que
+// "Exportar jugadores" de /rating: un Excel con cada jugador, su rating y lo que
 // rellenó al inscribirse. Sólo para administradores.
 //
 // Vive aquí y no en el panel de /cuenta porque el rating no está en la base:
@@ -19,22 +19,15 @@
   });
 
   var CABECERA = [
-    'jugador', 'estado', 'rating', 'rd', 'fiabilidad', 'categoria', 'partidos',
-    'correo', 'correo_confirmado', 'rol', 'alta', 'aprobada',
-    'nombre_completo', 'telefono', 'prueba_bk', 'nivel_bk', 'liga', 'torneos',
-    'ranking_semana', 'disponibilidad'
+    'Jugador', 'Estado', 'Rating', 'RD', 'Fiabilidad', 'Categoría', 'Partidos',
+    'Correo', 'Correo confirmado', 'Rol', 'Alta', 'Aprobada',
+    'Nombre completo', 'Teléfono', 'Prueba BK', 'Nivel BK', 'Liga', 'Torneos',
+    'Ranking/semana', 'Disponibilidad'
   ];
 
-  // Excel ejecuta como fórmula lo que empieza por = + - @, y los nombres y el
-  // teléfono los escribe quien se registra.
-  function celda(valor) {
-    var s = valor === undefined || valor === null ? '' : String(valor);
-    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
-    return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }
-
+  // Números de verdad, para que Excel ordene y sume; vacío si no hay.
   function numero(n, decimales) {
-    return Number.isFinite(n) ? n.toFixed(decimales).replace('.', ',') : '';
+    return Number.isFinite(n) ? Number(n.toFixed(decimales)) : '';
   }
 
   function categoria(rating) {
@@ -81,18 +74,6 @@
     ];
   }
 
-  function descargar(texto) {
-    var blob = new Blob(['﻿' + texto], { type: 'text/csv;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'jugadores-' + new Date().toISOString().slice(0, 10) + '.csv';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-
   async function exportar() {
     boton.disabled = true;
     try {
@@ -102,7 +83,7 @@
       var ratings = ratingsPorNombre();
       var filas = (datos.players || []).map(function (j) { return fila(j, ratings.get(j.name)); });
       filas.sort(function (a, b) { return String(a[0]).localeCompare(String(b[0]), 'es', { sensitivity: 'base' }); });
-      descargar([CABECERA].concat(filas).map(function (f) { return f.map(celda).join(';'); }).join('\n'));
+      vtExcel.descargar('jugadores-' + new Date().toISOString().slice(0, 10) + '.xlsx', 'Jugadores', [CABECERA].concat(filas));
     } catch (err) {
       alert('No se pudo exportar: ' + err.message);
     } finally {
