@@ -43,6 +43,10 @@ El 2026-10-16 quedan tres: `rating-test.html` 790, `players.html` 738 y
 `api/league-admin.js` 626. `index.html` bajó a 323 al quitarle el panel de
 ligas, y `league-results.html` se borró con las ligas.
 
+El 2026-10-17 quedan dos: `api/league-admin.js` bajó a 392 al sacar sus
+auxiliares (fechas, nombres de evento, lectura de CSV) a `api/_ligas.js`, sin
+cambiar su código, para hacer sitio a la comprobación de administrador.
+
 ## Lo que la guarda no ve
 
 Antes de medir se enmascaran cadenas, plantillas, comentarios y regex, porque un

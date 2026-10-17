@@ -30,7 +30,6 @@
     "tournaments.html:buildTableForMatches": 106
   },
   "ficheros": {
-    "api/league-admin.js": 626,
     "players.html": 738,
     "rating-test.html": 790
   }

@@ -36,20 +36,17 @@ Crea el esquema él mismo (`ensureSchema` y `ensureAuthSchema`, las dos
 memoizadas) porque corre **antes** del `switch`, y las acciones lo hacían por
 dentro, después.
 
-## `league-admin.js` no tiene ni una línea de margen
+## `league-admin.js` se partió para tener margen
 
-Mide **626 líneas** y `tools/code-size-baseline.json` lo tiene registrado
-exactamente ahí: el trinquete sólo deja encoger
-([[tamano_del_codigo_y_trinquete]]). El guardia entró ocupando las dos líneas
-en blanco que había —la de después de los `import` y la de dentro del
-`handler`—, de modo que el fichero no creció.
+Medía **626 líneas**, registradas así en `tools/code-size-baseline.json`, y el
+trinquete sólo deja encoger ([[tamano_del_codigo_y_trinquete]]): no admitía ni
+una línea más. El 2026-10-17 sus auxiliares —fechas de liga y fases, nombre de
+cada evento, lectura de los tres CSV— salieron **sin cambiar** a
+`api/_ligas.js`, y el fichero bajó a 392.
 
-**Quien quiera añadir algo ahí tiene que sacar algo primero.** El arreglo de
-verdad es partirlo: `createLeague` (91), `createPozoTournament` (95),
-`createCompasTournament` (83) y `createLeagueBracket` (64) son 333 líneas que
-cabrían en un `api/_torneos.js`. Es un refactor sin pruebas que lo respalden,
-así que va solo, en su commit, y se verifica creando una liga y un pozo de
-verdad contra el Postgres local.
+Las cuatro `create*` (91, 95, 83 y 64 líneas) se quedaron dentro a propósito:
+están perdonadas por su nombre `api/league-admin.js:<función>`, y movidas a otro
+fichero contarían como nuevas por encima del techo de 60.
 
 ## Las piezas
 
