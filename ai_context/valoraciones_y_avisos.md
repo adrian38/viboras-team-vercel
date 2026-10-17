@@ -23,6 +23,11 @@ días lleva un botón «Valorar» que entra a `/valorar` con lo ya elegido marca
 (se puede cambiar). Se reconoce el partido por fecha y cuatro nombres, que
 `pendientes` devuelve, porque `getResults` no manda el id.
 
+El ambiente recibido se ve, por ahora, sólo en la pantalla Jugadores del panel
+de administración (`admin-jugadores.js`): «👍 n · 👎 m» en la lista y una
+sección «Ambiente» en Editar. Sale de `getAmbiente` en `read.js`, sólo para
+admin y sólo con cuentas.
+
 ## Privacidad
 
 Cada uno sólo ve sus propias elecciones: `/api/avisos?action=partido` devuelve

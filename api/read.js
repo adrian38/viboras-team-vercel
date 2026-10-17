@@ -245,6 +245,31 @@ async function getNivelVotos(req, res) {
   }
 }
 
+// Votos de «¿qué tal el ambiente?» recibidos por cada jugador, para la
+// pantalla Jugadores del panel (admin-jugadores.js). Solo admin y solo
+// cuentas: quien voto no sale de aqui. Mismo filtro que getNivelVotos.
+async function getAmbiente(req, res) {
+  if (!await exigirAdmin(req, res)) return;
+  try {
+    await ensureAvisosSchema();
+    const { rows } = await sql`
+      SELECT f.rated_player_id AS player_id,
+        COUNT(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
+        COUNT(*) FILTER (WHERE f.actitud = 'mejorable')::int AS mejorable
+      FROM match_feedback f
+      JOIN matches m ON m.id = f.match_id
+      WHERE f.actitud IS NOT NULL
+        AND f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+        AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+      GROUP BY f.rated_player_id`;
+    res.setHeader('cache-control', 'no-store');
+    res.status(200).json({ ok: true, ambiente: rows });
+  } catch (err) {
+    console.error('read:getAmbiente error', err);
+    res.status(500).json({ ok: false, error: 'server_error' });
+  }
+}
+
 export default async function handler(req, res) {
   // Desde el 2026-10-16 la app entera va detras de la sesion, lecturas
   // incluidas: ai_context/cuentas_y_sesiones.md
@@ -264,6 +289,8 @@ export default async function handler(req, res) {
       return exportPlayers(req, res);
     case 'getNivelVotos':
       return getNivelVotos(req, res);
+    case 'getAmbiente':
+      return getAmbiente(req, res);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;

@@ -34,7 +34,18 @@
     '.aj-botones{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}' +
     '@media(max-width:520px){.aj-form{grid-template-columns:1fr}}';
 
-  var estado = { filas: [], inscripcion: [], texto: '', filtro: '', caja: null };
+  var estado = { filas: [], inscripcion: [], ambiente: {}, texto: '', filtro: '', caja: null };
+
+  // Lo que le votaron de ambiente tras los partidos (/valorar), solo cuentas.
+  // Desde el 2026-10-17. Detalle: ai_context/valoraciones_y_avisos.md
+  function ambienteDe(f) {
+    var a = f.playerId ? estado.ambiente[f.playerId] : null;
+    return a && (a.buen_rollo || a.mejorable) ? a : null;
+  }
+
+  function resumenAmbiente(a) {
+    return '👍 ' + a.buen_rollo + ' · 👎 ' + a.mejorable;
+  }
 
   function estilos() {
     if (document.getElementById('ajEstilos')) return;
@@ -91,7 +102,8 @@
   }
 
   function fila(f) {
-    var sub = [f.email, f.userId ? ROLES[f.role] : null].filter(Boolean).join(' · ');
+    var a = ambienteDe(f);
+    var sub = [f.email, f.userId ? ROLES[f.role] : null, a ? resumenAmbiente(a) : null].filter(Boolean).join(' · ');
     var editar = el('button', { className: 'btn ghost', textContent: 'Editar', style: 'min-width:90px' });
     editar.onclick = function () { pantallaEditar(f); };
     var caja = el('div', { className: 'aj-fila' }, [
@@ -127,8 +139,19 @@
     return el('div', { className: 'aj-filtros' }, [buscar, cual, el('span', { className: 'aj-cuenta' })]);
   }
 
+  // El ambiente es un extra: si falla, la lista sale igual, sin él.
+  async function cargarAmbiente() {
+    estado.ambiente = {};
+    try {
+      var r = await fetch('/api/read?action=getAmbiente', { headers: { accept: 'application/json' } });
+      var j = r.ok ? await r.json() : {};
+      (j.ambiente || []).forEach(function (a) { estado.ambiente[a.player_id] = a; });
+    } catch (err) { console.warn('Sin datos de ambiente', err); }
+  }
+
   async function cargar() {
-    var r = await fetch('/api/read?action=exportPlayers', { headers: { accept: 'application/json' } });
+    var pedidas = await Promise.all([fetch('/api/read?action=exportPlayers', { headers: { accept: 'application/json' } }), cargarAmbiente()]);
+    var r = pedidas[0];
     if (!r.ok) throw new Error(r.status === 403 ? 'sólo para administradores' : 'HTTP ' + r.status);
     var datos = await r.json();
     estado.inscripcion = datos.inscripcion || [];
@@ -188,6 +211,20 @@
     form.appendChild(dato(f.status === 'rejected' ? 'Rechazada' : 'Aprobada', fecha(f.status === 'rejected' ? f.rejectedAt : f.approvedAt)));
   }
 
+  // Solo lectura: lo votan los compañeros, no se edita.
+  function seccionAmbiente(f, form) {
+    if (!f.playerId) return;
+    var a = ambienteDe(f);
+    form.appendChild(el('h3', { className: 'aj-seccion', textContent: 'Ambiente' }));
+    if (!a) {
+      form.appendChild(el('div', { className: 'aj-sub aj-ancho', textContent: 'Todavía nadie ha valorado su ambiente.' }));
+      return;
+    }
+    form.appendChild(dato('👍 Buen rollo', String(a.buen_rollo)));
+    form.appendChild(dato('👎 No tan bien', String(a.mejorable)));
+    form.appendChild(el('div', { className: 'aj-sub aj-ancho', textContent: 'Votos anónimos de sus compañeros de pista al terminar cada partido.' }));
+  }
+
   function seccionInscripcion(f, form, campos) {
     if (!f.userId) return;
     form.appendChild(el('h3', { className: 'aj-seccion', textContent: 'Inscripción' }));
@@ -210,6 +247,7 @@
     marca.style.setProperty('--aj-color', COLORES[f.estado] || 'var(--vt-faint)');
     form.appendChild(marca);
     seccionFicha(f, form, campos);
+    seccionAmbiente(f, form);
     seccionCuenta(f, form, campos);
     seccionInscripcion(f, form, campos);
     var guardar = el('button', { className: 'btn secondary-green', textContent: 'Guardar' });
