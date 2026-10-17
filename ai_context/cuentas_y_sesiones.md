@@ -440,9 +440,12 @@ anterior.
 El botón de «Administración» se sigue viendo para todos; a quien no es admin
 le dice que no y no abre nada.
 
-**Lo que el panel de `history.html` no protege.** Ahí se borran y editan
-resultados, pero `deleteResult` y `submitResult` sólo exigen sesión, no rol:
-cualquier miembro puede llamarlas directamente. `submitResult` no puede ser
-sólo de admin, porque es como cualquiera sube su partido desde la portada.
-Si se quiere cerrar `deleteResult`, es pasarle `user` igual que a
+**Lo que el panel de `history.html` no protege.** Ahí se borran resultados,
+pero `deleteResult` sólo exige sesión, no rol: cualquier miembro puede
+llamarlo directamente. Si se quiere cerrar, es pasarle `user` igual que a
 `deleteName`, en su propio commit.
+
+**Editar un resultado sí está cerrado** desde el 2026-10-17: `submitResult` con
+`_original` sólo deja a los cuatro jugadores del partido y a los admins (403 a
+los demás). Subir un partido nuevo sigue abierto a cualquier miembro. Detalle:
+[[valoraciones_y_avisos]].

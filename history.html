@@ -285,6 +285,17 @@ const monthsNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','A
 let parsedMatches = []
 let lastFiltered = []
 let isAdmin = false
+// Desde el 2026-10-17 los cuatro jugadores de un partido pueden editarlo sin
+// entrar en Administración; borrar sigue siendo solo de admin. El API lo
+// comprueba igual (write.js, updateExistingMatch).
+let miNombre = ''
+const juegaEn = (m) => !!miNombre && [m.p1a, m.p1b, m.p2a, m.p2b].includes(miNombre)
+document.addEventListener('DOMContentLoaded', ()=>{
+  window.vtMe.then(me=>{
+    miNombre = (me && me.playerName) || ''
+    if(miNombre && lastFiltered.length) renderTable(lastFiltered)
+  })
+})
 
 function parseMatches(raw){
   return (raw || []).map(m=>{
@@ -369,7 +380,7 @@ function renderTable(matches){
 
   const table = document.createElement('table')
   const thead = document.createElement('thead')
-  thead.innerHTML = '<tr><th><span class="th-full">Fecha</span><span class="th-day">Día</span></th><th>Jugadores</th><th><span class="th-full-res">Marcador</span></th>' + (isAdmin? '<th>Acciones</th>' : '') + '</tr>'
+  thead.innerHTML = '<tr><th><span class="th-full">Fecha</span><span class="th-day">Día</span></th><th>Jugadores</th><th><span class="th-full-res">Marcador</span></th>' + (isAdmin || matches.some(juegaEn) ? '<th>Acciones</th>' : '') + '</tr>'
   table.appendChild(thead)
 
   const tbody = document.createElement('tbody')
@@ -474,7 +485,7 @@ function renderTable(matches){
     tr.appendChild(tdPlayers)
     tr.appendChild(tdScore)
 
-    if(isAdmin){
+    if(isAdmin || juegaEn(m)){
       const tdAct = document.createElement('td')
       const editBtn = document.createElement('button')
       editBtn.className = 'small-btn'
@@ -488,7 +499,7 @@ function renderTable(matches){
       delBtn.addEventListener('click',()=> deleteMatch(m))
 
       tdAct.appendChild(editBtn)
-      tdAct.appendChild(delBtn)
+      if(isAdmin) tdAct.appendChild(delBtn)
       tr.appendChild(tdAct)
     }
 
@@ -566,6 +577,7 @@ document.getElementById('adminAddBtn').addEventListener('click', async ()=>{
 async function saved(res){
   const json = await res.json().catch(()=>({}))
   if(json && json.error === 'invalid_score'){ alert(json.message || 'El partido no está terminado'); return false }
+  if(json && json.error === 'forbidden'){ alert(json.message); return false }
   if(!res.ok || !json.ok){ alert('Error al guardar'); return false }
   return true
 }

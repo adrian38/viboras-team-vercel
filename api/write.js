@@ -3,6 +3,7 @@ import { ensureSchema, getOrCreatePlayerId, getPlayerId, readBody, toInt } from 
 import { validateBo3Score } from './_score.js';
 import { exigirSesion } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
+import { avisarEdicion } from './_avisos.js';
 
 async function submitName(req, res) {
   try {
@@ -33,13 +34,20 @@ async function submitName(req, res) {
 // se busca por la fecha y los cuatro jugadores de antes. El `event_id` entra en
 // la condicion solo si venia en la peticion; sin el, la fila se actualiza
 // pertenezca al evento que pertenezca.
-async function updateExistingMatch(original, m) {
+//
+// Desde el 2026-10-17 solo editan los cuatro jugadores del partido (los de
+// antes de la edicion) y los administradores; a los demas jugadores del
+// partido les llega un aviso con el nombre de quien edito (_avisos.js).
+// Devuelve 'forbidden', el id de la fila editada o null si no la encontro.
+async function updateExistingMatch(original, m, user) {
   const o_p1a = await getPlayerId(original.p1a);
   const o_p1b = await getPlayerId(original.p1b);
   const o_p2a = await getPlayerId(original.p2a);
   const o_p2b = await getPlayerId(original.p2b);
   const o_date = String(original.date || '').trim();
   const o_event = original.event_id ? toInt(original.event_id) : null;
+  const jugadores = [o_p1a, o_p1b, o_p2a, o_p2b, m.p1a_id, m.p1b_id, m.p2a_id, m.p2b_id];
+  if (user.role !== 'admin' && !(user.player_id && jugadores.slice(0, 4).includes(user.player_id))) return 'forbidden';
 
   if (o_event !== null) {
     const conEvento = await sql`
@@ -58,7 +66,7 @@ async function updateExistingMatch(original, m) {
         AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
         AND event_id IS NOT DISTINCT FROM ${o_event}
       RETURNING id`;
-    return conEvento.rowCount > 0;
+    return editado(conEvento, user, jugadores, m.date);
   }
 
   const upd = await sql`
@@ -76,7 +84,13 @@ async function updateExistingMatch(original, m) {
       AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
       AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
     RETURNING id`;
-  return upd.rowCount > 0;
+  return editado(upd, user, jugadores, m.date);
+}
+
+async function editado(resultado, user, jugadores, fecha) {
+  if (!resultado.rowCount) return null;
+  await avisarEdicion(user, jugadores, fecha);
+  return resultado.rows[0].id;
 }
 
 // El partido nuevo entra siempre en el evento 1, el de los partidos sueltos;
@@ -94,7 +108,7 @@ async function insertMatch(m) {
     )`;
 }
 
-async function submitResult(req, res) {
+async function submitResult(req, res, user) {
   try {
     await ensureSchema();
     const data = await readBody(req);
@@ -124,7 +138,12 @@ async function submitResult(req, res) {
     };
 
     const original = data._original;
-    if (original && typeof original === 'object' && await updateExistingMatch(original, m)) {
+    const editada = (original && typeof original === 'object') ? await updateExistingMatch(original, m, user) : null;
+    if (editada === 'forbidden') {
+      res.status(403).json({ ok: false, error: 'forbidden', message: 'Solo pueden editar este partido sus jugadores y los administradores.' });
+      return;
+    }
+    if (editada) {
       res.status(200).json({ ok: true });
       return;
     }
@@ -300,7 +319,7 @@ export default async function handler(req, res) {
     case 'submitName':
       return submitName(req, res);
     case 'submitResult':
-      return submitResult(req, res);
+      return submitResult(req, res, user);
     case 'deleteResult':
       return deleteResult(req, res);
     case 'deleteName':
