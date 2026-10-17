@@ -65,17 +65,21 @@ export async function partidosParaValorar(playerId) {
       FROM matches m
       WHERE ${playerId} IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
     )
-    SELECT m.id, m.date,
+    SELECT m.id, m.date, p1a.name AS p1a, p1b.name AS p1b, p2a.name AS p2a, p2b.name AS p2b,
       3 - COUNT(f.actitud) AS faltan_actitud,
       3 - COUNT(f.nivel) AS faltan_nivel
     FROM mios m
+    JOIN players p1a ON p1a.id = m.player1a_id JOIN players p1b ON p1b.id = m.player1b_id
+    JOIN players p2a ON p2a.id = m.player2a_id JOIN players p2b ON p2b.id = m.player2b_id
     LEFT JOIN match_feedback f ON f.match_id = m.id AND f.rater_player_id = ${playerId}
       AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
     WHERE m.dia BETWEEN current_date - ${DIAS_PARA_VALORAR}::int AND current_date
-    GROUP BY m.id, m.date, m.dia
+    GROUP BY m.id, m.date, m.dia, p1a.name, p1b.name, p2a.name, p2b.name
     ORDER BY m.dia DESC, m.id DESC`;
+  // Los cuatro nombres, para que /history reconozca el partido: alli se
+  // identifica por fecha y jugadores, porque getResults no manda el id.
   return rows.map((r) => ({
-    id: r.id, fecha: r.date,
+    id: r.id, fecha: r.date, jugadores: [r.p1a, r.p1b, r.p2a, r.p2b],
     faltanActitud: Number(r.faltan_actitud), faltanNivel: Number(r.faltan_nivel)
   }));
 }

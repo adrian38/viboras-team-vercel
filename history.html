@@ -290,9 +290,32 @@ let isAdmin = false
 // comprueba igual (write.js, updateExistingMatch).
 let miNombre = ''
 const juegaEn = (m) => !!miNombre && [m.p1a, m.p1b, m.p2a, m.p2b].includes(miNombre)
+// Partidos propios de los ultimos 14 dias que aun se pueden valorar, por
+// fecha y jugadores (el id no llega en getResults). Llevan un boton «Valorar»
+// que entra a /valorar con lo ya elegido marcado.
+const valorables = new Map()
+const claveDePartido = (fecha, js) => [fecha, ...js].join('|')
+function anadirValorar(td, m){
+  const id = valorables.get(claveDePartido(m.date, [m.p1a, m.p1b, m.p2a, m.p2b]))
+  if(!id) return
+  const b = document.createElement('button')
+  b.className = 'small-btn'
+  b.style.marginLeft = '6px'
+  b.innerText = 'Valorar'
+  b.addEventListener('click', ()=>{ location.href = '/valorar?partido=' + id })
+  td.appendChild(b)
+}
+async function cargarValorables(){
+  try{
+    const res = await fetch('/api/avisos?action=pendientes')
+    const json = await res.json()
+    ;(json.partidos || []).forEach(p => valorables.set(claveDePartido(p.fecha, p.jugadores), p.id))
+  }catch(e){ console.warn('Sin partidos para valorar', e) }
+}
 document.addEventListener('DOMContentLoaded', ()=>{
-  window.vtMe.then(me=>{
+  window.vtMe.then(async me=>{
     miNombre = (me && me.playerName) || ''
+    if(miNombre) await cargarValorables()
     if(miNombre && lastFiltered.length) renderTable(lastFiltered)
   })
 })
@@ -498,7 +521,7 @@ function renderTable(matches){
       delBtn.innerText = 'Eliminar'
       delBtn.addEventListener('click',()=> deleteMatch(m))
 
-      tdAct.appendChild(editBtn)
+      tdAct.appendChild(editBtn); anadirValorar(tdAct, m)
       if(isAdmin) tdAct.appendChild(delBtn)
       tr.appendChild(tdAct)
     }

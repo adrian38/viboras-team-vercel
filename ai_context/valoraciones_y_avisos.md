@@ -18,6 +18,24 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    editó vuestro partido del dd/mm. Comprueba el resultado.», con el nombre del
    jugador que editó («Un administrador» si es un admin sin ficha).
 
+Además de la campanita, en `/history` cada partido propio de los últimos 14
+días lleva un botón «Valorar» que entra a `/valorar` con lo ya elegido marcado
+(se puede cambiar). Se reconoce el partido por fecha y cuatro nombres, que
+`pendientes` devuelve, porque `getResults` no manda el id.
+
+## Privacidad
+
+Cada uno sólo ve sus propias elecciones: `/api/avisos?action=partido` devuelve
+lo que votó quien pregunta y nada de los demás (comprobado en local: Álvaro
+vota a Julio y Julio, al abrir el mismo partido, no ve nada). Ninguna pantalla
+enseña votos ajenos.
+
+**El límite:** el motor de rating corre en el navegador, así que
+`getNivelVotos` manda a cualquier miembro la suma de votos de nivel por
+jugador y día (no quién votó). Quien abra las herramientas del navegador puede
+leerla, y en un día de un solo partido a veces se deduce mucho. Cerrarlo del
+todo obliga a calcular el rating en el servidor.
+
 ## Dónde vive
 
 | Pieza | Fichero |
