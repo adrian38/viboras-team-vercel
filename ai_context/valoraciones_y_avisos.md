@@ -10,6 +10,10 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    / en su nivel / por encima). Los dos llevan a `/valorar?partido=<id>`, donde
    se contestan por separado. Cada aviso desaparece cuando se ha valorado a los
    tres. Las respuestas son anónimas: el API nunca dice quién votó qué.
+   Sólo cuentan partidos **jugados** (desde el 2026-10-17): los de liga sin
+   jugar llevan 0-0 y salían en `/valorar` como tres «Partido del 05/10»
+   iguales, y en la campanita. La lista de `/valorar` enseña también las dos
+   parejas, para distinguir dos partidos del mismo día.
 2. **El nivel mueve la fiabilidad.** Regla de Adrián: «en su nivel» o «por
    encima» suben la fiabilidad (bajan el RD); «por debajo» la baja. El ambiente
    se guarda y **no cuenta** en nada todavía.

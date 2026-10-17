@@ -38,7 +38,7 @@
 }
 .opcion[aria-pressed="true"]{background:var(--vt-gold);border-color:var(--vt-gold);color:#121316;font-weight:700}
 .estado{margin-top:var(--vt-sm);font-size:14px;color:var(--vt-muted);min-height:20px}
-.lista a{display:block;padding:12px 0;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
+.lista a{display:block;padding:12px 0;border-bottom:1px solid var(--vt-border);color:var(--vt-text);overflow-wrap:anywhere}
 .lista a span{color:var(--vt-muted);font-size:13px}
 </style>
 </head>
@@ -107,7 +107,9 @@ function pintarLista(caja, partidos) {
   }
   const lista = el('div', 'lista');
   partidos.forEach((p) => {
-    const a = el('a', '', `Partido del ${diaYMes(p.fecha)} `);
+    // Con las parejas: dos partidos el mismo dia se distinguen.
+    const j = p.jugadores || [];
+    const a = el('a', '', `Partido del ${diaYMes(p.fecha)} · ${j[0]} / ${j[1]} vs ${j[2]} / ${j[3]} `);
     a.href = `/valorar?partido=${p.id}`;
     const falta = p.faltanActitud + p.faltanNivel;
     a.appendChild(el('span', '', falta ? `· te faltan ${falta} respuestas` : '· valorado'));

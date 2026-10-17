@@ -64,6 +64,9 @@ export async function partidosParaValorar(playerId) {
       END AS dia
       FROM matches m
       WHERE ${playerId} IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+        -- Solo partidos jugados: los de liga sin jugar llevan 0-0 (o nada) y
+        -- salian en /valorar como «Partido del 05/10» repetido (2026-10-17).
+        AND COALESCE(m.set1_team1, 0) + COALESCE(m.set1_team2, 0) > 0
     )
     SELECT m.id, m.date, p1a.name AS p1a, p1b.name AS p1b, p2a.name AS p2a, p2b.name AS p2b,
       3 - COUNT(f.actitud) AS faltan_actitud,
