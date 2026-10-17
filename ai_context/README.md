@@ -36,6 +36,9 @@ que hay.
 - `tabla_de_rating_en_movil.md`: por qué la tabla lleva `table-layout: fixed`,
   qué hace la media query de 560 px y cómo se mide un desborde en el DOM en vez
   de mirarlo a ojo.
+- `exportar_jugadores.md`: el CSV de jugadores de los administradores, por qué
+  sale de `/rating` y no de `/cuenta`, qué estados tiene (y por qué no hay
+  «Rechazado») y a qué fecha calcula el rating.
 
 ## Datos y base de datos
 

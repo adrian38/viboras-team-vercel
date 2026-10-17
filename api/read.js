@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, formatSet } from './_db.js';
-import { exigirSesion } from './_auth.js';
+import { exigirSesion, exigirAdmin } from './_auth.js';
 
 async function getNames(req, res) {
   try {
@@ -150,6 +150,56 @@ async function getSlots(req, res) {
   }
 }
 
+// Estado de cada fila del CSV de jugadores. "Rechazado" no existe: rechazar
+// borra la cuenta (ai_context/cuentas_y_sesiones.md).
+const ESTADO_CUENTA = { active: 'Activo', pending: 'Pendiente', blocked: 'Bloqueado' };
+
+function estadoJugador(player, user) {
+  if (player && player.active === false) return 'De baja';
+  return user ? (ESTADO_CUENTA[user.status] || user.status) : 'Sin cuenta';
+}
+
+// Solo admin. Una fila por cuenta, mas una por cada jugador sin cuenta. El
+// rating no esta aqui: lo calcula el navegador (rating-export.js lo cruza).
+async function exportPlayers(req, res) {
+  if (!await exigirAdmin(req, res)) return;
+  try {
+    res.setHeader('cache-control', 'no-store');
+    res.status(200).json({ ok: true, players: await filasDeJugadores() });
+  } catch (err) {
+    console.error('read:exportPlayers error', err);
+    res.status(500).json({ ok: false, error: 'server_error' });
+  }
+}
+
+async function filasDeJugadores() {
+  const [{ rows: players }, { rows: users }] = await Promise.all([
+    sql`SELECT id, name, active FROM players`,
+    sql`SELECT email, status, role, player_id, requested_player_name, created_at, approved_at,
+               email_verified_at, signup_form FROM users ORDER BY created_at`
+  ]);
+  const porId = new Map(players.map((p) => [p.id, p]));
+  const conCuenta = new Set();
+  const filas = users.map((u) => {
+    const p = porId.get(u.player_id);
+    if (p) conCuenta.add(p.id);
+    return {
+      name: p ? p.name : u.requested_player_name || '',
+      estado: estadoJugador(p, u),
+      email: u.email,
+      role: u.role,
+      createdAt: u.created_at,
+      approvedAt: u.approved_at,
+      emailVerified: Boolean(u.email_verified_at),
+      form: u.signup_form || {}
+    };
+  });
+  for (const p of players) {
+    if (!conCuenta.has(p.id)) filas.push({ name: p.name, estado: estadoJugador(p, null), form: {} });
+  }
+  return filas;
+}
+
 export default async function handler(req, res) {
   // Desde el 2026-10-16 la app entera va detras de la sesion, lecturas
   // incluidas: ai_context/cuentas_y_sesiones.md
@@ -165,6 +215,8 @@ export default async function handler(req, res) {
       return getResults(req, res);
     case 'getSlots':
       return getSlots(req, res);
+    case 'exportPlayers':
+      return exportPlayers(req, res);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;

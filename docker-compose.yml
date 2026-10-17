@@ -115,6 +115,7 @@ services:
       - ./inscripcion.html:/app/inscripcion.html
       - ./splash.js:/app/splash.js
       - ./players-aportes.js:/app/players-aportes.js
+      - ./rating-export.js:/app/rating-export.js
     depends_on:
       wsproxy:
         condition: service_started

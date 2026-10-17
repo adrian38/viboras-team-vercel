@@ -160,6 +160,7 @@ td.rating-col{
   transition:background .15s ease,border-color .15s ease;
 }
 .info-btn:hover{background:rgba(245,158,11,0.12);border-color:var(--vt-gold)}
+.info-btn[hidden]{display:none}
 
 /* Movil: los anchos fijos de arriba no caben en 375px, se reducen aqui.
    Detalle en ai_context/tabla_de_rating_en_movil.md */
@@ -232,6 +233,10 @@ td.rating-col{
     <div class="vt-acciones">
       <button class="info-btn" onclick="window.location.href='/rating-info.html'">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">lightbulb</span>¿Cómo funciona el rating?
+      </button>
+      <!-- Sólo administradores; lo muestra rating-export.js. -->
+      <button class="info-btn" id="exportPlayersBtn" type="button" hidden>
+        <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">download</span>Exportar jugadores
       </button>
     </div>
 
@@ -697,6 +702,8 @@ function computeRatings(entries, includeInactive = false, minReliability = 'any'
   return out;
 }
 
+// Fuera de renderTable porque rating-export.js las usa tambien: los cortes
+// viven en un solo sitio (ai_context/categorias_de_rating.md).
 function getFiabilidadConfig(rd) {
   if (rd === undefined || rd === null) return { bars: 0, color: '', label: '' };
   const v = Number(rd);
@@ -836,6 +843,8 @@ async function init() {
 
 init();
 </script>
+<!-- defer: necesita window.vtMe, que pone auth-client.js, también diferido. -->
+<script src="/rating-export.js" defer></script>
 
 </body>
 </html>
