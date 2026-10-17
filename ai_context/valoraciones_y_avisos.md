@@ -69,6 +69,8 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
   codificados y `getOrCreatePlayerId` crea jugadores basura («�lvaro»). Los
   cuerpos con nombres, desde Node. Hay dos jugadores así en la copia local
   (549, 550) que no son de esta prueba.
-- Si la edición no encuentra la fila original (nombres que no casan), el API
-  **inserta un partido nuevo** en vez de fallar. Es comportamiento anterior;
-  ojo al probar.
+- Si la edición no encuentra la fila original (otro la editó mientras tanto,
+  o un nombre cambió), el API responde **409** «Alguien ha editado este
+  partido… vuelve a intentarlo» y `history.html` recarga la tabla. Hasta el
+  2026-10-17 insertaba un partido nuevo, que lo duplicaba: la fila se busca
+  por fecha y cuatro nombres, no por id, porque `getResults` no manda el id.

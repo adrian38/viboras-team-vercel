@@ -38,7 +38,8 @@ async function submitName(req, res) {
 // Desde el 2026-10-17 solo editan los cuatro jugadores del partido (los de
 // antes de la edicion) y los administradores; a los demas jugadores del
 // partido les llega un aviso con el nombre de quien edito (_avisos.js).
-// Devuelve 'forbidden', el id de la fila editada o null si no la encontro.
+// Devuelve 'forbidden', el id de la fila editada o null si no la encontro
+// (y entonces submitResult responde 409, no inserta).
 async function updateExistingMatch(original, m, user) {
   const o_p1a = await getPlayerId(original.p1a);
   const o_p1b = await getPlayerId(original.p1b);
@@ -145,6 +146,13 @@ async function submitResult(req, res, user) {
     }
     if (editada) {
       res.status(200).json({ ok: true });
+      return;
+    }
+    // Una edicion que no encuentra su partido no se convierte en un partido
+    // nuevo: casi siempre es que otro lo edito mientras tanto, y guardarlo
+    // lo duplicaria.
+    if (original && typeof original === 'object') {
+      res.status(409).json({ ok: false, error: 'conflict', message: 'Alguien ha editado este partido mientras lo tenías abierto. Recarga y vuelve a intentarlo.' });
       return;
     }
 

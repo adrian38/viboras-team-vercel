@@ -578,6 +578,7 @@ async function saved(res){
   const json = await res.json().catch(()=>({}))
   if(json && json.error === 'invalid_score'){ alert(json.message || 'El partido no está terminado'); return false }
   if(json && json.error === 'forbidden'){ alert(json.message); return false }
+  if(json && json.error === 'conflict'){ alert(json.message); loadData(); return false }
   if(!res.ok || !json.ok){ alert('Error al guardar'); return false }
   return true
 }
