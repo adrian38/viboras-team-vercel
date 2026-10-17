@@ -125,12 +125,22 @@ export async function ensureSchema() {
   return schemaReady;
 }
 
+// Las paginas pintan los nombres con innerHTML: con < > " ' ` o & un nombre
+// seria codigo ejecutandose para todo el grupo. La misma regla que el alta
+// (comprobarNombreNuevo en auth.js), para cualquier ficha que se cree.
+export function nombreDeJugadorValido(nombre) {
+  return nombre.length >= 2 && nombre.length <= 60 && !/[<>"'`&]/.test(nombre);
+}
+
+// Un jugador que ya existe se devuelve aunque su nombre no cumpla la regla,
+// que es de 2026-10-17: las fichas anteriores siguen sirviendo.
 export async function getOrCreatePlayerId(name) {
   const trimmed = String(name || '').trim();
   if (!trimmed) return null;
+  const existente = await getPlayerId(trimmed);
+  if (existente || !nombreDeJugadorValido(trimmed)) return existente;
   await sql`INSERT INTO players (name, active) VALUES (${trimmed}, TRUE) ON CONFLICT (name) DO NOTHING`;
-  const { rows } = await sql`SELECT id FROM players WHERE name = ${trimmed}`;
-  return rows.length ? rows[0].id : null;
+  return getPlayerId(trimmed);
 }
 
 export async function getPlayerId(name) {

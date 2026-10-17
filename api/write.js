@@ -1,5 +1,5 @@
 import { sql } from '@vercel/postgres';
-import { ensureSchema, getOrCreatePlayerId, getPlayerId, readBody, toInt } from './_db.js';
+import { ensureSchema, getOrCreatePlayerId, getPlayerId, nombreDeJugadorValido, readBody, toInt } from './_db.js';
 import { validateBo3Score } from './_score.js';
 import { exigirSesion } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
@@ -25,6 +25,10 @@ async function submitName(req, res, user) {
       return;
     }
     const existing = await sql`SELECT id, active FROM players WHERE name = ${name}`;
+    if (existing.rows.length === 0 && !nombreDeJugadorValido(name)) {
+      res.status(400).json({ ok: false, error: 'bad_name', message: 'El nombre tiene que tener entre 2 y 60 caracteres, sin < > " \' ` ni &.' });
+      return;
+    }
     let added = false;
     if (existing.rows.length === 0) {
       const result = await sql`INSERT INTO players (name, active) VALUES (${name}, TRUE) RETURNING id`;
@@ -147,6 +151,11 @@ async function submitResult(req, res, user) {
       s12: toInt(data.s12), s22: toInt(data.s22),
       s13: toInt(data.s13), s23: toInt(data.s23)
     };
+    // Sin esto un nombre vacio o rechazado guardaba el partido con un hueco.
+    if (!m.p1a_id || !m.p1b_id || !m.p2a_id || !m.p2b_id) {
+      res.status(400).json({ ok: false, error: 'bad_player', message: 'Faltan jugadores, o algún nombre no vale.' });
+      return;
+    }
 
     const original = data._original;
     const editada = (original && typeof original === 'object') ? await updateExistingMatch(original, m, user) : null;

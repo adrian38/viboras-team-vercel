@@ -552,10 +552,10 @@
       const playerWon = playerOnTeam1 ? team1Sets > team2Sets : team2Sets > team1Sets;
       return playerWon ? 'win' : 'loss';
     }
-
+    const escaparHtml = (t) => String(t).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
     function buildMatchLineHtml(match, playerName) {
-      const team1 = [match.p1a, match.p1b].filter(Boolean).join(' / ');
-      const team2 = [match.p2a, match.p2b].filter(Boolean).join(' / ');
+      const team1 = [match.p1a, match.p1b].filter(Boolean).map(escaparHtml).join(' / ');
+      const team2 = [match.p2a, match.p2b].filter(Boolean).map(escaparHtml).join(' / ');
       const tag = getMatchEventTag(match);
       const resultClass = getSelectedPlayerMatchOutcome(match, playerName);
 

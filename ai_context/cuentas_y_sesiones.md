@@ -122,6 +122,20 @@ haría que la persona lo intentase otra vez igual:
 El correo se comprueba **antes** que el nombre: si ya tiene cuenta, el nombre
 da igual y decirlo primero evita el mensaje equivocado.
 
+**La regla del nombre vale para cualquier ficha nueva, no sólo para el alta**
+(desde el 2026-10-17): entre 2 y 60 caracteres y sin `< > " ' ` &`, en
+`nombreDeJugadorValido` (`api/_db.js`). La aplican `getOrCreatePlayerId` y
+`submitName`. Antes, subir un resultado o una disponibilidad con un nombre
+inventado creaba la ficha tal cual, y `players.html` la pintaba con
+`innerHTML`: comprobado en local que un nombre con `<img onerror=…>` se
+ejecutaba en el navegador del administrador. Una ficha que ya existe se sigue
+aceptando aunque no cumpla, para no dejar fuera a nadie antiguo.
+
+Las páginas también escapan: `players.html` (`escaparHtml`, en la lista de
+partidos del día) y `results.html` (las opciones con `new Option`). Las demás
+ya pintaban los nombres con `textContent`, `innerText` o `escapeHtml`; se
+comprobó recorriendo las 13 páginas con datos con un jugador trampa.
+
 **Tampoco puede repetirse el teléfono** (desde el 2026-10-17, lo pidió
 Adrián): `telefonoLibre` en `api/_inscripcion.js`, justo después del correo.
 Compara los **nueve últimos dígitos**, así que `+34 611 22 33 44`,

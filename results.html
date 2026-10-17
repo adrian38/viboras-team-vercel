@@ -313,7 +313,7 @@ function updatePlayers(){
     select.innerHTML=`<option value="">Jugador ${i}</option>`
 
     players.forEach(p=>{
-      select.innerHTML+=`<option value="${p}">${p}</option>`
+      select.add(new Option(p, p))
     })
 
     select.addEventListener("change",updateDropdowns)
