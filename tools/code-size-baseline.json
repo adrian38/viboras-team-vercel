@@ -22,7 +22,7 @@
     "rating.html:updatePeriod": 66,
     "rating.html:calculateEngineRatings": 70,
     "rating.html:fetchMatches": 103,
-    "rating.html:renderTable": 102,
+    "rating.html:renderTable": 79,
     "scripts/apply-schema.js:main": 83,
     "statistics.html:computeStats": 218,
     "statistics.html:renderTable": 116,

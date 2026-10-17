@@ -697,39 +697,36 @@ function computeRatings(entries, includeInactive = false, minReliability = 'any'
   return out;
 }
 
+function getFiabilidadConfig(rd) {
+  if (rd === undefined || rd === null) return { bars: 0, color: '', label: '' };
+  const v = Number(rd);
+  if (!Number.isFinite(v)) return { bars: 0, color: '', label: '' };
+
+  if (v >= 350) return { bars: 0, color: '#f87171', label: 'Sin fiabilidad' };
+  if (v < 100) return { bars: 5, color: '#4ade80', label: 'Muy alta' };
+  if (v < 140) return { bars: 4, color: '#a3e635', label: 'Alta' };
+  if (v < 190) return { bars: 3, color: '#facc15', label: 'Media' };
+  if (v < 250) return { bars: 2, color: '#fb923c', label: 'Baja' };
+  return { bars: 1, color: '#f87171', label: 'Muy baja' };
+}
+
+const TIER_DEFINITIONS = [
+  { key: 'entreno', title: 'Entreno', rangeText: '> 2000,00 pts', min: 2000, max: Infinity },
+  { key: 'avanzado', title: 'Avanzado', rangeText: '1600,01 – 2000,00 pts', min: 1600, max: 2000 },
+  { key: 'intermedio', title: 'Intermedio', rangeText: '1200,01 – 1600,00 pts', min: 1200, max: 1600 },
+  { key: 'iniciacion', title: 'Iniciación', rangeText: '≤ 1200,00 pts', min: -Infinity, max: 1200 }
+];
+
 function renderTable(rows) {
   if (!rows || rows.length === 0) {
     document.getElementById('ratingContainer').innerHTML = '<div class="muted">No hay jugadores que coincidan con los filtros</div>';
     return;
   }
 
-  function getFiabilidadConfig(rd) {
-    if (rd === undefined || rd === null) return { bars: 0, color: '', label: '' };
-    const v = Number(rd);
-    if (!Number.isFinite(v)) return { bars: 0, color: '', label: '' };
-
-    if (v >= 350) return { bars: 0, color: '#f87171', label: 'Sin fiabilidad' };
-    if (v < 100) return { bars: 5, color: '#4ade80', label: 'Muy alta' };
-    if (v < 140) return { bars: 4, color: '#a3e635', label: 'Alta' };
-    if (v < 190) return { bars: 3, color: '#facc15', label: 'Media' };
-    if (v < 250) return { bars: 2, color: '#fb923c', label: 'Baja' };
-    return { bars: 1, color: '#f87171', label: 'Muy baja' };
-  }
-
   function formatRating(num) {
     if (num === undefined || num === null || !Number.isFinite(num)) return '-';
     return num.toFixed(2).replace('.', ',');
   }
-
-  const TIER_DEFINITIONS = [
-    { key: 'entreno', title: 'Entreno', rangeText: '> 2000,00 pts', min: 2000, max: Infinity },
-
-    { key: 'avanzado', title: 'Avanzado', rangeText: '1600,01 – 2000,00 pts', min: 1600, max: 2000 },
-
-    { key: 'intermedio', title: 'Intermedio', rangeText: '1200,01 – 1600,00 pts', min: 1200, max: 1600 },
-
-    { key: 'iniciacion', title: 'Iniciación', rangeText: '≤ 1200,00 pts', min: -Infinity, max: 1200 }
-  ];
 
   const html = [];
 
