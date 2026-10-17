@@ -89,3 +89,15 @@ También había dos filas `ranked` sin fecha, sin jugadores y sin marcador
 
 El `7-5 4-6 3-0` que destapó todo esto no está: lo borró el grupo antes de que
 llegara la guarda. Si vuelve a aparecer un partido así, ya no entra.
+
+## Lo que no es el marcador: fecha y jugadores
+
+Desde el 2026-10-17 `submitResult` también rechaza (`problemaDelPartido` en
+`api/write.js`, error `bad_match`, mismo trato en las dos páginas):
+
+- una fecha que no sea DD/MM/AAAA o que no exista (el 31/02);
+- un jugador que no esté en `players`: antes una errata creaba una ficha
+  nueva, y en `/history` los jugadores se editan con texto libre;
+- el mismo jugador dos veces en el partido.
+
+Las fichas sólo nacen al aprobar un alta o desde el panel de administración.

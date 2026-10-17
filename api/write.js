@@ -123,6 +123,27 @@ async function insertMatch(m) {
     )`;
 }
 
+// Una fecha DD/MM/AAAA que exista: el 31/02/2026 no. Es el formato de todas
+// las filas de `matches`; las paginas lo convierten antes de enviar.
+function fechaValida(texto) {
+  const p = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(texto);
+  if (!p) return false;
+  const d = new Date(Date.UTC(Number(p[3]), Number(p[2]) - 1, Number(p[1])));
+  return d.getUTCDate() === Number(p[1]) && d.getUTCMonth() === Number(p[2]) - 1;
+}
+
+// Lo que el marcador no mira (desde el 2026-10-17). Los jugadores tienen que
+// existir: antes un nombre mal escrito creaba una ficha nueva, y en /history
+// se editan con texto libre. Las fichas se crean al aprobar un alta o desde
+// el panel de administracion, no subiendo resultados.
+function problemaDelPartido(m) {
+  if (!fechaValida(m.date)) return 'La fecha no vale. Tiene que ser DD/MM/AAAA.';
+  const ids = [m.p1a_id, m.p1b_id, m.p2a_id, m.p2b_id];
+  if (ids.some((id) => !id)) return 'Algún jugador no está en la lista. Revisa cómo está escrito.';
+  if (new Set(ids).size !== 4) return 'Un jugador no puede estar dos veces en el mismo partido.';
+  return null;
+}
+
 async function submitResult(req, res, user) {
   try {
     await ensureSchema();
@@ -143,17 +164,17 @@ async function submitResult(req, res, user) {
     const m = {
       date: String(data.date || '').trim(),
       format: (String(data.format || '').trim() === 'bo3_stb') ? 'bo3_stb' : 'bo3_regular',
-      p1a_id: await getOrCreatePlayerId(data.p1a),
-      p1b_id: await getOrCreatePlayerId(data.p1b),
-      p2a_id: await getOrCreatePlayerId(data.p2a),
-      p2b_id: await getOrCreatePlayerId(data.p2b),
+      p1a_id: await getPlayerId(data.p1a),
+      p1b_id: await getPlayerId(data.p1b),
+      p2a_id: await getPlayerId(data.p2a),
+      p2b_id: await getPlayerId(data.p2b),
       s11: toInt(data.s11), s21: toInt(data.s21),
       s12: toInt(data.s12), s22: toInt(data.s22),
       s13: toInt(data.s13), s23: toInt(data.s23)
     };
-    // Sin esto un nombre vacio o rechazado guardaba el partido con un hueco.
-    if (!m.p1a_id || !m.p1b_id || !m.p2a_id || !m.p2b_id) {
-      res.status(400).json({ ok: false, error: 'bad_player', message: 'Faltan jugadores, o algún nombre no vale.' });
+    const problema = problemaDelPartido(m);
+    if (problema) {
+      res.status(400).json({ ok: false, error: 'bad_match', message: problema });
       return;
     }
 

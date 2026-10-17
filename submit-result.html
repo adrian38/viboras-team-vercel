@@ -356,6 +356,7 @@ async function submitResult(){
     // El API rechaza los partidos a medias y dice por que; el motivo se enseña
     // tal cual, que para eso lo escribe.
     if(json && json.error === 'invalid_score'){ mostrarAviso(json.message || 'El partido no está terminado.'); return }
+    if(json && json.error === 'bad_match'){ mostrarAviso(json.message); return }
     if(!res.ok || !json.ok){ throw new Error('save_failed') }
     alert('Resultado guardado')
     window.location='/'
