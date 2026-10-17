@@ -118,6 +118,8 @@ services:
       - ./rating-export.js:/app/rating-export.js
       - ./excel-export.js:/app/excel-export.js
       - ./admin-jugadores.js:/app/admin-jugadores.js
+      - ./valorar.html:/app/valorar.html
+      - ./nivel-votos.js:/app/nivel-votos.js
     depends_on:
       wsproxy:
         condition: service_started

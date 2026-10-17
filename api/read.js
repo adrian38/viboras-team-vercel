@@ -2,6 +2,7 @@ import { sql } from '@vercel/postgres';
 import { ensureSchema, formatSet } from './_db.js';
 import { exigirSesion, exigirAdmin } from './_auth.js';
 import { describirInscripcion } from './_inscripcion.js';
+import { ensureAvisosSchema } from './_avisos.js';
 
 async function getNames(req, res) {
   try {
@@ -214,6 +215,36 @@ async function filasDeJugadores() {
   return filas;
 }
 
+// Votos de «¿estaban en su nivel?» sumados por dia y jugador, para el motor
+// de rating (nivel-votos.js): en su nivel o por encima +1, por debajo -1.
+// Solo cuentan los votos entre jugadores que siguen en el partido: si se
+// edita y cambia un jugador, lo que se voto de el deja de contar.
+async function getNivelVotos(req, res) {
+  try {
+    await ensureAvisosSchema();
+    const { rows } = await sql`
+      SELECT to_char(CASE
+          WHEN m.date ~ '^\\d{4}-\\d{2}-\\d{2}$' THEN m.date::date
+          WHEN m.date ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(m.date, 'DD/MM/YYYY')
+        END, 'YYYY-MM-DD') AS fecha,
+        p.name AS jugador,
+        SUM(CASE f.nivel WHEN 'por_debajo' THEN -1 ELSE 1 END)::int AS neto
+      FROM match_feedback f
+      JOIN matches m ON m.id = f.match_id
+      JOIN players p ON p.id = f.rated_player_id
+      WHERE f.nivel IS NOT NULL
+        AND f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+        AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+      GROUP BY 1, 2
+      HAVING SUM(CASE f.nivel WHEN 'por_debajo' THEN -1 ELSE 1 END) <> 0`;
+    res.setHeader('cache-control', 'no-store');
+    res.status(200).json({ ok: true, votos: rows.filter((r) => r.fecha) });
+  } catch (err) {
+    console.error('read:getNivelVotos error', err);
+    res.status(500).json({ ok: false, votos: [] });
+  }
+}
+
 export default async function handler(req, res) {
   // Desde el 2026-10-16 la app entera va detras de la sesion, lecturas
   // incluidas: ai_context/cuentas_y_sesiones.md
@@ -231,6 +262,8 @@ export default async function handler(req, res) {
       return getSlots(req, res);
     case 'exportPlayers':
       return exportPlayers(req, res);
+    case 'getNivelVotos':
+      return getNivelVotos(req, res);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;

@@ -243,6 +243,7 @@ td.rating-col{
   </div>
 </div>
 
+<script src="/nivel-votos.js"></script>
 <script>
 // ============================================================================
 // GLICKO ENGINE
@@ -451,7 +452,7 @@ function calculateEngineRatings(names, matches, cutoffDateIso) {
     decayAllPlayersOneDay(playerMap, activeToday);
 
     if (dayMatches.length > 0) {
-      updatePeriod(playerMap, dayMatches);
+      updatePeriod(playerMap, dayMatches); window.vtNivel.ajustar(playerMap, dateStr, dayMatches);
     }
 
     curTime += ONE_DAY_MS;
@@ -829,7 +830,7 @@ function escapeHtml(s) {
 async function init() {
   const [names, matches] = await Promise.all([
     loadNames(),
-    fetchMatches()
+    fetchMatches(), window.vtNivel.listo
   ]);
 
   window._registeredNames = new Set((names || []).map(n => String(n).trim()).filter(Boolean));

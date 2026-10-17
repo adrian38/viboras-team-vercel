@@ -116,6 +116,13 @@
       a.className = 'vt-campana__item';
       a.href = it.enlace || '/cuenta';
       a.textContent = it.texto;
+      // Los avisos guardados (los que traen id) se dan por vistos al pulsarlos.
+      // sendBeacon sobrevive a la navegacion que dispara el propio enlace.
+      if (it.id) {
+        a.addEventListener('click', function () {
+          navigator.sendBeacon('/api/avisos?action=visto&id=' + encodeURIComponent(it.id));
+        });
+      }
       panel.appendChild(a);
     });
   }

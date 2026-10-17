@@ -30,6 +30,10 @@ que hay.
 - `motor_de_rating_duplicado.md`: el motor Glicko está implementado tres veces
   —`rating.html`, `players.html`, `rating-test.html`—, qué partes son idénticas
   byte a byte, cuál ya divergió a propósito y cómo se toca sin romper las otras; y cómo /players reparte el cambio del día entre sus partidos sin tocar el motor.
+- `valoraciones_y_avisos.md`: valorar a los compañeros tras un partido
+  (ambiente y nivel), cómo los votos de nivel mueven el RD sin tocar el motor
+  por dentro, quién puede editar un resultado y el aviso a los demás, y por
+  qué sus tablas no están en `ensureSchema()`.
 - `categorias_de_rating.md`: las cuatro categorías, a qué categoría pertenece un
   límite exacto y por qué una categoría nueva sin su CSS no falla, sólo se ve
   gris.

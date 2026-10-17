@@ -24,6 +24,7 @@ import {
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
 import { validarInscripcion, telefonoLibre, mensajeDeSolicitud } from './_inscripcion.js';
+import { avisosDeJugador } from './_avisos.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -264,12 +265,13 @@ async function changePassword(req, res) {
 }
 
 // Lo que pinta la campanita (auth-client.js). Una lista generica para que
-// quepan otros avisos; hoy solo la llenan las altas pendientes, y solo para
-// administradores. Sin sesion responde vacio, no 401: la campanita no es
-// motivo para que una pagina falle.
+// quepan otros avisos: los del propio jugador (_avisos.js: partidos por
+// valorar, resultados editados) y, para administradores, las altas
+// pendientes. Sin sesion responde vacio, no 401: la campanita no es motivo
+// para que una pagina falle.
 async function notifications(req, res) {
   const user = await usuarioDeLaPeticion(req);
-  const items = [];
+  const items = user ? await avisosDeJugador(user.player_id) : [];
   if (user && user.role === 'admin') {
     const { rows } = await sql`
       SELECT COALESCE(p.name, u.requested_player_name, u.email) AS quien, u.created_at

@@ -332,6 +332,7 @@
     </div>
   </div>
 
+  <script src="/nivel-votos.js"></script>
   <script>
     const MIN_DATE = '2026-09-01';
     const DAILY_SNAPSHOT_LIMIT = 3650;
@@ -693,7 +694,7 @@
         decayAllPlayersOneDay(selectedPlayerMap, activeToday);
 
         if (dayMatches.length > 0) {
-          updatePeriod(selectedPlayerMap, dayMatches);
+          updatePeriod(selectedPlayerMap, dayMatches); window.vtNivel.ajustar(selectedPlayerMap, dateStr, dayMatches);
         }
 
         historical.push({
@@ -1035,7 +1036,7 @@
       allNames = (namesData.names || []).map((n) => String(n).trim()).filter(Boolean);
 
       const matchesRes = await fetch('/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,compas,doble_ko,legacy&ts=' + Date.now());
-      const matchesData = await matchesRes.json();
+      const [matchesData] = await Promise.all([matchesRes.json(), window.vtNivel.listo]);
       allMatches = (matchesData.matches || []).filter((m) => {
         const date = toIsoDate(m.date) || toIsoDate(m.start_date);
         if (!date) return false;

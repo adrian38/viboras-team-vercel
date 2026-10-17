@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valorar partido</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/splash.js"></script>
+<script src="/pwa.js" defer></script>
+<script src="/auth-client.js" defer></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<style>
+/* Dos preguntas por partido, cada una con su boton: se contestan por separado
+   y la campanita avisa de cada una mientras falte. */
+.partido{display:flex;flex-direction:column;gap:var(--vt-xs);margin-bottom:var(--vt-md)}
+.partido__equipos{font-weight:600;color:var(--vt-text-strong)}
+.partido__sets{color:var(--vt-gold-light);font-family:var(--vt-font-head);font-size:18px}
+.pregunta{margin-top:var(--vt-lg);padding-top:var(--vt-md);border-top:1px solid var(--vt-border)}
+.pregunta h4{margin:0 0 var(--vt-xs)}
+.pregunta p{margin:0 0 var(--vt-md);color:var(--vt-muted);font-size:14px}
+.voto{display:flex;flex-direction:column;gap:var(--vt-xs);margin-bottom:var(--vt-md)}
+.voto__nombre{font-weight:600}
+.opciones{display:flex;flex-wrap:wrap;gap:var(--vt-xs)}
+.opcion{
+  flex:1 1 0;min-width:0;padding:10px 8px;
+  background:var(--vt-surface-3);color:var(--vt-text);
+  border:1px solid var(--vt-border-strong);border-radius:var(--vt-r);
+  font-family:var(--vt-font-body);font-size:14px;cursor:pointer;
+}
+.opcion[aria-pressed="true"]{background:var(--vt-gold);border-color:var(--vt-gold);color:#121316;font-weight:700}
+.estado{margin-top:var(--vt-sm);font-size:14px;color:var(--vt-muted);min-height:20px}
+.lista a{display:block;padding:12px 0;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
+.lista a span{color:var(--vt-muted);font-size:13px}
+</style>
+</head>
+
+<body>
+
+<div class="vt-page">
+
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h3 class="vt-gold" style="margin-top:var(--vt-sm)">Víboras Team</h3>
+    <span class="vt-label">Valorar partido</span>
+  </div>
+
+  <div class="vt-card vt-card--accent" id="contenido">
+    <p class="estado">Cargando…</p>
+  </div>
+
+  <div style="text-align:center;margin-top:var(--vt-lg)">
+    <a class="vt-btn vt-btn--ghost" href="/">Volver al inicio</a>
+  </div>
+</div>
+
+<script>
+// Las valoraciones son anonimas: nadie ve quien voto que. «Nivel» cuenta en
+// la fiabilidad del rating (nivel-votos.js); «ambiente» se guarda y no cuenta.
+// Detalle: ai_context/valoraciones_y_avisos.md
+const PREGUNTAS = [
+  {
+    campo: 'actitud', titulo: '¿Qué tal el ambiente?',
+    texto: 'Cómo te sentiste jugando con cada uno.',
+    opciones: [['buen_rollo', '👍 Buen rollo'], ['mejorable', '👎 No tan bien']]
+  },
+  {
+    campo: 'nivel', titulo: '¿Estaban en su nivel?',
+    texto: 'Comparado con su rating: ¿jugó como cabía esperar?',
+    opciones: [['por_debajo', 'Por debajo'], ['en_su_nivel', 'En su nivel'], ['por_encima', 'Por encima']]
+  }
+];
+
+function el(tag, clase, texto) {
+  const n = document.createElement(tag);
+  if (clase) n.className = clase;
+  if (texto !== undefined) n.textContent = texto;
+  return n;
+}
+
+function diaYMes(fecha) {
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(fecha || ''));
+  return iso ? `${iso[3]}/${iso[2]}` : String(fecha || '').slice(0, 5);
+}
+
+async function pedir(url, opciones) {
+  const res = await fetch(url, opciones);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.ok) throw new Error(json.message || 'No se pudo cargar.');
+  return json;
+}
+
+function pintarLista(caja, partidos) {
+  caja.textContent = '';
+  caja.appendChild(el('h4', '', 'Tus partidos de los últimos 14 días'));
+  if (!partidos.length) {
+    caja.appendChild(el('p', 'estado', 'No tienes partidos recientes para valorar.'));
+    return;
+  }
+  const lista = el('div', 'lista');
+  partidos.forEach((p) => {
+    const a = el('a', '', `Partido del ${diaYMes(p.fecha)} `);
+    a.href = `/valorar?partido=${p.id}`;
+    const falta = p.faltanActitud + p.faltanNivel;
+    a.appendChild(el('span', '', falta ? `· te faltan ${falta} respuestas` : '· valorado'));
+    lista.appendChild(a);
+  });
+  caja.appendChild(lista);
+}
+
+// Una fila por compañero con un boton por opcion; pulsar marca y desmarca.
+function pintarVoto(pregunta, jugador, elegidos) {
+  const fila = el('div', 'voto');
+  fila.appendChild(el('div', 'voto__nombre', jugador.name));
+  const opciones = el('div', 'opciones');
+  pregunta.opciones.forEach(([valor, etiqueta]) => {
+    const b = el('button', 'opcion', etiqueta);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(jugador[pregunta.campo] === valor));
+    b.addEventListener('click', () => {
+      const ya = elegidos.get(jugador.id) === valor;
+      elegidos.set(jugador.id, ya ? null : valor);
+      opciones.querySelectorAll('.opcion').forEach((o) => o.setAttribute('aria-pressed', 'false'));
+      b.setAttribute('aria-pressed', String(!ya));
+    });
+    opciones.appendChild(b);
+  });
+  fila.appendChild(opciones);
+  return fila;
+}
+
+async function enviar(partidoId, pregunta, elegidos, estado) {
+  const votos = [...elegidos].filter(([, v]) => v).map(([playerId, v]) => ({ playerId, [pregunta.campo]: v }));
+  if (!votos.length) { estado.textContent = 'Elige al menos una respuesta.'; return; }
+  estado.textContent = 'Enviando…';
+  try {
+    await pedir('/api/avisos?action=valorar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partido: partidoId, votos })
+    });
+    estado.textContent = votos.length < 3 ? 'Guardado. Te queda alguien por valorar.' : 'Guardado. ¡Gracias!';
+  } catch (e) {
+    estado.textContent = e.message;
+  }
+}
+
+function pintarPregunta(partidoId, pregunta, otros) {
+  const caja = el('div', 'pregunta');
+  caja.appendChild(el('h4', '', pregunta.titulo));
+  caja.appendChild(el('p', '', pregunta.texto));
+  const elegidos = new Map(otros.map((j) => [j.id, j[pregunta.campo]]));
+  otros.forEach((j) => caja.appendChild(pintarVoto(pregunta, j, elegidos)));
+  const boton = el('button', 'vt-btn', 'Enviar');
+  boton.type = 'button';
+  const estado = el('div', 'estado');
+  boton.addEventListener('click', () => enviar(partidoId, pregunta, elegidos, estado));
+  caja.appendChild(boton);
+  caja.appendChild(estado);
+  return caja;
+}
+
+function pintarPartido(caja, datos) {
+  const p = datos.partido;
+  caja.textContent = '';
+  const cabecera = el('div', 'partido');
+  cabecera.appendChild(el('span', 'vt-label', `Partido del ${diaYMes(p.fecha)}`));
+  cabecera.appendChild(el('span', 'partido__equipos', `${p.equipo1.join(' / ')}  vs  ${p.equipo2.join(' / ')}`));
+  cabecera.appendChild(el('span', 'partido__sets', p.sets.join('  ')));
+  caja.appendChild(cabecera);
+  caja.appendChild(el('p', 'estado', 'Las respuestas son anónimas.'));
+  PREGUNTAS.forEach((q) => caja.appendChild(pintarPregunta(p.id, q, datos.otros)));
+}
+
+async function iniciar() {
+  const caja = document.getElementById('contenido');
+  const id = new URLSearchParams(location.search).get('partido');
+  try {
+    if (id) pintarPartido(caja, await pedir(`/api/avisos?action=partido&id=${encodeURIComponent(id)}`));
+    else pintarLista(caja, (await pedir('/api/avisos?action=pendientes')).partidos);
+  } catch (e) {
+    caja.textContent = '';
+    caja.appendChild(el('p', 'estado', e.message));
+  }
+}
+
+iniciar();
+</script>
+
+</body>
+</html>
