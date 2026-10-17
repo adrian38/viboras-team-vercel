@@ -64,9 +64,17 @@ todo obliga a calcular el rating en el servidor.
   después de `updatePeriod`: `RD × (1 − 0,03 × neto)`, con neto = votos a favor
   − votos en contra de ese día, entre `MIN_RD` y `MAX_RD`. El rating del día no
   cambia; lo que cambia es cuánto se moverá en los partidos siguientes.
-  Medido en local el 2026-10-17: neto +1 bajó el RD de 255,82 a 248,18; neto −2
-  lo subió de 255,82 a 271,12; ningún otro jugador cambió, y `/rating` y
-  `/players` dieron los mismos números.
+  Auditado en local el 2026-10-17 (dos partidos el día 14 y uno el 16, con
+  los mismos cuatro): neto +3 dio RD × 0,9100 exacto (254,74 → 231,82) y neto
+  −4 repartido en dos partidos del mismo día, × 1,1200 (una sola vez, no
+  0,97 dos veces); el rating del día 14 no cambió. En el partido del 16, que
+  perdieron los dos, Julio (+3) bajó 49,34 en vez de 58,71 y Jesús C (−4)
+  70,62 en vez de 58,71. Votos sólo de ambiente, de alguien que no jugó o a
+  alguien que no jugó: no cuentan. `/rating` y `/players`, idénticos.
+- **Los rivales también notan el voto, en el partido siguiente.** El día del
+  voto sólo cambia el RD del votado. Después, quien juega contra él usa ese RD
+  en el cálculo: en la auditoría, Álvaro ganó 49,54 en vez de 49,95. Es el
+  motor de siempre (un rival menos fiable cuenta menos), no un efecto aparte.
 - **`rating-test.html` no lo usa.** Es un banco de pruebas con partidos
   escritos a mano; las cuatro primitivas siguen idénticas
   ([[motor_de_rating_duplicado]]).
