@@ -44,9 +44,21 @@ una línea más. El 2026-10-17 sus auxiliares —fechas de liga y fases, nombre 
 cada evento, lectura de los tres CSV— salieron **sin cambiar** a
 `api/_ligas.js`, y el fichero bajó a 392.
 
-Las cuatro `create*` (91, 95, 83 y 64 líneas) se quedaron dentro a propósito:
-están perdonadas por su nombre `api/league-admin.js:<función>`, y movidas a otro
-fichero contarían como nuevas por encima del techo de 60.
+Las cuatro `create*` se quedaron dentro a propósito: estaban perdonadas por su
+nombre `api/league-admin.js:<función>`, y movidas a otro fichero contarían como
+nuevas por encima del techo de 60. El mismo día bajaron al hacerlas atómicas
+(abajo); sólo `createLeague` sigue perdonada, con 83.
+
+**Crear una liga, un cuadro o un torneo es una sola sentencia SQL** (desde el
+2026-10-17). El driver HTTP de Neon manda cada `sql` suelto, sin
+transacción, y antes cada partido iba en su `INSERT` con `Promise.all`: un
+fallo a mitad dejaba una liga sin eventos o un torneo con parte de sus
+partidos. Ahora un `WITH … INSERT … RETURNING` mete el evento y sus partidos
+con `unnest` de arrays (`crearTorneo`, y su equivalente en `createLeague` y
+`createLeagueBracket`). Probado en local: un nombre repetido o un número que
+no cabe en un `integer` en la segunda fila no dejan nada creado. Un nombre
+repetido se explica («Ya hay un torneo o un grupo de liga con ese nombre»)
+en vez del error de Postgres (`motivo`).
 
 ## Las piezas
 

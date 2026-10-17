@@ -5,6 +5,13 @@ import { asInt, ensureValidDateText, normalizeDateToText, validatePhaseSchedule,
 const MAX_GROUPS = 20;
 const MAX_PHASES = 10;
 
+// Lo que ve el administrador cuando algo falla. Un nombre repetido sale de
+// la base como "duplicate key value violates unique constraint".
+function motivo(err, porDefecto) {
+  if (err && err.code === '23505') return 'Ya hay un torneo o un grupo de liga con ese nombre.';
+  return err && err.message ? err.message : porDefecto;
+}
+
 async function createLeague(req, res) {
   try {
     await ensureSchema();
@@ -63,36 +70,28 @@ async function createLeague(req, res) {
 
     validatePhaseSchedule(startDate, endDate, phaseRecords);
 
-    const leagueInsert = await sql`
-      INSERT INTO leagues (name, start_date, end_date, substitution_groups)
-      VALUES (${name}, ${startDate}, ${endDate}, ${JSON.stringify(substitutionGroups)})
-      RETURNING id
-    `;
-    const leagueId = leagueInsert.rows[0]?.id;
-    if (!leagueId) {
-      throw new Error('No se pudo crear la liga');
-    }
-
-    const eventInserts = [];
-    for (let phaseIndex = 0; phaseIndex < phaseRecords.length; phaseIndex++) {
-      const phase = phaseRecords[phaseIndex];
-      for (let groupIndex = 0; groupIndex < groupNames.length; groupIndex++) {
-        const groupName = groupNames[groupIndex];
-        const eventName = buildEventName(name, groupName, phaseIndex + 1);
-        eventInserts.push(sql`
-          INSERT INTO events (type, name, start_date, end_date, league_id)
-          VALUES ('grupo_liga', ${eventName}, ${phase.start_date}, ${phase.end_date}, ${leagueId})
-        `);
-      }
-    }
-
-    await Promise.all(eventInserts);
-    res.status(200).json({ ok: true, leagueId, groupCount, phaseCount, eventCount: eventInserts.length });
+    // Un evento por grupo y fase. La liga y sus eventos van en UNA sentencia:
+    // un nombre repetido ya no deja la liga creada a medias (2026-10-17).
+    const eventos = phaseRecords.flatMap((phase, i) => groupNames.map((g) => ({ ...phase, name: buildEventName(name, g, i + 1) })));
+    const { rows } = await sql`
+      WITH liga AS (
+        INSERT INTO leagues (name, start_date, end_date, substitution_groups)
+        VALUES (${name}, ${startDate}, ${endDate}, ${JSON.stringify(substitutionGroups)})
+        RETURNING id
+      ), ev AS (
+        INSERT INTO events (type, name, start_date, end_date, league_id)
+        SELECT 'grupo_liga', x.name, x.start_date, x.end_date, liga.id
+        FROM liga, unnest(${eventos.map((e) => e.name)}::text[], ${eventos.map((e) => e.start_date)}::text[],
+          ${eventos.map((e) => e.end_date)}::text[]) AS x(name, start_date, end_date)
+        RETURNING id
+      )
+      SELECT (SELECT id FROM liga) AS id, (SELECT count(*) FROM ev)::int AS eventos`;
+    res.status(200).json({ ok: true, leagueId: rows[0].id, groupCount, phaseCount, eventCount: rows[0].eventos });
   } catch (error) {
     console.error('league-admin:createLeague error', error);
     res.status(400).json({
       ok: false,
-      error: error && error.message ? error.message : 'Error al crear la liga'
+      error: motivo(error, 'Error al crear la liga')
     });
   }
 }
@@ -123,7 +122,7 @@ async function createLeagueBracket(req, res) {
       }
     }
 
-    const inserts = [];
+    const partidos = [];
     for (let ri = 0; ri < rows.length; ri++) {
       const r = rows[ri];
       const eventName = `${league.name}_${r.group}_Fase${r.phase}`;
@@ -133,33 +132,50 @@ async function createLeagueBracket(req, res) {
         return;
       }
       const ev = evQ.rows[0];
-      const p1id = activeNames.get(r.p1);
-      const p2id = activeNames.get(r.p2);
-      const p3id = activeNames.get(r.p3);
-      const p4id = activeNames.get(r.p4);
-      if (!p1id || !p2id || !p3id || !p4id) {
-        throw new Error(`No se pudieron resolver ids de jugadores para la fila: ${JSON.stringify(r)}`);
-      }
-
-      inserts.push(sql`
-        INSERT INTO matches (
-          date, format, event_id, round,
-          player1a_id, player1b_id, player2a_id, player2b_id,
-          set1_team1, set1_team2, set2_team1, set2_team2, set3_team1, set3_team2
-        ) VALUES (
-          ${ev.start_date}, 'bo3_regular', ${ev.id}, NULL,
-          ${p1id}, ${p2id}, ${p3id}, ${p4id},
-          0, 0, NULL, NULL, NULL, NULL
-        )
-      `);
+      partidos.push({ date: ev.start_date, ev: ev.id, ids: [r.p1, r.p2, r.p3, r.p4].map((n) => activeNames.get(n)) });
     }
 
-    await Promise.all(inserts);
-    res.status(200).json({ ok: true, inserted: inserts.length });
+    // Todo el cuadro en UNA sentencia: o entran todos los partidos o ninguno.
+    // Sin jugar llevan 0-0, que el rating ignora.
+    const col = (f) => partidos.map(f);
+    await sql`
+      INSERT INTO matches (date, format, event_id, round, player1a_id, player1b_id, player2a_id, player2b_id, set1_team1, set1_team2)
+      SELECT x.date, 'bo3_regular', x.ev, NULL, x.a, x.b, x.c, x.d, 0, 0
+      FROM unnest(${col((p) => p.date)}::text[], ${col((p) => p.ev)}::int[], ${col((p) => p.ids[0])}::int[],
+        ${col((p) => p.ids[1])}::int[], ${col((p) => p.ids[2])}::int[], ${col((p) => p.ids[3])}::int[]) AS x(date, ev, a, b, c, d)`;
+    res.status(200).json({ ok: true, inserted: partidos.length });
   } catch (err) {
     console.error('league-admin:createLeagueBracket error', err);
-    res.status(400).json({ ok: false, error: err && err.message ? err.message : 'Error al crear el cuadro' });
+    res.status(400).json({ ok: false, error: motivo(err, 'Error al crear el cuadro') });
   }
+}
+
+async function idsDeActivos() {
+  const { rows } = await sql`SELECT id, name FROM players WHERE active = TRUE`;
+  return new Map(rows.map((r) => [r.name, r.id]));
+}
+
+// El torneo y todos sus partidos en UNA sentencia: o entra todo o nada.
+// Con el driver HTTP de Neon cada `sql` va suelto, y hasta el 2026-10-17 un
+// fallo a mitad dejaba el evento creado con parte de sus partidos.
+async function crearTorneo(t, partidos) {
+  const col = (f) => partidos.map(f);
+  const { rows } = await sql`
+    WITH ev AS (
+      INSERT INTO events (type, name, start_date, end_date)
+      VALUES (${t.type}, ${t.name}, ${t.startDate}, ${t.endDate})
+      RETURNING id
+    ), m AS (
+      INSERT INTO matches (date, format, event_id, round, player1a_id, player1b_id, player2a_id, player2b_id,
+        set1_team1, set1_team2, set2_team1, set2_team2)
+      SELECT ${t.startDate}, 'timed_games', ev.id, x.round, x.a, x.b, x.c, x.d, x.s11, x.s21, x.s12, x.s22
+      FROM ev, unnest(${col((p) => p.round)}::text[], ${col((p) => p.ids[0])}::int[], ${col((p) => p.ids[1])}::int[],
+        ${col((p) => p.ids[2])}::int[], ${col((p) => p.ids[3])}::int[], ${col((p) => p.s11)}::int[],
+        ${col((p) => p.s21)}::int[], ${col((p) => p.s12)}::int[], ${col((p) => p.s22)}::int[])
+        AS x(round, a, b, c, d, s11, s21, s12, s22)
+    )
+    SELECT id FROM ev`;
+  return rows[0].id;
 }
 
 async function createPozoTournament(req, res) {
@@ -181,79 +197,29 @@ async function createPozoTournament(req, res) {
     }
 
     const rows = parseCsvRows(csvText);
-    const existingNames = new Set((await sql`SELECT name FROM players WHERE active = TRUE`).rows.map((r) => r.name));
+    const ids = await idsDeActivos();
 
     for (const row of rows) {
       for (const playerName of [row.player1, row.player2, row.player3, row.player4]) {
-        if (!existingNames.has(playerName)) {
+        if (!ids.has(playerName)) {
           res.status(400).json({ ok: false, error: `El nombre "${playerName}" no existe en la tabla players` });
           return;
         }
       }
     }
 
-    const eventInsert = await sql`
-      INSERT INTO events (type, name, start_date, end_date)
-      VALUES ('pozo', ${name}, ${startDate}, ${endDate})
-      RETURNING id
-    `;
-    const eventId = eventInsert.rows[0]?.id;
-    if (!eventId) {
-      throw new Error('No se pudo crear el evento');
-    }
-
-    const inserts = rows.map(async (row) => {
-      const p1aId = (await sql`SELECT id FROM players WHERE name = ${row.player1}`).rows[0]?.id;
-      const p1bId = (await sql`SELECT id FROM players WHERE name = ${row.player2}`).rows[0]?.id;
-      const p2aId = (await sql`SELECT id FROM players WHERE name = ${row.player3}`).rows[0]?.id;
-      const p2bId = (await sql`SELECT id FROM players WHERE name = ${row.player4}`).rows[0]?.id;
-
-      if (!p1aId || !p1bId || !p2aId || !p2bId) {
-        throw new Error(`No se pudieron resolver los ids de los jugadores en la fila: ${JSON.stringify(row)}`);
-      }
-
-      return sql`
-        INSERT INTO matches (
-          date,
-          format,
-          event_id,
-          round,
-          player1a_id,
-          player1b_id,
-          player2a_id,
-          player2b_id,
-          set1_team1,
-          set1_team2,
-          set2_team1,
-          set2_team2,
-          set3_team1,
-          set3_team2
-        ) VALUES (
-          ${startDate},
-          'timed_games',
-          ${eventId},
-          NULL,
-          ${p1aId},
-          ${p1bId},
-          ${p2aId},
-          ${p2bId},
-          ${row.result1},
-          ${row.result2},
-          ${row.winnerForSet2 === 1 ? 1 : null},
-          ${row.winnerForSet2 === 2 ? 1 : null},
-          NULL,
-          NULL
-        )
-      `;
-    });
-
-    await Promise.all(inserts);
+    // El empate a juegos se decide con un "set 2" de 1-0 para quien lleva el '+'.
+    const eventId = await crearTorneo({ type: 'pozo', name, startDate, endDate }, rows.map((row) => ({
+      round: null, ids: [row.player1, row.player2, row.player3, row.player4].map((n) => ids.get(n)),
+      s11: row.result1, s21: row.result2,
+      s12: row.winnerForSet2 === 1 ? 1 : null, s22: row.winnerForSet2 === 2 ? 1 : null
+    })));
     res.status(200).json({ ok: true, eventId });
   } catch (err) {
     console.error('league-admin:createPozoTournament error', err);
     res.status(400).json({
       ok: false,
-      error: err && err.message ? err.message : 'Error al crear el torneo'
+      error: motivo(err, 'Error al crear el torneo')
     });
   }
 }
@@ -271,74 +237,22 @@ async function createCompasTournament(req, res) {
     if (!startDate || !endDate) { res.status(400).json({ ok: false, error: 'Faltan las fechas del torneo' }); return; }
 
     const rows = parseCompasRows(csvText);
-    const existingNames = new Set((await sql`SELECT name FROM players WHERE active = TRUE`).rows.map((r) => r.name));
+    const ids = await idsDeActivos();
 
     for (const row of rows) {
       for (const playerName of [row.player1, row.player2, row.player3, row.player4]) {
-        if (!existingNames.has(playerName)) { res.status(400).json({ ok: false, error: `El nombre "${playerName}" no existe en la tabla players` }); return; }
+        if (!ids.has(playerName)) { res.status(400).json({ ok: false, error: `El nombre "${playerName}" no existe en la tabla players` }); return; }
       }
     }
 
-    const eventInsert = await sql`
-      INSERT INTO events (type, name, start_date, end_date)
-      VALUES ('compas', ${name}, ${startDate}, ${endDate})
-      RETURNING id
-    `;
-    const eventId = eventInsert.rows[0]?.id;
-    if (!eventId) { throw new Error('No se pudo crear el evento'); }
-
-    const inserts = rows.map(async (row) => {
-      const p1aId = (await sql`SELECT id FROM players WHERE name = ${row.player1}`).rows[0]?.id;
-      const p1bId = (await sql`SELECT id FROM players WHERE name = ${row.player2}`).rows[0]?.id;
-      const p2aId = (await sql`SELECT id FROM players WHERE name = ${row.player3}`).rows[0]?.id;
-      const p2bId = (await sql`SELECT id FROM players WHERE name = ${row.player4}`).rows[0]?.id;
-
-      if (!p1aId || !p1bId || !p2aId || !p2bId) {
-        throw new Error(`No se pudieron resolver los ids de los jugadores en la fila: ${JSON.stringify(row)}`);
-      }
-
-      const roundText = `${row.ronda}-${row.bracket}`;
-
-      return sql`
-        INSERT INTO matches (
-          date,
-          format,
-          event_id,
-          round,
-          player1a_id,
-          player1b_id,
-          player2a_id,
-          player2b_id,
-          set1_team1,
-          set1_team2,
-          set2_team1,
-          set2_team2,
-          set3_team1,
-          set3_team2
-        ) VALUES (
-          ${startDate},
-          'timed_games',
-          ${eventId},
-          ${roundText},
-          ${p1aId},
-          ${p1bId},
-          ${p2aId},
-          ${p2bId},
-          ${row.g1},
-          ${row.g2},
-          NULL,
-          NULL,
-          NULL,
-          NULL
-        )
-      `;
-    });
-
-    await Promise.all(inserts);
+    const eventId = await crearTorneo({ type: 'compas', name, startDate, endDate }, rows.map((row) => ({
+      round: `${row.ronda}-${row.bracket}`, ids: [row.player1, row.player2, row.player3, row.player4].map((n) => ids.get(n)),
+      s11: row.g1, s21: row.g2, s12: null, s22: null
+    })));
     res.status(200).json({ ok: true, eventId });
   } catch (err) {
     console.error('league-admin:createCompasTournament error', err);
-    res.status(400).json({ ok: false, error: err && err.message ? err.message : 'Error al crear el torneo' });
+    res.status(400).json({ ok: false, error: motivo(err, 'Error al crear el torneo') });
   }
 }
 

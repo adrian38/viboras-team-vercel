@@ -2,10 +2,7 @@
   "_comentario": "Perdonados: lo que ya pasaba del techo (60 lineas por funcion, 600 de JavaScript por fichero) cuando se puso la guarda. Esta lista solo encoge; --write nunca anade ni sube una entrada.",
   "funciones": {
     "api/_db.js:ensureSchema": 122,
-    "api/league-admin.js:createLeague": 91,
-    "api/league-admin.js:createLeagueBracket": 64,
-    "api/league-admin.js:createPozoTournament": 95,
-    "api/league-admin.js:createCompasTournament": 83,
+    "api/league-admin.js:createLeague": 83,
     "api/read.js:getResults": 80,
     "history.html:renderTable": 136,
     "players.html:updatePeriod": 66,
