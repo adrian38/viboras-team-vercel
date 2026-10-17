@@ -628,9 +628,10 @@ async function loadAdminNames(){
       row.style.justifyContent = 'space-between'
       row.style.padding = '8px'
       row.style.borderRadius = '8px'
-      row.style.background = 'linear-gradient(180deg,#fff,#fbfdff)'
+      row.style.background = 'var(--vt-surface-deep)'
+      row.style.border = '1px solid var(--vt-border)'
       const span = document.createElement('div')
-      span.style.color = 'var(--muted)'
+      span.style.color = 'var(--vt-text)'
       span.innerText = n
       const btn = document.createElement('button')
       btn.className = 'btn ghost'
