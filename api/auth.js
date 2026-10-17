@@ -421,7 +421,7 @@ async function usuarioDeGoogle(dato) {
   // una cuenta duplicada. El correo esta verificado por Google, que es la
   // unica razon por la que enlazar asi no es suplantar.
   const porCorreo = await sql`
-    SELECT u.id, u.email, u.status, u.role, u.player_id, p.active AS player_active
+    SELECT u.id, u.email, u.status, u.role, u.player_id, p.active AS player_active, u.email_verified_at
     FROM users u LEFT JOIN players p ON p.id = u.player_id
     WHERE u.email = ${dato.email}
   `;
@@ -432,7 +432,22 @@ async function usuarioDeGoogle(dato) {
     VALUES (${user.id}, 'google', ${dato.sub})
     ON CONFLICT (provider, subject) DO NOTHING
   `;
+  if (!user.email_verified_at) await quitarContrasenaAjena(user.id);
   return user;
+}
+
+// La cuenta se registro con contrasena y nadie demostro nunca que el correo
+// fuese suyo; ahora Google si lo demuestra. La contrasena pudo ponerla otro
+// que escribio este correo sin tenerlo, asi que deja de valer y se cierran
+// sus sesiones. El dueno sigue entrando con Google, y si quiere contrasena la
+// pone con «¿Has olvidado la contraseña?», que llega a su correo.
+async function quitarContrasenaAjena(userId) {
+  await sql`
+    UPDATE users SET password_hash = NULL, email_verified_at = now(),
+      failed_attempts = 0, locked_until = NULL
+    WHERE id = ${userId}
+  `;
+  await cerrarSesionesDe(userId);
 }
 
 // ADMIN_EMAILS solo cuenta por aqui: el alta con contrasena no verifica el

@@ -238,6 +238,21 @@ El enlace por correo (quien se registró con contraseña y luego entra con
 Google) **exige `email_verified === true`**. Sin esa comprobación sería
 suplantación: Google emite el token igualmente para un correo sin confirmar.
 
+**Y si la cuenta nunca confirmó su correo, Google le quita la contraseña**
+(`quitarContrasenaAjena`, desde el 2026-10-17). El alta con contraseña no
+verifica el correo, así que cualquiera podía registrarse con el de otro, que
+un admin lo aprobase, y que el dueño, al entrar luego con Google, heredase
+una cuenta cuya contraseña conocía el intruso. Ahora, al enlazar Google a una
+cuenta con `email_verified_at` vacío: contraseña a `NULL`, correo verificado y
+todas sus sesiones cerradas. Si el dueño quiere contraseña, la pone con
+«¿Has olvidado la contraseña?»: no hay pantalla para cambiarla
+(`changePassword` existe en el API pero ninguna página la llama). Una cuenta
+que sí confirmó su correo conserva la contraseña.
+
+Se probó en local llamando al handler de verdad con `api/_google.js`
+simulado (`mock.module` de Node 22, `--experimental-test-module-mocks`): con
+Google real no se puede, porque el botón no se dibuja en `localhost`.
+
 ## Normativa y formulario de inscripción en el alta
 
 - **El texto de la normativa está en un solo sitio: `group-normativa.html`.**
