@@ -22,7 +22,7 @@ import {
 } from './_auth.js';
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
-import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
+import { validarInscripcion, telefonoLibre, mensajeDeSolicitud } from './_inscripcion.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -119,9 +119,7 @@ async function comprobarAlta(email, playerName, newPlayerName, data) {
 // da igual, y decirlo primero evita el mensaje equivocado.
 async function correoLibre(email) {
   const { rows } = await sql`SELECT status FROM users WHERE email = ${email}`;
-  if (!rows.length) return null;
-  if (rows[0].status === 'rejected') return { error: 'email_rejected', message: 'Ese correo ya pidió entrar y no se aprobó. Habla con un administrador.' };
-  return { error: 'email_taken', message: 'Ya hay una cuenta con ese correo.' };
+  return rows.length ? { error: 'email_taken', message: mensajeDeSolicitud('ese correo', rows[0].status) } : null;
 }
 
 async function register(req, res) {

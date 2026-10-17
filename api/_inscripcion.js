@@ -9,7 +9,6 @@
 // Detalle: ai_context/cuentas_y_sesiones.md
 
 import { sql } from '@vercel/postgres';
-
 export const OPCIONES = {
   bkTest: ['si', 'no'],
   bkLevel: ['iniciacion', 'intermedio', 'avanzado', 'entreno'],
@@ -67,7 +66,20 @@ function claveDeTelefono(phone) {
 // vive dentro del JSONB y llega escrito de cualquier manera.
 export async function telefonoLibre(form) {
   const clave = claveDeTelefono(form.phone);
-  const { rows } = await sql`SELECT signup_form->>'phone' AS phone FROM users WHERE signup_form ? 'phone'`;
-  if (!rows.some((r) => claveDeTelefono(r.phone) === clave)) return null;
-  return { error: 'phone_taken', message: 'Ese teléfono ya está en otra cuenta. Si es el tuyo, habla con un administrador.' };
+  const { rows } = await sql`SELECT status, signup_form->>'phone' AS phone FROM users WHERE signup_form ? 'phone'`;
+  const igual = rows.find((r) => claveDeTelefono(r.phone) === clave);
+  return igual ? { error: 'phone_taken', message: mensajeDeSolicitud('ese teléfono', igual.status) } : null;
+}
+
+// Quien repite el alta se entera de en que esta la que ya hizo, en vez de un
+// «ya existe» a secas (lo pidio Adrian, 2026-10-17).
+const ESTADO_DE_SOLICITUD = {
+  pending: 'está pendiente de que un administrador la apruebe. Te avisaremos por correo.',
+  active: 'ya está aprobada: entra con tu cuenta.',
+  blocked: 'está bloqueada. Habla con un administrador.',
+  rejected: 'no se aprobó. Habla con un administrador.'
+};
+
+export function mensajeDeSolicitud(con, status) {
+  return `Ya hay una solicitud con ${con} y ${ESTADO_DE_SOLICITUD[status] || 'no se puede repetir.'}`;
 }
