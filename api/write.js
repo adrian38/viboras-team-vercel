@@ -1,7 +1,8 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, getOrCreatePlayerId, getPlayerId, readBody, toInt } from './_db.js';
 import { validateBo3Score } from './_score.js';
-import { exigirSesion, cerrarSesionesDe } from './_auth.js';
+import { exigirSesion } from './_auth.js';
+import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
 
 async function submitName(req, res) {
   try {
@@ -183,10 +184,10 @@ async function deleteName(req, res, user) {
 
 // «Editar» de la pantalla de jugadores (admin-jugadores.js). Desde el
 // 2026-10-17. Detalle: ai_context/exportar_jugadores.md
+// El estado de la cuenta no se edita aqui: aprobar y rechazar siguen en
+// /cuenta, que crea la ficha y manda el correo, y «bloqueada» no tiene
+// pantalla en la app.
 const ROLES = ['member', 'admin'];
-// Solo se pasa de una a otra: aprobar o rechazar un pendiente sigue siendo
-// cosa de /cuenta, que crea la ficha y manda el correo.
-const ESTADOS_EDITABLES = ['active', 'blocked'];
 
 // Sin mayusculas, tildes ni espacios de mas, como claveDeNombre en auth.js.
 const claveDeNombre = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -204,23 +205,28 @@ async function editarFicha(playerId, data) {
   return hecho.rowCount ? null : 'Ese jugador ya no existe.';
 }
 
+// Las respuestas de la inscripcion, con las mismas reglas que el alta: todas
+// las preguntas y un telefono que no este en otra cuenta.
+async function inscripcionEditada(userId, datos) {
+  if (!datos) return { form: undefined };
+  const insc = validarInscripcion(datos);
+  if (insc.error) return { fallo: insc.message.replace(' antes de crear la cuenta', '') };
+  const repetido = await telefonoLibre(insc.form, userId);
+  return repetido ? { fallo: 'Ese teléfono ya está en otra cuenta.' } : { form: insc.form };
+}
+
 async function editarCuenta(userId, data, admin) {
-  const { rows } = await sql`SELECT status, role FROM users WHERE id = ${userId}`;
+  const { rows } = await sql`SELECT role FROM users WHERE id = ${userId}`;
   if (!rows.length) return 'Esa cuenta ya no existe.';
-  const status = ESTADOS_EDITABLES.includes(rows[0].status) ? String(data.status || rows[0].status) : rows[0].status;
   const role = String(data.role || rows[0].role);
-  if (!ROLES.includes(role) || (status !== rows[0].status && !ESTADOS_EDITABLES.includes(status))) return 'Estado o tipo de usuario no válido.';
-  if (userId === admin.id && (status !== rows[0].status || role !== rows[0].role)) {
-    return 'No puedes cambiar el estado ni el tipo de tu propia cuenta.';
-  }
-  try {
-    await sql`UPDATE users SET status = ${status}, role = ${role} WHERE id = ${userId}`;
-  } catch (err) {
-    // users_player_activo_idx: el jugador ya tiene otra cuenta activa.
-    if (err && err.code === '23505') return 'Ese jugador ya tiene otra cuenta activa.';
-    throw err;
-  }
-  if (status === 'blocked' && rows[0].status !== 'blocked') await cerrarSesionesDe(userId);
+  if (!ROLES.includes(role)) return 'Tipo de usuario no válido.';
+  if (userId === admin.id && role !== rows[0].role) return 'No puedes cambiar el tipo de tu propia cuenta.';
+  const { form, fallo } = await inscripcionEditada(userId, data.form);
+  if (fallo) return fallo;
+  await sql`
+    UPDATE users SET role = ${role},
+      signup_form = COALESCE(${form ? JSON.stringify(form) : null}::jsonb, signup_form)
+    WHERE id = ${userId}`;
   return null;
 }
 

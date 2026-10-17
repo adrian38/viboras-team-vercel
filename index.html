@@ -364,6 +364,7 @@ async function openAdmin(){
         <div id="adminMenuColumn" style="flex:0 0 260px;display:flex;flex-direction:column;gap:8px;align-items:stretch">
           <div style="font-weight:700;text-align:center;padding:8px 0">Administración</div>
           <button class="btn" style="width:100%;text-align:left" onclick="showPlayerPanel()">Nuevo jugador</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="vtAdminJugadores.abrir()">Jugadores</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showCompasPanel()">Nuevo torneo Compás</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showPozoPanel()">Nuevo torneo Pozo</button>
           <button class="btn red" style="width:100%;text-align:left" onclick="closeAdmin()">Cerrar</button>
@@ -435,9 +436,7 @@ function showPlayerPanel(){
       <input id="playerNameInput" class="register-input" placeholder="Nombre completo" />
       <button class="btn secondary-green" onclick="registerPlayer()">Registrar jugador</button>
     </div>
-    <div id="adminList" style="display:flex;flex-direction:column;gap:8px;overflow:auto"></div>
   `
-  loadAdminNames()
 }
 
 function showPozoPanel(){
@@ -604,7 +603,6 @@ async function registerPlayer(){
     if(j && j.ok){
       if(j.added){ alert('Jugador guardado'); el.value = '' }
       else alert('Nombre ya registrado')
-      await loadAdminNames()
     } else {
       alert('Error al guardar')
     }
@@ -612,11 +610,6 @@ async function registerPlayer(){
 }
 function closeAdmin(){ const o=document.getElementById('adminOverlay'); if(o) o.style.display='none' }
 
-// La lista, los filtros y Editar viven en admin-jugadores.js (2026-10-17).
-async function loadAdminNames(){
-  const container = document.getElementById('adminList')
-  if(container) await window.vtAdminJugadores.pintar(container)
-}
 
 
 </script>

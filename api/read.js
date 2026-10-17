@@ -1,6 +1,7 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, formatSet } from './_db.js';
 import { exigirSesion, exigirAdmin } from './_auth.js';
+import { describirInscripcion } from './_inscripcion.js';
 
 async function getNames(req, res) {
   try {
@@ -167,7 +168,7 @@ async function exportPlayers(req, res) {
   if (!await exigirAdmin(req, res)) return;
   try {
     res.setHeader('cache-control', 'no-store');
-    res.status(200).json({ ok: true, players: await filasDeJugadores() });
+    res.status(200).json({ ok: true, players: await filasDeJugadores(), inscripcion: describirInscripcion() });
   } catch (err) {
     console.error('read:exportPlayers error', err);
     res.status(500).json({ ok: false, error: 'server_error' });

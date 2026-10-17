@@ -56,30 +56,45 @@ reclama el mismo nombre. Es lo que hay en la base.
 
 ## La pantalla «Jugadores» del panel lee la misma lista
 
-Desde el 2026-10-17, la pantalla «Jugadores» del panel de administración
-(`index.html`, botón «Nuevo jugador») la pinta `admin-jugadores.js` con
-`exportPlayers`. Por eso las filas llevan `userId`, `playerId`,
-`playerActive` y `status`. Muestra todas las cuentas, **rechazadas
-incluidas**, con el estado en color (verde activo, amarillo pendiente, rojo
-rechazado, naranja bloqueado, gris de baja o sin cuenta), un buscador por
-nombre, correo o nombre completo, y un filtro por estado. Los colores y los
-filtros los pidió Adrián.
+Desde el 2026-10-17, el panel de administración (`index.html`) tiene una
+entrada propia **«Jugadores»**, aparte de «Nuevo jugador», que se quedó sólo
+con el formulario de registrar. La pinta `admin-jugadores.js` con
+`exportPlayers`; por eso las filas llevan `userId`, `playerId`,
+`playerActive` y `status`, y la respuesta trae `inscripcion`: las preguntas y
+los textos de sus opciones, que salen de `describirInscripcion()` en
+`api/_inscripcion.js`. Todo lo pidió Adrián:
 
-**«Editar»** guarda con `/api/write?action=updatePlayer`, sólo de admin:
+- **Todas las cuentas, rechazadas incluidas**, con el estado en color: verde
+  activo, amarillo pendiente, rojo rechazado, gris de baja o sin cuenta.
+- **Buscador** por nombre, correo, nombre completo o teléfono, y **filtro por
+  estado** que sólo ofrece los estados que hay en los datos, con cuántos.
+- **«Bloqueado» no aparece.** `blockUser` existe en el API pero ninguna
+  pantalla lo usa, y en la base no había ninguna cuenta bloqueada. Una
+  primera versión lo ofrecía y Adrián lo señaló como estado que no existe.
 
-- **Ficha** (si hay jugador): el nombre en las tablas y «En activo» o «Dado de
-  baja». Al renombrar se rechaza un nombre que choque con otro jugador sin
+**«Editar» abre su propia pantalla** (en la primera versión se desplegaba
+dentro de la fila y era incómodo), con todos los datos, y guarda con
+`/api/write?action=updatePlayer`, sólo de admin:
+
+- **Jugador** (si hay ficha): el nombre en las tablas y «En activo» o «Dado
+  de baja». Al renombrar se rechaza un nombre que choque con otro jugador sin
   mayúsculas, tildes ni espacios de más. `claveDeNombre` está copiada de
   `auth.js` a `write.js`: si cambia una, cambia la otra.
-- **Cuenta** (si hay cuenta): «Activa» o «Bloqueada», y el tipo de usuario
-  (Jugador o Admin). Bloquear cierra sus sesiones. Una pendiente o una
-  rechazada no cambian de estado aquí: aprobar y rechazar siguen en
-  `/cuenta`, que crea la ficha y manda el correo.
-- **Nadie cambia el estado ni el tipo de su propia cuenta**: un admin podría
-  quedarse fuera.
+- **Cuenta**: estado, correo, nombre que pidió (si no tiene ficha), correo
+  confirmado y fechas de alta y aprobación o rechazo, sólo para ver. **El
+  estado no se cambia aquí**: aprobar y rechazar siguen en `/cuenta`, que
+  crea la ficha y manda el correo. Lo único editable es el **tipo de
+  usuario**, y sólo en una cuenta activa. Nadie cambia el de su propia
+  cuenta: un admin podría quedarse fuera.
+- **Inscripción**: las ocho respuestas, editables, con las mismas reglas que
+  el alta (`validarInscripcion`, todas obligatorias) y un teléfono que no
+  esté en otra cuenta (`telefonoLibre`, sin contar la propia). Si están todas
+  vacías, como en las cuentas anteriores al formulario, no se manda nada.
 
 Sustituye al botón «Eliminar», que daba de baja: ahora eso es «Dado de baja»
 dentro de Editar. `deleteName` sigue en `write.js`, sin nadie que lo llame.
+Los textos de las opciones están en tres sitios: `inscripcion.html`,
+`cuenta.html` (`TEXTO_INSCRIPCION`) y `api/_inscripcion.js`.
 
 ## Es un Excel, y lo escribe `excel-export.js`
 

@@ -30,6 +30,29 @@ const PREGUNTAS = {
   availability: 'tu disponibilidad'
 };
 
+// Las preguntas y respuestas como las lee una persona, para la pantalla
+// «Jugadores» del panel (admin-jugadores.js). Mismos textos que
+// inscripcion.html; si cambia una opcion alli, cambia aqui.
+const TITULOS = {
+  fullName: 'Nombre y apellidos', phone: 'Teléfono', bkTest: 'Prueba de nivel BK',
+  bkLevel: 'Nivel BK', league: 'Liga', tournaments: 'Torneos',
+  rankingPerWeek: 'Ranking por semana', availability: 'Disponibilidad'
+};
+const TEXTOS = {
+  si: 'Sí', no: 'No', ninguno: 'Ninguno', iniciacion: 'Iniciación', intermedio: 'Intermedio',
+  avanzado: 'Avanzado', entreno: 'Entreno', mananas: 'Solamente mañanas', tardes: 'Solamente tardes',
+  turnos: 'Turnos mañana/tarde', findes: 'Solamente findes', 'mananas-findes': 'Mañanas + findes',
+  'tardes-findes': 'Tardes + findes', 'turnos-findes': 'Turnos mañana/tarde + findes'
+};
+
+export function describirInscripcion() {
+  return Object.keys(TITULOS).map((campo) => ({
+    campo,
+    titulo: TITULOS[campo],
+    opciones: OPCIONES[campo] ? OPCIONES[campo].map((v) => [v, TEXTOS[v] || v]) : null
+  }));
+}
+
 const fallo = (message) => ({ error: 'bad_form', message });
 
 // Devuelve { form } con lo que se guarda, o { error, message }.
@@ -64,9 +87,12 @@ function claveDeTelefono(phone) {
 // Cuentan todas, rechazadas incluidas: si no, quien fue rechazado volveria a
 // pedir entrar con otro correo. Se compara en JavaScript porque el telefono
 // vive dentro del JSONB y llega escrito de cualquier manera.
-export async function telefonoLibre(form) {
+// `excepto`: la cuenta que se esta editando, que no choca consigo misma.
+export async function telefonoLibre(form, excepto = null) {
   const clave = claveDeTelefono(form.phone);
-  const { rows } = await sql`SELECT status, signup_form->>'phone' AS phone FROM users WHERE signup_form ? 'phone'`;
+  const { rows } = await sql`
+    SELECT status, signup_form->>'phone' AS phone FROM users
+    WHERE signup_form ? 'phone' AND id IS DISTINCT FROM ${excepto}`;
   const igual = rows.find((r) => claveDeTelefono(r.phone) === clave);
   return igual ? { error: 'phone_taken', message: mensajeDeSolicitud('ese teléfono', igual.status) } : null;
 }
