@@ -20,8 +20,9 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
 
 Además de la campanita, en `/history` cada partido propio de los últimos 14
 días lleva un botón «Valorar» que entra a `/valorar` con lo ya elegido marcado
-(se puede cambiar). Se reconoce el partido por fecha y cuatro nombres, que
-`pendientes` devuelve, porque `getResults` no manda el id.
+(se puede cambiar). Se reconoce el partido por su id, que `getResults` manda
+desde el 2026-10-17; antes era por fecha y cuatro nombres, y una revancha
+del mismo día con las mismas parejas se confundía.
 
 El ambiente recibido se ve, por ahora, sólo en la pantalla Jugadores del panel
 de administración (`admin-jugadores.js`): «👍 n · 👎 m» en la lista y una
@@ -105,5 +106,9 @@ todo obliga a calcular el rating en el servidor.
 - Si la edición no encuentra la fila original (otro la editó mientras tanto,
   o un nombre cambió), el API responde **409** «Alguien ha editado este
   partido… vuelve a intentarlo» y `history.html` recarga la tabla. Hasta el
-  2026-10-17 insertaba un partido nuevo, que lo duplicaba: la fila se busca
-  por fecha y cuatro nombres, no por id, porque `getResults` no manda el id.
+  2026-10-17 insertaba un partido nuevo, que lo duplicaba. La fila se busca
+  por su id y, además, por la fecha y los cuatro jugadores de antes: si no
+  coinciden es que otro la cambió. Borrar funciona igual. Antes no había id
+  y una revancha del mismo día se editaba y se borraba a la vez que la
+  otra. La edición manda también el formato: sin él, un partido con super
+  tie-break pasaba a normal y el tercer set se validaba como uno de 7 juegos.

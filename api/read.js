@@ -75,7 +75,7 @@ async function getResults(req, res) {
       ORDER BY m.id`;
 
     const matches = rows.map((r) => ({
-      format: r.format || 'bo3_regular',
+      id: r.id, format: r.format || 'bo3_regular',
       event_id: r.event_id || null,
       event_type: r.event_type || null,
       event_name: r.event_name || null,

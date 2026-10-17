@@ -290,14 +290,14 @@ let isAdmin = false
 // comprueba igual (write.js, updateExistingMatch).
 let miNombre = ''
 const juegaEn = (m) => !!miNombre && [m.p1a, m.p1b, m.p2a, m.p2b].includes(miNombre)
-// Partidos propios de los ultimos 14 dias que aun se pueden valorar, por
-// fecha y jugadores (el id no llega en getResults). Llevan un boton «Valorar»
-// que entra a /valorar con lo ya elegido marcado.
-const valorables = new Map()
-const claveDePartido = (fecha, js) => [fecha, ...js].join('|')
+// Partidos propios de los ultimos 14 dias que aun se pueden valorar, por su
+// id (getResults lo manda desde el 2026-10-17; antes era por fecha y
+// jugadores, y una revancha del mismo dia se confundia). Llevan un boton
+// «Valorar» que entra a /valorar con lo ya elegido marcado.
+const valorables = new Set()
 function anadirValorar(td, m){
-  const id = valorables.get(claveDePartido(m.date, [m.p1a, m.p1b, m.p2a, m.p2b]))
-  if(!id) return
+  const id = m.id
+  if(!valorables.has(id)) return
   const b = document.createElement('button')
   b.className = 'small-btn'
   b.style.marginLeft = '6px'
@@ -309,7 +309,7 @@ async function cargarValorables(){
   try{
     const res = await fetch('/api/avisos?action=pendientes')
     const json = await res.json()
-    ;(json.partidos || []).forEach(p => valorables.set(claveDePartido(p.fecha, p.jugadores), p.id))
+    ;(json.partidos || []).forEach(p => valorables.add(p.id))
   }catch(e){ console.warn('Sin partidos para valorar', e) }
 }
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -609,7 +609,8 @@ async function saved(res){
 async function deleteMatch(m){
   if(!confirm('¿Eliminar este partido?')) return
   try{
-    await fetch('/api/write?action=deleteResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:m.date,p1a:m.p1a,p1b:m.p1b,p2a:m.p2a,p2b:m.p2b})})
+    const res = await fetch('/api/write?action=deleteResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:m.id,date:m.date,p1a:m.p1a,p1b:m.p1b,p2a:m.p2a,p2b:m.p2b})})
+    if(!res.ok){ const j = await res.json().catch(()=>({})); alert(j.message || 'No se pudo eliminar') }
     loadData()
   }catch(e){ console.error(e); alert('Error al eliminar') }
 }
@@ -723,7 +724,7 @@ function startEditRow(tr,m){
       p1a: inP1a.value.trim(), p1b: inP1b.value.trim(), p2a: inP2a.value.trim(), p2b: inP2b.value.trim(),
       s11: inS11.value.trim(), s12: inS12.value.trim(), s13: inS13.value.trim(),
       s21: inS21.value.trim(), s22: inS22.value.trim(), s23: inS23.value.trim(),
-      _original: { date: m.date, p1a: m.p1a, p1b: m.p1b, p2a: m.p2a, p2b: m.p2b }
+      format: m.format, _original: { id: m.id, date: m.date, p1a: m.p1a, p1b: m.p1b, p2a: m.p2a, p2b: m.p2b }
     }
     try{
       const res = await fetch('/api/write?action=submitResult',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})

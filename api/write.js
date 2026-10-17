@@ -44,45 +44,27 @@ async function submitName(req, res, user) {
   }
 }
 
-// `_original` llega cuando se esta editando un partido que ya existe: la fila
-// se busca por la fecha y los cuatro jugadores de antes. El `event_id` entra en
-// la condicion solo si venia en la peticion; sin el, la fila se actualiza
-// pertenezca al evento que pertenezca.
+// `_original` llega cuando se esta editando un partido que ya existe. Desde
+// el 2026-10-17 la fila se busca por su `id`: por fecha y jugadores, una
+// revancha del mismo dia con las mismas parejas se editaba a la vez, aunque
+// fuese de otro evento. La fecha y los jugadores de antes siguen en la
+// condicion: si no coinciden, otro lo edito mientras tanto.
 //
-// Desde el 2026-10-17 solo editan los cuatro jugadores del partido (los de
-// antes de la edicion) y los administradores; a los demas jugadores del
-// partido les llega un aviso con el nombre de quien edito (_avisos.js).
-// Devuelve 'forbidden', el id de la fila editada o null si no la encontro
-// (y entonces submitResult responde 409, no inserta).
+// Solo editan los cuatro jugadores del partido (los de antes de la edicion) y
+// los administradores; a los demas jugadores del partido les llega un aviso
+// con el nombre de quien edito (_avisos.js). Devuelve forbidden, el id de
+// la fila editada o null si no la encontro (y submitResult responde 409).
 async function updateExistingMatch(original, m, user) {
+  const id = toInt(original.id);
   const o_p1a = await getPlayerId(original.p1a);
   const o_p1b = await getPlayerId(original.p1b);
   const o_p2a = await getPlayerId(original.p2a);
   const o_p2b = await getPlayerId(original.p2b);
   const o_date = String(original.date || '').trim();
-  const o_event = original.event_id ? toInt(original.event_id) : null;
   const jugadores = [o_p1a, o_p1b, o_p2a, o_p2b, m.p1a_id, m.p1b_id, m.p2a_id, m.p2b_id];
   if (user.role !== 'admin' && !(user.player_id && jugadores.slice(0, 4).includes(user.player_id))) return 'forbidden';
-
-  if (o_event !== null) {
-    const conEvento = await sql`
-      UPDATE matches SET
-        date = ${m.date},
-        format = ${m.format},
-        player1a_id = ${m.p1a_id}, player1b_id = ${m.p1b_id},
-        player2a_id = ${m.p2a_id}, player2b_id = ${m.p2b_id},
-        set1_team1 = ${m.s11}, set1_team2 = ${m.s21},
-        set2_team1 = ${m.s12}, set2_team2 = ${m.s22},
-        set3_team1 = ${m.s13}, set3_team2 = ${m.s23}
-      WHERE date = ${o_date}
-        AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
-        AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
-        AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
-        AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
-        AND event_id IS NOT DISTINCT FROM ${o_event}
-      RETURNING id`;
-    return editado(conEvento, user, jugadores, m.date);
-  }
+  // Sin id es una pestana abierta antes de este cambio: que recargue.
+  if (!id) return null;
 
   const upd = await sql`
     UPDATE matches SET
@@ -93,7 +75,8 @@ async function updateExistingMatch(original, m, user) {
       set1_team1 = ${m.s11}, set1_team2 = ${m.s21},
       set2_team1 = ${m.s12}, set2_team2 = ${m.s22},
       set3_team1 = ${m.s13}, set3_team2 = ${m.s23}
-    WHERE date = ${o_date}
+    WHERE id = ${id}
+      AND date = ${o_date}
       AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
       AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
       AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
@@ -209,19 +192,27 @@ async function deleteResult(req, res, user) {
   try {
     await ensureSchema();
     const data = await readBody(req);
+    const id = toInt(data.id);
     const date = String(data.date || '').trim();
     const p1a_id = await getPlayerId(data.p1a);
     const p1b_id = await getPlayerId(data.p1b);
     const p2a_id = await getPlayerId(data.p2a);
     const p2b_id = await getPlayerId(data.p2b);
 
-    await sql`
+    // Por id, como la edicion: por fecha y jugadores se borraban tambien las
+    // revanchas del mismo dia. El resto confirma que es el partido que se veia.
+    const borrado = id ? await sql`
       DELETE FROM matches
-      WHERE date = ${date}
+      WHERE id = ${id}
+        AND date = ${date}
         AND player1a_id IS NOT DISTINCT FROM ${p1a_id}
         AND player1b_id IS NOT DISTINCT FROM ${p1b_id}
         AND player2a_id IS NOT DISTINCT FROM ${p2a_id}
-        AND player2b_id IS NOT DISTINCT FROM ${p2b_id}`;
+        AND player2b_id IS NOT DISTINCT FROM ${p2b_id}` : { rowCount: 0 };
+    if (!borrado.rowCount) {
+      res.status(409).json({ ok: false, error: 'conflict', message: 'Ese partido ha cambiado o ya no existe. Recarga y vuelve a intentarlo.' });
+      return;
+    }
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error('write:deleteResult error', err);

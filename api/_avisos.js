@@ -76,8 +76,8 @@ export async function partidosParaValorar(playerId) {
     WHERE m.dia BETWEEN current_date - ${DIAS_PARA_VALORAR}::int AND current_date
     GROUP BY m.id, m.date, m.dia, p1a.name, p1b.name, p2a.name, p2b.name
     ORDER BY m.dia DESC, m.id DESC`;
-  // Los cuatro nombres, para que /history reconozca el partido: alli se
-  // identifica por fecha y jugadores, porque getResults no manda el id.
+  // Los cuatro nombres van con el id para poder ensenar el partido sin otra
+  // consulta. /history lo reconoce por el id desde el 2026-10-17.
   return rows.map((r) => ({
     id: r.id, fecha: r.date, jugadores: [r.p1a, r.p1b, r.p2a, r.p2b],
     faltanActitud: Number(r.faltan_actitud), faltanNivel: Number(r.faltan_nivel)
