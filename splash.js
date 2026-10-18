@@ -3,7 +3,8 @@
 // Los estilos estan en theme.css (.vt-splash*).
 //
 // Una vez por sesion: al abrir la app instalada (cada arranque es una sesion
-// nueva) o la web en una pestana nueva, no en cada cambio de pagina. Tocar la
+// nueva) o la web en una pestana nueva, no en cada cambio de pagina ni en una
+// pestana que abre la propia app. Tocar la
 // pantalla la salta. Con «reducir movimiento» sale el ultimo fotograma quieto
 // y se va enseguida.
 //
@@ -16,6 +17,10 @@
   } catch (e) {
     return; // Sin sessionStorage saldria en cada pagina: mejor ninguna.
   }
+  // Una pestana abierta desde una pagina nuestra estrena sessionStorage, pero
+  // no es un arranque: el «Rellenar» del alta abre /inscripcion asi y salia
+  // el video en mitad del registro (2026-10-18).
+  if (document.referrer.indexOf(location.origin + '/') === 0) return;
 
   var raiz = document.documentElement;
   var reducido = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;

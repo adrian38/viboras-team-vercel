@@ -330,6 +330,11 @@ Lo que sigue igual que antes:
 - **Una vez por sesión** (`sessionStorage`): al abrir la app instalada, cada
   arranque es una sesión nueva; navegar entre páginas no la repite. Sin
   `sessionStorage` no sale nunca, para no salir en cada página.
+- **Tampoco en una pestaña abierta desde la app** (desde el 2026-10-18): una
+  pestaña nueva estrena `sessionStorage`, así que el «Rellenar» del alta, que
+  abre `/inscripcion` con `target="_blank"`, sacaba el vídeo en mitad del
+  registro. Se salta si `document.referrer` es de nuestro propio origen.
+  `rel="noopener"` no quita el referrer; `noreferrer` sí, y lo rompería.
 - **Va sin `defer` en el `<head>` de todas las páginas.** Tiene que poner la
   clase `vt-splash` antes de que se pinte nada; con `defer` la página asoma un
   instante antes del negro. Mientras la capa no está montada, el `body` va con
