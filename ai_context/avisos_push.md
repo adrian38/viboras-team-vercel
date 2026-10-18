@@ -53,9 +53,13 @@ uno solo, para no mandar dos notificaciones por lo mismo.
 - **La campanita siempre dice en qué estado están los avisos** (desde el
   2026-10-18): «Activar…», «bloqueados», «instala la app» o «Avisos activados
   en este dispositivo.». Antes, con el permiso concedido no salía nada, y no se
-  distinguía de un servidor sin claves VAPID, que tampoco enseña nada. Si en
-  un Android no sale ninguna de las cuatro líneas, faltan las claves:
-  `/api/push?action=clave` devuelve `null`.
+  distinguía de un servidor sin claves VAPID, que tampoco enseñaba nada.
+  **Sin claves, a los administradores les dice «Avisos al móvil sin
+  configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.»**; a los
+  demás, nada, porque no pueden arreglarlo. Así se vio en producción el
+  2026-10-18: Adrián no veía ni el botón ni la pregunta, y en local, simulando
+  `clave: null` desde un Android emulado, la campanita quedaba idéntica a su
+  captura.
 - **Con el permiso concedido, cada carga reenvía la suscripción.** Cubre el
   cerrar sesión y volver a entrar, y que el navegador la renueve.
 - **Al cerrar sesión el dispositivo se da de baja** y la suscripción se

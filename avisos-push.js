@@ -40,9 +40,10 @@
   var clave = api('clave').then(function (j) { return (j && j.clave) || null; });
 
   // 'activo', 'pendiente' (se puede pedir), 'bloqueado' (dijo que no en el
-  // navegador), 'instalar' (iPhone sin instalar) o null (no hay nada que hacer).
+  // navegador), 'instalar' (iPhone sin instalar), 'sinClaves' (el servidor no
+  // tiene VAPID: solo se lo dice a los administradores) o null.
   var estado = clave.then(function (k) {
-    if (!k) return null;
+    if (!k) return 'sinClaves';
     if (!soporta) return esIOS && !instalada ? 'instalar' : null;
     if (Notification.permission === 'denied') return 'bloqueado';
     return Notification.permission === 'granted' ? 'activo' : 'pendiente';
@@ -87,15 +88,20 @@
     activo: 'Avisos activados en este dispositivo.',
     pendiente: 'Activar avisos en este dispositivo',
     instalar: 'Para recibir avisos en el iPhone, instala la app: Compartir → «Añadir a pantalla de inicio».',
-    bloqueado: 'Los avisos están bloqueados en este navegador. Actívalos en sus ajustes para esta web.'
+    bloqueado: 'Los avisos están bloqueados en este navegador. Actívalos en sus ajustes para esta web.',
+    sinClaves: 'Avisos al móvil sin configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.'
   };
 
   // El bloque de arriba de la campanita. Se repinta entero cada vez: la
-  // campanita borra su panel al rellenarlo.
+  // campanita borra su panel al rellenarlo. Sin claves en el servidor no
+  // salia nada, igual que con todo bien, y no habia forma de saberlo
+  // (2026-10-18): ahora se lo dice a quien puede arreglarlo.
   function pintarEnCampana(panel) {
-    estado.then(function (e) {
+    Promise.all([estado, window.vtMe]).then(function (r) {
+      var e = r[0];
       var viejo = panel.querySelector('.vt-campana__push');
       if (viejo) viejo.remove();
+      if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
       if (!TEXTOS[e]) return;
       var el = document.createElement(e === 'pendiente' ? 'button' : 'div');
       el.className = 'vt-campana__item vt-campana__push';
