@@ -50,6 +50,12 @@ uno solo, para no mandar dos notificaciones por lo mismo.
   (iOS 16.4 o posterior). En Safari normal `PushManager` no existe: la pregunta
   explica cómo instalarla, y al abrirla instalada se pregunta otra vez (el
   almacenamiento de la app instalada es otro).
+- **La campanita siempre dice en qué estado están los avisos** (desde el
+  2026-10-18): «Activar…», «bloqueados», «instala la app» o «Avisos activados
+  en este dispositivo.». Antes, con el permiso concedido no salía nada, y no se
+  distinguía de un servidor sin claves VAPID, que tampoco enseña nada. Si en
+  un Android no sale ninguna de las cuatro líneas, faltan las claves:
+  `/api/push?action=clave` devuelve `null`.
 - **Con el permiso concedido, cada carga reenvía la suscripción.** Cubre el
   cerrar sesión y volver a entrar, y que el navegador la renueve.
 - **Al cerrar sesión el dispositivo se da de baja** y la suscripción se

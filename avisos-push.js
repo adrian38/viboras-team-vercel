@@ -81,7 +81,10 @@
       .catch(function () { return null; });
   }
 
+  // 'activo' tambien se dice: sin esa linea, avisos activos y un servidor sin
+  // claves dejaban la campanita igual y no se distinguian.
   var TEXTOS = {
+    activo: 'Avisos activados en este dispositivo.',
     pendiente: 'Activar avisos en este dispositivo',
     instalar: 'Para recibir avisos en el iPhone, instala la app: Compartir → «Añadir a pantalla de inicio».',
     bloqueado: 'Los avisos están bloqueados en este navegador. Actívalos en sus ajustes para esta web.'
