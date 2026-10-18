@@ -149,8 +149,20 @@ label.small{
 /* Barra superior en el flujo del documento (no fija). Así el botón se desplaza al hacer scroll y desaparece. */
 /* space-between desde que hay cuentas: normativa a la izquierda, el chip de
    sesion a la derecha. */
-.topbar{position:static;display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);height:var(--topbar-height);padding:0 var(--vt-sm);pointer-events:auto}
+/* relative por la campanita: su panel se ancla al borde derecho de la barra
+   y no al de la campana, que tiene el chip de cuenta a su derecha. Anclado a
+   la campana, por debajo de unos 350 px el panel empezaba fuera de la
+   pantalla y se comia el principio de cada aviso. */
+.topbar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);height:var(--topbar-height);padding:0 var(--vt-sm);pointer-events:auto}
 .topbar .vt-chip{flex:0 0 auto;white-space:nowrap;text-decoration:none}
+/* El numero de avisos se sigue colocando sobre la campana: sin esto, al
+   quitarle el relative a .vt-campana se iria a la esquina de la barra. */
+.topbar .vt-campana{position:static}
+.topbar .vt-campana > .vt-chip{position:relative}
+/* Pegado a la campana y no al pie de la barra, que queda mas abajo: la
+   campana (27 px) va centrada en la barra, asi que su pie esta a 50% + 14;
+   y 6 px de aire, como en theme.css. */
+.topbar .vt-campana__panel{right:var(--vt-sm);top:calc(50% + 20px)}
 /* A 375 px los dos textos caben con 16 px de sobra; a 320 el chip desbordaba
    29 px. Por debajo de 370 se queda en el icono, que sigue llevando a /cuenta
    y conserva su aria-label. */
