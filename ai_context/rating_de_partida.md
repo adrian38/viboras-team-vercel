@@ -49,7 +49,9 @@ ganado, el de Avanzado quedó en 1867,55 (RD 303,29); arrancando en 1500 habría
 quedado en 1602,90. `/rating` y `/players` dieron lo mismo y no cambió ningún
 jugador ajeno al partido.
 
-**Un alta sin partidos no sale en `/rating` por defecto**: el filtro de
-fiabilidad mínima viene en «muy baja» (RD < 350) y una fiabilidad 0 es RD 350.
-Aparece con su primer partido, o eligiendo «cualquiera» en el filtro. Era así
-antes de este cambio.
+**Un alta sin partidos sale en `/rating` desde el 2026-10-18**, con «Sin
+fiabilidad» (RD 350, 0 barras). Hasta entonces el filtro de fiabilidad mínima
+venía en «muy baja» (RD < 350) y la escondía: tras vaciar producción, `/rating`
+salía en blanco con un jugador dentro. Ahora viene en «cualquiera» (decidido
+por Adrián: quiere ver a todos desde el principio). «Sin fiabilidad» sigue
+siendo su propia categoría, no se fundió con «muy baja».
