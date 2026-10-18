@@ -551,6 +551,7 @@ async function crearCuentaDeGoogle(req, res, dato, alta) {
     res.status(200).json({ ok: true, status: 'pending' });
     return;
   }
+  await fijarRatingDePartida((await crearFichaSiHaceFalta({ id: userId, player_id: alta.playerId, requested_player_name: alta.requestedName })).player_id, alta.form);
   await abrirSesion(req, res, userId);
   res.status(200).json({ ok: true, status: 'active' });
 }

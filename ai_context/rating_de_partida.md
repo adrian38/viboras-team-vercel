@@ -29,6 +29,12 @@ todo el mundo arrancaba en 1500.
   rating de partida. Así quien reclama una ficha con historia la conserva
   aunque rellenara el nivel. Un jugador creado a mano o subiendo un resultado
   tampoco lo recibe.
+- **El alta de `ADMIN_EMAILS` por Google no pasa por `approveUser`**: nace
+  activa. Hasta el 2026-10-18 eso la dejaba en 1500 (y sin ficha si pedía un
+  nombre nuevo); ahora `crearCuentaDeGoogle` hace lo mismo que aprobar:
+  `crearFichaSiHaceFalta` y `fijarRatingDePartida`. Se notó al vaciar
+  producción: Adrián se dio de alta en Avanzado y salió con 1500.
+  `api/auth.js` quedó en 600 líneas justas: la próxima línea obliga a partirlo.
 - El motor lo lee de `getRatingsDePartida` (`api/read.js`) mediante
   `rating-inicial.js`, cargado **antes** del script de `rating.html` y
   `players.html`, como `nivel-votos.js` ([[valoraciones_y_avisos]]). Cada
