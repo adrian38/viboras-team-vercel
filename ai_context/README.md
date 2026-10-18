@@ -23,7 +23,9 @@ que hay.
   tokens del tema oscuro y por qué no se tomaron de las maquetas, que se
   contradicen entre sí; qué trae la exportación de Stitch que se descartó a
   propósito —una barra lateral inventada en inglés— y qué páginas se quedaron
-  sin maqueta; y cómo está hecha la pantalla de bienvenida del logo.
+  sin maqueta; y la pantalla de bienvenida: el vídeo del grupo recortado, por
+  qué se cierra si no arranca en 1,5 s y por qué `sw.js` deja pasar los
+  `Range`.
 
 ## El rating
 

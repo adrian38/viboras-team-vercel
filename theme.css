@@ -334,83 +334,16 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
   background:#000;cursor:pointer;transition:opacity .4s ease;
 }
 .vt-splash__capa--fuera{opacity:0}
-/* Pelota + brillo (elegida el 2026-10-16 entre tres pruebas). Una cosa
-   detras de otra, sin pisarse, como lo pidio Adrian:
-     0    - 0,3 s   negro
-     0,3  - 1,1 s   la pelota sube y da dos botes en el centro
-     1,1  - 1,2 s   la pelota estalla en la onda dorada y desaparece
-     1,2  - 1,7 s   aparece el icono
-     1,75 - 2,45 s  el brillo barre el icono
-   splash.js la cierra a los 2,8 s. */
-.vt-splash__logo{position:relative;width:min(78vmin,360px);aspect-ratio:1}
-.vt-splash__logo img{display:block;width:100%;height:100%;opacity:0}
-.vt-splash__pelota{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;opacity:0;
-  background:radial-gradient(circle at 35% 30%,#fbffd0 0 18%,#e4f53a 45%,#b6c51c 100%);box-shadow:0 0 12px rgba(228,245,58,.45)}
-/* Las dos costuras de la pelota. */
-.vt-splash__pelota::before,.vt-splash__pelota::after{content:'';position:absolute;inset:3px;border-radius:50%;
-  border:2px solid rgba(255,255,255,.85);border-color:rgba(255,255,255,.85) transparent transparent transparent}
-.vt-splash__pelota::after{transform:rotate(180deg)}
-.vt-splash__onda{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid var(--vt-gold);opacity:0}
-/* Con mix-blend-mode overlay el destello solo aclara lo que ya es claro (el
-   oro del logo); sobre el negro del fondo no se ve. */
-.vt-splash__brillo{position:absolute;inset:0;overflow:hidden;pointer-events:none;mix-blend-mode:overlay;opacity:0}
-.vt-splash__brillo::after{content:'';position:absolute;top:-20%;bottom:-20%;width:45%;left:-60%;
-  background:linear-gradient(105deg,transparent 0%,rgba(255,244,214,0) 20%,rgba(255,244,214,.95) 50%,rgba(255,244,214,0) 80%,transparent 100%)}
-
-/* La pelota esta oculta en el negro inicial: su 0 % la deja fuera de la
-   pantalla, por debajo, y ademas transparente. */
-.vt-splash__capa--animando .vt-splash__pelota{animation:vt-splash-sube .8s .3s linear both,vt-splash-gira .8s .3s linear both,vt-splash-sale .1s 1.1s ease-in forwards}
-.vt-splash__capa--animando .vt-splash__onda{animation:vt-splash-onda .7s 1.1s cubic-bezier(.1,.6,.3,1) both}
-.vt-splash__capa--animando .vt-splash__logo img{animation:vt-splash-revela .5s 1.2s cubic-bezier(.2,.8,.2,1) both}
-.vt-splash__capa--animando .vt-splash__brillo{animation:vt-splash-aparece .01s 1.73s forwards}
-.vt-splash__capa--animando .vt-splash__brillo::after{animation:vt-splash-barre .7s 1.75s ease-in-out both}
-/* Sube, bota (aplastada), rebota alto, bota, rebota poco y se queda. Cada
-   tramo con su curva: frena al subir, acelera al caer. */
-@keyframes vt-splash-sube{
-  0%{opacity:0;transform:translateY(55vh) scale(1.1);animation-timing-function:cubic-bezier(.2,.6,.35,1)}
-  1%{opacity:1}
-  42%{transform:translateY(0) scale(1.18,.8);animation-timing-function:cubic-bezier(.3,.7,.4,1)}
-  48%{transform:translateY(0) scale(1)}
-  64%{transform:translateY(-70px) scale(1);animation-timing-function:cubic-bezier(.6,0,.8,.4)}
-  78%{transform:translateY(0) scale(1.15,.85);animation-timing-function:cubic-bezier(.3,.7,.4,1)}
-  89%{transform:translateY(-20px) scale(1);animation-timing-function:cubic-bezier(.6,0,.8,.4)}
-  100%{opacity:1;transform:translateY(0) scale(1)}
+/* splash.mp4 (1000x620, recortado del video del grupo) o, con «reducir
+   movimiento», su ultimo fotograma. Cabe entero en cualquier pantalla y no se
+   estira por encima de su tamano. Espera transparente hasta que de verdad se
+   reproduce: arranca con las palas ya puestas y sin el fundido apareceria de
+   golpe. */
+.vt-splash__escena{
+  display:block;width:min(100%,1000px);max-height:100%;aspect-ratio:50/31;
+  object-fit:contain;background:#000;opacity:0;transition:opacity .3s ease;
 }
-@keyframes vt-splash-gira{from{rotate:0deg}to{rotate:720deg}}
-/* Estalla: crece un poco y se desvanece, y en ese instante sale la onda. */
-@keyframes vt-splash-sale{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.8)}}
-/* Igual que el logo: mientras espera (1,1 s) se queda en su 0 %, y ahi tiene
-   que ser invisible. Con opacidad .95 se veia un anillo en el centro desde el
-   primer instante, antes que la pelota. */
-@keyframes vt-splash-onda{0%{opacity:0;transform:scale(.2);border-width:4px}2%{opacity:.95}100%{opacity:0;transform:scale(9);border-width:1px}}
-/* Mientras espera su turno (1,2 s) el logo se queda en el 0 % de esta
-   animacion: ahi tiene que ser transparente, y no solo estar recortado. Si un
-   navegador no aplica el clip-path durante la espera (Safari), con opacidad 1
-   el logo se veia entero antes que la pelota. */
-@keyframes vt-splash-revela{
-  0%{opacity:0;clip-path:circle(0% at 50% 50%);-webkit-clip-path:circle(0% at 50% 50%);transform:scale(.88);filter:brightness(1.6)}
-  6%{opacity:1}
-  100%{opacity:1;clip-path:circle(75% at 50% 50%);-webkit-clip-path:circle(75% at 50% 50%);transform:scale(1);filter:brightness(1)}
-}
-@keyframes vt-splash-aparece{to{opacity:1}}
-@keyframes vt-splash-barre{from{left:-60%}to{left:115%}}
-/* App instalada en Android (splash.js pone --instalada). Android ya ha
-   ensenado su pantalla con el icono, asi que aqui no se repite: negro, la
-   pelota bota (0,3-1,1 s), estalla en la onda y un agujero que crece desde el
-   centro descubre la app (1,12-1,67 s). El negro lo pone la sombra del
-   agujero, no el fondo de la capa. */
-.vt-splash__hueco{display:none}
-.vt-splash__capa--instalada{background:transparent}
-.vt-splash__capa--instalada .vt-splash__logo{display:none}
-.vt-splash__capa--instalada .vt-splash__hueco{display:block;position:absolute;left:50%;top:50%;width:0;height:0;
-  border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 150vmax #000}
-.vt-splash__capa--instalada.vt-splash__capa--animando .vt-splash__hueco{animation:vt-splash-abre .55s 1.12s cubic-bezier(.55,0,.8,.4) both}
-@keyframes vt-splash-abre{from{width:0;height:0}to{width:300vmax;height:300vmax}}
-@media (prefers-reduced-motion:reduce){
-  .vt-splash__capa--animando .vt-splash__pelota,.vt-splash__capa--animando .vt-splash__onda,
-  .vt-splash__capa--animando .vt-splash__brillo{animation:none;opacity:0}
-  .vt-splash__capa--animando .vt-splash__logo img{animation:none;opacity:1}
-}
+.vt-splash__capa--animando .vt-splash__escena{opacity:1}
 
 /* Campanita de avisos. La rellena auth-client.js en cualquier pagina que
    tenga un #vtCampana; hoy solo index.html. */

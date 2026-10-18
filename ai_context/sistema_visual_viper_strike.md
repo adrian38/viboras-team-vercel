@@ -259,73 +259,80 @@ a `viboras-v2`): sin él la portada abre sin estilos cuando no hay cobertura.
 
 ## La pantalla de bienvenida
 
-`splash.js` + las reglas `.vt-splash*` de `theme.css`, desde el 2026-10-16.
-**Pelota + brillo**, una cosa detrás de otra y sin pisarse, como lo pidió
-Adrián: negro (0–0,3 s); la pelota sube y da dos botes (0,3–1,1 s); estalla
-en una onda dorada y desaparece (1,1–1,2 s); aparece el icono (1,2–1,7 s), y
-el brillo lo barre (1,75–2,45 s). A los 2,8 s se funde.
+`splash.js` + las reglas `.vt-splash*` de `theme.css`. Desde el 2026-10-18 es
+**el vídeo del grupo** (`splash.mp4`): dos palas, la víbora entra desde la
+izquierda y se levanta entre ellas, cae «VÍBORAS TEAM» en dorado y estalla en
+chispas. Lo pidió Adrián con el vídeo de WhatsApp de 5 s; sustituyó a la
+versión de CSS (una pelota que botaba, estallaba en una onda y descubría el
+logo con un brillo), que está en el historial de git si se quiere volver.
+
+**El fichero no es el vídeo original, es un recorte.** El original es de
+1280×720, 5 s, 2,5 MB y con audio. `splash.mp4`:
+
+- Empieza en el 0,8 s: antes sólo están las palas quietas. La víbora asoma
+  en el 1,0 s, así que aún se ven las palas un instante. Dura 4,2 s.
+- Recortado a 1000×620 (`crop=1000:620:40:60`). La caja de lo que no es negro,
+  medida fotograma a fotograma sin las chispas, va de x 62 a 1028 e y 82 a
+  650; el recorte la deja entera, cola incluida. Lo que se pierde son chispas
+  de los bordes.
+- H.264 *main*, `yuv420p`, CRF 29, `-movflags +faststart`, sin audio: 494 KB.
+  CRF 26 daba 695 KB y 32 daba 356 KB; a tamaño de móvil no se distinguían, y
+  se quedó el del medio.
+- `splash-final.jpg` es su último fotograma (85 KB): lo que se ve con
+  «reducir movimiento».
+- En este equipo no hay `ffmpeg`. Se usó el que trae el paquete de Python
+  `imageio-ffmpeg`, instalado en un entorno virtual temporal. Para rehacerlo:
+
+  ```bash
+  ffmpeg -ss 0.8 -i original.mp4 -an -vf "crop=1000:620:40:60" \
+    -c:v libx264 -profile:v main -pix_fmt yuv420p -preset veryslow -crf 29 \
+    -movflags +faststart splash.mp4
+  ```
+
+**Cómo se comporta:**
+
+- El vídeo espera transparente y aparece con un fundido de 0,3 s cuando llega
+  `playing`: empieza con las palas ya puestas y sin fundido saldrían de golpe.
+  Al acabar (`ended`) queda 0,3 s sobre el último fotograma y la capa se funde
+  en 0,4 s.
+- **Si en 1,5 s no ha empezado, se cierra.** Cubre la red lenta la primera
+  vez, iOS en ahorro de energía (no deja reproducir solo y `play()` falla) y
+  el arranque sin conexión. Mejor sin bienvenida que mirando el negro.
+- **Sin conexión no hay bienvenida.** El vídeo no está en el `PRECACHE` de
+  `sw.js` (medio mega en cada instalación del service worker) y el `error` o
+  el plazo de 1,5 s la cierran.
+- `muted` y `playsinline` se ponen **antes** del `src`: sin ellos iOS no lo
+  reproduce solo o lo abre a pantalla completa.
+- **`sw.js` deja pasar sin tocar las peticiones con `Range`.** Safari pide los
+  vídeos siempre por trozos y la respuesta es un 206; `cache.put` rechaza las
+  respuestas parciales.
+- Cabe entero en cualquier pantalla (`object-fit: contain`) y no crece por
+  encima de 1000 px de ancho. En un móvil en vertical ocupa todo el ancho y
+  queda una franja negra arriba y abajo, que se funde con el fondo.
 
 **La pantalla de arranque de Android va antes y no se puede quitar.** Con la
 app instalada, Chrome pinta su pantalla (fondo negro del manifiesto e icono)
-antes de que exista la página, y después sale la nuestra. Si la nuestra
-repetía el icono, salía dos veces.
+antes de que exista la página. La versión de CSS mostraba el logo y salía dos
+veces, de distinto tamaño; por eso tenía una variante para la app instalada
+(`?splash=instalada`), sin logo y con un agujero que descubría la app. El
+vídeo no repite el icono y empieza sobre el mismo negro, así que esa variante
+se quitó. Por qué no se puede igualar el icono del sistema: el tamaño con que
+lo pinta Chrome no es fijo (aviso de Chromium 40244503, código de PWACompat).
 
-- **No se puede enlazar copiando el icono.** El tamaño con que lo pinta Chrome
-  no es fijo. El «ideal» es 128 px, pero desde Chrome 71 sale más grande si
-  hay un icono de 512 px. Chrome prefiere el *maskable* (el nuestro es el logo
-  al 72 %), puede recortarlo en círculo, y la página no puede leer nada de
-  esto. Se probó con un tamaño estimado (150 px) y en el móvil de Adrián el
-  icono saltaba dos veces. Fuentes: aviso de Chromium 40244503 y el código de
-  PWACompat, que imita esa pantalla.
-- **Solución (la habitual, de un desarrollador de Google en Stack Overflow
-  46106126): no repetir el icono y animar desde el color de fondo hacia la
-  app.** En Android y en modo `standalone`, `splash.js` pone
-  `vt-splash__capa--instalada`: sin icono ni brillo; negro, la pelota bota,
-  estalla en la onda y un agujero que crece desde el centro descubre la app
-  (de 1,12 a 1,67 s; se cierra a los 1,75 s). El negro lo pone la sombra
-  enorme de un círculo transparente (`.vt-splash__hueco`), así que al crecer
-  el círculo aparece la app. No depende del tamaño de nada que pinte el
-  sistema, así que vale igual en cualquier móvil.
-- Para verla en el navegador: `/cuenta?splash=instalada` en una pestaña nueva.
-- Ojo al medir con el panel del navegador: si está oculto, la ventana mide
-  0×0 y todo sale mal. Antes de medir, `resize_window` a móvil.
+Lo que sigue igual que antes:
 
-**Todo lo que espera su turno tiene que esperar invisible.** Con
-`animation-fill-mode: both`, durante el retraso cada elemento se queda en el
-0 % de su animación. La onda empezaba con `opacity: .95` y se veía un anillo
-en el centro desde el instante 0; el icono, igual. Las dos animaciones
-empiezan ahora en `opacity: 0`. Se comprueba llevando la capa a cada instante
-(de 25 en 25 ms) y leyendo qué es visible. No con capturas ni con
-`requestAnimationFrame`, que en el panel del navegador apenas da fotogramas.
-
-Se eligió el mismo día entre tres pruebas (pelota + brillo, sólo brillo, y
-«mordida», con dos colmillos). Sustituyó a una primera versión que imitaba un
-vídeo del grupo, con el logo creciendo dentro de un círculo: duraba 3 s en
-cada arranque y no tenía nada de pádel.
-
-- **Es CSS sobre `image.png`.** Pesa nada, se ve nítido, y `image.png` ya está
-  en el `PRECACHE` de `sw.js`, así que sale sin conexión.
-- **El logo espera su turno transparente, no sólo recortado.** Durante los
-  0,6 s de retraso se queda en el 0 % de su animación. Ahí estaba con
-  `opacity: 1` y lo escondía sólo `clip-path: circle(0%)`. En un navegador que
-  no aplicaba el recorte durante la espera, el logo salía entero antes que la
-  pelota (lo vio Adrián el 2026-10-16). Simulándolo en local, anulando el
-  `clip-path` con `!important`: con la animación vieja el logo salía en el
-  instante 0; con `opacity: 0` en el 0 %, a los 614 ms, como debe.
-- **El destello usa `mix-blend-mode: overlay`**: sólo aclara lo que ya es
-  claro (el oro), y sobre el negro del fondo no se ve. Con un blanco normal
-  pintaría una franja sobre todo el cuadrado del logo.
-- **Para comprobarla se pausa** con `getAnimations({subtree:true})` y se lleva
-  a un instante (`a.currentTime = 780`), en vez de hacer capturas al vuelo. La
-  capa real se cierra sola a los 2,1 s: para mirarla con calma, se clona antes
-  y se anima la copia.
 - **Una vez por sesión** (`sessionStorage`): al abrir la app instalada, cada
   arranque es una sesión nueva; navegar entre páginas no la repite. Sin
   `sessionStorage` no sale nunca, para no salir en cada página.
-- **Va sin `defer` en el `<head>` de las 16 páginas.** Tiene que poner la
+- **Va sin `defer` en el `<head>` de todas las páginas.** Tiene que poner la
   clase `vt-splash` antes de que se pinte nada; con `defer` la página asoma un
   instante antes del negro. Mientras la capa no está montada, el `body` va con
-  `visibility: hidden`.
-- **Tocar la pantalla la salta**, y con «reducir movimiento» el logo sale
-  quieto y se va a los 0,7 s.
+  `visibility: hidden`. `avisos-push.js` espera a que esa clase desaparezca
+  para preguntar por los avisos.
+- **Tocar la pantalla la salta.**
 - La capa usa `--vt-z-splash` (3000), por encima de todo lo demás.
+- Ojo al medir con el panel del navegador: si está oculto, la ventana mide
+  0×0 y todo sale mal. Antes de medir, `resize_window` a móvil. Y con el
+  panel oculto el reloj de animaciones no avanza (`document.timeline` se
+  queda en 0): el vídeo se reproduce, pero su opacidad se lee 0 todo el rato.
+  Se comprueba que la transición 0→1 existe (`getAnimations()`), no su valor.
