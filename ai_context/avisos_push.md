@@ -11,6 +11,7 @@ del móvil, en el mismo momento en que nace.
 | «Ya están los resultados de <torneo>. Valora a tus compañeros.» | `crearTorneo` (`league-admin.js`), pozo y compás | cada jugador del torneo, **uno** por jugador, no uno por partido |
 | «<Nombre> editó vuestro partido del dd/mm…» | `avisarEdicion` (`_avisos.js`) | los mismos que reciben el aviso guardado |
 | «<Nombre> pide entrar» | `register` y alta con Google (`auth.js`) | los administradores |
+| «Queja nueva de <Nombre> en el buzón» (o «Sugerencia») | `guardarMensaje` (`_buzon.js`) | los administradores, sin el texto ([[buzon_de_quejas]]) |
 
 Los avisos de valorar de la campanita **no se guardan**: se calculan al vuelo
 ([[valoraciones_y_avisos]]). Por eso el push no puede salir de la tabla
@@ -36,7 +37,7 @@ uno solo, para no mandar dos notificaciones por lo mismo.
 - **La suscripción es de la cuenta, no del jugador.** Hay administradores sin
   ficha y las altas pendientes les llegan a ellos.
 - **`avisos-push.js` no está en ningún `<head>`.** Lo inyecta `auth-client.js`
-  cuando hay sesión, así que llega a las 17 páginas sin tocarlas.
+  cuando hay sesión, así que llega a las 18 páginas sin tocarlas.
 - **La pregunta sale una vez por cuenta y dispositivo** (`localStorage`,
   `vt-push-preguntado:<correo>`), no al pulsar nada. Petición de Adrián: al
   entrar por primera vez tras ser aceptado. Si dice que no, queda el botón de

@@ -15,7 +15,7 @@ eso: hacen falta un **web manifest** y un **apple-touch-icon**.
 | `site.webmanifest` | `display: standalone`, nombre corto «Viboras». |
 
 Las cuatro etiquetas (`apple-touch-icon`, `manifest`,
-`apple-mobile-web-app-title`, `theme-color`) están en el `<head>` de las 17
+`apple-mobile-web-app-title`, `theme-color`) están en el `<head>` de las 18
 páginas.
 
 ## Por qué el maskable va reducido

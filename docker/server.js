@@ -35,7 +35,8 @@ const FUNCTIONS = {
   '/api/auth': () => import('../api/auth.js'),
   '/api/correo': () => import('../api/correo.js'),
   '/api/avisos': () => import('../api/avisos.js'),
-  '/api/push': () => import('../api/push.js')
+  '/api/push': () => import('../api/push.js'),
+  '/api/buzon': () => import('../api/buzon.js')
 };
 
 for (const [route, load] of Object.entries(FUNCTIONS)) {

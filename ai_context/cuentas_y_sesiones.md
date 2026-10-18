@@ -14,7 +14,7 @@ abiertos, es de esos dos días.
 | --- | --- |
 | `api/read.js`, `api/write.js`, `api/league-admin.js` | **Cerrado.** Sesión activa o 401, antes de mirar el `action`. |
 | `api/auth.js` | Abierto, obviamente: es por donde se entra. |
-| Las 17 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
+| Las 18 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
 
 `/group-normativa` **no** redirige a `/cuenta`: el alta pide aceptar la
 normativa, así que tiene que poder leerse antes de tener cuenta. No llama al
@@ -303,7 +303,7 @@ Google real no se puede, porque el botón no se dibuja en `localhost`.
     cuenta» llegaba sin contraseña. Adrián dijo que eso tenía que funcionar.
   - **Caduca a los 30 minutos** de la última vez que se escribió, y se borra
     en cuanto la cuenta existe (`olvidarInscripcion`). `auth-client.js`, que
-    cargan las 17 páginas, borra la caducada en cualquiera de ellas, no sólo
+    cargan las 18 páginas, borra la caducada en cualquiera de ellas, no sólo
     en `/cuenta`.
   - **El precio**: mientras dura el alta, la contraseña está en claro en el
     almacenamiento de ese navegador. Comprobado el 2026-10-17 en local: llega
@@ -359,7 +359,8 @@ pasar». Para probar esto, hazlo dentro del contenedor:
 cuando, enlace}] }`. Es una lista genérica a propósito, para que quepan otros
 avisos. A cada jugador le llegan sus partidos por valorar y los avisos de
 «editó vuestro partido» (`api/_avisos.js`, [[valoraciones_y_avisos]]); a los
-administradores, además, las altas pendientes. Sin nada de eso, la campana
+administradores, además, las altas pendientes y lo que no han leído del
+buzón ([[buzon_de_quejas]]). Sin nada de eso, la campana
 sale sin número y «No tienes avisos». Sin sesión responde vacío, no 401.
 
 La pinta `auth-client.js` en cualquier página con un `#vtCampana`, que hoy

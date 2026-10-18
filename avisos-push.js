@@ -1,6 +1,6 @@
 // Avisos push en el movil: lo que sale en la campanita, con la app cerrada.
 //
-// Lo carga auth-client.js solo cuando hay sesion, asi que las 17 paginas lo
+// Lo carga auth-client.js solo cuando hay sesion, asi que las 18 paginas lo
 // tienen sin tocar sus <head>. Hace tres cosas:
 //   - La primera vez que una cuenta entra en un dispositivo, pregunta si
 //     quiere avisos. Una sola vez por cuenta y dispositivo: si dice que no,

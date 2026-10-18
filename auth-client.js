@@ -130,7 +130,7 @@
   }
 
   // Los avisos push solo tienen sentido con sesion. Se carga desde aqui para
-  // no tocar el <head> de las 17 paginas.
+  // no tocar el <head> de las 18 paginas.
   function cargarPush(user) {
     if (!user) return;
     var s = document.createElement('script');

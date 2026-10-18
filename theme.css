@@ -24,7 +24,7 @@
  * de 400 caracteres dieciseis veces: cambiar la lista es una linea. Cuesta un
  * viaje extra, que con font-display:block solo retrasa los iconos.
  */
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=admin_panel_settings,arrow_back,arrow_forward,calendar_month,cloud_upload,download,edit_note,emoji_events,emoji_symbols,error,fact_check,filter_alt,format_list_bulleted,gavel,group,history,leaderboard,lightbulb,login,logout,menu_book,military_tech,monitoring,notifications,person,publish,query_stats,scoreboard,shield_person,speed,sports_tennis,swap_vert,trending_up,trophy,tune,verified_user,visibility,visibility_off,workspace_premium&display=block');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=admin_panel_settings,arrow_back,arrow_forward,calendar_month,cloud_upload,download,edit_note,emoji_events,emoji_symbols,error,fact_check,feedback,filter_alt,format_list_bulleted,gavel,group,history,leaderboard,lightbulb,login,logout,menu_book,military_tech,monitoring,notifications,person,publish,query_stats,scoreboard,shield_person,speed,sports_tennis,swap_vert,trending_up,trophy,tune,verified_user,visibility,visibility_off,workspace_premium&display=block');
 
 :root{
   /* Superficies: negro carbono y sus elevaciones. */

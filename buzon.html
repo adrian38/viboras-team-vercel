@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buzón de quejas y sugerencias</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/splash.js"></script>
+<script src="/pwa.js" defer></script>
+<script src="/auth-client.js" defer></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<style>
+.tipos{display:flex;gap:var(--vt-xs);margin-bottom:var(--vt-md)}
+.tipo{
+  flex:1 1 0;min-width:0;padding:10px 8px;
+  background:var(--vt-surface-3);color:var(--vt-text);
+  border:1px solid var(--vt-border-strong);border-radius:var(--vt-r);
+  font-family:var(--vt-font-body);font-size:15px;cursor:pointer;
+}
+.tipo[aria-pressed="true"]{background:var(--vt-gold);border-color:var(--vt-gold);color:#121316;font-weight:700}
+.vt-textarea{min-height:140px;resize:vertical}
+.cuenta-letras{font-size:12px;color:var(--vt-faint);text-align:right;margin-top:4px}
+.estado{margin-top:var(--vt-sm);font-size:14px;color:var(--vt-muted);min-height:20px}
+.aviso{font-size:14px;color:var(--vt-muted);margin:0 0 var(--vt-md)}
+.mensaje{padding:var(--vt-md) 0;border-bottom:1px solid var(--vt-border)}
+.mensaje:last-child{border-bottom:0}
+.mensaje__cabeza{display:flex;flex-wrap:wrap;align-items:center;gap:var(--vt-xs) var(--vt-sm);margin-bottom:var(--vt-xs)}
+.mensaje__quien{font-weight:600;color:var(--vt-text-strong);overflow-wrap:anywhere}
+.mensaje__cuando{font-size:13px;color:var(--vt-muted)}
+.mensaje__texto{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.mensaje--nuevo .mensaje__quien::before{content:"● ";color:var(--vt-gold)}
+</style>
+</head>
+
+<body>
+
+<div class="vt-page">
+
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h3 class="vt-gold" style="margin-top:var(--vt-sm)">Víboras Team</h3>
+    <span class="vt-label">Buzón de quejas y sugerencias</span>
+  </div>
+
+  <div class="vt-card vt-card--accent">
+    <p class="aviso">Lo que escribas aquí solo lo leen los administradores, y verán tu nombre.</p>
+    <div class="tipos" role="group" aria-label="Tipo de mensaje">
+      <button class="tipo" type="button" data-tipo="queja" aria-pressed="false">Queja</button>
+      <button class="tipo" type="button" data-tipo="sugerencia" aria-pressed="false">Sugerencia</button>
+    </div>
+    <div class="vt-field">
+      <label for="texto">Tu mensaje</label>
+      <textarea id="texto" class="vt-textarea" maxlength="2000" placeholder="Cuéntanos qué pasa o qué mejorarías"></textarea>
+      <div class="cuenta-letras" id="letras">0 / 2000</div>
+    </div>
+    <button class="vt-btn" type="button" id="enviar" style="margin-top:var(--vt-md)">Enviar</button>
+    <div class="estado" id="estado" role="status"></div>
+  </div>
+
+  <div class="vt-card" id="recibidos" hidden>
+    <h4 style="margin-top:0">Recibidos</h4>
+    <div id="lista"><p class="estado">Cargando…</p></div>
+  </div>
+
+  <div style="text-align:center;margin-top:var(--vt-lg)">
+    <a class="vt-btn vt-btn--ghost" href="/">Volver al inicio</a>
+  </div>
+</div>
+
+<script>
+// Escribe cualquiera con sesion; la lista solo se pide si la cuenta es de
+// administrador, y el servidor lo vuelve a comprobar (403 a los demas).
+// Detalle: ai_context/buzon_de_quejas.md
+const TIPOS = { queja: 'Queja', sugerencia: 'Sugerencia' };
+let tipoElegido = null;
+
+function el(tag, clase, texto) {
+  const n = document.createElement(tag);
+  if (clase) n.className = clase;
+  if (texto !== undefined) n.textContent = texto;
+  return n;
+}
+
+async function pedir(url, opciones) {
+  const res = await fetch(url, opciones);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.ok) throw new Error(json.message || 'No se pudo completar. Inténtalo otra vez.');
+  return json;
+}
+
+function elegirTipo(boton) {
+  tipoElegido = boton.dataset.tipo;
+  document.querySelectorAll('.tipo').forEach((b) => b.setAttribute('aria-pressed', String(b === boton)));
+}
+
+async function enviar() {
+  const estado = document.getElementById('estado');
+  const caja = document.getElementById('texto');
+  const texto = caja.value.trim();
+  if (!tipoElegido) { estado.textContent = 'Elige si es una queja o una sugerencia.'; return; }
+  if (texto.length < 5) { estado.textContent = 'Escribe un poco más.'; caja.focus(); return; }
+  const boton = document.getElementById('enviar');
+  boton.disabled = true;
+  estado.textContent = 'Enviando…';
+  try {
+    await pedir('/api/buzon?action=enviar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: tipoElegido, texto })
+    });
+    caja.value = '';
+    contarLetras();
+    estado.textContent = 'Enviado. Gracias, los administradores ya lo tienen.';
+  } catch (e) {
+    estado.textContent = e.message;
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+function contarLetras() {
+  document.getElementById('letras').textContent = `${document.getElementById('texto').value.length} / 2000`;
+}
+
+function fecha(cuando) {
+  return new Date(cuando).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function pintarMensaje(m) {
+  const fila = el('div', m.nuevo ? 'mensaje mensaje--nuevo' : 'mensaje');
+  const cabeza = el('div', 'mensaje__cabeza');
+  cabeza.appendChild(el('span', 'vt-badge', TIPOS[m.tipo] || m.tipo));
+  cabeza.appendChild(el('span', 'mensaje__quien', m.quien));
+  cabeza.appendChild(el('span', 'mensaje__cuando', fecha(m.cuando)));
+  fila.appendChild(cabeza);
+  fila.appendChild(el('p', 'mensaje__texto', m.texto));
+  return fila;
+}
+
+// Al verlos, se dan por leidos para este administrador: salen de su campanita.
+async function pintarRecibidos() {
+  document.getElementById('recibidos').hidden = false;
+  const lista = document.getElementById('lista');
+  try {
+    const { mensajes } = await pedir('/api/buzon?action=lista');
+    lista.textContent = '';
+    if (!mensajes.length) { lista.appendChild(el('p', 'estado', 'Todavía no ha llegado nada.')); return; }
+    mensajes.forEach((m) => lista.appendChild(pintarMensaje(m)));
+    if (mensajes.some((m) => m.nuevo)) {
+      await pedir('/api/buzon?action=leidos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hasta: Math.max(...mensajes.map((m) => m.id)) })
+      });
+    }
+  } catch (e) {
+    lista.textContent = '';
+    lista.appendChild(el('p', 'estado', e.message));
+  }
+}
+
+document.querySelectorAll('.tipo').forEach((b) => b.addEventListener('click', () => elegirTipo(b)));
+document.getElementById('texto').addEventListener('input', contarLetras);
+document.getElementById('enviar').addEventListener('click', enviar);
+// auth-client.js va con defer: window.vtMe existe en DOMContentLoaded, no antes.
+document.addEventListener('DOMContentLoaded', () => {
+  window.vtMe.then((me) => { if (me && me.role === 'admin') pintarRecibidos(); });
+});
+</script>
+
+</body>
+</html>

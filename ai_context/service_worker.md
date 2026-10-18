@@ -3,7 +3,7 @@
 `sw.js` existe para que Chrome en Android ofrezca «Instalar aplicación»
 (un WebAPK con icono propio) en vez de «Añadir a pantalla de inicio» (un acceso
 directo que abre el navegador con sus barras). Se registra desde `pwa.js`, que
-cargan las 17 páginas.
+cargan las 18 páginas.
 
 ## En un preview protegido, la consola se llena de errores del manifiesto
 
@@ -25,7 +25,7 @@ está, y devuelve `Response.error()`, que es lo que dice su código. Esa segunda
 línea es, de hecho, la señal de que **está registrado y funcionando** — que es
 justo lo que no se puede comprobar en local.
 
-Por eso las 17 páginas llevan
+Por eso las 18 páginas llevan
 `<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">`:
 así la petición manda la cookie, no la redirigen, y no queda nada que bloquear.
 En producción no cambia nada, porque ahí no hay protección.

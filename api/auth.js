@@ -25,6 +25,7 @@ import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
 import { validarInscripcion, telefonoLibre, mensajeDeSolicitud, fijarRatingDePartida } from './_inscripcion.js';
 import { avisosDeJugador, avisarAltaPendiente } from './_avisos.js';
+import { avisosDelBuzon } from './_buzon.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -284,6 +285,7 @@ async function notifications(req, res) {
     for (const r of rows) {
       items.push({ tipo: 'alta', texto: `${r.quien} pide entrar`, cuando: r.created_at, enlace: '/cuenta' });
     }
+    items.push(...await avisosDelBuzon(user.id).catch((err) => { console.error('auth: buzon', err); return []; }));
   }
   res.status(200).json({ ok: true, items });
 }

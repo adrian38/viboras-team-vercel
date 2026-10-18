@@ -92,6 +92,12 @@ que hay.
   variables VAPID de Vercel y cómo se probó sin poder registrar el service
   worker en local.
 
+## Lo que escriben los miembros
+
+- `buzon_de_quejas.md`: el buzón de quejas y sugerencias de `/buzon`; por qué
+  no es anónimo, por qué «leído» es de cada administrador, por qué el push no
+  lleva el texto y el límite de cinco por hora.
+
 ---
 
 Actualizar estos documentos cuando cambien invariantes, contratos de datos o
