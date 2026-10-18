@@ -184,8 +184,9 @@ app no se ve en ningún otro sitio. Lo que cambia y por qué no rompe nada:
   contraseña como con Google. **No puede volver a darse de alta con el mismo
   correo** («Ese correo ya pidió entrar y no se aprobó»): antes, como la fila
   se borraba, sí podía. Tampoco recibe enlaces para restablecer la contraseña.
-- **No hay forma de deshacer un rechazo desde la app.** Para eso hace falta
-  un `UPDATE` a mano.
+- **Un rechazo se deshace desde «Editar»** de la pantalla Jugadores (desde el
+  2026-10-18; hasta entonces hacía falta un `UPDATE` a mano): Rechazado →
+  Pendiente o → Activo ([[exportar_jugadores]]).
 - Los rechazados antes del 2026-10-17 se borraron y no se pueden recuperar.
 
 ## Lo que cada decisión evita

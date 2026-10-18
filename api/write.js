@@ -1,7 +1,7 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, getPlayerId, nombreDeJugadorValido, readBody, toInt } from './_db.js';
 import { validateBo3Score } from './_score.js';
-import { exigirSesion } from './_auth.js';
+import { exigirSesion, cerrarSesionesDe } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
 import { avisarEdicion, avisarPartidoNuevo } from './_avisos.js';
 
@@ -245,9 +245,9 @@ async function deleteName(req, res, user) {
 
 // «Editar» de la pantalla de jugadores (admin-jugadores.js). Desde el
 // 2026-10-17. Detalle: ai_context/exportar_jugadores.md
-// El estado de la cuenta no se edita aqui: aprobar y rechazar siguen en
-// /cuenta, que crea la ficha y manda el correo, y «bloqueada» no tiene
-// pantalla en la app.
+// Del estado de la cuenta, aqui solo se vuelve a «pendiente»: aprobar y
+// rechazar los hace la pantalla con approveUser y rejectUser (auth.js), que
+// crean la ficha y mandan el correo. «Bloqueada» no tiene pantalla en la app.
 const ROLES = ['member', 'admin'];
 
 // Sin mayusculas, tildes ni espacios de mas, como claveDeNombre en auth.js.
@@ -284,11 +284,24 @@ async function editarCuenta(userId, data, admin) {
   if (userId === admin.id && role !== rows[0].role) return 'No puedes cambiar el tipo de tu propia cuenta.';
   const { form, fallo } = await inscripcionEditada(userId, data.form);
   if (fallo) return fallo;
+  if (data.status !== undefined && data.status !== 'pending') return 'Estado no válido.';
+  if (data.status === 'pending' && userId === admin.id) return 'No puedes cambiar el estado de tu propia cuenta.';
   await sql`
     UPDATE users SET role = ${role},
       signup_form = COALESCE(${form ? JSON.stringify(form) : null}::jsonb, signup_form)
     WHERE id = ${userId}`;
+  if (data.status === 'pending') await volverAPendiente(userId);
   return null;
+}
+
+// Desde el 2026-10-18 (lo pidio Adrian). Deja de poder entrar: sus sesiones
+// se cierran, y las fechas de aprobado y rechazado se borran porque ya no
+// dicen su estado. Volver a aprobarla pasa por approveUser, como un alta.
+async function volverAPendiente(userId) {
+  const hecho = await sql`
+    UPDATE users SET status = 'pending', approved_at = NULL, rejected_at = NULL
+    WHERE id = ${userId} AND status IN ('active', 'rejected') RETURNING id`;
+  if (hecho.rowCount) await cerrarSesionesDe(userId);
 }
 
 async function updatePlayer(req, res, user) {

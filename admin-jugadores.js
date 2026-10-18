@@ -150,6 +150,8 @@
   }
 
   async function cargar() {
+    var yo = await window.vtMe;
+    estado.yo = yo && yo.email;
     var pedidas = await Promise.all([fetch('/api/read?action=exportPlayers', { headers: { accept: 'application/json' } }), cargarAmbiente()]);
     var r = pedidas[0];
     if (!r.ok) throw new Error(r.status === 403 ? 'sólo para administradores' : 'HTTP ' + r.status);
@@ -189,18 +191,34 @@
     form.appendChild(el('label', {}, ['Situación', campos.active]));
   }
 
-  // El estado de la cuenta se ve pero no se cambia aquí: aprobar y rechazar
-  // siguen en Tu cuenta. El tipo sólo se cambia en una cuenta aprobada.
+  // A qué estado se puede pasar desde cada uno (desde el 2026-10-18).
+  // Rechazar es negar el alta: a una cuenta activa se la devuelve a
+  // pendiente, no se la rechaza. «Bloqueada» no tiene pantalla.
+  var ESTADOS = { pending: 'Pendiente', active: 'Activo', rejected: 'Rechazado' };
+  function estadosDesde(status) {
+    var a = status === 'active' ? ['active', 'pending'] : ['pending', 'active', 'rejected'];
+    return a.map(function (s) { return [s, ESTADOS[s]]; });
+  }
+
+  // El estado y el tipo se cambian aquí, salvo los de tu propia cuenta: un
+  // admin podría quedarse fuera. El tipo también se elige en una pendiente:
+  // es el que se le da al aprobarla.
   function seccionCuenta(f, form, campos) {
     form.appendChild(el('h3', { className: 'aj-seccion', textContent: 'Cuenta' }));
     if (!f.userId) {
       form.appendChild(el('div', { className: 'aj-sub aj-ancho', textContent: 'Todavía no tiene cuenta en la app.' }));
       return;
     }
-    form.appendChild(dato('Estado', f.estado));
+    var propia = estado.yo && estado.yo === f.email;
+    if (ESTADOS[f.status] && !propia) {
+      campos.status = selector(estadosDesde(f.status), f.status);
+      form.appendChild(el('label', {}, ['Estado de la cuenta', campos.status]));
+    } else {
+      form.appendChild(dato('Estado de la cuenta', ESTADOS[f.status] || f.estado));
+    }
     if (!f.playerId) form.appendChild(dato('Nombre que pidió', f.name));
     form.appendChild(dato('Correo', f.email));
-    if (f.status === 'active') {
+    if (!propia) {
       campos.role = selector([['member', 'Jugador'], ['admin', 'Admin']], f.role || 'member');
       form.appendChild(el('label', {}, ['Tipo de usuario', campos.role]));
     } else {
@@ -264,6 +282,7 @@
     var cuerpo = { playerId: f.playerId, userId: f.userId };
     if (campos.name) { cuerpo.name = campos.name.value; cuerpo.active = campos.active.value === 'si'; }
     if (campos.role) cuerpo.role = campos.role.value;
+    if (campos.status && campos.status.value === 'pending' && f.status !== 'pending') cuerpo.status = 'pending';
     if (campos.form) {
       var respuestas = {};
       Object.keys(campos.form).forEach(function (k) { respuestas[k] = campos.form[k].value; });
@@ -272,14 +291,33 @@
     return cuerpo;
   }
 
+  async function post(url, cuerpo) {
+    var r = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo)
+    });
+    var j = await r.json().catch(function () { return {}; });
+    if (!r.ok || !j.ok) throw new Error(j.message || 'HTTP ' + r.status);
+    return j;
+  }
+
+  // Aprobar y rechazar van por las mismas acciones que /cuenta: crean la
+  // ficha, comprueban el jugador y mandan el correo. Una rechazada se aprueba
+  // pasando antes por pendiente (lo hace updatePlayer con cuerpo.status).
+  async function cambiarEstado(f, campos) {
+    var nuevo = campos.status && campos.status.value;
+    if (!nuevo || nuevo === f.status || nuevo === 'pending') return;
+    if (f.status === 'rejected' && nuevo === 'active') {
+      await post('/api/write?action=updatePlayer', { userId: f.userId, status: 'pending' });
+    }
+    if (nuevo === 'active') await post('/api/auth?action=approveUser', { id: f.userId, role: campos.role.value });
+    if (nuevo === 'rejected') await post('/api/auth?action=rejectUser', { id: f.userId });
+  }
+
   async function enviar(f, campos, boton) {
     boton.disabled = true;
     try {
-      var r = await fetch('/api/write?action=updatePlayer', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpoDe(f, campos))
-      });
-      var j = await r.json().catch(function () { return {}; });
-      if (!r.ok || !j.ok) throw new Error(j.message || 'HTTP ' + r.status);
+      await post('/api/write?action=updatePlayer', cuerpoDe(f, campos));
+      await cambiarEstado(f, campos);
       await abrir();
     } catch (err) {
       alert('No se pudo guardar: ' + err.message);

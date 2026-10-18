@@ -80,12 +80,28 @@ dentro de la fila y era incómodo), con todos los datos, y guarda con
   de baja». Al renombrar se rechaza un nombre que choque con otro jugador sin
   mayúsculas, tildes ni espacios de más. `claveDeNombre` está copiada de
   `auth.js` a `write.js`: si cambia una, cambia la otra.
-- **Cuenta**: estado, correo, nombre que pidió (si no tiene ficha), correo
-  confirmado y fechas de alta y aprobación o rechazo, sólo para ver. **El
-  estado no se cambia aquí**: aprobar y rechazar siguen en `/cuenta`, que
-  crea la ficha y manda el correo. Lo único editable es el **tipo de
-  usuario**, y sólo en una cuenta activa. Nadie cambia el de su propia
-  cuenta: un admin podría quedarse fuera.
+- **Cuenta**: **estado** y **tipo de usuario** editables; correo, nombre que
+  pidió (si no tiene ficha), correo confirmado y fechas, sólo para ver.
+  Nadie cambia el estado ni el tipo de su propia cuenta: un admin podría
+  quedarse fuera (la pantalla lo enseña sin desplegable y el servidor lo
+  rechaza igual).
+  - **El estado se edita desde el 2026-10-18** (lo pidió Adrián; antes sólo se
+    veía). Pendiente → Activo o Rechazado; Activo → Pendiente; Rechazado →
+    Pendiente o Activo. **Activo → Rechazado no se ofrece**: rechazar es
+    negar el alta y manda «Tu solicitud no ha sido aprobada»; a un activo se
+    le devuelve a Pendiente.
+  - **Aprobar y rechazar no se duplicaron**: la pantalla llama a
+    `approveUser` y `rejectUser` de `auth.js`, igual que `/cuenta`, y eso crea
+    la ficha, comprueba que el jugador esté libre y en activo, fija el rating
+    de partida y manda el correo. El tipo elegido es el que se da al aprobar.
+    Rechazado → Activo pasa antes por Pendiente.
+  - **Volver a Pendiente** es lo único nuevo en el servidor
+    (`volverAPendiente`, en `write.js`, vía `updatePlayer` con
+    `status: 'pending'`): cierra sus sesiones, borra las fechas de aprobado y
+    rechazado y conserva la ficha. No manda correo.
+  - Primero se guarda el resto del formulario y después el estado: si se
+    reactiva la ficha y se aprueba a la vez, la aprobación ya la ve en activo.
+    Si la aprobación falla, lo demás queda guardado y sale el motivo.
 - **Inscripción**: las ocho respuestas, editables, con las mismas reglas que
   el alta (`validarInscripcion`, todas obligatorias) y un teléfono que no
   esté en otra cuenta (`telefonoLibre`, sin contar la propia). Si están todas
