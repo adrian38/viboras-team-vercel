@@ -101,6 +101,12 @@ tbody tr:hover td{background:var(--vt-surface-3)}
 .metric-col{min-width:120px;padding-right:12px}
 .name-col{max-width:280px}
 .td-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+/* En el movil la tabla se desplaza de lado (unos 600 px en una caja de 300):
+   el nombre se queda fijo a la izquierda para saber de quien es cada fila.
+   Necesita fondo opaco, el mismo del panel, o las cifras pasan por debajo. */
+th.name-col,td.td-name{position:sticky;left:0;z-index:2}
+td.td-name{background:var(--card)}
+@media(max-width:720px){th.name-col,td.td-name{max-width:110px}}
 .center{text-align:center}
 .metric-cell{position:relative;padding:6px 12px}
 .metric-cell .bar{position:absolute;left:0;top:3px;bottom:3px;right:8px;z-index:0;border-radius:var(--vt-r);opacity:0.34}

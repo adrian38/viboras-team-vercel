@@ -42,7 +42,8 @@ que hay.
   gris.
 - `tabla_de_rating_en_movil.md`: por qué la tabla lleva `table-layout: fixed`,
   qué hace la media query de 560 px y cómo se mide un desborde en el DOM en vez
-  de mirarlo a ojo.
+  de mirarlo a ojo. También por qué `/statistics` se desplaza de lado con el
+  nombre fijo.
 - `exportar_jugadores.md`: el Excel de jugadores de los administradores, por
   qué sale de `/rating` y no de `/cuenta`, qué estados tiene (y por qué no hay
   «Rechazado») y a qué fecha calcula el rating. También cómo `excel-export.js`

@@ -45,3 +45,11 @@ dos líneas. No desborda, pero si hay que ganar sitio, lo siguiente es ocultar
 «Pos» por debajo de 360 px.
 
 Relacionado: [[categorias_de_rating]].
+
+## `/statistics` se desplaza de lado, con el nombre fijo
+
+Su tabla no cabe en el móvil (unos 600 px en una caja de 260 a 307) y no se
+intentó que cupiera: tiene cuatro columnas de barras. Se desplaza dentro del
+panel, y desde el 2026-10-17 la columna del nombre es `position: sticky` con
+el fondo del panel (`var(--card)`) y 110 px como máximo por debajo de 720.
+Medido a 320 px: tras desplazar 300 px la celda del nombre sigue en x = 30.
