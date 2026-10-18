@@ -155,7 +155,10 @@
     svg {
       display: block;
       width: 100%;
-      min-width: 700px;
+      /* 580 y no 700: a 768 px (tablet) la caja deja 644 de contenido y el
+         grafico se salia 56 px; a 721, la mas estrecha antes del movil, deja
+         597. Por debajo de 720 manda la media query (620) y se desplaza. */
+      min-width: 580px;
       height: 310px;
       border-radius: var(--vt-r);
     }

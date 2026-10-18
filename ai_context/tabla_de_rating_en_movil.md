@@ -53,3 +53,11 @@ intentó que cupiera: tiene cuatro columnas de barras. Se desplaza dentro del
 panel, y desde el 2026-10-17 la columna del nombre es `position: sticky` con
 el fondo del panel (`var(--card)`) y 110 px como máximo por debajo de 720.
 Medido a 320 px: tras desplazar 300 px la celda del nombre sigue en x = 30.
+
+## El gráfico de `/players`
+
+Por debajo de 720 px el SVG mide 620 como mínimo y se desplaza dentro de
+`.chart-shell`, a propósito: 31 días no caben legibles en 300 px. Por encima,
+hasta el 2026-10-17 el mínimo era 700 y entre 721 y 790 px se salía (56 px a
+768). Ahora es 580, lo que deja la caja más estrecha de ese tramo (597 a 721
+px). Medido a 720, 721, 740, 768 y 1024: sin desplazamiento.
