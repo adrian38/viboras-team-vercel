@@ -1,189 +1,69 @@
-# Padel App — Vercel + Vercel Postgres
+# Viboras Team
 
-Migrated from Netlify Functions + Netlify Blobs to **Vercel Functions** + **Vercel Postgres**.
-Persistence layer replaced with a normalized SQL schema (no more JSON blob rewrites, no more race conditions).
+La web del grupo de pádel Viboras Team: resultados, rating, estadísticas,
+torneos y disponibilidad. Páginas estáticas más funciones serverless en
+`api/`, desplegadas en Vercel sobre Neon Postgres.
 
-The UI (HTML/CSS/JS) and all business logic are preserved. Only the fetch URLs changed:
-`/.netlify/functions/<name>` → `/api/<name>`.
+**`viboras` es la rama de producción: un push despliega al grupo sin paso
+intermedio.** Las reglas de trabajo y de verificación están en `AGENTS.md`, y
+lo que no se ve leyendo el código, en `ai_context/` (empezar por su
+`README.md`).
 
-## Project layout
+## Qué hay
 
 ```
 .
-├── api/                       # Vercel serverless functions
-│   ├── _db.js                 # Shared SQL helpers (schema bootstrap + player upsert)
-│   ├── getNames.js            # GET  → { names: [...] }
-│   ├── submitName.js          # POST { name } → { ok, added }
-│   ├── deleteName.js          # POST { name } → { ok, deleted }  (admin session)
-│   ├── getResults.js          # GET  → { matches: [...] }
-│   ├── submitResult.js        # POST { date, p1a..p2b, s11..s23, _original? } → { ok }
-│   ├── deleteResult.js        # POST { date, p1a..p2b } → { ok }
-│   ├── getSlots.js            # GET  ?date=YYYY-MM-DD → { "9:00": [names], ... }
-│   └── submitVote.js          # POST { date, name, slots: [...] } → "ok"
-├── scripts/
-│   ├── schema.sql             # Canonical schema
-│   ├── apply-schema.js        # Idempotent CREATE TABLE runner
-│   └── migrate.js             # Imports names.json / results.json / votes.json
-├── data/                      # Legacy JSON snapshots (used only by migrate.js)
-│   ├── names.json
-│   ├── results.json
-│   └── votes.json
-├── index.html, day.html, history.html, results.html,
-├── statistics.html, submit-result.html, app.js, image.png
-├── package.json               # depends on @vercel/postgres
-├── vercel.json
-└── README.md
+├── api/                   # funciones de Vercel; los _*.js son piezas, no rutas
+│   ├── read.js            # lecturas: getNames, getResults, getSlots, getLeagues,
+│   │                      #   getNivelVotos, getRatingsDePartida;
+│   │                      #   solo admin: exportPlayers, getAmbiente
+│   ├── write.js           # submitResult, submitVote;
+│   │                      #   solo admin: submitName, deleteName, deleteResult, updatePlayer
+│   ├── league-admin.js    # solo admin: ligas, cuadros, pozos, compás, sustituciones
+│   ├── auth.js            # cuentas: alta, entrada (contraseña o Google), aprobar…
+│   ├── correo.js          # restablecer contraseña y confirmar correo
+│   ├── avisos.js          # valorar a los compañeros y avisos de la campanita
+│   ├── _db.js             # ensureSchema(): el esquema que de verdad corre
+│   └── _auth.js, _google.js, _correo.js, _avisos.js, _inscripcion.js,
+│       _score.js, _ligas.js, _logo.js
+├── *.html                 # 17 páginas, cada una con su <head> completo
+├── *.js                   # JavaScript de las páginas que vive fuera del HTML
+│                          #   (auth-client.js, pwa.js, sw.js, splash.js…)
+├── theme.css              # tokens y componentes del tema oscuro
+├── tools/                 # las guardas de `npm run check`
+├── scripts/               # schema.sql (copia DESFASADA) y apply-schema.js
+├── docker/, docker-compose.yml   # entorno local, abajo
+├── .vercelignore          # lo que no se publica (docs, entorno local, tools…)
+└── vercel.json            # cleanUrls: /rating sirve rating.html
 ```
 
-## Database schema
+Todo `api/` exige sesión salvo `auth.js` y `correo.js`, que son la puerta de
+entrada. Las páginas se descargan sin sesión, pero llegan vacías: los datos
+vienen del API.
 
-```sql
-CREATE TABLE players (
-  id     SERIAL PRIMARY KEY,
-  name   TEXT NOT NULL UNIQUE
-);
+## La base de datos
 
-CREATE TABLE availability (
-  id         SERIAL PRIMARY KEY,
-  player_id  INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-  date       TEXT    NOT NULL,   -- ISO YYYY-MM-DD (from day.html)
-  hour       TEXT    NOT NULL,   -- e.g. "9:00"
-  UNIQUE (player_id, date, hour)
-);
+El esquema que corre es el de `ensureSchema()` en `api/_db.js`, que crea y
+migra las tablas en cada arranque en frío; las de cuentas, valoraciones y
+avisos las crean `ensureAuthSchema()` y `ensureAvisosSchema()`.
+`scripts/schema.sql` es una copia a mano **desfasada**: no usarla para crear
+una base. Detalle en `ai_context/esquema_duplicado_y_desfasado.md` y, para
+Neon, en `ai_context/neon_en_produccion.md`.
 
-CREATE TABLE matches (
-  id           SERIAL PRIMARY KEY,
-  date         TEXT NOT NULL,     -- DD/MM/YYYY (from submit-result.html)
+## Comprobar antes de commitear
 
-  format       TEXT NOT NULL CHECK (
-    format IN ('bo3_regular','bo3_stb','bo1_regular','timed_games')
-  ),
-
-  event_id     INTEGER NOT NULL REFERENCES events(id) ON DELETE RESTRICT,
-
-  round        TEXT,
-
-  player1a_id  INTEGER REFERENCES players(id) ON DELETE RESTRICT,
-  player1b_id  INTEGER REFERENCES players(id) ON DELETE RESTRICT,
-  player2a_id  INTEGER REFERENCES players(id) ON DELETE RESTRICT,
-  player2b_id  INTEGER REFERENCES players(id) ON DELETE RESTRICT,
-  set1_team1 INTEGER, set1_team2 INTEGER,
-  set2_team1 INTEGER, set2_team2 INTEGER,
-  set3_team1 INTEGER, set3_team2 INTEGER
-);
-
-CREATE TABLE events (
-  id SERIAL PRIMARY KEY,
-  type TEXT NOT NULL,
-  name TEXT NOT NULL UNIQUE,
-  start_date TEXT NOT NULL,
-  end_date TEXT NOT NULL,
-  league_id INTEGER REFERENCES leagues(id) ON DELETE SET NULL
-);
-
-CREATE TABLE leagues (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  start_date TEXT NOT NULL,
-  end_date TEXT NOT NULL
-);
-```
-
-Notes on FK behavior:
-- `availability.player_id` cascades on player delete (availability is ephemeral).
-- `matches.player*_id` uses `ON DELETE RESTRICT` to protect historical data.
-  `deleteName` returns `{ ok: false, error: 'has_matches' }` if the player is
-  referenced by any match — the existing frontend already surfaces this as
-  "No se pudo eliminar", matching prior behavior semantics.
-- All writes are single-row SQL operations. No read-modify-write of large JSON
-  objects, eliminating the race conditions the blob approach was prone to.
-
-## One-time setup
-
-### 1. Create the project on Vercel
+No hay pruebas automáticas. Lo mínimo:
 
 ```bash
-npm i -g vercel
-vercel link                # create/link the project
+npm run check                 # índice de ai_context, paridad del rating, tamaño del código
+docker compose up -d --build  # y comprobar el cambio en http://localhost:3000
 ```
 
-### 2. Provision Vercel Postgres
+El resto (medir en el navegador, contrastar con un `SELECT`) está en
+`AGENTS.md`.
 
-In the Vercel dashboard: **Storage → Create Database → Postgres**, then attach
-it to this project. Vercel will populate the following env vars automatically:
-
-- `POSTGRES_URL`
-- `POSTGRES_URL_NON_POOLING`
-- `POSTGRES_USER`, `POSTGRES_HOST`, `POSTGRES_PASSWORD`, `POSTGRES_DATABASE`
-
-Pull them locally:
-
-```bash
-vercel env pull .env.local
-```
-
-### 3. Install dependencies
-
-```bash
-yarn install     # (or npm install)
-```
-
-### 4. Apply the schema
-
-```bash
-node --env-file=.env.local scripts/apply-schema.js
-```
-
-### 5. Import legacy data
-
-Ensure `data/names.json`, `data/results.json`, `data/votes.json` are present
-(they are shipped with this project as a snapshot). Then run:
-
-```bash
-node --env-file=.env.local scripts/migrate.js
-```
-
-The migration:
-- inserts every registered name into `players` (idempotent via `ON CONFLICT`);
-- inserts every historical match, upserting any referenced player name that
-  wasn't in the registered list so foreign keys resolve;
-- inserts every past availability entry into `availability`.
-
-Re-running the script is safe: duplicate players/availability rows are
-skipped. Matches will be re-inserted if you re-run — clear the `matches`
-table first if you need a clean re-import.
-
-## Local development
-
-```bash
-vercel dev
-```
-
-Serves the static HTML from the project root and mounts the `/api/*` routes
-using the same Postgres database configured above.
-
-## Deployment
-
-```bash
-vercel deploy --prod
-```
-
-## What changed vs. the Netlify version
-
-| Concern              | Before (Netlify)                             | After (Vercel)                              |
-|----------------------|----------------------------------------------|---------------------------------------------|
-| Hosting              | Netlify static + Netlify Functions           | Vercel static + Vercel Functions            |
-| Storage              | Netlify Blobs (JSON blobs)                   | Vercel Postgres (normalized tables)         |
-| Concurrency          | Read-modify-write blob → race conditions     | Single-statement SQL, unique constraints    |
-| Frontend URLs        | `/.netlify/functions/<name>`                 | `/api/<name>`                               |
-| Admin key            | `4F7K9Q2Z` (unchanged, in deleteName.js)     | Retired: admin session (`role = 'admin'`)   |
-| WhatsApp sharing     | Preserved                                    | Preserved                                   |
-| Organizer flow       | Preserved                                    | Preserved                                   |
-| History/edit/delete  | Preserved                                    | Preserved                                   |
-| Statistics view      | Preserved                                    | Preserved                                   |
-
-Removed dependency: `@netlify/blobs`.
-Added dependency: `@vercel/postgres`.
+`package.json` aún declara `npm run migrate`, de la importación desde Netlify;
+`scripts/migrate.js` ya no existe.
 
 ---
 
@@ -203,6 +83,7 @@ Servicios que arranca:
 | `neon-http`  | 4444   | traduce el API HTTP de Neon -> Postgres normal         |
 | `wsproxy`    | —      | lo mismo para el camino WebSocket (hoy sin uso)        |
 | `app`        | 3000   | servidor Express que emula las funciones de Vercel     |
+| `mailpit`    | 8025   | recoge los correos de la app sin mandarlos fuera       |
 
 App en http://localhost:3000 y comprobacion de la conexion en
 http://localhost:3000/health
