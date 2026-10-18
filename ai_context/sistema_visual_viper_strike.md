@@ -271,20 +271,26 @@ logo con un brillo), que está en el historial de git si se quiere volver.
 
 - Empieza en el 0,8 s: antes sólo están las palas quietas. La víbora asoma
   en el 1,0 s, así que aún se ven las palas un instante. Dura 4,2 s.
-- Recortado a 1000×620 (`crop=1000:620:40:60`). La caja de lo que no es negro,
-  medida fotograma a fotograma sin las chispas, va de x 62 a 1028 e y 82 a
-  650; el recorte la deja entera, cola incluida. Lo que se pierde son chispas
-  de los bordes.
-- H.264 *main*, `yuv420p`, CRF 29, `-movflags +faststart`, sin audio: 494 KB.
+- Recortado a 1000×620 (`crop=1000:620:140:60`), **centrado en el logo, no
+  en la caja de todo lo que se ve.** El logo (palas, cabeza y letras) está
+  centrado en el original, en x ≈ 640. La cola llega hasta x 62, así que la
+  caja de lo que no es negro (x 62–1028) tiene el centro más a la izquierda.
+  El primer recorte se centró en esa caja (`crop=1000:620:40:60`) y en el
+  móvil el logo salía desplazado a la derecha: 100 px de 1000, unos 37 px en
+  un móvil de 375 (lo vio Adrián el 2026-10-18). Ahora se pierde la punta de
+  la cola, que sale por el borde izquierdo como si siguiera fuera de la
+  pantalla, y chispas de los bordes. En el último fotograma el logo va de
+  x 157 a 841: centro en 499.
+- H.264 *main*, `yuv420p`, CRF 29, `-movflags +faststart`, sin audio: 477 KB.
   CRF 26 daba 695 KB y 32 daba 356 KB; a tamaño de móvil no se distinguían, y
   se quedó el del medio.
-- `splash-final.jpg` es su último fotograma (85 KB): lo que se ve con
+- `splash-final.jpg` es su último fotograma (86 KB): lo que se ve con
   «reducir movimiento».
 - En este equipo no hay `ffmpeg`. Se usó el que trae el paquete de Python
   `imageio-ffmpeg`, instalado en un entorno virtual temporal. Para rehacerlo:
 
   ```bash
-  ffmpeg -ss 0.8 -i original.mp4 -an -vf "crop=1000:620:40:60" \
+  ffmpeg -ss 0.8 -i original.mp4 -an -vf "crop=1000:620:140:60" \
     -c:v libx264 -profile:v main -pix_fmt yuv420p -preset veryslow -crf 29 \
     -movflags +faststart splash.mp4
   ```
