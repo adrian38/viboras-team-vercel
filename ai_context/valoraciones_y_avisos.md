@@ -11,8 +11,10 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    ambiente?» (buen rollo / no tan bien) y «¿Estaban en su nivel?» (por debajo
    / en su nivel / por encima). El aviso sigue mientras falte alguna de las dos
    a alguno de los tres. Hasta el 2026-10-18 eran dos avisos por partido, uno
-   por pregunta; Adrián pidió uno. Dos partidos el mismo día salen como dos
-   avisos con el mismo texto. Las respuestas son anónimas: el API nunca dice quién votó qué.
+   por pregunta; Adrián pidió uno. Lleva los rivales de quien lo lee
+   («… del 14/10 contra Alberto M y Mikel A»), para distinguir dos partidos
+   del mismo día: `partidosParaValorar` devuelve `rivales` según en qué
+   equipo jugó. Las respuestas son anónimas: el API nunca dice quién votó qué.
    Sólo cuentan partidos **jugados** (desde el 2026-10-17): los de liga sin
    jugar llevan 0-0 y salían en `/valorar` como tres «Partido del 05/10»
    iguales, y en la campanita. La lista de `/valorar` enseña también las dos

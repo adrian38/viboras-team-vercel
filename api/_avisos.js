@@ -70,6 +70,7 @@ export async function partidosParaValorar(playerId) {
         AND COALESCE(m.set1_team1, 0) + COALESCE(m.set1_team2, 0) > 0
     )
     SELECT m.id, m.date, p1a.name AS p1a, p1b.name AS p1b, p2a.name AS p2a, p2b.name AS p2b,
+      ${playerId} IN (m.player1a_id, m.player1b_id) AS en_equipo1,
       3 - COUNT(f.actitud) AS faltan_actitud,
       3 - COUNT(f.nivel) AS faltan_nivel
     FROM mios m
@@ -78,12 +79,13 @@ export async function partidosParaValorar(playerId) {
     LEFT JOIN match_feedback f ON f.match_id = m.id AND f.rater_player_id = ${playerId}
       AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
     WHERE m.dia BETWEEN current_date - ${DIAS_PARA_VALORAR}::int AND current_date
-    GROUP BY m.id, m.date, m.dia, p1a.name, p1b.name, p2a.name, p2b.name
+    GROUP BY m.id, m.date, m.dia, m.player1a_id, m.player1b_id, p1a.name, p1b.name, p2a.name, p2b.name
     ORDER BY m.dia DESC, m.id DESC`;
   // Los cuatro nombres van con el id para poder ensenar el partido sin otra
   // consulta. /history lo reconoce por el id desde el 2026-10-17.
   return rows.map((r) => ({
     id: r.id, fecha: r.date, jugadores: [r.p1a, r.p1b, r.p2a, r.p2b],
+    rivales: r.en_equipo1 ? [r.p2a, r.p2b] : [r.p1a, r.p1b],
     faltanActitud: Number(r.faltan_actitud), faltanNivel: Number(r.faltan_nivel)
   }));
 }
@@ -97,6 +99,7 @@ function diaYMes(fecha) {
 // Lo que la campanita ensena a un jugador: los avisos guardados sin ver y una
 // entrada por partido con algo por valorar. Hasta el 2026-10-18 eran dos
 // (ambiente y nivel); Adrian pidio una: /valorar ya ensena las dos preguntas.
+// Con los rivales, para distinguir dos partidos del mismo dia.
 export async function avisosDeJugador(playerId) {
   if (!playerId) return [];
   await ensureAvisosSchema();
@@ -110,7 +113,8 @@ export async function avisosDeJugador(playerId) {
   // Se filtra antes de cortar: cinco partidos ya valorados no tapan uno viejo.
   const pendientes = (await partidosParaValorar(playerId)).filter((p) => p.faltanActitud > 0 || p.faltanNivel > 0);
   for (const p of pendientes.slice(0, 5)) {
-    items.push({ tipo: 'valorar', texto: `Valora el partido del ${diaYMes(p.fecha)}`, enlace: `/valorar?partido=${p.id}` });
+    const texto = `Valora el partido del ${diaYMes(p.fecha)} contra ${p.rivales.join(' y ')}`;
+    items.push({ tipo: 'valorar', texto, enlace: `/valorar?partido=${p.id}` });
   }
   return items;
 }
