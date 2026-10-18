@@ -14,7 +14,7 @@ abiertos, es de esos dos días.
 | --- | --- |
 | `api/read.js`, `api/write.js`, `api/league-admin.js` | **Cerrado.** Sesión activa o 401, antes de mirar el `action`. |
 | `api/auth.js` | Abierto, obviamente: es por donde se entra. |
-| Las 16 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
+| Las 17 páginas `.html` | **Se descargan igual**: son estáticas y están en un CDN. Llegan vacías, porque los datos vienen del API. |
 
 `/group-normativa` **no** redirige a `/cuenta`: el alta pide aceptar la
 normativa, así que tiene que poder leerse antes de tener cuenta. No llama al
@@ -303,7 +303,7 @@ Google real no se puede, porque el botón no se dibuja en `localhost`.
     cuenta» llegaba sin contraseña. Adrián dijo que eso tenía que funcionar.
   - **Caduca a los 30 minutos** de la última vez que se escribió, y se borra
     en cuanto la cuenta existe (`olvidarInscripcion`). `auth-client.js`, que
-    cargan las 16 páginas, borra la caducada en cualquiera de ellas, no sólo
+    cargan las 17 páginas, borra la caducada en cualquiera de ellas, no sólo
     en `/cuenta`.
   - **El precio**: mientras dura el alta, la contraseña está en claro en el
     almacenamiento de ese navegador. Comprobado el 2026-10-17 en local: llega
@@ -357,9 +357,10 @@ pasar». Para probar esto, hazlo dentro del contenedor:
 
 `GET /api/auth?action=notifications` devuelve `{ items: [{tipo, texto,
 cuando, enlace}] }`. Es una lista genérica a propósito, para que quepan otros
-avisos; hoy sólo la llenan las altas pendientes, y sólo para administradores.
-Un jugador ve la campana sin número y «No tienes avisos». Sin sesión
-responde vacío, no 401.
+avisos. A cada jugador le llegan sus partidos por valorar y los avisos de
+«editó vuestro partido» (`api/_avisos.js`, [[valoraciones_y_avisos]]); a los
+administradores, además, las altas pendientes. Sin nada de eso, la campana
+sale sin número y «No tienes avisos». Sin sesión responde vacío, no 401.
 
 La pinta `auth-client.js` en cualquier página con un `#vtCampana`, que hoy
 sólo tiene `index.html`. Con ella la barra de la portada no cabía: por debajo
@@ -374,9 +375,9 @@ Cualquier valor que no sea `admin` se guarda como `member`.
 
 `ADMIN_EMAILS` es una lista de correos separados por comas, en las variables de
 entorno. Quien esté en ella nace `active` y `admin` — **pero sólo entrando por
-Google**. El alta con contraseña no verifica el correo (no hay servicio de
-correo contratado), así que si la lista valiese para esa vía bastaría con saber
-la dirección para hacerse administrador.
+Google**. El alta con contraseña no exige confirmar el correo —manda el
+enlace, pero aprobar no lo espera—, así que si la lista valiese para esa vía
+bastaría con saber la dirección para hacerse administrador.
 
 Hoy es `131995adrian@gmail.com`, atado al jugador `Adrián C` (`players.id = 43`
 en producción).
@@ -449,11 +450,12 @@ Lo que cada decisión evita:
 
 **Confirmar el correo no bloquea nada.** El administrador ve «confirmado» o
 «sin confirmar» junto al correo de cada pendiente, y decide. Si fuese
-obligatorio, mientras no haya SMTP en producción nadie podría entrar. Las
+obligatorio, un fallo del SMTP, o no tenerlo configurado, dejaría fuera a
+quien se registra. Las
 altas con Google nacen confirmadas.
 
-Mientras no haya SMTP en producción, la vía manual para una contraseña
-olvidada sigue siendo un `UPDATE` con un hash generado a mano:
+Si el SMTP no está configurado o falla, la vía manual para una contraseña
+olvidada es un `UPDATE` con un hash generado a mano:
 
 ```bash
 docker compose exec -T app node -e "import('./api/_auth.js').then(async m => console.log(await m.hashPassword('la-nueva')))"

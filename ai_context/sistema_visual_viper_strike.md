@@ -13,7 +13,7 @@ Lo que había que deducir de ellas está aquí y los valores en `theme.css`.
 ## `theme.css` es la única copia de los valores
 
 Los tokens —colores, tipografías, radios, espaciado— viven en `theme.css`, en la
-raíz, y lo cargan las 16 páginas. Salieron del *frontmatter* de
+raíz, y lo cargan las 17 páginas. Salieron del *frontmatter* de
 `viper_strike_athletic/DESIGN.md`.
 
 No se tomaron de las maquetas **porque las maquetas no coinciden entre sí**. Cada
@@ -33,7 +33,7 @@ color, la respuesta está en `DESIGN.md`, y si hay que cambiarla se cambia en
 
 Las maquetas cargan `cdn.tailwindcss.com` más un `<script>` de configuración.
 Portarlo serían ~100 KB bloqueantes y un bloque de configuración repetido en
-cada una de las 16 páginas, en un sitio estático sin build y con service worker.
+cada una de las 17 páginas, en un sitio estático sin build y con service worker.
 Además ese bloque contaría como JavaScript en línea para `tools/code-size.mjs`.
 
 Las variables CSS hacen el mismo trabajo. Las clases del sistema llevan prefijo
@@ -180,7 +180,7 @@ Son dos problemas distintos y hacen falta los dos arreglos:
 
 - **Que no se traduzca sola.** Nueve páginas no declaraban `lang`, así que el
   navegador adivinaba; con `arrow_back`, `download` y «Set 1» por medio, decidía
-  que la página no estaba en español y la traducía. Ahora las 16 llevan
+  que la página no estaba en español y la traducía. Ahora las 17 llevan
   `<html lang="es">`.
 - **Que aguante si alguien la traduce a mano.** Cada icono lleva
   `translate="no"` y `class="notranslate"`, que es lo que respeta Google
