@@ -1,6 +1,9 @@
 # Buzón de quejas y sugerencias
 
-Desde el 2026-10-18, en `/buzon` (bloque «Buzón» de la portada). Lo pidió
+Desde el 2026-10-18, en `/buzon`. Se llega por el bloque «Buzón» de la portada,
+por la campanita y, los administradores, también por el botón «Buzón» del
+panel de Administración: es la misma página, con «Recibidos» debajo del
+formulario sólo para ellos. Lo pidió
 Adrián: los miembros escriben quejas y sugerencias, sólo los administradores
 las leen, y a los administradores les llega aviso de cada una.
 
