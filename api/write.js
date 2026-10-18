@@ -51,9 +51,9 @@ async function submitName(req, res, user) {
 // condicion: si no coinciden, otro lo edito mientras tanto.
 //
 // Solo editan los cuatro jugadores del partido (los de antes de la edicion) y
-// los administradores; a los demas jugadores del partido les llega un aviso
-// con el nombre de quien edito (_avisos.js). Devuelve forbidden, el id de
-// la fila editada o null si no la encontro (y submitResult responde 409).
+// los administradores. El aviso a los demas sale solo si cambia el marcador y
+// lo cambia uno de los jugadores (editado). Devuelve forbidden, el id de la
+// fila editada o null si no la encontro (y submitResult responde 409).
 async function updateExistingMatch(original, m, user) {
   const id = toInt(original.id);
   const o_p1a = await getPlayerId(original.p1a);
@@ -66,6 +66,8 @@ async function updateExistingMatch(original, m, user) {
   // Sin id es una pestana abierta antes de este cambio: que recargue.
   if (!id) return null;
 
+  // `antes` lee la fila como estaba: en un UPDATE ... FROM, la subconsulta ve
+  // los valores previos al cambio.
   const upd = await sql`
     UPDATE matches SET
       date = ${m.date},
@@ -75,20 +77,32 @@ async function updateExistingMatch(original, m, user) {
       set1_team1 = ${m.s11}, set1_team2 = ${m.s21},
       set2_team1 = ${m.s12}, set2_team2 = ${m.s22},
       set3_team1 = ${m.s13}, set3_team2 = ${m.s23}
-    WHERE id = ${id}
+    FROM (
+      SELECT set1_team1 AS a11, set1_team2 AS a21, set2_team1 AS a12,
+        set2_team2 AS a22, set3_team1 AS a13, set3_team2 AS a23
+      FROM matches WHERE id = ${id}
+    ) AS antes
+    WHERE matches.id = ${id}
       AND date = ${o_date}
       AND player1a_id IS NOT DISTINCT FROM ${o_p1a}
       AND player1b_id IS NOT DISTINCT FROM ${o_p1b}
       AND player2a_id IS NOT DISTINCT FROM ${o_p2a}
       AND player2b_id IS NOT DISTINCT FROM ${o_p2b}
-    RETURNING id`;
-  return editado(upd, user, jugadores, m.date);
+    RETURNING matches.id, antes.*`;
+  return editado(upd, user, jugadores, m);
 }
 
-async function editado(resultado, user, jugadores, fecha) {
+// Desde el 2026-10-18 (lo pidio Adrian) solo avisa un cambio del resultado
+// guardado, hecho por uno de los jugadores del partido: corregir la fecha o
+// un nombre no avisa, y un administrador que no juega ese partido tampoco.
+async function editado(resultado, user, jugadores, m) {
   if (!resultado.rowCount) return null;
-  await avisarEdicion(user, jugadores, fecha);
-  return resultado.rows[0].id;
+  const a = resultado.rows[0];
+  const sets = [[a.a11, m.s11], [a.a21, m.s21], [a.a12, m.s12], [a.a22, m.s22], [a.a13, m.s13], [a.a23, m.s23]];
+  const cambioElResultado = sets.some(([antes, ahora]) => String(antes ?? '') !== String(ahora ?? ''));
+  const juegaEl = Boolean(user.player_id) && jugadores.slice(0, 4).includes(user.player_id);
+  if (cambioElResultado && juegaEl) await avisarEdicion(user, jugadores, m.date);
+  return a.id;
 }
 
 // El partido nuevo entra siempre en el evento 1, el de los partidos sueltos;

@@ -359,7 +359,7 @@ pasar». Para probar esto, hazlo dentro del contenedor:
 `GET /api/auth?action=notifications` devuelve `{ items: [{tipo, texto,
 cuando, enlace}] }`. Es una lista genérica a propósito, para que quepan otros
 avisos. A cada jugador le llegan sus partidos por valorar y los avisos de
-«editó vuestro partido» (`api/_avisos.js`, [[valoraciones_y_avisos]]); a los
+«cambió el resultado de vuestro partido» (`api/_avisos.js`, [[valoraciones_y_avisos]]); a los
 administradores, además, las altas pendientes y lo que no han leído del
 buzón ([[buzon_de_quejas]]). Sin nada de eso, la campana
 sale sin número y «No tienes avisos». Sin sesión responde vacío, no 401.

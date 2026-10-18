@@ -5,11 +5,14 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
 ## Qué hace
 
 1. **Valorar a los compañeros de pista.** Durante 14 días después de un
-   partido, cada jugador con cuenta ve en la campanita dos avisos: «¿Qué tal el
+   partido, cada jugador con cuenta ve en la campanita **un** aviso por
+   partido, «Valora el partido del dd/mm», que lleva a `/valorar?partido=<id>`.
+   Allí hay dos preguntas que se contestan por separado: «¿Qué tal el
    ambiente?» (buen rollo / no tan bien) y «¿Estaban en su nivel?» (por debajo
-   / en su nivel / por encima). Los dos llevan a `/valorar?partido=<id>`, donde
-   se contestan por separado. Cada aviso desaparece cuando se ha valorado a los
-   tres. Las respuestas son anónimas: el API nunca dice quién votó qué.
+   / en su nivel / por encima). El aviso sigue mientras falte alguna de las dos
+   a alguno de los tres. Hasta el 2026-10-18 eran dos avisos por partido, uno
+   por pregunta; Adrián pidió uno. Dos partidos el mismo día salen como dos
+   avisos con el mismo texto. Las respuestas son anónimas: el API nunca dice quién votó qué.
    Sólo cuentan partidos **jugados** (desde el 2026-10-17): los de liga sin
    jugar llevan 0-0 y salían en `/valorar` como tres «Partido del 05/10»
    iguales, y en la campanita. La lista de `/valorar` enseña también las dos
@@ -18,9 +21,14 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    encima» suben la fiabilidad (bajan el RD); «por debajo» la baja. El ambiente
    se guarda y **no cuenta** en nada todavía.
 3. **Editar un resultado** lo pueden hacer los cuatro jugadores del partido y
-   los administradores. A los demás jugadores del partido les llega «<Nombre>
-   editó vuestro partido del dd/mm. Comprueba el resultado.», con el nombre del
-   jugador que editó («Un administrador» si es un admin sin ficha).
+   los administradores. **Desde el 2026-10-18 sólo se avisa si cambia el
+   marcador y lo cambia uno de los jugadores del partido** (lo pidió Adrián):
+   a los demás jugadores les llega «<Nombre> cambió el resultado de vuestro
+   partido del dd/mm. Compruébalo.». Corregir la fecha o un nombre sin tocar
+   el marcador no avisa, y un administrador que no juega ese partido tampoco.
+   Los sets de antes los lee el propio `UPDATE` (`UPDATE … FROM`, que ve la
+   fila previa), no lo que manda la página: `editado` en `write.js`. Probado
+   en local con los cuatro casos.
 
 Además de la campanita, en `/history` cada partido propio de los últimos 14
 días lleva un botón «Valorar» que entra a `/valorar` con lo ya elegido marcado

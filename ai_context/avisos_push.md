@@ -9,7 +9,7 @@ del móvil, en el mismo momento en que nace.
 | --- | --- | --- |
 | «¿Qué tal el partido del dd/mm? Valora a tus compañeros.» | `submitResult` al **insertar** un partido (`write.js`) | los otros tres jugadores, no quien lo subió |
 | «Ya están los resultados de <torneo>. Valora a tus compañeros.» | `crearTorneo` (`league-admin.js`), pozo y compás | cada jugador del torneo, **uno** por jugador, no uno por partido |
-| «<Nombre> editó vuestro partido del dd/mm…» | `avisarEdicion` (`_avisos.js`) | los mismos que reciben el aviso guardado |
+| «<Nombre> cambió el resultado de vuestro partido del dd/mm…» | `avisarEdicion` (`_avisos.js`), sólo si cambia el marcador y lo cambia un jugador del partido | los mismos que reciben el aviso guardado |
 | «<Nombre> pide entrar» | `register` y alta con Google (`auth.js`) | los administradores |
 | «Queja nueva de <Nombre> en el buzón» (o «Sugerencia») | `guardarMensaje` (`_buzon.js`) | los administradores, sin el texto ([[buzon_de_quejas]]) |
 
@@ -18,8 +18,8 @@ Los avisos de valorar de la campanita **no se guardan**: se calculan al vuelo
 `avisos` y sale del sitio donde se crea el partido. Un partido de hace más de
 14 días no manda nada: `/valorar` ya no lo abriría.
 
-En la campanita salen dos entradas por partido (ambiente y nivel); el push es
-uno solo, para no mandar dos notificaciones por lo mismo.
+En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
+(hasta el 2026-10-18 eran dos, ambiente y nivel), y el push también es uno.
 
 ## Piezas
 

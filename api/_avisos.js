@@ -95,7 +95,8 @@ function diaYMes(fecha) {
 }
 
 // Lo que la campanita ensena a un jugador: los avisos guardados sin ver y una
-// entrada por cada valoracion pendiente.
+// entrada por partido con algo por valorar. Hasta el 2026-10-18 eran dos
+// (ambiente y nivel); Adrian pidio una: /valorar ya ensena las dos preguntas.
 export async function avisosDeJugador(playerId) {
   if (!playerId) return [];
   await ensureAvisosSchema();
@@ -106,10 +107,10 @@ export async function avisosDeJugador(playerId) {
     ORDER BY created_at DESC LIMIT 20
   `;
   const items = rows.map((r) => ({ tipo: 'aviso', id: r.id, texto: r.texto, cuando: r.created_at, enlace: r.enlace }));
-  for (const p of (await partidosParaValorar(playerId)).slice(0, 5)) {
-    const enlace = `/valorar?partido=${p.id}`;
-    if (p.faltanActitud > 0) items.push({ tipo: 'actitud', texto: `¿Qué tal el ambiente en el partido del ${diaYMes(p.fecha)}?`, enlace });
-    if (p.faltanNivel > 0) items.push({ tipo: 'nivel', texto: `¿Estaban en su nivel? Partido del ${diaYMes(p.fecha)}`, enlace });
+  // Se filtra antes de cortar: cinco partidos ya valorados no tapan uno viejo.
+  const pendientes = (await partidosParaValorar(playerId)).filter((p) => p.faltanActitud > 0 || p.faltanNivel > 0);
+  for (const p of pendientes.slice(0, 5)) {
+    items.push({ tipo: 'valorar', texto: `Valora el partido del ${diaYMes(p.fecha)}`, enlace: `/valorar?partido=${p.id}` });
   }
   return items;
 }
@@ -119,12 +120,12 @@ export async function marcarAvisoVisto(playerId, avisoId) {
   await sql`UPDATE avisos SET visto_at = now() WHERE id = ${avisoId} AND player_id = ${playerId} AND visto_at IS NULL`;
 }
 
-// Tras editar un resultado: un aviso a cada jugador del partido, el de antes y
-// el de ahora, menos a quien lo edito.
+// Tras cambiar el resultado de un partido (write.js, editado): un aviso a cada
+// jugador del partido, el de antes y el de ahora, menos a quien lo cambio.
 export async function avisarEdicion(user, playerIds, fecha) {
   await ensureAvisosSchema();
   const quien = user.player_name || 'Un administrador';
-  const texto = `${quien} editó vuestro partido del ${diaYMes(fecha)}. Comprueba el resultado.`;
+  const texto = `${quien} cambió el resultado de vuestro partido del ${diaYMes(fecha)}. Compruébalo.`;
   const destinos = [...new Set(playerIds.filter((id) => id && id !== user.player_id))];
   for (const id of destinos) {
     await sql`INSERT INTO avisos (player_id, texto, enlace) VALUES (${id}, ${texto}, '/history')`;
