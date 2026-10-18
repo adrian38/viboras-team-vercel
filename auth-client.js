@@ -125,6 +125,18 @@
       }
       panel.appendChild(a);
     });
+    // Arriba, el boton de activar los avisos push (avisos-push.js), si toca.
+    if (window.vtPush) window.vtPush.pintarEnCampana(panel);
+  }
+
+  // Los avisos push solo tienen sentido con sesion. Se carga desde aqui para
+  // no tocar el <head> de las 17 paginas.
+  function cargarPush(user) {
+    if (!user) return;
+    var s = document.createElement('script');
+    s.src = '/avisos-push.js';
+    s.defer = true;
+    document.head.appendChild(s);
   }
 
   function montarCampana(user) {
@@ -153,5 +165,6 @@
     pintarChip(user);
     exigirEntrar(user);
     montarCampana(user);
+    cargarPush(user);
   });
 })();

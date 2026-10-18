@@ -80,4 +80,9 @@ dos vías:
 Vercel sirve `sw.js` con `Cache-Control: public, max-age=0, must-revalidate`,
 que es lo correcto para que las versiones nuevas se recojan.
 
-Relacionado: [[iconos_pwa]], [[entorno_local_docker_y_proxies_neon]].
+## También enseña los avisos push
+
+Desde el 2026-10-18 tiene dos handlers más, `push` y `notificationclick`, que
+no tocan la caché. Están en [[avisos_push]].
+
+Relacionado: [[iconos_pwa]], [[entorno_local_docker_y_proxies_neon]], [[avisos_push]].

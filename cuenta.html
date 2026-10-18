@@ -568,6 +568,7 @@ $('formAlta').onsubmit = (ev) => {
 }
 
 $('btnSalir').onclick = () => conBoton($('btnSalir'), 'Saliendo...', async () => {
+  if (window.vtPush) await window.vtPush.baja()
   await llamar('logout', {})
   window.location.reload()
 })

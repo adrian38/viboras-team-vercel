@@ -52,6 +52,7 @@ todo obliga a calcular el rating en el servidor.
 | --- | --- |
 | Tablas `match_feedback` y `avisos` | `api/_avisos.js`, `ensureAvisosSchema()` |
 | Avisos de la campanita | `api/_avisos.js` `avisosDeJugador`, llamado desde `notifications` en `api/auth.js` |
+| Los mismos avisos como push al móvil | [[avisos_push]] |
 | Valorar y marcar visto | `api/avisos.js` (función serverless nueva) |
 | Votos agregados para el motor | `api/read.js` `getNivelVotos` |
 | Ajuste del RD | `nivel-votos.js`, cargado por `rating.html` y `players.html` |

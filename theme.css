@@ -441,6 +441,24 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 .vt-campana__item:last-child{border-bottom:0}
 .vt-campana__item:hover{background:var(--vt-surface-3)}
 .vt-campana__vacio{padding:12px;color:var(--vt-muted);font-size:13px}
+/* Activar los avisos push (avisos-push.js). Es un <button> cuando se puede
+   pulsar y un <div> cuando solo explica; los dos con la pinta de un aviso. */
+.vt-campana__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
+button.vt-campana__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
+button.vt-campana__push:hover{color:var(--vt-gold-light)}
+
+/* La pregunta de la primera vez (avisos-push.js). <dialog> nativo: trae el
+   fondo, el foco y el Esc hechos. */
+.vt-push-dialogo{
+  width:min(380px, calc(100vw - 32px));padding:var(--vt-lg);
+  background:var(--vt-surface-2);color:var(--vt-text);
+  border:1px solid var(--vt-border-gold);border-radius:var(--vt-r-xl);
+  box-shadow:0 18px 48px rgba(0,0,0,0.6);
+}
+.vt-push-dialogo::backdrop{background:rgba(0,0,0,0.7)}
+.vt-push-dialogo h2{margin:0 0 var(--vt-sm);font-size:20px;line-height:26px}
+.vt-push-dialogo p{margin:0;color:var(--vt-muted);font-size:14px;line-height:21px}
+.vt-push-dialogo__botones{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--vt-sm);margin-top:var(--vt-lg)}
 
 /* -------------------------------------------------------------- botones -- */
 

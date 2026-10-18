@@ -23,9 +23,10 @@ lo que no se ve leyendo el código, en `ai_context/` (empezar por su
 │   ├── auth.js            # cuentas: alta, entrada (contraseña o Google), aprobar…
 │   ├── correo.js          # restablecer contraseña y confirmar correo
 │   ├── avisos.js          # valorar a los compañeros y avisos de la campanita
+│   ├── push.js            # avisos push: alta y baja de un dispositivo
 │   ├── _db.js             # ensureSchema(): el esquema que de verdad corre
-│   └── _auth.js, _google.js, _correo.js, _avisos.js, _inscripcion.js,
-│       _score.js, _ligas.js, _logo.js
+│   └── _auth.js, _google.js, _correo.js, _avisos.js, _push.js,
+│       _inscripcion.js, _score.js, _ligas.js, _logo.js
 ├── *.html                 # 17 páginas, cada una con su <head> completo
 ├── *.js                   # JavaScript de las páginas que vive fuera del HTML
 │                          #   (auth-client.js, pwa.js, sw.js, splash.js…)

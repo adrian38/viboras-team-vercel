@@ -34,7 +34,8 @@ const FUNCTIONS = {
   '/api/league-admin': () => import('../api/league-admin.js'),
   '/api/auth': () => import('../api/auth.js'),
   '/api/correo': () => import('../api/correo.js'),
-  '/api/avisos': () => import('../api/avisos.js')
+  '/api/avisos': () => import('../api/avisos.js'),
+  '/api/push': () => import('../api/push.js')
 };
 
 for (const [route, load] of Object.entries(FUNCTIONS)) {

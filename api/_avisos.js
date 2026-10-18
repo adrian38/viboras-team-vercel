@@ -6,6 +6,7 @@
 // Detalle: ai_context/valoraciones_y_avisos.md
 import { sql } from '@vercel/postgres';
 import { ensureSchema } from './_db.js';
+import { pushAJugadores, pushAAdmins } from './_push.js';
 
 let listo = null;
 
@@ -127,5 +128,45 @@ export async function avisarEdicion(user, playerIds, fecha) {
   const destinos = [...new Set(playerIds.filter((id) => id && id !== user.player_id))];
   for (const id of destinos) {
     await sql`INSERT INTO avisos (player_id, texto, enlace) VALUES (${id}, ${texto}, '/history')`;
+  }
+  await pushAJugadores(destinos, { texto, enlace: '/history' });
+}
+
+// Si el partido aun se puede valorar: un resultado viejo subido hoy no abre
+// /valorar, y el push llevaria a un «ese partido no es tuyo».
+function seValoraTodavia(fecha) {
+  const t = String(fecha || '');
+  const p = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t) || /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (!p) return false;
+  const [a, m, d] = p[1].length === 4 ? [p[1], p[2], p[3]] : [p[3], p[2], p[1]];
+  const dias = (Date.now() - Date.UTC(Number(a), Number(m) - 1, Number(d))) / 86400000;
+  return dias > -1 && dias < DIAS_PARA_VALORAR + 1;
+}
+
+// Los avisos de valorar no se guardan (se calculan al vuelo), asi que el push
+// sale cuando nace el partido: a los otros tres, no a quien lo subio.
+export async function avisarPartidoNuevo(user, playerIds, fecha, matchId) {
+  if (!seValoraTodavia(fecha)) return;
+  const texto = `¿Qué tal el partido del ${diaYMes(fecha)}? Valora a tus compañeros.`;
+  await pushAJugadores(playerIds.filter((id) => id !== user.player_id), { texto, enlace: `/valorar?partido=${matchId}` });
+}
+
+// Un torneo entra con todos sus resultados de golpe: un solo push por jugador,
+// no uno por partido.
+export async function avisarTorneo(nombre, fecha, playerIds) {
+  if (!seValoraTodavia(fecha)) return;
+  await pushAJugadores(playerIds, { texto: `Ya están los resultados de ${nombre}. Valora a tus compañeros.`, enlace: '/valorar' });
+}
+
+// El «pide entrar» de la campanita de los administradores. La cuenta ya esta
+// creada cuando se llama: un fallo aqui no puede convertir el alta en un 500.
+export async function avisarAltaPendiente(userId) {
+  try {
+    const { rows } = await sql`
+      SELECT COALESCE(p.name, u.requested_player_name, u.email) AS quien
+      FROM users u LEFT JOIN players p ON p.id = u.player_id WHERE u.id = ${userId}`;
+    if (rows.length) await pushAAdmins({ texto: `${rows[0].quien} pide entrar`, enlace: '/cuenta' });
+  } catch (err) {
+    console.error('avisos: alta pendiente', err);
   }
 }

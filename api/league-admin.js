@@ -1,6 +1,7 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, readBody } from './_db.js';
 import { exigirSesion } from './_auth.js';
+import { avisarTorneo } from './_avisos.js';
 import { asInt, ensureValidDateText, normalizeDateToText, validatePhaseSchedule, buildEventName, normalizeSubstitutionGroupsInput, parseRows, parseCsvRows, parseCompasRows } from './_ligas.js';
 const MAX_GROUPS = 20;
 const MAX_PHASES = 10;
@@ -175,6 +176,7 @@ async function crearTorneo(t, partidos) {
         AS x(round, a, b, c, d, s11, s21, s12, s22)
     )
     SELECT id FROM ev`;
+  await avisarTorneo(t.name, t.startDate, partidos.flatMap((p) => p.ids));
   return rows[0].id;
 }
 

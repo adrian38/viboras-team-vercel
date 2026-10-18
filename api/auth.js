@@ -24,7 +24,7 @@ import {
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
 import { validarInscripcion, telefonoLibre, mensajeDeSolicitud, fijarRatingDePartida } from './_inscripcion.js';
-import { avisosDeJugador } from './_avisos.js';
+import { avisosDeJugador, avisarAltaPendiente } from './_avisos.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -147,6 +147,7 @@ async function register(req, res) {
     VALUES (${email}, ${hash}, ${alta.playerId}, ${alta.requestedName}, now(), ${JSON.stringify(alta.form)}::jsonb) RETURNING id
   `;
   await correoDeVerificacion(email, await crearEnlace(rows[0].id, 'verify', 60 * 24 * 7));
+  await avisarAltaPendiente(rows[0].id);
   res.status(200).json({ ok: true, status: 'pending' });
 }
 
@@ -544,6 +545,7 @@ async function crearCuentaDeGoogle(req, res, dato, alta) {
     VALUES (${userId}, 'google', ${dato.sub})
   `;
   if (!admin) {
+    await avisarAltaPendiente(userId);
     res.status(200).json({ ok: true, status: 'pending' });
     return;
   }

@@ -88,6 +88,11 @@ services:
       SMTP_PASS: "${SMTP_PASS:-}"
       MAIL_FROM: "${MAIL_FROM:-Víboras Team <no-responder@viboras.local>}"
       APP_URL: "${APP_URL:-http://localhost:3000}"
+      # Avisos push. Vacias, la app no ofrece activarlos y no manda nada. Para
+      # probarlos, un par propio en .env: npx web-push generate-vapid-keys
+      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-}"
+      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-}"
+      VAPID_SUBJECT: "${VAPID_SUBJECT:-}"
       USE_LOCAL_PG: "1"
       WS_PROXY: "wsproxy:80"
       HTTP_PROXY_NEON: "neon-http:4444"
@@ -121,6 +126,8 @@ services:
       - ./valorar.html:/app/valorar.html
       - ./nivel-votos.js:/app/nivel-votos.js
       - ./rating-inicial.js:/app/rating-inicial.js
+      - ./avisos-push.js:/app/avisos-push.js
+      - ./sw.js:/app/sw.js
     depends_on:
       wsproxy:
         condition: service_started

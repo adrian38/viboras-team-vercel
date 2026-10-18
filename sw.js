@@ -69,3 +69,40 @@ self.addEventListener('fetch', (event) => {
       }))
   );
 });
+
+// Avisos push (api/_push.js). Llegan con la app cerrada; el texto es el mismo
+// que el de la campanita. Detalle: ai_context/avisos_push.md
+self.addEventListener('push', (event) => {
+  let d = {};
+  try {
+    d = event.data ? event.data.json() : {};
+  } catch (e) {
+    d = { body: event.data ? event.data.text() : '' };
+  }
+  event.waitUntil(self.registration.showNotification(d.title || 'Víboras Team', {
+    body: d.body || '',
+    icon: '/icon-192.png',
+    data: { url: d.url || '/' }
+  }));
+});
+
+// Solo enlaces de la propia app: lo que venga de fuera abre la portada.
+function destino(url) {
+  const u = new URL(url || '/', self.location.origin);
+  return u.origin === self.location.origin ? u.href : self.location.origin + '/';
+}
+
+// Si la app ya esta abierta se lleva alli; si no, se abre.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = destino(event.notification.data && event.notification.data.url);
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+      const abierta = ventanas.find((v) => new URL(v.url).origin === self.location.origin);
+      if (!abierta) return self.clients.openWindow(url);
+      return abierta.focus()
+        .then((v) => (v || abierta).navigate(url))
+        .catch(() => self.clients.openWindow(url));
+    })
+  );
+});

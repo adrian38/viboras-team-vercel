@@ -3,7 +3,7 @@ import { ensureSchema, getPlayerId, nombreDeJugadorValido, readBody, toInt } fro
 import { validateBo3Score } from './_score.js';
 import { exigirSesion } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
-import { avisarEdicion } from './_avisos.js';
+import { avisarEdicion, avisarPartidoNuevo } from './_avisos.js';
 
 // Dar de alta jugadores y borrar partidos es de administradores desde el
 // 2026-10-17: las paginas solo lo ensenaban a ellos, pero el API lo dejaba a
@@ -94,7 +94,7 @@ async function editado(resultado, user, jugadores, fecha) {
 // El partido nuevo entra siempre en el evento 1, el de los partidos sueltos;
 // los de liga y torneo los crea `league-admin`.
 async function insertMatch(m) {
-  await sql`
+  const { rows } = await sql`
     INSERT INTO matches (
       date, player1a_id, player1b_id, player2a_id, player2b_id,
       set1_team1, set1_team2, set2_team1, set2_team2, set3_team1, set3_team2,
@@ -103,7 +103,8 @@ async function insertMatch(m) {
       ${m.date}, ${m.p1a_id}, ${m.p1b_id}, ${m.p2a_id}, ${m.p2b_id},
       ${m.s11}, ${m.s21}, ${m.s12}, ${m.s22}, ${m.s13}, ${m.s23},
       ${m.format}, 1, NULL
-    )`;
+    ) RETURNING id`;
+  return rows[0].id;
 }
 
 // Una fecha DD/MM/AAAA que exista: el 31/02/2026 no. Es el formato de todas
@@ -179,7 +180,8 @@ async function submitResult(req, res, user) {
       return;
     }
 
-    await insertMatch(m);
+    const nuevo = await insertMatch(m);
+    await avisarPartidoNuevo(user, [m.p1a_id, m.p1b_id, m.p2a_id, m.p2b_id], m.date, nuevo);
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error('write:submitResult error', err);
