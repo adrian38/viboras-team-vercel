@@ -47,6 +47,31 @@ las leen, y a los administradores les llega aviso de cada una.
 No se puede borrar ni responder desde la app. Para borrar, un `DELETE` a
 mano.
 
+## Marcar como procesado (desde el 2026-10-19)
+
+Lo pidió Adrián: el administrador marca el mensaje y al autor le llegan las
+gracias. Cada mensaje de «Recibidos» lleva «Marcar como procesada» o, si ya
+lo está, «✓ Procesada por X el …».
+
+- `procesar` (POST, sólo admin) en `api/buzon.js` → `marcarProcesado` en
+  `_buzon.js`. Columnas `procesado_at` y `procesado_por` añadidas con `ALTER`
+  en `crearTablas`.
+- **El aviso va a la tabla `avisos`** ([[valoraciones_y_avisos]]), que es por
+  jugador: «Gracias por tu queja del 18/10: ya la hemos procesado.», con
+  enlace a `/buzon`, más un push con el mismo texto. Como el push a los
+  administradores, **no lleva el texto del mensaje**.
+- **Sólo la primera vez.** El `UPDATE` exige `procesado_at IS NULL`: si dos
+  administradores pulsan a la vez, uno recibe 409 y el autor un solo aviso.
+  No hay «desmarcar».
+- **Sin aviso si el autor no tiene ficha** o la cuenta se borró: se marca
+  igual. Hoy toda cuenta activa tiene ficha, así que es el caso raro.
+- La página pide confirmación (`confirm`) porque el aviso sale en el acto.
+
+Probado en local: el miembro recibe 403 y un `GET` 405; repetir da 409, igual
+que un id inexistente, no numérico o enorme; la campanita del autor muestra
+el agradecimiento; un mensaje de cuenta borrada se marca sin crear aviso; a
+375 px no desborda. **No probado**: que el push llegue a un móvil real.
+
 ## Cómo se probó (2026-10-18, en local)
 
 - API: sin sesión 401; un miembro pidiendo `lista` o `leidos`, 403; tipo

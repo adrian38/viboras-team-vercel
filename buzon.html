@@ -38,6 +38,8 @@
 .mensaje__cuando{font-size:13px;color:var(--vt-muted)}
 .mensaje__texto{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .mensaje--nuevo .mensaje__quien::before{content:"● ";color:var(--vt-gold)}
+.mensaje__pie{margin-top:var(--vt-sm);display:flex;flex-wrap:wrap;align-items:center;gap:var(--vt-xs) var(--vt-sm)}
+.mensaje__procesado{font-size:13px;color:var(--vt-success);overflow-wrap:anywhere}
 </style>
 </head>
 
@@ -142,7 +144,38 @@ function pintarMensaje(m) {
   cabeza.appendChild(el('span', 'mensaje__cuando', fecha(m.cuando)));
   fila.appendChild(cabeza);
   fila.appendChild(el('p', 'mensaje__texto', m.texto));
+  fila.appendChild(pieDeMensaje(m));
   return fila;
+}
+
+// Procesado: quien y cuando. Sin procesar: el boton, que da las gracias al
+// autor por la campanita y por push (api/_buzon.js, marcarProcesado).
+function pieDeMensaje(m) {
+  const pie = el('div', 'mensaje__pie');
+  if (m.procesado) {
+    const quien = m.procesadoPor ? ` por ${m.procesadoPor}` : '';
+    pie.appendChild(el('span', 'mensaje__procesado', `✓ Procesada${quien} el ${fecha(m.procesado)}`));
+    return pie;
+  }
+  const boton = el('button', 'vt-btn vt-btn--ghost vt-btn--sm', 'Marcar como procesada');
+  boton.type = 'button';
+  boton.addEventListener('click', () => procesar(m, boton));
+  pie.appendChild(boton);
+  return pie;
+}
+
+async function procesar(m, boton) {
+  if (!confirm(`¿Marcar como procesada? A ${m.quien} le llegará un aviso dándole las gracias.`)) return;
+  boton.disabled = true;
+  try {
+    await pedir('/api/buzon?action=procesar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: m.id })
+    });
+  } catch (e) {
+    alert(e.message);
+  }
+  pintarRecibidos();
 }
 
 // Al verlos, se dan por leidos para este administrador: salen de su campanita.

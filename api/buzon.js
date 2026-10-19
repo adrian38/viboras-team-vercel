@@ -5,7 +5,7 @@ import { readBody, toInt } from './_db.js';
 import { exigirSesion, sinCache } from './_auth.js';
 import {
   ensureBuzonSchema, TIPOS, LARGO_MAXIMO, POR_HORA,
-  guardarMensaje, enviadosEnLaUltimaHora, mensajesParaAdmin, marcarLeidos
+  guardarMensaje, enviadosEnLaUltimaHora, mensajesParaAdmin, marcarLeidos, marcarProcesado
 } from './_buzon.js';
 
 async function enviar(req, res, user) {
@@ -39,11 +39,24 @@ async function leidos(req, res, user) {
   res.status(200).json({ ok: true });
 }
 
+// 409 si ya estaba procesado (otro administrador se adelanto) o no existe: la
+// pagina lo dice y recarga, en vez de dar por enviado un aviso que no salio.
+async function procesar(req, res, user) {
+  const data = await readBody(req);
+  const id = toInt(data?.id);
+  if (!(id > 0 && id <= 2147483647) || !await marcarProcesado(user.id, id)) {
+    res.status(409).json({ ok: false, error: 'not_pending', message: 'Ese mensaje ya estaba procesado o ya no existe.' });
+    return;
+  }
+  res.status(200).json({ ok: true });
+}
+
 // [metodo, funcion, solo administradores]
 const ACCIONES = {
   enviar: ['POST', enviar, false],
   lista: ['GET', lista, true],
-  leidos: ['POST', leidos, true]
+  leidos: ['POST', leidos, true],
+  procesar: ['POST', procesar, true]
 };
 
 export default async function handler(req, res) {
