@@ -24,8 +24,8 @@ import {
 import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js';
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
 import { validarInscripcion, telefonoLibre, mensajeDeSolicitud, fijarRatingDePartida } from './_inscripcion.js';
-import { avisosDeJugador, avisarAltaPendiente } from './_avisos.js';
-import { avisosDelBuzon } from './_buzon.js';
+import { avisarAltaPendiente } from './_avisos.js';
+import { avisosDeCampana } from './_campana.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -266,28 +266,11 @@ async function changePassword(req, res) {
   res.status(200).json({ ok: true });
 }
 
-// Lo que pinta la campanita (auth-client.js). Una lista generica para que
-// quepan otros avisos: los del propio jugador (_avisos.js: partidos por
-// valorar, resultados editados) y, para administradores, las altas
-// pendientes. Sin sesion responde vacio, no 401: la campanita no es motivo
-// para que una pagina falle.
+// Lo que pinta la campanita: api/_campana.js. Sin sesion responde vacio, no
+// 401: la campanita no es motivo para que una pagina falle.
 async function notifications(req, res) {
   const user = await usuarioDeLaPeticion(req);
-  const items = user ? await avisosDeJugador(user.player_id) : [];
-  if (user && user.role === 'admin') {
-    const { rows } = await sql`
-      SELECT COALESCE(p.name, u.requested_player_name, u.email) AS quien, u.created_at
-      FROM users u LEFT JOIN players p ON p.id = u.player_id
-      WHERE u.status = 'pending'
-      ORDER BY u.created_at DESC
-      LIMIT 20
-    `;
-    for (const r of rows) {
-      items.push({ tipo: 'alta', texto: `${r.quien} pide entrar`, cuando: r.created_at, enlace: '/cuenta' });
-    }
-    items.push(...await avisosDelBuzon(user.id).catch((err) => { console.error('auth: buzon', err); return []; }));
-  }
-  res.status(200).json({ ok: true, items });
+  res.status(200).json({ ok: true, items: user ? await avisosDeCampana(user) : [] });
 }
 
 async function listPending(req, res) {

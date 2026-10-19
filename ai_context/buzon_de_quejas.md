@@ -13,7 +13,7 @@ las leen, y a los administradores les llega aviso de cada una.
 | --- | --- |
 | Tablas `buzon` y `buzon_leidos`, guardar, listar, aviso | `api/_buzon.js` |
 | Endpoint: `enviar` (POST, cualquiera), `lista` (GET) y `leidos` (POST), éstas dos sólo admin | `api/buzon.js` |
-| Entrada en la campanita de cada admin | `notifications` en `api/auth.js`, con `avisosDelBuzon` |
+| Entrada en la campanita de cada admin | `avisosDeCampana` en `api/_campana.js`, con `avisosDelBuzon` |
 | Push a los admin | `guardarMensaje` → `pushAAdmins` ([[avisos_push]]) |
 | La página: formulario para todos, «Recibidos» para admin | `buzon.html` |
 
@@ -38,10 +38,10 @@ las leen, y a los administradores les llega aviso de cada una.
 - **Las tablas no están en `ensureSchema()`**, por el techo de tamaño
   ([[tamano_del_codigo_y_trinquete]]): nacen con la primera petición a
   `/api/buzon` o a la campanita de un admin.
-- **Un fallo del buzón no rompe la campanita**: `notifications` envuelve
+- **Un fallo del buzón no rompe la campanita**: `avisosDeCampana` envuelve
   `avisosDelBuzon` en un `catch` que devuelve vacío.
-- **`api/auth.js` está en 598 líneas** tras añadir esas dos. Lo siguiente que
-  necesite la campanita tiene que salir a otro fichero.
+- **La campanita salió de `api/auth.js`** a `api/_campana.js` el 2026-10-19:
+  `auth.js` había llegado al techo de 600 líneas.
 - **Es la octava función de Vercel.** El plan Hobby admite 12.
 
 No se puede borrar ni responder desde la app. Para borrar, un `DELETE` a

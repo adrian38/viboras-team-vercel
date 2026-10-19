@@ -34,7 +34,8 @@ todo el mundo arrancaba en 1500.
   nombre nuevo); ahora `crearCuentaDeGoogle` hace lo mismo que aprobar:
   `crearFichaSiHaceFalta` y `fijarRatingDePartida`. Se notó al vaciar
   producción: Adrián se dio de alta en Avanzado y salió con 1500.
-  `api/auth.js` quedó en 600 líneas justas: la próxima línea obliga a partirlo.
+  `api/auth.js` quedó en 600 líneas justas; luego la campanita salió a
+  `api/_campana.js` y bajó a 582.
 - El motor lo lee de `getRatingsDePartida` (`api/read.js`) mediante
   `rating-inicial.js`, cargado **antes** del script de `rating.html` y
   `players.html`, como `nivel-votos.js` ([[valoraciones_y_avisos]]). Cada
