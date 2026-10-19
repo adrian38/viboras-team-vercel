@@ -170,6 +170,8 @@ label.small{
 /* Con la campanita no caben los tres a 375 px: por debajo de 420 el boton
    dice solo NORMATIVA y el chip se queda en el icono. */
 @media (max-width:420px){ .topbar-largo,.topbar .vt-chip__nombre{display:none} }
+/* NORMATIVA y DEL GRUPO van en un mismo <span>: sueltos eran dos elementos
+   del flex y el gap de .btn se sumaba al espacio (lo vio Rodrigo, 2026-10-18). */
 .topbar .btn.black-top{pointer-events:auto}
 .topbar-spacer{display:none}
 
@@ -262,7 +264,7 @@ label.small{
 
 <div class="hero">
   <div class="topbar">
-    <button class="btn black-top" onclick="window.location='group-normativa.html'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">gavel</span>NORMATIVA<span class="topbar-largo">&nbsp;DEL GRUPO</span></button>
+    <button class="btn black-top" onclick="window.location='group-normativa.html'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">gavel</span><span>NORMATIVA<span class="topbar-largo">&nbsp;DEL GRUPO</span></span></button>
     <div class="vt-row" style="gap:var(--vt-sm);flex:0 0 auto;flex-wrap:nowrap">
     <div class="vt-campana" id="vtCampana" hidden>
       <button class="vt-chip" type="button" aria-label="Avisos" aria-expanded="false" aria-haspopup="true"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-campana__num" hidden></span></button>
