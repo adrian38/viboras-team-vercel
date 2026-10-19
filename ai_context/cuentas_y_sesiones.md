@@ -370,6 +370,22 @@ de 420 px el botón dice sólo «Normativa» y el chip se queda en el icono
 (medido a 320, 375, 421 y 1024 px). El icono `notifications` está en la lista
 recortada de `theme.css` ([[sistema_visual_viper_strike]]).
 
+**«Limpiar todas»** (desde el 2026-10-19, lo pidió Adrián) va al pie de la
+lista cuando hay algo. `POST /api/auth?action=clearNotifications` guarda en
+`campana_descartes` la **clave** de cada aviso que hay en ese momento
+(`aviso:12`, `valorar:345`, `alta:7`, `buzon:3`) y `avisosDeCampana` las
+filtra. Por eso lo que llegue después sí sale, y no hace falta una fecha de
+corte que no sirve para los avisos calculados al vuelo (`matches` no tiene
+`created_at`). No toca nada más: el partido sigue en `/valorar`, el alta en
+`/cuenta`, el mensaje sin leer en `/buzon`. Es por cuenta: lo que limpia un
+administrador lo siguen viendo los demás. Descartes de más de 60 días se
+borran al limpiar: para entonces ya no tapan nada.
+
+Probado en local: los cuatro tipos desaparecen al limpiar y siguen fuera al
+recargar; un mensaje nuevo del buzón vuelve a salir; lo que limpia el admin
+no se lo quita al miembro; sin sesión 401 y un `GET` 405; a 375 px el botón
+cabe en el panel.
+
 Al aprobar, el administrador elige el rol: Jugador (`member`) o Admin.
 Cualquier valor que no sea `admin` se guarda como `member`.
 

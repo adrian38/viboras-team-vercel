@@ -109,12 +109,12 @@ export async function avisosDeJugador(playerId) {
       AND created_at > now() - interval '30 days'
     ORDER BY created_at DESC LIMIT 20
   `;
-  const items = rows.map((r) => ({ tipo: 'aviso', id: r.id, texto: r.texto, cuando: r.created_at, enlace: r.enlace }));
+  const items = rows.map((r) => ({ tipo: 'aviso', id: r.id, clave: `aviso:${r.id}`, texto: r.texto, cuando: r.created_at, enlace: r.enlace }));
   // Se filtra antes de cortar: cinco partidos ya valorados no tapan uno viejo.
   const pendientes = (await partidosParaValorar(playerId)).filter((p) => p.faltanActitud > 0 || p.faltanNivel > 0);
   for (const p of pendientes.slice(0, 5)) {
     const texto = `Valora el partido del ${diaYMes(p.fecha)} contra ${p.rivales.join(' y ')}`;
-    items.push({ tipo: 'valorar', texto, enlace: `/valorar?partido=${p.id}` });
+    items.push({ tipo: 'valorar', clave: `valorar:${p.id}`, texto, enlace: `/valorar?partido=${p.id}` });
   }
   return items;
 }

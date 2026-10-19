@@ -126,7 +126,7 @@ export async function marcarLeidos(adminId, hasta) {
 export async function avisosDelBuzon(adminId) {
   await ensureBuzonSchema();
   const { rows } = await sql`
-    SELECT b.tipo, b.created_at, COALESCE(p.name, u.email, 'alguien') AS quien
+    SELECT b.id, b.tipo, b.created_at, COALESCE(p.name, u.email, 'alguien') AS quien
     FROM buzon b
     LEFT JOIN users u ON u.id = b.user_id
     LEFT JOIN players p ON p.id = u.player_id
@@ -135,6 +135,6 @@ export async function avisosDelBuzon(adminId) {
       AND b.created_at > now() - interval '30 days'
     ORDER BY b.created_at DESC LIMIT 20`;
   return rows.map((r) => ({
-    tipo: 'buzon', texto: `${TIPOS[r.tipo] || 'Mensaje'} de ${r.quien} en el buzón`, cuando: r.created_at, enlace: '/buzon'
+    tipo: 'buzon', clave: `buzon:${r.id}`, texto: `${TIPOS[r.tipo] || 'Mensaje'} de ${r.quien} en el buzón`, cuando: r.created_at, enlace: '/buzon'
   }));
 }

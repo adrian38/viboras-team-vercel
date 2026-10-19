@@ -125,8 +125,25 @@
       }
       panel.appendChild(a);
     });
+    if (items.length) panel.appendChild(botonLimpiar(caja));
     // Arriba, el boton de activar los avisos push (avisos-push.js), si toca.
     if (window.vtPush) window.vtPush.pintarEnCampana(panel);
+  }
+
+  // Descarta lo que hay ahora; lo que llegue despues vuelve a salir
+  // (api/_campana.js). Si falla, la campanita se queda como estaba.
+  function botonLimpiar(caja) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'vt-campana__limpiar';
+    b.textContent = 'Limpiar todas';
+    b.addEventListener('click', function () {
+      b.disabled = true;
+      fetch('/api/auth?action=clearNotifications', { method: 'POST', headers: { accept: 'application/json' } })
+        .then(function (r) { if (r.ok) pintarAvisos(caja, []); else b.disabled = false; })
+        .catch(function () { b.disabled = false; });
+    });
+    return b;
   }
 
   // Los avisos push solo tienen sentido con sesion. Se carga desde aqui para

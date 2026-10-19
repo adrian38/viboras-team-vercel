@@ -379,6 +379,13 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 .vt-campana__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
 button.vt-campana__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
 button.vt-campana__push:hover{color:var(--vt-gold-light)}
+/* «Limpiar todas», al pie de la lista (auth-client.js). */
+.vt-campana__limpiar{
+  display:block;width:100%;padding:10px 12px;border:0;background:transparent;
+  color:var(--vt-muted);font:inherit;font-size:13px;text-align:center;cursor:pointer;
+}
+.vt-campana__limpiar:hover{color:var(--vt-gold-light);background:var(--vt-surface-3)}
+.vt-campana__limpiar[disabled]{opacity:.5;cursor:default}
 
 /* La pregunta de la primera vez (avisos-push.js). <dialog> nativo: trae el
    fondo, el foco y el Esc hechos. */

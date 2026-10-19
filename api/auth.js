@@ -25,7 +25,7 @@ import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
 import { validarInscripcion, telefonoLibre, mensajeDeSolicitud, fijarRatingDePartida } from './_inscripcion.js';
 import { avisarAltaPendiente } from './_avisos.js';
-import { avisosDeCampana } from './_campana.js';
+import { avisosDeCampana, limpiarCampana } from './_campana.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -271,6 +271,17 @@ async function changePassword(req, res) {
 async function notifications(req, res) {
   const user = await usuarioDeLaPeticion(req);
   res.status(200).json({ ok: true, items: user ? await avisosDeCampana(user) : [] });
+}
+
+// «Limpiar todas» de la campanita: descarta lo que hay ahora, no lo que venga.
+async function clearNotifications(req, res) {
+  const user = await usuarioDeLaPeticion(req);
+  if (!user) {
+    res.status(401).json({ ok: false, error: 'unauthorized' });
+    return;
+  }
+  await limpiarCampana(user);
+  res.status(200).json({ ok: true });
 }
 
 async function listPending(req, res) {
@@ -550,6 +561,7 @@ const ACCIONES = {
   changePassword,
   listPending,
   notifications,
+  clearNotifications,
   approveUser,
   rejectUser,
   blockUser
