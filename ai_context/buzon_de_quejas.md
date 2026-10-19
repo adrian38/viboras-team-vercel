@@ -66,6 +66,9 @@ lo está, «✓ Procesada por X el …».
 - **Sin aviso si el autor no tiene ficha** o la cuenta se borró: se marca
   igual. Hoy toda cuenta activa tiene ficha, así que es el caso raro.
 - La página pide confirmación (`confirm`) porque el aviso sale en el acto.
+- **Procesado por uno, sale de la campanita de todos los administradores**
+  (`avisosDelBuzon` filtra `procesado_at IS NULL`). «Leído» sigue siendo de
+  cada uno; «procesado» es del grupo.
 
 Probado en local: el miembro recibe 403 y un `GET` 405; repetir da 409, igual
 que un id inexistente, no numérico o enorme; la campanita del autor muestra

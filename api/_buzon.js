@@ -121,7 +121,8 @@ export async function marcarLeidos(adminId, hasta) {
     ON CONFLICT DO NOTHING`;
 }
 
-// Para la campanita de un administrador: lo que el no ha leido.
+// Para la campanita de un administrador: lo que el no ha leido y nadie ha
+// procesado. Procesado por uno, sale de la campanita de todos (2026-10-19).
 export async function avisosDelBuzon(adminId) {
   await ensureBuzonSchema();
   const { rows } = await sql`
@@ -130,6 +131,7 @@ export async function avisosDelBuzon(adminId) {
     LEFT JOIN users u ON u.id = b.user_id
     LEFT JOIN players p ON p.id = u.player_id
     WHERE NOT EXISTS (SELECT 1 FROM buzon_leidos l WHERE l.mensaje_id = b.id AND l.user_id = ${adminId})
+      AND b.procesado_at IS NULL
       AND b.created_at > now() - interval '30 days'
     ORDER BY b.created_at DESC LIMIT 20`;
   return rows.map((r) => ({
