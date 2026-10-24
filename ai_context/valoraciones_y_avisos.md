@@ -45,6 +45,20 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    Los sets de antes los lee el propio `UPDATE` (`UPDATE … FROM`, que ve la
    fila previa), no lo que manda la página: `editado` en `write.js`. Probado
    en local con los cuatro casos.
+4. **Meter un partido por primera vez también avisa «compruébalo».** Hasta el
+   2026-10-24 el único aviso al insertar era el push de «¿Qué tal el partido?
+   Valora a tus compañeros» (`avisarPartidoNuevo`), que no se guarda en la
+   campanita: un push perdido no dejaba rastro. Adrián pidió que la primera
+   carga avisara igual que una edición posterior, para poder comprobar el
+   marcador desde el principio: `avisarResultadoNuevo` (`_avisos.js`) manda el
+   mismo aviso guardado + push que `avisarEdicion` («<Nombre> metió el
+   resultado de vuestro partido del dd/mm. Compruébalo.»), a los otros tres.
+   Sin «antes» que comparar, avisa siempre, lo meta un jugador o un
+   administrador (a diferencia de editar, que solo avisa si lo cambia un
+   jugador). Las dos funciones comparten `avisarResultado` por dentro; solo
+   cambia el verbo. Probado en local: insertar un partido nuevo deja un
+   `aviso:<id>` en la tabla para los otros tres y aparece en
+   `/api/auth?action=notifications`.
 
 Además de la campanita, en `/history` cada partido propio de los últimos 14
 días lleva un botón «Valorar» que entra a `/valorar` con lo ya elegido marcado

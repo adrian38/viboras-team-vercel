@@ -145,17 +145,33 @@ export async function marcarAvisoVisto(playerId, avisoId) {
   await sql`UPDATE avisos SET visto_at = now() WHERE id = ${avisoId} AND player_id = ${playerId} AND visto_at IS NULL`;
 }
 
-// Tras cambiar el resultado de un partido (write.js, editado): un aviso a cada
-// jugador del partido, el de antes y el de ahora, menos a quien lo cambio.
-export async function avisarEdicion(user, playerIds, fecha) {
+// Aviso guardado (campanita) + push a los jugadores del partido, menos a
+// quien lo mete: comparten forma el alta y la edicion, solo cambia el verbo.
+async function avisarResultado(user, playerIds, fecha, verbo) {
   await ensureAvisosSchema();
   const quien = user.player_name || 'Un administrador';
-  const texto = `${quien} cambió el resultado de vuestro partido del ${diaYMes(fecha)}. Compruébalo.`;
+  const texto = `${quien} ${verbo} el resultado de vuestro partido del ${diaYMes(fecha)}. Compruébalo.`;
   const destinos = [...new Set(playerIds.filter((id) => id && id !== user.player_id))];
   for (const id of destinos) {
     await sql`INSERT INTO avisos (player_id, texto, enlace) VALUES (${id}, ${texto}, '/history')`;
   }
   await pushAJugadores(destinos, { texto, enlace: '/history' });
+}
+
+// Tras cambiar el resultado de un partido (write.js, editado): un aviso a cada
+// jugador del partido, el de antes y el de ahora, menos a quien lo cambio.
+export function avisarEdicion(user, playerIds, fecha) {
+  return avisarResultado(user, playerIds, fecha, 'cambió');
+}
+
+// Al meter un partido nuevo (write.js, submitResult): hasta el 2026-10-24 solo
+// salia el push de «valora a tus companeros» (avisarPartidoNuevo, mas abajo),
+// que ni se guarda en la campanita ni dice nada del marcador. Adrian pidio que
+// la primera vez que se mete un resultado tambien avise «compruebalo», igual
+// que una edicion posterior: sin «antes» que comparar, siempre avisa, lo meta
+// un jugador o un administrador.
+export function avisarResultadoNuevo(user, playerIds, fecha) {
+  return avisarResultado(user, playerIds, fecha, 'metió');
 }
 
 // Si el partido aun se puede valorar: un resultado viejo subido hoy no abre

@@ -3,7 +3,7 @@ import { ensureSchema, getPlayerId, nombreDeJugadorValido, readBody, toInt } fro
 import { validateBo3Score } from './_score.js';
 import { exigirSesion, cerrarSesionesDe } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
-import { avisarEdicion, avisarPartidoNuevo } from './_avisos.js';
+import { avisarEdicion, avisarPartidoNuevo, avisarResultadoNuevo } from './_avisos.js';
 
 // Dar de alta jugadores y borrar partidos es de administradores desde el
 // 2026-10-17: las paginas solo lo ensenaban a ellos, pero el API lo dejaba a
@@ -142,6 +142,15 @@ function problemaDelPartido(m) {
   return null;
 }
 
+// Los dos avisos de un partido recien insertado: «compruébalo» (igual que una
+// edicion posterior) y el push de valorar a los companeros.
+async function avisarAltaDePartido(user, m) {
+  const nuevo = await insertMatch(m);
+  const jugadores = [m.p1a_id, m.p1b_id, m.p2a_id, m.p2b_id];
+  await avisarResultadoNuevo(user, jugadores, m.date);
+  await avisarPartidoNuevo(user, jugadores, m.date, nuevo);
+}
+
 async function submitResult(req, res, user) {
   try {
     await ensureSchema();
@@ -194,8 +203,7 @@ async function submitResult(req, res, user) {
       return;
     }
 
-    const nuevo = await insertMatch(m);
-    await avisarPartidoNuevo(user, [m.p1a_id, m.p1b_id, m.p2a_id, m.p2b_id], m.date, nuevo);
+    await avisarAltaDePartido(user, m);
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error('write:submitResult error', err);

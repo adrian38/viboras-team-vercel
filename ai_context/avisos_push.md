@@ -8,6 +8,7 @@ del móvil, en el mismo momento en que nace.
 | Aviso | Nace en | A quién |
 | --- | --- | --- |
 | «¿Qué tal el partido del dd/mm? Valora a tus compañeros.» | `submitResult` al **insertar** un partido (`write.js`) | los otros tres jugadores, no quien lo subió |
+| «<Nombre> metió el resultado de vuestro partido del dd/mm…» | `avisarResultadoNuevo` (`_avisos.js`), al **insertar** un partido, desde el 2026-10-24 | los otros tres, siempre (lo meta un jugador o un administrador) |
 | «Ya están los resultados de <torneo>. Valora a tus compañeros.» | `crearTorneo` (`league-admin.js`), pozo y compás | cada jugador del torneo, **uno** por jugador, no uno por partido |
 | «<Nombre> cambió el resultado de vuestro partido del dd/mm…» | `avisarEdicion` (`_avisos.js`), sólo si cambia el marcador y lo cambia un jugador del partido | los mismos que reciben el aviso guardado |
 | «<Nombre> pide entrar» | `register` y alta con Google (`auth.js`) | los administradores |
