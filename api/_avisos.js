@@ -69,7 +69,8 @@ export async function partidosParaValorar(playerId) {
         -- salian en /valorar como «Partido del 05/10» repetido (2026-10-17).
         AND COALESCE(m.set1_team1, 0) + COALESCE(m.set1_team2, 0) > 0
     )
-    SELECT m.id, m.date, p1a.name AS p1a, p1b.name AS p1b, p2a.name AS p2a, p2b.name AS p2b,
+    SELECT m.id, m.date, m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id,
+      p1a.name AS p1a, p1b.name AS p1b, p2a.name AS p2a, p2b.name AS p2b,
       ${playerId} IN (m.player1a_id, m.player1b_id) AS en_equipo1,
       3 - COUNT(f.actitud) AS faltan_actitud,
       3 - COUNT(f.nivel) AS faltan_nivel
@@ -79,12 +80,14 @@ export async function partidosParaValorar(playerId) {
     LEFT JOIN match_feedback f ON f.match_id = m.id AND f.rater_player_id = ${playerId}
       AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
     WHERE m.dia BETWEEN current_date - ${DIAS_PARA_VALORAR}::int AND current_date
-    GROUP BY m.id, m.date, m.dia, m.player1a_id, m.player1b_id, p1a.name, p1b.name, p2a.name, p2b.name
+    GROUP BY m.id, m.date, m.dia, m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id,
+      p1a.name, p1b.name, p2a.name, p2b.name
     ORDER BY m.dia DESC, m.id DESC`;
   // Los cuatro nombres van con el id para poder ensenar el partido sin otra
   // consulta. /history lo reconoce por el id desde el 2026-10-17.
   return rows.map((r) => ({
     id: r.id, fecha: r.date, jugadores: [r.p1a, r.p1b, r.p2a, r.p2b],
+    jugadoresIds: [r.player1a_id, r.player1b_id, r.player2a_id, r.player2b_id].sort((a, b) => a - b),
     rivales: r.en_equipo1 ? [r.p2a, r.p2b] : [r.p1a, r.p1b],
     faltanActitud: Number(r.faltan_actitud), faltanNivel: Number(r.faltan_nivel)
   }));
@@ -96,9 +99,24 @@ function diaYMes(fecha) {
   return iso ? `${iso[3]}/${iso[2]}` : t.slice(0, 5);
 }
 
+// Mismos cuatro jugadores el mismo dia (una revancha, varios sets sueltos):
+// un partido por grupo para que la campanita no repita aviso. El orden de los
+// partidos en cada grupo no importa para la clave, solo quien jugo y cuando.
+function agruparPorDiaYJugadores(pendientes) {
+  const grupos = new Map();
+  for (const p of pendientes) {
+    const clave = `${p.fecha}|${p.jugadoresIds.join(',')}`;
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave).push(p);
+  }
+  return [...grupos.values()];
+}
+
 // Lo que la campanita ensena a un jugador: los avisos guardados sin ver y una
 // entrada por partido con algo por valorar. Hasta el 2026-10-18 eran dos
 // (ambiente y nivel); Adrian pidio una: /valorar ya ensena las dos preguntas.
+// Desde el 2026-10-24, los partidos del mismo dia con los mismos cuatro
+// jugadores comparten una sola entrada (Adrian: varios partidos, un aviso).
 // Con los rivales, para distinguir dos partidos del mismo dia.
 export async function avisosDeJugador(playerId) {
   if (!playerId) return [];
@@ -112,9 +130,12 @@ export async function avisosDeJugador(playerId) {
   const items = rows.map((r) => ({ tipo: 'aviso', id: r.id, clave: `aviso:${r.id}`, texto: r.texto, cuando: r.created_at, enlace: r.enlace }));
   // Se filtra antes de cortar: cinco partidos ya valorados no tapan uno viejo.
   const pendientes = (await partidosParaValorar(playerId)).filter((p) => p.faltanActitud > 0 || p.faltanNivel > 0);
-  for (const p of pendientes.slice(0, 5)) {
-    const texto = `Valora el partido del ${diaYMes(p.fecha)} contra ${p.rivales.join(' y ')}`;
-    items.push({ tipo: 'valorar', clave: `valorar:${p.id}`, texto, enlace: `/valorar?partido=${p.id}` });
+  for (const grupo of agruparPorDiaYJugadores(pendientes).slice(0, 5)) {
+    const ids = grupo.map((p) => p.id).sort((a, b) => a - b);
+    const texto = grupo.length > 1
+      ? `Valora los partidos del ${diaYMes(grupo[0].fecha)} contra ${grupo[0].rivales.join(' y ')}`
+      : `Valora el partido del ${diaYMes(grupo[0].fecha)} contra ${grupo[0].rivales.join(' y ')}`;
+    items.push({ tipo: 'valorar', clave: `valorar:${ids.join(',')}`, texto, enlace: `/valorar?partido=${ids.join(',')}` });
   }
   return items;
 }

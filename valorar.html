@@ -139,14 +139,14 @@ function pintarVoto(pregunta, jugador, elegidos) {
   return fila;
 }
 
-async function enviar(partidoId, pregunta, elegidos, estado) {
+async function enviar(ids, pregunta, elegidos, estado) {
   const votos = [...elegidos].filter(([, v]) => v).map(([playerId, v]) => ({ playerId, [pregunta.campo]: v }));
   if (!votos.length) { estado.textContent = 'Elige al menos una respuesta.'; return; }
   estado.textContent = 'Enviando…';
   try {
     await pedir('/api/avisos?action=valorar', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ partido: partidoId, votos })
+      body: JSON.stringify({ partido: ids.join(','), votos })
     });
     estado.textContent = votos.length < 3 ? 'Guardado. Te queda alguien por valorar.' : 'Guardado. ¡Gracias!';
   } catch (e) {
@@ -154,7 +154,7 @@ async function enviar(partidoId, pregunta, elegidos, estado) {
   }
 }
 
-function pintarPregunta(partidoId, pregunta, otros) {
+function pintarPregunta(ids, pregunta, otros) {
   const caja = el('div', 'pregunta');
   caja.appendChild(el('h4', '', pregunta.titulo));
   caja.appendChild(el('p', '', pregunta.texto));
@@ -163,22 +163,26 @@ function pintarPregunta(partidoId, pregunta, otros) {
   const boton = el('button', 'vt-btn', 'Enviar');
   boton.type = 'button';
   const estado = el('div', 'estado');
-  boton.addEventListener('click', () => enviar(partidoId, pregunta, elegidos, estado));
+  boton.addEventListener('click', () => enviar(ids, pregunta, elegidos, estado));
   caja.appendChild(boton);
   caja.appendChild(estado);
   return caja;
 }
 
+// Uno o varios partidos (mismo dia, mismos cuatro): una cabecera por partido
+// y las preguntas una sola vez, para todos a la vez.
 function pintarPartido(caja, datos) {
-  const p = datos.partido;
   caja.textContent = '';
-  const cabecera = el('div', 'partido');
-  cabecera.appendChild(el('span', 'vt-label', `Partido del ${diaYMes(p.fecha)}`));
-  cabecera.appendChild(el('span', 'partido__equipos', `${p.equipo1.join(' / ')}  vs  ${p.equipo2.join(' / ')}`));
-  cabecera.appendChild(el('span', 'partido__sets', p.sets.join('  ')));
-  caja.appendChild(cabecera);
+  datos.partidos.forEach((p) => {
+    const cabecera = el('div', 'partido');
+    cabecera.appendChild(el('span', 'vt-label', `Partido del ${diaYMes(p.fecha)}`));
+    cabecera.appendChild(el('span', 'partido__equipos', `${p.equipo1.join(' / ')}  vs  ${p.equipo2.join(' / ')}`));
+    cabecera.appendChild(el('span', 'partido__sets', p.sets.join('  ')));
+    caja.appendChild(cabecera);
+  });
   caja.appendChild(el('p', 'estado', 'Las respuestas son anónimas.'));
-  PREGUNTAS.forEach((q) => caja.appendChild(pintarPregunta(p.id, q, datos.otros)));
+  const ids = datos.partidos.map((p) => p.id);
+  PREGUNTAS.forEach((q) => caja.appendChild(pintarPregunta(ids, q, datos.otros)));
 }
 
 async function iniciar() {

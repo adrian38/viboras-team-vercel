@@ -19,6 +19,20 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    jugar llevan 0-0 y salían en `/valorar` como tres «Partido del 05/10»
    iguales, y en la campanita. La lista de `/valorar` enseña también las dos
    parejas, para distinguir dos partidos del mismo día.
+
+   **Desde el 2026-10-24, varios partidos del mismo día entre los mismos
+   cuatro jugadores comparten un solo aviso** (Adrián: una revancha no debe
+   doblar la notificación). `agruparPorDiaYJugadores` en `_avisos.js` junta
+   los pendientes por `fecha + jugadoresIds` (ids ordenados, no nombres) y el
+   aviso lleva todos los ids en el enlace: `/valorar?partido=345,346`. La
+   página y `api/avisos.js` (`idsDe`, `partidosDe`) aceptan uno o varios ids
+   separados por coma: una sola pantalla de preguntas vale para todos, y votar
+   escribe la misma fila en `match_feedback` para cada partido del grupo. Un
+   «otro» sólo sale marcado como ya valorado si lo está en **todos** los
+   partidos del grupo, para que un hueco en uno solo siga pidiéndose. Probado
+   en local insertando dos partidos del mismo día con los mismos cuatro: un
+   solo `valorar:345,346` en la campanita, y un tercer partido con otros
+   jugadores sigue saliendo aparte.
 2. **El nivel mueve la fiabilidad.** Regla de Adrián: «en su nivel» o «por
    encima» suben la fiabilidad (bajan el RD); «por debajo» la baja. El ambiente
    se guarda y **no cuenta** en nada todavía.
