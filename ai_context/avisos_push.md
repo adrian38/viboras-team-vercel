@@ -3,6 +3,19 @@
 Desde el 2026-10-18. Cada aviso de la campanita sale también como notificación
 del móvil, en el mismo momento en que nace.
 
+**Desde el 2026-10-24, para los avisos guardados (tabla `avisos`) esto no es
+una convención, es la única puerta.** `crearAviso(playerIds, texto, enlace)`
+en `_avisos.js` guarda la fila y manda el push a la vez; nadie hace el
+`INSERT INTO avisos` por su cuenta. `avisarEdicion`, `avisarResultadoNuevo` y
+`marcarProcesado` (`_buzon.js`, el «gracias» de una queja procesada) la
+llaman. Antes `_buzon.js` repetía el mismo `INSERT` + `pushAJugadores` que
+`_avisos.js`: si un aviso nuevo se guardaba sin pasar por ahí, no llevaba push
+y nadie lo notaba hasta que alguien preguntaba por qué no le había llegado
+nada (así se encontró el hueco de `avisarResultadoNuevo`, más abajo). Los
+avisos que **no** se guardan (valorar, alta pendiente, buzón sin leer: se
+calculan al vuelo) siguen mandando su push a mano desde donde nace el hecho,
+porque no hay fila que los obligue a pasar por `crearAviso`.
+
 ## Qué manda push y cuándo
 
 | Aviso | Nace en | A quién |

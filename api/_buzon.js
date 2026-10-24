@@ -3,8 +3,8 @@
 // campanita y por push. Detalle: ai_context/buzon_de_quejas.md
 import { sql } from '@vercel/postgres';
 import { ensureAuthSchema } from './_auth.js';
-import { pushAAdmins, pushAJugadores } from './_push.js';
-import { ensureAvisosSchema } from './_avisos.js';
+import { pushAAdmins } from './_push.js';
+import { crearAviso } from './_avisos.js';
 
 export const TIPOS = { queja: 'Queja', sugerencia: 'Sugerencia' };
 export const LARGO_MAXIMO = 2000;
@@ -105,9 +105,7 @@ export async function marcarProcesado(adminId, mensajeId) {
   const dia = new Date(cuando).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Madrid' });
   const cual = tipo === 'queja' ? 'tu queja' : 'tu sugerencia';
   const texto = `Gracias por ${cual} del ${dia}: ya la hemos procesado.`;
-  await ensureAvisosSchema();
-  await sql`INSERT INTO avisos (player_id, texto, enlace) VALUES (${playerId}, ${texto}, '/buzon')`;
-  await pushAJugadores([playerId], { texto, enlace: '/buzon' });
+  await crearAviso([playerId], texto, '/buzon');
   return true;
 }
 

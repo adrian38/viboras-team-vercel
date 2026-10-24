@@ -145,17 +145,25 @@ export async function marcarAvisoVisto(playerId, avisoId) {
   await sql`UPDATE avisos SET visto_at = now() WHERE id = ${avisoId} AND player_id = ${playerId} AND visto_at IS NULL`;
 }
 
+// La unica puerta para guardar un aviso en la campanita de unos jugadores:
+// de aqui no se sale sin mandar tambien el push, a la vez. Adrian: toda
+// entrada de la campanita tiene que nacer con su push, no por convencion de
+// cada sitio que la crea, sino porque no hay otra forma de crearla.
+export async function crearAviso(playerIds, texto, enlace) {
+  await ensureAvisosSchema();
+  const destinos = [...new Set(playerIds.filter(Boolean))];
+  for (const id of destinos) {
+    await sql`INSERT INTO avisos (player_id, texto, enlace) VALUES (${id}, ${texto}, ${enlace})`;
+  }
+  await pushAJugadores(destinos, { texto, enlace });
+}
+
 // Aviso guardado (campanita) + push a los jugadores del partido, menos a
 // quien lo mete: comparten forma el alta y la edicion, solo cambia el verbo.
 async function avisarResultado(user, playerIds, fecha, verbo) {
-  await ensureAvisosSchema();
   const quien = user.player_name || 'Un administrador';
   const texto = `${quien} ${verbo} el resultado de vuestro partido del ${diaYMes(fecha)}. Compruébalo.`;
-  const destinos = [...new Set(playerIds.filter((id) => id && id !== user.player_id))];
-  for (const id of destinos) {
-    await sql`INSERT INTO avisos (player_id, texto, enlace) VALUES (${id}, ${texto}, '/history')`;
-  }
-  await pushAJugadores(destinos, { texto, enlace: '/history' });
+  await crearAviso(playerIds.filter((id) => id !== user.player_id), texto, '/history');
 }
 
 // Tras cambiar el resultado de un partido (write.js, editado): un aviso a cada
