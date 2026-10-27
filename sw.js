@@ -109,3 +109,43 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// --- Reponer la suscripcion cuando el navegador la rota ------------------
+//
+// El navegador la renueva o la caduca por su cuenta y la vieja deja de
+// servir: el servidor sigue mandando al endpoint de antes, el servicio
+// contesta 410 y los avisos se acaban sin que nadie toque nada ni vea un
+// error. Hasta el 2026-10-27 solo se reponia al abrir la app con sesion
+// (avisos-push.js), asi que un movil que no se abria se quedaba mudo. El
+// 25/10 le paso a la suscripcion del movil de Adrian.
+// Detalle: ai_context/avisos_push.md
+function clavePorBytes(base64url) {
+  const b64 = (base64url + '==='.slice((base64url.length + 3) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(b64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+// La peticion lleva la cookie de sesion: el worker es del mismo origen y
+// /api/push?action=suscribir la exige. Sin sesion, sin claves o sin red no
+// hay nada que reponer, y callar es lo unico que se puede hacer aqui.
+async function resuscribir() {
+  const r = await fetch('/api/push?action=clave', { headers: { accept: 'application/json' }, cache: 'no-store' });
+  if (!r.ok) return;
+  const j = await r.json();
+  if (!j || !j.clave) return;
+  const s = await self.registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: clavePorBytes(j.clave)
+  });
+  await fetch('/api/push?action=suscribir', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(s.toJSON())
+  });
+}
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(resuscribir().catch(() => {}));
+});
