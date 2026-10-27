@@ -49,11 +49,34 @@
     return Notification.permission === 'granted' ? 'activo' : 'pendiente';
   });
 
+  // La suscripcion que ya tiene el navegador puede estar firmada con otra
+  // clave VAPID (el servidor cambio de par, o la creo otro despliegue): el
+  // servicio de push rechaza cada aviso con un 403 y aqui no se ve nada.
+  // Reusarla sin mirar dejaria el movil mudo para siempre.
+  function mismaClave(s, clavePublica) {
+    var actual = (s.options || {}).applicationServerKey;
+    if (!actual) return false;
+    var mia = bytes(clavePublica);
+    var suya = new Uint8Array(actual);
+    if (mia.length !== suya.length) return false;
+    for (var i = 0; i < mia.length; i++) if (mia[i] !== suya[i]) return false;
+    return true;
+  }
+
+  // Darse de baja antes de rehacerla: el navegador no deja tener dos.
+  function renovar(reg, s, clavePublica) {
+    if (s && mismaClave(s, clavePublica)) return Promise.resolve(s);
+    return (s ? s.unsubscribe().catch(function () { return null; }) : Promise.resolve(null))
+      .then(function () {
+        return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(clavePublica) });
+      });
+  }
+
   function suscribir() {
     return Promise.all([navigator.serviceWorker.ready, clave]).then(function (r) {
       var reg = r[0];
       return reg.pushManager.getSubscription().then(function (s) {
-        return s || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(r[1]) });
+        return renovar(reg, s, r[1]);
       });
     }).then(function (s) {
       return api('suscribir', s.toJSON()).then(function (j) { return Boolean(j && j.ok); });

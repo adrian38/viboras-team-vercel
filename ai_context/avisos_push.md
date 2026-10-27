@@ -134,5 +134,35 @@ El navegador integrado no registra service workers sobre `localhost`
 **Lo que falta, en producción con un móvil de verdad**: que llegue una
 notificación a Android (Chrome) y a un iPhone con la app instalada.
 
+## Una suscripción se muere sola, y el silencio es el único síntoma
+
+El 2026-10-27 Adrián avisó de que no le llegaba al móvil el «pide entrar» de
+un alta. En la base de producción estaban sus cuatro dispositivos: el del PC
+(WNS, del 18/10) vivo y avisando, y los dos del móvil **muertos**, con el
+servicio contestando 410 a cada envío. Nadie había tocado nada.
+
+El navegador rota la suscripción por su cuenta —caduca, o se renueva al
+actualizarse— y emite `pushsubscriptionchange`. Hasta ese día `sw.js` no
+escuchaba ese evento, así que la única reposición era la de `avisos-push.js`
+al cargar la página con sesión: es decir, **sólo al abrir la app**. Un móvil
+que no se abre se queda mudo para siempre y no hay nada que lo delate, porque
+`mandarUno` borra la fila del 410 y sigue adelante sin un mal aviso.
+
+Dos arreglos, copiados del manager de MT5 (`web_push.js`, `sw.js`), que ya
+los tenía:
+
+- **`pushsubscriptionchange` en `sw.js`**: pide la clave, se vuelve a
+  suscribir y manda la nueva dirección. Corre con la app cerrada, que es
+  justo cuando hace falta.
+- **Comprobar la clave antes de reusar la suscripción** (`mismaClave` en
+  `avisos-push.js`): una suscripción firmada con otro par VAPID hace que el
+  servicio rechace **todos** los avisos con un 403, y eso tampoco se ve.
+
+**Lo que esto no arregla**: ese mismo día, con una suscripción viva y cuatro
+envíos aceptados (201), el aviso sólo aparecía en el móvil al abrir la app.
+Entre el 201 del servicio y el `push` del service worker no hay código
+nuestro, así que eso es del teléfono (entrega diferida de FCM o el canal de
+avisos de la app instalada) y queda sin resolver.
+
 Relacionado: [[valoraciones_y_avisos]], [[service_worker]],
 [[cuentas_y_sesiones]].
