@@ -123,6 +123,25 @@
   border-top:1px solid var(--vt-border);font-size:12px;color:var(--vt-muted);
 }
 
+/* Las tres opciones del lado de pista, como un interruptor de tres. */
+.lado{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:var(--vt-xs);
+  padding:var(--vt-xs);margin:var(--vt-sm) 0;
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border);border-radius:var(--vt-r-md);
+}
+.lado__op{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:10px 4px;border:0;border-radius:var(--vt-r);
+  background:var(--vt-surface-2);color:var(--vt-muted);
+  font-family:var(--vt-font-head);font-size:14px;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;
+  transition:background .15s ease,color .15s ease;
+}
+.lado__op:hover{color:var(--vt-text-strong)}
+.lado__op[aria-pressed="true"]{background:var(--vt-gold);color:var(--vt-surface-deep)}
+.lado__op[disabled]{opacity:.6;cursor:default}
+
 .cifras{display:grid;grid-template-columns:1fr 1fr;gap:var(--vt-sm)}
 .cifras .vt-well{padding:var(--vt-sm) var(--vt-md)}
 .cifras b{
@@ -189,6 +208,7 @@
 
 @media(max-width:380px){
   .medidor__nombre{width:92px}
+  .lado__op{font-size:12px;letter-spacing:0.02em}
 }
 
 /* Al final del bloque y no al principio: .campos y .separador declaran su
@@ -275,8 +295,26 @@
       </div>
     </section>
 
-    <!-- Lado de pista: la unica tarjeta que todavia no guarda nada. Se queda
-         fuera hasta que haya donde escribirlo. -->
+    <section class="vt-card" id="pTarjetaLado">
+      <span class="vt-label vt-gold">
+        <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">sports_tennis</span>Lado de pista
+      </span>
+      <p class="vt-small vt-muted" style="margin-top:var(--vt-xs)">
+        ¿Dónde juegas mejor? Lo verán tus compañeros al formar parejas.
+      </p>
+      <div class="lado" role="group" aria-label="Lado de pista">
+        <button type="button" class="lado__op" data-lado="drive" aria-pressed="false">
+          <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">sports_tennis</span>Drive
+        </button>
+        <button type="button" class="lado__op" data-lado="reves" aria-pressed="false">
+          <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">sports_tennis</span>Revés
+        </button>
+        <button type="button" class="lado__op" data-lado="ambos" aria-pressed="false">
+          <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">sync_alt</span>Los dos
+        </button>
+      </div>
+      <small id="pLadoPie">Mientras no elijas, cuentas para los dos lados.</small>
+    </section>
 
     <section class="vt-card" id="pTarjetaPartidos">
       <span class="vt-label">Partidos y rendimiento</span>

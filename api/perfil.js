@@ -2,27 +2,30 @@
 // ficha de inscripcion, sus partidos, lo que le han valorado, lo que tiene
 // votado y sus dispositivos.
 //
-// Todo de lectura y todo de uno mismo: no hay ninguna accion que escriba, y
-// ninguna consulta recibe un id de jugador de fuera. El de la sesion y ya.
+// Todo de uno mismo: ninguna consulta recibe un id de jugador de fuera, el de
+// la sesion y ya. De escritura hay una sola accion, el lado de pista, y
+// tambien sobre la ficha propia.
 //
-// Dos cosas que la pagina ensena y aqui no estan, porque no existen en la
-// base:
-//
-//   - el lado de pista (drive / reves / ambos): no hay columna donde vivir;
-//   - el rating, que lo calcula el navegador a partir del historico. El motor
-//     ya esta triplicado (ai_context/motor_de_rating_duplicado.md) y una
-//     cuarta copia en el servidor seria la peor de todas.
+// Lo que la pagina ensena y aqui no esta es el rating, que lo calcula el
+// navegador a partir del historico. El motor ya esta triplicado
+// (ai_context/motor_de_rating_duplicado.md) y una cuarta copia en el servidor
+// seria la peor de todas. De el solo sale la salida inicial, que si es un
+// dato guardado.
 //
 // `matches.date` es texto en dos formatos (DD/MM/AAAA y AAAA-MM-DD), como en
 // api/_avisos.js: lo que no encaja en ninguno queda en NULL y fuera, en vez
 // de romper la consulta.
 import { sql } from '@vercel/postgres';
 import { exigirSesion, sinCache } from './_auth.js';
-import { ensureSchema } from './_db.js';
+import { ensureSchema, readBody } from './_db.js';
 import { ensureAvisosSchema, partidosParaValorar } from './_avisos.js';
 import { describirInscripcion } from './_inscripcion.js';
 import { ensurePushSchema } from './_push.js';
 import { ensureBuzonSchema } from './_buzon.js';
+
+// Donde juega cada uno. La lista manda: lo que no este aqui se rechaza,
+// aunque la pagina lo deje. Misma regla que las opciones de _inscripcion.js.
+const LADOS = ['drive', 'reves', 'ambos'];
 
 // Los partidos del jugador con el equipo en el que jugo y los sets de cada
 // pareja ya contados. La base de casi todo lo que sigue.
@@ -212,7 +215,7 @@ function ficha(form) {
 async function cuenta(userId) {
   const { rows } = await sql`
     SELECT u.email, u.role, u.status, u.created_at, u.email_verified_at, u.signup_form,
-           p.name AS player_name, p.initial_rating
+           p.name AS player_name, p.initial_rating, p.court_side
     FROM users u LEFT JOIN players p ON p.id = u.player_id
     WHERE u.id = ${userId}`;
   const u = rows[0] || {};
@@ -224,6 +227,9 @@ async function cuenta(userId) {
     rol: u.role,
     estado: u.status,
     salida: u.initial_rating === null || u.initial_rating === undefined ? null : Number(u.initial_rating),
+    // Quien no lo ha elegido juega en los dos lados mientras no diga otra
+    // cosa: es lo que hacia el grupo antes de que existiera el campo.
+    lado: LADOS.includes(u.court_side) ? u.court_side : 'ambos',
     ficha: ficha(u.signup_form)
   };
 }
@@ -242,18 +248,37 @@ async function todo(req, res, user) {
   res.status(200).json(datos);
 }
 
+// Lo unico que se escribe desde aqui, y solo sobre la ficha de uno mismo.
+// Sin ficha de jugador no hay donde guardarlo: la cuenta todavia no esta
+// enlazada con ningun jugador.
+async function guardarLado(req, res, user) {
+  const lado = String((await readBody(req))?.lado || '');
+  if (!LADOS.includes(lado)) {
+    res.status(400).json({ ok: false, error: 'bad_side', message: 'Elige drive, revés o los dos.' });
+    return;
+  }
+  if (!user.player_id) {
+    res.status(409).json({ ok: false, error: 'no_player', message: 'Tu cuenta todavía no tiene jugador asignado.' });
+    return;
+  }
+  await sql`UPDATE players SET court_side = ${lado} WHERE id = ${user.player_id}`;
+  res.status(200).json({ ok: true, lado });
+}
+
 export default async function handler(req, res) {
   const user = await exigirSesion(req, res);
   if (!user) return;
-  if (req.method !== 'GET') {
-    res.setHeader('allow', 'GET');
+  const escribe = req.method === 'POST' && String(req.query?.action || '') === 'lado';
+  if (req.method !== 'GET' && !escribe) {
+    res.setHeader('allow', 'GET, POST');
     res.status(405).json({ ok: false, error: 'method_not_allowed' });
     return;
   }
   sinCache(res);
   try {
     await ensureSchema();
-    await todo(req, res, user);
+    if (escribe) await guardarLado(req, res, user);
+    else await todo(req, res, user);
   } catch (err) {
     console.error('perfil error', err);
     if (!res.headersSent) res.status(500).json({ ok: false, error: 'server_error' });

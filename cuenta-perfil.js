@@ -9,8 +9,9 @@
 //
 //   - el rating, que lo calcula el navegador en /rating a partir del
 //     historico. Aqui solo se ensena la salida inicial, que si esta en la
-//     base, y un enlace;
-//   - el lado de pista, que todavia no se guarda en ninguna tabla.
+//     base, y un enlace.
+//
+// Lo unico que escribe es el lado de pista.
 ;(function(){
 
 const $ = (id) => document.getElementById(id)
@@ -95,6 +96,52 @@ function pintarFicha(c){
   if(vacia) return
   for(const campo of c.ficha || []){
     caja.appendChild(filaFicha(campo.titulo, campo.valor, FIJAS.includes(campo.campo)))
+  }
+}
+
+/* ------------------------------------------------------ lado de pista -- */
+
+function marcarLado(lado){
+  for(const boton of document.querySelectorAll('.lado__op')){
+    boton.setAttribute('aria-pressed', String(boton.dataset.lado === lado))
+  }
+}
+
+// Se pinta el lado nuevo antes de que conteste el servidor: si falla, se
+// vuelve al que habia y se dice. Esperar a la respuesta para mover el boton
+// deja la pulsacion sin efecto visible medio segundo.
+async function elegirLado(lado, anterior){
+  marcarLado(lado)
+  const botones = document.querySelectorAll('.lado__op')
+  for(const b of botones) b.disabled = true
+  try{
+    const res = await fetch('/api/perfil?action=lado', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({lado})
+    })
+    const json = await res.json().catch(() => ({}))
+    if(!res.ok || !json.ok) throw new Error(json.message || 'error')
+    texto('pLadoPie', 'Guardado.')
+  }catch(err){
+    marcarLado(anterior)
+    texto('pLadoPie', 'No se pudo guardar. Vuelve a intentarlo.')
+  }finally{
+    for(const b of botones) b.disabled = false
+  }
+}
+
+function pintarLado(lado){
+  let actual = lado
+  marcarLado(actual)
+  for(const boton of document.querySelectorAll('.lado__op')){
+    boton.addEventListener('click', () => {
+      const nuevo = boton.dataset.lado
+      if(nuevo === actual) return
+      const anterior = actual
+      actual = nuevo
+      elegirLado(nuevo, anterior)
+    })
   }
 }
 
@@ -244,6 +291,10 @@ async function pintarPerfil(){
   pintarCuenta(datos.cuenta)
   pintarFicha(datos.cuenta)
   const conJugador = Boolean(datos.partidos)
+  // Sin ficha de jugador no hay donde guardar el lado, asi que la tarjeta no
+  // se ensena: seria un boton que no hace nada.
+  ver('pTarjetaLado', conJugador)
+  if(conJugador) pintarLado(datos.cuenta.lado)
   ver('pTarjetaPartidos', conJugador)
   ver('pTarjetaValoracion', conJugador)
   ver('pTarjetaDisponibilidad', conJugador)

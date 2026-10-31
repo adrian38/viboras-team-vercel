@@ -158,10 +158,20 @@ async function ratingDePartida() {
   await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS initial_rating DOUBLE PRECISION`;
 }
 
+// Donde juega cada uno: 'drive', 'reves' o 'ambos'. NULL es «no lo ha dicho
+// todavia», y para quien pregunta vale lo mismo que 'ambos' (api/perfil.js):
+// asi se sabe quien lo eligio de verdad y quien no ha entrado a decirlo.
+// Sin CHECK por lo mismo que `identities.provider`: no se podria migrar
+// despues. Se valida en JavaScript.
+async function ladoDePista() {
+  await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS court_side TEXT`;
+}
+
 async function crearTablas() {
   await tablaUsuarios();
   await estadoRechazado();
   await ratingDePartida();
+  await ladoDePista();
   await tablaIdentidades();
   await tablaSesiones();
   await tablaEnlaces();
