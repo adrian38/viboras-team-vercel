@@ -16,6 +16,12 @@
 //
 // No bloquea el teclado ni roba el foco: lo que hay debajo sigue siendo la
 // pagina, y si la carga falla, quien la llamo ensena su propio error.
+//
+// Va SIN defer en las trece paginas que lo usan, igual que splash.js. Casi
+// todas arrancan su carga desde un <script> en linea que corre mientras se
+// parsea la pagina, y con defer este fichero todavia no ha corrido:
+// `vtCargando` seria undefined justo donde hace falta. No toca el DOM al
+// cargarse y pesa unos 3 KB, asi que bloquear ahi no cuesta nada.
 window.vtCargando = (function () {
   var ESPERA = 250;
   var MINIMO = 400;

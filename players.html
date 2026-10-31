@@ -10,6 +10,7 @@
   <script src="/splash.js"></script>
   <script src="/pwa.js" defer></script>
 <script src="/auth-client.js" defer></script>
+<script src="/vt-cargando.js"></script>
   <meta name="apple-mobile-web-app-title" content="Viboras">
   <meta name="theme-color" content="#121316">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1073,7 +1074,7 @@
       document.getElementById('prevWindowBtn').addEventListener('click', () => moveWindow(-1));
       document.getElementById('nextWindowBtn').addEventListener('click', () => moveWindow(1));
       document.getElementById('rangeLabel').addEventListener('click', promptMonthSelection);
-      await loadData();
+      await vtCargando.mientras(loadData, 'Cargando los jugadores');
     });
   </script>
   <!-- Despues del script de la pagina y antes de DOMContentLoaded: envuelve

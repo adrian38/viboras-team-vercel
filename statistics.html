@@ -10,6 +10,7 @@
 <script src="/splash.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-client.js" defer></script>
+<script src="/vt-cargando.js"></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -664,7 +665,7 @@ document.querySelectorAll('.view-btn').forEach(btn=>{
 
 document.getElementById('refreshStatsBtn').addEventListener('click', refresh)
 
-refresh()
+vtCargando.mientras(refresh, 'Calculando las estadísticas')
 </script>
 
 </body>

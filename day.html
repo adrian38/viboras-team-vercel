@@ -10,6 +10,7 @@
 <script src="/splash.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-client.js" defer></script>
+<script src="/vt-cargando.js"></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -191,7 +192,7 @@ function goBack(){
   window.location = "/"
 }
 
-loadSlots()
+vtCargando.mientras(loadSlots, 'Cargando el día')
 
 // populate name select from registered names
 async function loadNames(){
@@ -227,7 +228,7 @@ async function loadNames(){
   }
 }
 
-loadNames()
+vtCargando.mientras(loadNames, 'Cargando el día')
 </script>
 
 </body>

@@ -15,7 +15,7 @@
 <script src="/splash.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-client.js" defer></script>
-<script src="/vt-cargando.js" defer></script>
+<script src="/vt-cargando.js"></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -202,9 +202,8 @@ async function iniciar() {
   }
 }
 
-// En DOMContentLoaded y no al vuelo: este <script> se ejecuta mientras se
-// parsea la pagina, y para entonces vt-cargando.js —que va con defer— todavia
-// no ha corrido.
+// En DOMContentLoaded y no al vuelo: pintarLista toca el DOM de la pagina,
+// que este <script> todavia esta parseando cuando corre.
 document.addEventListener('DOMContentLoaded', iniciar);
 </script>
 

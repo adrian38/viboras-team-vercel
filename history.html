@@ -10,6 +10,7 @@
 <script src="/splash.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-client.js" defer></script>
+<script src="/vt-cargando.js"></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -539,7 +540,7 @@ document.getElementById('year').addEventListener('change', applyFilter)
 document.getElementById('month').addEventListener('change', applyFilter)
 document.getElementById('player').addEventListener('change', applyFilter)
 
-loadData()
+vtCargando.mientras(loadData, 'Cargando el historial')
 
 function toggleAdmin(on){
   isAdmin = !!on
