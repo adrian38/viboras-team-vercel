@@ -205,9 +205,13 @@ document.getElementById('texto').addEventListener('input', contarLetras);
 document.getElementById('enviar').addEventListener('click', enviar);
 // auth-client.js va con defer: window.vtMe existe en DOMContentLoaded, no antes.
 document.addEventListener('DOMContentLoaded', () => {
-  window.vtMe.then((me) => {
-    if (me && me.role === 'admin') vtCargando.mientras(pintarRecibidos, 'Cargando el buzón');
-  });
+  // El arranque cubre las dos ramas: saber quien eres y, si eres
+  // administrador, traerte los mensajes. Si solo se tapara la rama de admin,
+  // quien no lo es se quedaria mirando la pagina tapada hasta el rescate.
+  vtCargando.arranque(
+    () => window.vtMe.then((me) => (me && me.role === 'admin') ? pintarRecibidos() : null),
+    'Cargando el buzón'
+  );
 });
 </script>
 

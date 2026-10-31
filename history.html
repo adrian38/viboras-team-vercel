@@ -540,7 +540,7 @@ document.getElementById('year').addEventListener('change', applyFilter)
 document.getElementById('month').addEventListener('change', applyFilter)
 document.getElementById('player').addEventListener('change', applyFilter)
 
-vtCargando.mientras(loadData, 'Cargando el historial')
+vtCargando.arranque(loadData, 'Cargando el historial')
 
 function toggleAdmin(on){
   isAdmin = !!on

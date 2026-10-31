@@ -411,6 +411,16 @@ button.vt-campana__push:hover{color:var(--vt-gold-light)}
  *
  * Con «reducir movimiento» la rueda deja de girar: se queda el aro quieto y
  * el texto, que siguen diciendo que algo esta pasando. */
+/* Mientras dura la carga de arranque, la pagina no se ve: primero el velo y
+ * luego la pagina ya pintada, nunca al reves. La clase la pone vt-cargando.js
+ * al cargarse —va en el <head> y sin defer—, asi que no da tiempo a pintar
+ * nada antes.
+ *
+ * visibility y no display: el contenido sigue ocupando su sitio, asi que la
+ * pagina no da un salto al aparecer ni se recalcula el layout dos veces. Es
+ * el mismo recurso que usa splash.js con el video. */
+html.vt-cargando-pagina body > *:not(.vt-cargando){visibility:hidden}
+
 .vt-cargando{
   position:fixed;inset:0;z-index:var(--vt-z-velo);
   display:flex;flex-direction:column;align-items:center;justify-content:center;

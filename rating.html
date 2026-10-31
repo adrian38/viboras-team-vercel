@@ -844,7 +844,7 @@ async function init() {
   handleFilterChange();
 }
 
-vtCargando.mientras(init, 'Calculando el rating');
+vtCargando.arranque(init, 'Calculando el rating');
 </script>
 <!-- defer: necesita window.vtMe, que pone auth-client.js, también diferido. -->
 <script src="/excel-export.js" defer></script>

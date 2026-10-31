@@ -190,7 +190,7 @@ async function iniciar() {
   const caja = document.getElementById('contenido');
   const id = new URLSearchParams(location.search).get('partido');
   try {
-    const datos = await window.vtCargando.mientras(
+    const datos = await window.vtCargando.arranque(
       () => pedir(id ? `/api/avisos?action=partido&id=${encodeURIComponent(id)}` : '/api/avisos?action=pendientes'),
       'Buscando tus partidos'
     );

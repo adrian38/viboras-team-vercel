@@ -386,7 +386,7 @@ async function loadNamesIntoSelects(){
     if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poner); else poner()
   }catch(e){ console.error('Could not load names',e) }
 }
-vtCargando.mientras(loadNamesIntoSelects, 'Cargando los jugadores')
+vtCargando.arranque(loadNamesIntoSelects, 'Cargando los jugadores')
 
 </script>
 

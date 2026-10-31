@@ -988,7 +988,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if(quiereAlta()) elegirPestana(true)
   montarGoogle()
   window.addEventListener('resize', dibujarBotonesGoogle)
-  window.vtMe.then(pintarSesion)
+  // La carga de arranque de esta pagina es saber quien eres: hasta entonces
+  // no se puede ensenar ni el perfil ni el formulario de entrada. El perfil
+  // en si lo pide despues cuenta-perfil.js, ya con la pagina delante.
+  vtCargando.arranque(() => window.vtMe.then(pintarSesion), 'Cargando tu cuenta')
 })
 </script>
 

@@ -1074,7 +1074,7 @@
       document.getElementById('prevWindowBtn').addEventListener('click', () => moveWindow(-1));
       document.getElementById('nextWindowBtn').addEventListener('click', () => moveWindow(1));
       document.getElementById('rangeLabel').addEventListener('click', promptMonthSelection);
-      await vtCargando.mientras(loadData, 'Cargando los jugadores');
+      await vtCargando.arranque(loadData, 'Cargando los jugadores');
     });
   </script>
   <!-- Despues del script de la pagina y antes de DOMContentLoaded: envuelve
