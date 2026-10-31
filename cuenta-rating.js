@@ -125,6 +125,9 @@ async function pintarRating(nombre, salida){
   }
 
   pintar(hoy.mia, hace30, puestoDe(hoy.todos, nombre), curva, salida)
+  // La calificacion de estrellas de la tarjeta de valoracion lleva dentro
+  // este RD: sin el no se puede componer, asi que se avisa aqui.
+  if(window.pintarCalificacion) window.pintarCalificacion(hoy.mia.rd)
 }
 
 window.pintarRating = pintarRating

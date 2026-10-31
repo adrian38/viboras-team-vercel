@@ -287,7 +287,7 @@ function signo(neto){
   return '0'
 }
 
-// Cinco estrellas: llena, media o vacia segun la nota. La media se dibuja con
+// Cinco estrellas: llena, media o vacia segun la calificacion. La media se dibuja con
 // el degradado que define la pagina, porque la fuente de iconos viene con
 // FILL 0 y no trae estrella llena.
 function pintarEstrellas(nota){
@@ -310,27 +310,55 @@ function pintarEstrellas(nota){
 
 const coma = (n) => n.toFixed(1).replace('.', ',')
 
-function medidor(barraId, valorId, sobreCinco){
-  const barra = $(barraId)
-  if(barra) barra.style.width = Math.round((sobreCinco / 5) * 100) + '%'
-  texto(valorId, coma(sobreCinco))
+// La fiabilidad es la del ranking: el RD de Glicko, el mismo numero que la
+// tarjeta de rating enseña como «Media» o «Alta». No hay otra fiabilidad en
+// esta pantalla; la que hubo aqui hasta el 2026-10-31, calculada con votos y
+// partidos, era un invento que ademas chocaba de nombre con esta.
+// De 0 a 1 para poder
+// multiplicar: RD 350 (nadie sabe nada de ti) es 0 y RD 80 (el suelo del
+// motor) es 1. Los dos limites son los del motor, no inventados aqui.
+function fiabilidadDeRd(rd){
+  const t = (window.MAX_RD - rd) / (window.MAX_RD - window.MIN_RD)
+  return Math.min(1, Math.max(0, t))
 }
 
-// La nota no se vota: la calcula el servidor con el buen rollo y la
-// fiabilidad (api/perfil.js). Aqui solo se pinta, con sus dos partes a la
-// vista para que se entienda de donde sale.
+// La calificacion: las opiniones de buen rollo del grupo, pesadas por lo
+// seguro que esta el motor de tu ranking. El 3 es el centro —sin fiabilidad
+// no se sabe lo bastante para subir ni para bajar— y la fiabilidad
+// multiplica en vez de sumar, que es lo que evita que dos opiniones den un 5
+// redondo.
+function calificacionDe(buenRollo, fiabilidad){
+  return Math.min(5, Math.max(1, 3 + 2 * fiabilidad * (2 * buenRollo - 1)))
+}
+
+// Lo ultimo que llega del API, para componer la calificacion cuando el motor
+// tenga el RD: las dos mitades no vienen a la vez.
+let ultimaValoracion = null
+
+// La llama cuenta-rating.js cuando el motor termina. Antes de eso falta la
+// mitad de la cuenta, asi que la caja esta escondida.
+function pintarCalificacion(rd){
+  const v = ultimaValoracion
+  if(!v || v.buenRollo === null) return
+  const fiabilidad = fiabilidadDeRd(rd)
+  const calificacion = calificacionDe(v.buenRollo, fiabilidad)
+  pintarEstrellas(calificacion)
+  texto('pNota', coma(calificacion))
+  texto('pVotos', v.votos + (v.votos === 1 ? ' opinión' : ' opiniones'))
+  const barra = $('pBarraFiab')
+  if(barra) barra.style.width = Math.round(fiabilidad * 100) + '%'
+  texto('pValorFiab', window.getFiabilidadConfig(rd).label)
+  texto('pComoSeCalcula', fiabilidad >= 0.8
+    ? 'El motor ya está seguro de tu rating, así que tu calificación se mueve en todo el rango.'
+    : 'Las calificaciones parten de 3 y se separan según el motor se fía más de tu rating: juega más.')
+  ver('pConVotos', true)
+}
+
 function pintarValoracion(v){
-  ver('pSinVotos', v.estrellas === null)
-  ver('pConVotos', v.estrellas !== null)
-  if(v.estrellas !== null){
-    pintarEstrellas(v.estrellas)
-    texto('pNota', coma(v.estrellas))
-    texto('pVotos', v.votos + (v.votos === 1 ? ' valoración' : ' valoraciones'))
-    medidor('pBarraFiab', 'pValorFiab', v.fiabilidad)
-    texto('pComoSeCalcula', v.fiabilidad >= 4
-      ? 'Con tantos partidos y valoraciones, tu nota ya se mueve en todo el rango.'
-      : 'Las notas parten de 3 y se separan según se sabe más de ti: juega y pide que te valoren.')
-  }
+  ultimaValoracion = v
+  // La caja de la nota no se enseña hasta que el motor da el RD; la frase de
+  // «todavia no te ha valorado nadie» se sabe ya.
+  ver('pSinVotos', v.buenRollo === null)
   texto('pNivel', v.nivelVotos ? NIVEL[signo(v.nivelNeto)] : 'Sin votos')
   // Son partidos por valorar, no valoraciones sueltas: en cada uno hay tres
   // compañeros y dos preguntas.
@@ -439,5 +467,6 @@ async function pintarPerfil(){
 }
 
 window.pintarPerfil = pintarPerfil
+window.pintarCalificacion = pintarCalificacion
 
 })()

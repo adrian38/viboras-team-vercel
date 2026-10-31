@@ -80,9 +80,12 @@ Antes de dar por terminada una pantalla, por cada cosa que enseñe: de dónde
 sale, y contrastarla contra un `SELECT`. Lo que no se pueda contrastar, se
 declara en la entrega.
 
-Un rango o una constante elegidos a ojo no son un dato inventado si se dicen:
-los de la nota de estrellas están en `ai_context/nota_de_estrellas.md` con sus
-números y con el «a ojo» escrito.
+Una constante elegida a ojo no es un dato inventado si se dice dónde está y
+que se eligió a ojo. Lo que no vale es construir con ella una magnitud nueva y
+enseñarla como un dato del jugador: la calificación de estrellas tuvo hasta el
+2026-10-31 su propia «fiabilidad», tres constantes a ojo sobre votos y
+partidos, que además chocaba de nombre con la fiabilidad del ranking. Ahora usa
+el RD del motor: `ai_context/calificacion_de_estrellas.md`.
 
 ## Invariante: el motor de rating está triplicado
 

@@ -427,9 +427,10 @@
     <section class="vt-card" id="pTarjetaValoracion">
       <span class="vt-label vt-gold">Valoración del jugador</span>
       <p class="vt-small vt-muted" style="margin-top:var(--vt-xs)">
-        Lo que votan tus compañeros de pista al terminar un partido.
+        Tu calificación: depende de la fiabilidad de tu rating y de las
+        opiniones de buen rollo o mal rollo de tus compañeros.
       </p>
-      <p class="vt-small vt-muted oculto" id="pSinVotos">Todavía no te ha valorado nadie.</p>
+      <p class="vt-small vt-muted oculto" id="pSinVotos">Todavía no te ha dado su opinión nadie.</p>
       <div class="vt-well oculto" id="pConVotos">
         <div class="nota" style="padding-bottom:var(--vt-sm);border-bottom:1px solid var(--vt-border)">
           <span class="estrellas" id="pEstrellas" role="img"></span>
@@ -440,7 +441,7 @@
         <div class="medidor" style="margin-top:var(--vt-sm)">
           <span class="medidor__nombre">
             <span class="ms ms--sm vt-gold notranslate" translate="no" aria-hidden="true">verified_user</span>
-            <span>Fiabilidad</span>
+            <span>Fiabilidad del rating</span>
           </span>
           <span class="barra barra--fina"><span id="pBarraFiab"></span></span>
           <span class="medidor__valor" id="pValorFiab"></span>
