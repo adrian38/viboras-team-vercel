@@ -75,6 +75,9 @@ que hay.
 - `marcador_incompleto_se_rechaza.md`: qué cuenta como partido terminado, por
   qué la regla vive sólo en `api/_score.js` y no en las tres páginas que suben
   resultados, por qué los torneos quedan fuera y qué pasa con lo ya guardado.
+- `disponibilidad_quien_la_ve.md`: quién ha votado cada hora sólo lo ve un
+  administrador; la restricción está en `getSlots` (`api/read.js`), no en el
+  HTML, y por eso `/results` ya no se enlaza desde `/day`.
 - `contar_partidos_de_un_jugador.md`: por qué `count(*)` sobre `matches` da un
   número equivocado: en los torneos las columnas de marcador son juegos y no
   sets, y un partido organizado y sin jugar está ahí con 0-0, que no es NULL.

@@ -116,7 +116,11 @@ async function getResults(req, res) {
   }
 }
 
-async function getSlots(req, res) {
+// Quien ha votado cada hora es privado: solo lo ve un admin. A los demas se
+// les devuelve su propia disponibilidad y nada mas, que es lo unico que /day
+// necesita para dejar marcadas tus horas. Antes cualquiera con sesion podia
+// pedir el dia entero y leerse la lista completa de nombres.
+async function getSlots(req, res, user) {
   try {
     await ensureSchema();
     const date = req.query && (req.query.date || req.body?.date);
@@ -132,12 +136,20 @@ async function getSlots(req, res) {
     const todayIso = `${yyyy}-${mm}-${dd}`;
     await sql`DELETE FROM availability WHERE date ~ '^\\d{4}-\\d{2}-\\d{2}$' AND date < ${todayIso}`;
 
-    const { rows } = await sql`
-      SELECT p.name AS name, a.hour AS hour
-      FROM availability a
-      JOIN players p ON a.player_id = p.id
-      WHERE a.date = ${String(date)} AND p.active = TRUE
-      ORDER BY a.id`;
+    const { rows } = user.role === 'admin'
+      ? await sql`
+          SELECT p.name AS name, a.hour AS hour
+          FROM availability a
+          JOIN players p ON a.player_id = p.id
+          WHERE a.date = ${String(date)} AND p.active = TRUE
+          ORDER BY a.id`
+      : await sql`
+          SELECT p.name AS name, a.hour AS hour
+          FROM availability a
+          JOIN players p ON a.player_id = p.id
+          WHERE a.date = ${String(date)} AND p.active = TRUE
+            AND a.player_id = ${user.player_id}
+          ORDER BY a.id`;
 
     const result = {};
     for (const r of rows) {
@@ -286,7 +298,8 @@ async function getRatingsDePartida(req, res) {
 export default async function handler(req, res) {
   // Desde el 2026-10-16 la app entera va detras de la sesion, lecturas
   // incluidas: ai_context/cuentas_y_sesiones.md
-  if (!await exigirSesion(req, res)) return;
+  const user = await exigirSesion(req, res);
+  if (!user) return;
   const action = String(req.query?.action || req.body?.action || '').trim();
 
   switch (action) {
@@ -297,7 +310,7 @@ export default async function handler(req, res) {
     case 'getResults':
       return getResults(req, res);
     case 'getSlots':
-      return getSlots(req, res);
+      return getSlots(req, res, user);
     case 'exportPlayers':
       return exportPlayers(req, res);
     case 'getNivelVotos':
