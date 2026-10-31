@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu perfil · Viboras Team</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/splash.js"></script>
+<script src="/pwa.js" defer></script>
+<script src="/auth-client.js" defer></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+<style>
+/* Maqueta de la pantalla de perfil: el mockup de Stitch traducido al sistema
+ * visual del proyecto. Los numeros son de ejemplo y no vienen del API; lo que
+ * se mide aqui es la forma, no los datos.
+ *
+ * Del mockup original se descarta Tailwind (la app no lo usa: paginas
+ * estaticas sin build) y los ocho colores que inventaba. Todo lo de abajo
+ * sale de las variables de theme.css, sin un solo hex suelto.
+ */
+
+.perfil{max-width:560px;gap:var(--vt-md)}
+.perfil .vt-card{padding:var(--vt-md)}
+
+/* Titulo de tarjeta: la etiqueta pequena espaciada del mockup. */
+.t-tarjeta{display:flex;align-items:center;gap:var(--vt-xs);margin:0 0 var(--vt-sm)}
+.t-tarjeta .ms{color:var(--vt-gold)}
+.t-tarjeta--oro{color:var(--vt-gold)}
+
+/* --------------------------------------------------------------- perfil -- */
+
+.identidad{display:flex;align-items:flex-start;gap:var(--vt-md)}
+.inicial{
+  flex:0 0 auto;width:56px;height:56px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--vt-gold);border-radius:var(--vt-r-full);
+  background:var(--vt-surface-3);
+  font-family:var(--vt-font-head);font-size:24px;font-weight:800;
+  letter-spacing:0.02em;color:var(--vt-gold);
+}
+.identidad__nombre{font-size:24px;line-height:28px}
+.identidad__correo{font-size:13px;color:var(--vt-muted);word-break:break-all}
+.chips{display:flex;flex-wrap:wrap;gap:var(--vt-sm);margin-top:var(--vt-sm)}
+.pie-tarjeta{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:var(--vt-sm);margin-top:var(--vt-md);padding-top:var(--vt-sm);
+  border-top:1px solid var(--vt-border);
+  font-size:12px;color:var(--vt-muted);
+}
+
+/* ------------------------------------------------------- lado de pista -- */
+
+.lado{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:var(--vt-xs);
+  padding:var(--vt-xs);margin-bottom:var(--vt-sm);
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border);border-radius:var(--vt-r-md);
+}
+.lado__op{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:10px 4px;border:0;border-radius:var(--vt-r);
+  background:var(--vt-surface-2);color:var(--vt-muted);
+  font-family:var(--vt-font-head);font-size:14px;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;
+  transition:background .15s ease,color .15s ease;
+}
+.lado__op:hover{color:var(--vt-text-strong)}
+.lado__op[aria-pressed="true"]{background:var(--vt-gold);color:var(--vt-surface-deep)}
+
+/* ---------------------------------------------------------- tu rating -- */
+
+.rating-cifra{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--vt-sm)}
+.rating-cifra .vt-score{font-size:48px;line-height:48px}
+.trio{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  margin:var(--vt-md) 0;padding:var(--vt-sm) 0;
+  border-top:1px solid var(--vt-border);border-bottom:1px solid var(--vt-border);
+  text-align:center;
+}
+.trio > div + div{border-left:1px solid var(--vt-border)}
+.trio b{display:block;font-family:var(--vt-font-head);font-size:16px;font-weight:700;letter-spacing:0.03em}
+.spark{display:block;width:100%;height:48px;overflow:visible}
+
+/* ---------------------------------------------------------- rejilla 2x2 -- */
+
+.cifras{display:grid;grid-template-columns:1fr 1fr;gap:var(--vt-sm)}
+.cifras .vt-well{padding:var(--vt-sm) var(--vt-md)}
+.cifras b{
+  display:block;font-family:var(--vt-font-head);font-size:26px;line-height:30px;
+  font-weight:800;color:var(--vt-text-strong);
+}
+.cifras b small{font-family:var(--vt-font-body);font-size:12px;font-weight:400;color:var(--vt-muted)}
+
+/* Barra de proporcion y medidores: la misma pieza con dos usos. */
+.barra{height:8px;border-radius:var(--vt-r-full);background:var(--vt-surface-4);overflow:hidden}
+.barra--fina{height:6px;background:var(--vt-surface-2)}
+.barra > span{display:block;height:100%;border-radius:var(--vt-r-full);background:var(--vt-gold)}
+
+.persona{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);padding:6px 0}
+.persona__id{display:flex;align-items:center;gap:var(--vt-sm);min-width:0}
+.persona__id .vt-label,.persona__id b,.persona__id small{display:block}
+.inicial--sm{width:28px;height:28px;font-size:12px;border-width:1px}
+.inicial--gris{border-color:var(--vt-border-strong);color:var(--vt-muted)}
+
+/* ------------------------------------------------------------ estrellas -- */
+
+.nota{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-md)}
+.estrellas{display:flex;gap:2px;color:var(--vt-gold-light)}
+.estrellas svg{width:28px;height:28px;flex:0 0 auto}
+.nota__cifra{text-align:right;line-height:1}
+.nota__cifra b{font-family:var(--vt-font-head);font-size:38px;font-weight:800;color:var(--vt-text-strong)}
+
+.medidor{display:flex;align-items:center;gap:var(--vt-sm);font-size:13px}
+.medidor__nombre{display:flex;align-items:center;gap:var(--vt-xs);width:120px;flex:0 0 auto}
+.medidor__nombre span:last-child{
+  font-family:var(--vt-font-head);font-size:12px;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-text-strong);
+}
+.medidor .barra{flex:1;min-width:0}
+.medidor__valor{width:28px;text-align:right;font-family:var(--vt-font-head);font-size:15px;font-weight:700;color:var(--vt-gold-light)}
+
+/* ------------------------------------------------------------- tu ficha -- */
+
+.ficha{display:flex;flex-direction:column}
+.ficha__fila{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--vt-md);
+  padding:10px 0;border-bottom:1px solid var(--vt-border);font-size:13px;
+}
+.ficha__fila:last-child{border-bottom:0}
+.ficha__et{color:var(--vt-muted)}
+.ficha__val{display:flex;align-items:center;gap:var(--vt-sm);text-align:right;font-weight:600;color:var(--vt-text)}
+/* Lo que no se puede cambiar: apagado y con candado, sin lapiz. */
+.ficha__fila--fija .ficha__val{color:var(--vt-muted)}
+.ficha__fila--fija .ms{color:var(--vt-faint)}
+.ficha__lapiz{background:none;border:0;padding:0;color:var(--vt-gold);cursor:pointer}
+.ficha__lapiz:hover{color:var(--vt-gold-light)}
+.nota-pie{display:flex;align-items:flex-start;gap:var(--vt-xs);margin-top:var(--vt-sm);padding-top:var(--vt-sm);border-top:1px solid var(--vt-border);font-size:12px;color:var(--vt-muted)}
+.nota-pie .ms{color:var(--vt-gold-dark)}
+
+/* ------------------------------------------------------- disponibilidad -- */
+
+.semana{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--vt-xs);text-align:center}
+.semana__dia{font-family:var(--vt-font-head);font-size:12px;font-weight:700;color:var(--vt-muted)}
+.semana__celda{
+  display:flex;align-items:center;justify-content:center;
+  aspect-ratio:1;margin-top:4px;border-radius:var(--vt-r);
+  background:var(--vt-surface-deep);border:1px solid var(--vt-border);
+  color:var(--vt-faint);font-size:13px;
+}
+.semana__celda--si{background:var(--vt-gold);border-color:var(--vt-gold);color:var(--vt-surface-deep);font-weight:700}
+
+/* ------------------------------------------------------------- ajustes -- */
+
+.ajuste{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-md);padding:10px 0;border-bottom:1px solid var(--vt-border)}
+.ajuste:last-child{border-bottom:0}
+.ajuste__id{display:flex;align-items:center;gap:var(--vt-sm);min-width:0}
+.ajuste__icono{
+  flex:0 0 auto;width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--vt-surface-deep);border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);color:var(--vt-gold);
+}
+.ajuste b{display:block;font-size:13px;font-weight:600;color:var(--vt-text-strong)}
+.ajuste small{font-size:12px}
+
+/* Interruptor: un checkbox de verdad, pintado. Asi llega el teclado y el
+   estado se lee sin JavaScript. */
+.palanca{position:relative;flex:0 0 auto;width:44px;height:24px}
+.palanca input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.palanca i{
+  display:block;width:100%;height:100%;border-radius:var(--vt-r-full);
+  background:var(--vt-surface-4);transition:background .15s ease;
+}
+.palanca i::after{
+  content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;
+  border-radius:var(--vt-r-full);background:var(--vt-text);transition:transform .15s ease;
+}
+.palanca input:checked + i{background:var(--vt-gold)}
+.palanca input:checked + i::after{transform:translateX(20px)}
+.palanca input:focus-visible + i{outline:2px solid var(--vt-gold-light);outline-offset:2px}
+
+/* ------------------------------------------------------------ pendiente -- */
+
+.pendiente{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);flex-wrap:wrap}
+.pendiente__botones{display:flex;gap:var(--vt-xs)}
+
+.salir{width:100%;margin-top:var(--vt-sm)}
+.sesion{margin-top:var(--vt-sm);text-align:center;font-size:12px;color:var(--vt-faint)}
+
+@media(max-width:380px){
+  .lado__op{font-size:12px;letter-spacing:0.02em}
+  .medidor__nombre{width:92px}
+}
+</style>
+</head>
+<body>
+
+<!-- Las estrellas no son de la fuente de iconos: con FILL 0 no hay estrella
+     llena, y la media estrella necesita un corte a medida. Un simbolo y dos
+     rellenos resuelven las tres formas. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <linearGradient id="mediaEstrella">
+      <stop offset="50%" stop-color="currentColor"></stop>
+      <stop offset="50%" stop-color="transparent"></stop>
+    </linearGradient>
+    <symbol id="estrella" viewBox="0 0 24 24">
+      <path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.5L12 17.5 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"></path>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="vt-page perfil">
+
+  <div class="vt-cabecera vt-header" style="align-items:center">
+    <div class="vt-header__logo" style="width:56px;height:56px;border-radius:var(--vt-r-full)">
+      <img src="/image.png" alt="Víboras Team" style="border-radius:var(--vt-r-full)">
+    </div>
+    <div class="vt-header__text" style="text-align:left">
+      <span class="vt-label">Tu cuenta</span>
+      <h1 style="font-size:26px;line-height:30px">Víboras <span class="vt-gold">Team</span></h1>
+    </div>
+    <button type="button" class="vt-volver" onclick="location.href='/'">
+      <span class="ms ms--sm">arrow_back</span> Volver
+    </button>
+  </div>
+
+  <!-- 1. Quien eres ----------------------------------------------------- -->
+  <section class="vt-card vt-card--accent">
+    <div class="identidad">
+      <div class="inicial">AC</div>
+      <div class="vt-grow">
+        <h2 class="identidad__nombre">Adrián C</h2>
+        <div class="identidad__correo">131995adrian@gmail.com</div>
+        <div class="chips">
+          <span class="vt-badge"><span class="vt-badge__dot"></span> Miembro activo</span>
+          <span class="vt-chip vt-chip--gold"><span class="ms ms--sm">verified_user</span> Correo verificado</span>
+        </div>
+      </div>
+    </div>
+    <div class="pie-tarjeta">
+      <span><span class="ms ms--sm">calendar_month</span> En el grupo desde el 17 oct 2026</span>
+    </div>
+  </section>
+
+  <!-- 2. Lado de pista --------------------------------------------------- -->
+  <section class="vt-card">
+    <h3 class="t-tarjeta t-tarjeta--oro"><span class="ms ms--sm">sports_tennis</span> Lado de pista</h3>
+    <p class="vt-small">¿Dónde juegas mejor? Lo verán tus compañeros al formar parejas.</p>
+    <div class="lado">
+      <button type="button" class="lado__op" aria-pressed="true"><span class="ms ms--sm">sports_tennis</span> Drive</button>
+      <button type="button" class="lado__op" aria-pressed="false"><span class="ms ms--sm">sports_tennis</span> Revés</button>
+      <button type="button" class="lado__op" aria-pressed="false"><span class="ms ms--sm">sync_alt</span> Me da igual</button>
+    </div>
+    <small><span class="ms ms--sm">info</span> Puedes cambiarlo cuando quieras.</small>
+  </section>
+
+  <!-- 3. Rating ---------------------------------------------------------- -->
+  <section class="vt-card">
+    <div class="vt-between">
+      <h3 class="t-tarjeta"><span class="vt-label">Tu rating</span></h3>
+      <span class="vt-badge">Activo</span>
+    </div>
+    <div class="rating-cifra">
+      <span class="vt-score">1842</span>
+      <span class="vt-chip vt-chip--gold"><span class="ms ms--sm">trending_up</span> +34 este mes</span>
+    </div>
+    <div class="trio">
+      <div><span class="vt-label">Posición</span><b>4.º</b></div>
+      <div><span class="vt-label">Fiabilidad</span><b class="vt-gold">Alta</b></div>
+      <div><span class="vt-label">Salida</span><b>1800</b></div>
+    </div>
+    <div class="vt-between" style="margin-bottom:var(--vt-xs)">
+      <span class="vt-label">Evolución últimos 30 días</span>
+      <span class="vt-label vt-gold">Máx 1856</span>
+    </div>
+    <svg class="spark" viewBox="0 0 320 60" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" y1="45" x2="320" y2="45" stroke="var(--vt-border)" stroke-dasharray="3 3"></line>
+      <path d="M 0,45 Q 30,42 60,40 T 120,32 T 180,36 T 240,20 T 290,14 L 320,12"
+            fill="none" stroke="var(--vt-gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+      <circle cx="318" cy="12" r="3.5" fill="var(--vt-gold-soft)"></circle>
+    </svg>
+  </section>
+
+  <!-- 4. Partidos -------------------------------------------------------- -->
+  <section class="vt-card">
+    <h3 class="t-tarjeta"><span class="vt-label">Partidos y rendimiento</span></h3>
+    <div class="cifras">
+      <div class="vt-well"><span class="vt-label">Partidos</span><b>87</b></div>
+      <div class="vt-well"><span class="vt-label">Victorias</span><b class="vt-gold">54</b></div>
+      <div class="vt-well"><span class="vt-label">% victorias</span><b>62%</b></div>
+      <div class="vt-well"><span class="vt-label">Racha</span><b>3 <small>seguidas</small></b></div>
+    </div>
+    <div class="vt-between" style="margin:var(--vt-md) 0 var(--vt-xs)">
+      <small><b class="vt-gold">118</b> sets ganados</small>
+      <small>72 perdidos</small>
+    </div>
+    <div class="barra"><span style="width:62%"></span></div>
+    <small style="display:block;margin-top:var(--vt-xs)">Último partido: 28 oct 2026</small>
+    <div style="margin-top:var(--vt-sm);padding-top:var(--vt-sm);border-top:1px solid var(--vt-border)">
+      <div class="persona">
+        <span class="persona__id">
+          <span class="inicial inicial--sm">JM</span>
+          <span><b style="font-size:13px">Jon M</b><span class="vt-label">Mejor compañero</span></span>
+        </span>
+        <b class="vt-gold">71% juntos</b>
+      </div>
+      <div class="persona">
+        <span class="persona__id">
+          <span class="inicial inicial--sm inicial--gris">IA</span>
+          <span><b style="font-size:13px">Iker A</b><span class="vt-label">Rival más frecuente</span></span>
+        </span>
+        <b class="vt-muted">14 partidos</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Valoracion del jugador ------------------------------------------ -->
+  <section class="vt-card">
+    <h3 class="t-tarjeta t-tarjeta--oro"><span class="ms ms--sm">military_tech</span> Valoración del jugador</h3>
+    <p class="vt-small">Tu nota combina fiabilidad y buen rollo.</p>
+    <div class="vt-well">
+      <div class="nota" style="padding-bottom:var(--vt-sm);border-bottom:1px solid var(--vt-border)">
+        <span class="estrellas" role="img" aria-label="4,3 sobre 5">
+          <svg fill="currentColor"><use href="#estrella"></use></svg>
+          <svg fill="currentColor"><use href="#estrella"></use></svg>
+          <svg fill="currentColor"><use href="#estrella"></use></svg>
+          <svg fill="currentColor"><use href="#estrella"></use></svg>
+          <svg fill="url(#mediaEstrella)" stroke="currentColor" stroke-width="1"><use href="#estrella"></use></svg>
+        </span>
+        <span class="nota__cifra"><b>4,3</b><br><span class="vt-label">sobre 5</span></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:var(--vt-sm);margin-top:var(--vt-sm)">
+        <div class="medidor">
+          <span class="medidor__nombre"><span class="ms ms--sm vt-gold">calendar_month</span><span>Fiabilidad</span></span>
+          <span class="barra barra--fina"><span style="width:90%"></span></span>
+          <span class="medidor__valor">4,5</span>
+        </div>
+        <div class="medidor">
+          <span class="medidor__nombre"><span class="ms ms--sm vt-gold">emoji_symbols</span><span>Buen rollo</span></span>
+          <span class="barra barra--fina"><span style="width:82%"></span></span>
+          <span class="medidor__valor">4,1</span>
+        </div>
+      </div>
+    </div>
+    <div class="vt-between" style="margin-top:var(--vt-sm);padding-bottom:var(--vt-sm);border-bottom:1px solid var(--vt-border)">
+      <span><span class="vt-label">Nivel</span> <b class="vt-gold" style="font-size:13px">En su nivel</b></span>
+      <button type="button" class="vt-btn vt-btn--quiet vt-btn--sm"><span class="ms ms--sm">info</span> Cómo se calcula</button>
+    </div>
+    <div class="vt-between" style="margin-top:var(--vt-sm)">
+      <small>Te faltan 2 valoraciones de partidos recientes</small>
+      <button type="button" class="vt-btn vt-btn--sm">Valorar ahora</button>
+    </div>
+  </section>
+
+  <!-- 6. Tu ficha -------------------------------------------------------- -->
+  <section class="vt-card">
+    <div class="vt-between" style="margin-bottom:var(--vt-sm)">
+      <div>
+        <h3 class="t-tarjeta" style="margin:0"><span class="vt-label">Tu ficha</span></h3>
+        <small>Datos registrados de tu inscripción</small>
+      </div>
+      <button type="button" class="vt-btn vt-btn--ghost vt-btn--sm"><span class="ms ms--sm">edit_note</span> Editar</button>
+    </div>
+    <div class="ficha">
+      <div class="ficha__fila ficha__fila--fija">
+        <span class="ficha__et">Nombre en el grupo</span>
+        <span class="ficha__val">Adrián C <span class="ms ms--sm">lock</span></span>
+      </div>
+      <div class="ficha__fila ficha__fila--fija">
+        <span class="ficha__et">Correo</span>
+        <span class="ficha__val">131995adrian@gmail.com <span class="ms ms--sm">lock</span></span>
+      </div>
+      <div class="ficha__fila ficha__fila--fija">
+        <span class="ficha__et">Nivel BK</span>
+        <span class="ficha__val">Avanzado <span class="ms ms--sm">lock</span></span>
+      </div>
+      <div class="ficha__fila">
+        <span class="ficha__et">Nombre y apellidos</span>
+        <span class="ficha__val">Adrián Calvo Gómez
+          <button type="button" class="ficha__lapiz" aria-label="Editar nombre y apellidos"><span class="ms ms--sm">edit_note</span></button>
+        </span>
+      </div>
+      <div class="ficha__fila">
+        <span class="ficha__et">Teléfono</span>
+        <span class="ficha__val">+34 612 34 56 78
+          <button type="button" class="ficha__lapiz" aria-label="Editar teléfono"><span class="ms ms--sm">edit_note</span></button>
+        </span>
+      </div>
+      <div class="ficha__fila">
+        <span class="ficha__et">Liga</span>
+        <span class="ficha__val">Sí
+          <button type="button" class="ficha__lapiz" aria-label="Editar liga"><span class="ms ms--sm">edit_note</span></button>
+        </span>
+      </div>
+      <div class="ficha__fila">
+        <span class="ficha__et">Torneos</span>
+        <span class="ficha__val">No
+          <button type="button" class="ficha__lapiz" aria-label="Editar torneos"><span class="ms ms--sm">edit_note</span></button>
+        </span>
+      </div>
+      <div class="ficha__fila">
+        <span class="ficha__et">Ranking por semana</span>
+        <span class="ficha__val">3-4
+          <button type="button" class="ficha__lapiz" aria-label="Editar ranking por semana"><span class="ms ms--sm">edit_note</span></button>
+        </span>
+      </div>
+      <div class="ficha__fila">
+        <span class="ficha__et">Disponibilidad</span>
+        <span class="ficha__val">Tardes + findes
+          <button type="button" class="ficha__lapiz" aria-label="Editar disponibilidad"><span class="ms ms--sm">edit_note</span></button>
+        </span>
+      </div>
+    </div>
+    <p class="nota-pie">
+      <span class="ms ms--sm">info</span>
+      El nombre, el correo y tu nivel los cambia un administrador. Escríbele por el buzón si hay algo mal.
+    </p>
+  </section>
+
+  <!-- 7. Disponibilidad -------------------------------------------------- -->
+  <section class="vt-card">
+    <div class="vt-between" style="margin-bottom:var(--vt-sm)">
+      <h3 class="t-tarjeta" style="margin:0"><span class="ms ms--sm">calendar_month</span><span class="vt-label">Disponibilidad</span></h3>
+      <span class="vt-chip vt-chip--gold">Esta semana</span>
+    </div>
+    <div class="semana">
+      <div><span class="semana__dia">L</span><div class="semana__celda semana__celda--si">✓</div></div>
+      <div><span class="semana__dia">M</span><div class="semana__celda">·</div></div>
+      <div><span class="semana__dia">X</span><div class="semana__celda semana__celda--si">✓</div></div>
+      <div><span class="semana__dia">J</span><div class="semana__celda semana__celda--si">✓</div></div>
+      <div><span class="semana__dia">V</span><div class="semana__celda">·</div></div>
+      <div><span class="semana__dia">S</span><div class="semana__celda semana__celda--si">✓</div></div>
+      <div><span class="semana__dia">D</span><div class="semana__celda semana__celda--si">✓</div></div>
+    </div>
+    <div class="vt-between" style="margin-top:var(--vt-md);padding-top:var(--vt-sm);border-top:1px solid var(--vt-border)">
+      <small>12 franjas votadas este mes</small>
+      <button type="button" class="vt-btn vt-btn--quiet vt-btn--sm">Ver franjas</button>
+    </div>
+  </section>
+
+  <!-- 8. Avisos y dispositivos ------------------------------------------- -->
+  <section class="vt-card">
+    <h3 class="t-tarjeta"><span class="vt-label">Avisos y dispositivos</span></h3>
+    <div class="ajuste">
+      <span class="ajuste__id">
+        <span class="ajuste__icono"><span class="ms ms--sm">notifications</span></span>
+        <span><b>Notificaciones push</b><small>Activas en 2 dispositivos</small></span>
+      </span>
+      <label class="palanca">
+        <input type="checkbox" checked aria-label="Notificaciones push">
+        <i></i>
+      </label>
+    </div>
+    <div class="ajuste">
+      <span class="ajuste__id">
+        <span class="ajuste__icono"><span class="ms ms--sm">history</span></span>
+        <span><b>Buzón de sugerencias</b><small>3 enviadas</small></span>
+      </span>
+      <span class="ms vt-muted">chevron_right</span>
+    </div>
+  </section>
+
+  <!-- 9. Administracion -------------------------------------------------- -->
+  <section class="vt-card">
+    <div class="vt-between" style="margin-bottom:var(--vt-sm)">
+      <h3 class="t-tarjeta t-tarjeta--oro" style="margin:0"><span class="ms ms--sm">admin_panel_settings</span> Cuentas pendientes</h3>
+      <span class="vt-badge">Panel admin</span>
+    </div>
+    <div class="vt-well pendiente">
+      <span class="persona__id">
+        <span class="inicial inicial--sm inicial--gris">MG</span>
+        <span><b style="font-size:13px">Marcos G.</b><small>Pide entrar al grupo</small></span>
+      </span>
+      <span class="pendiente__botones">
+        <button type="button" class="vt-btn vt-btn--sm">Aprobar</button>
+        <button type="button" class="vt-btn vt-btn--ghost vt-btn--sm">Rechazar</button>
+      </span>
+    </div>
+  </section>
+
+  <!-- 10. Cerrar sesion --------------------------------------------------- -->
+  <div>
+    <button type="button" class="vt-btn vt-btn--ghost salir"><span class="ms ms--sm">logout</span> Cerrar sesión</button>
+    <p class="sesion">Sesión iniciada el 30 oct · Caduca en 28 días</p>
+  </div>
+
+</div>
+</body>
+</html>
