@@ -432,6 +432,9 @@ async function pintarPerfil(){
     pintarDisponibilidad(datos.disponibilidad)
   }
   pintarDispositivos(datos.dispositivos)
+  // El rating va por su cuenta (cuenta-rating.js): lo calcula el navegador y
+  // tarda mas que todo lo demas junto, asi que no se le espera.
+  if(conJugador && window.pintarRating) window.pintarRating(datos.cuenta.nombre, datos.cuenta.salida)
 }
 
 window.pintarPerfil = pintarPerfil

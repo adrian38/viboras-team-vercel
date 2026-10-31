@@ -152,6 +152,18 @@
 .lado__op[aria-pressed="true"]{background:var(--vt-gold);color:var(--vt-surface-deep)}
 .lado__op[disabled]{opacity:.6;cursor:default}
 
+.rating-cifra{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--vt-sm);margin-top:var(--vt-xs)}
+.rating-cifra .vt-score{font-size:48px;line-height:48px}
+.trio{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  margin:var(--vt-md) 0;padding:var(--vt-sm) 0;
+  border-top:1px solid var(--vt-border);border-bottom:1px solid var(--vt-border);
+  text-align:center;
+}
+.trio > div + div{border-left:1px solid var(--vt-border)}
+.trio b{display:block;font-family:var(--vt-font-head);font-size:16px;font-weight:700;letter-spacing:0.03em}
+.spark{display:block;width:100%;height:48px;overflow:visible}
+
 .cifras{display:grid;grid-template-columns:1fr 1fr;gap:var(--vt-sm)}
 .cifras .vt-well{padding:var(--vt-sm) var(--vt-md)}
 .cifras b{
@@ -338,6 +350,35 @@
         </button>
       </div>
       <small id="pLadoPie">Mientras no elijas, cuentas para los dos lados.</small>
+    </section>
+
+    <!-- El rating lo calcula el navegador con el motor compartido
+         (/vt-glicko.js), el mismo que /rating: aqui no se copia nada. Tarda,
+         asi que la tarjeta se queda escondida hasta tenerlo. -->
+    <section class="vt-card oculto" id="pTarjetaRating">
+      <div class="vt-between">
+        <span class="vt-label">Tu rating</span>
+        <span class="vt-badge" id="pRatingCategoria"></span>
+      </div>
+      <div class="rating-cifra">
+        <span class="vt-score" id="pRating"></span>
+        <span class="vt-chip vt-chip--gold oculto" id="pRatingMes">
+          <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">trending_up</span><span id="pRatingMesTexto"></span>
+        </span>
+      </div>
+      <div class="trio">
+        <div><span class="vt-label">Posición</span><b id="pPuesto"></b></div>
+        <div><span class="vt-label">Fiabilidad</span><b class="vt-gold" id="pRd"></b></div>
+        <div><span class="vt-label">Salida</span><b id="pSalida2"></b></div>
+      </div>
+      <div class="vt-between" style="margin-bottom:var(--vt-xs)">
+        <span class="vt-label">Evolución últimos 30 días</span>
+        <span class="vt-label vt-gold" id="pRatingMax"></span>
+      </div>
+      <svg class="spark" id="pSpark" viewBox="0 0 320 60" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <p class="pie-tarjeta">
+        <span>El detalle, en <a href="/rating">la página de rating</a>.</span>
+      </p>
     </section>
 
     <section class="vt-card" id="pTarjetaPartidos">
@@ -559,7 +600,12 @@
 <script src="/auth-client.js" defer></script>
 <script src="/cuenta-correo.js" defer></script>
 <script src="/vt-cargando.js"></script>
+<!-- El motor de rating y sus dos tablas, los mismos que /rating. -->
+<script src="/nivel-votos.js"></script>
+<script src="/rating-inicial.js"></script>
+<script src="/vt-glicko.js"></script>
 <script src="/cuenta-perfil.js" defer></script>
+<script src="/cuenta-rating.js" defer></script>
 <script>
 const $ = (id) => document.getElementById(id)
 let enVuelo = false

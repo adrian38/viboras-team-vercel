@@ -430,6 +430,19 @@ function leerPartidos() {
     .catch(e => { console.error('Could not load matches', e); return []; });
 }
 
+// Los acompanantes del motor —nivel-votos.js, rating-inicial.js,
+// players-aportes.js— usan estos nombres a pelo, contando con que sean
+// globales. Lo eran cuando el motor estaba pegado en cada pagina; dentro de
+// esta funcion ya no, asi que se publican. Sin esto, una pagina que use el
+// motor sin traerse los nombres al ambito revienta con «X is not defined» en
+// cuanto entra uno de esos ficheros, que es justo lo que paso en /cuenta.
+window.GlickoPlayer = GlickoPlayer;
+window.MAX_RD = MAX_RD;
+window.MIN_RD = MIN_RD;
+window.Q = Q;
+window.expected = expected;
+window.getReliabilityWeight = getReliabilityWeight;
+
 return {
   Q, C_DAILY, INITIAL_RATING, INITIAL_RD, MIN_RD, MAX_RD,
   GlickoPlayer, g, expected, decayAllPlayersOneDay, getPlayerOrCreate,
