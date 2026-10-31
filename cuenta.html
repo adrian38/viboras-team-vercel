@@ -190,8 +190,9 @@
   display:flex;align-items:center;justify-content:center;
   aspect-ratio:1;margin-top:4px;border-radius:var(--vt-r);
   background:var(--vt-surface-deep);border:1px solid var(--vt-border);
-  color:var(--vt-faint);font-size:13px;
+  color:var(--vt-faint);font-size:13px;text-decoration:none;
 }
+.semana__celda:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
 .semana__celda--si{background:var(--vt-gold);border-color:var(--vt-gold);color:var(--vt-surface-deep);font-weight:700}
 
 .ajuste{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-md);padding:10px 0;border-bottom:1px solid var(--vt-border)}
@@ -398,7 +399,10 @@
       <div class="semana" id="pSemana" style="margin-top:var(--vt-sm)"></div>
       <div class="vt-between" style="margin-top:var(--vt-md);padding-top:var(--vt-sm);border-top:1px solid var(--vt-border)">
         <small id="pFranjas"></small>
-        <button class="vt-btn vt-btn--quiet vt-btn--sm" onclick="window.location.href='/'">Votar</button>
+        <!-- A /day?date=..., que es donde se vota. El href lo pone
+             cuenta-perfil.js con el primer dia que falte por votar; sin el no
+             iria a ninguna parte util, porque la portada no tiene calendario. -->
+        <a class="vt-btn vt-btn--quiet vt-btn--sm" id="pVotar" href="/">Votar</a>
       </div>
     </section>
 

@@ -234,6 +234,8 @@ function pintarValoracion(v){
 
 const DIAS = ['L','M','X','J','V','S','D']
 
+const pad = (n) => String(n).padStart(2, '0')
+
 // Los siete dias que vienen, empezando hoy. La base no guarda el pasado
 // (getSlots borra las franjas vencidas), asi que esto es lo que hay votado de
 // aqui en adelante, no un historico.
@@ -243,22 +245,29 @@ function pintarDisponibilidad(d){
   const votados = new Set((d.dias || []).map((x) => x.dia))
   caja.innerHTML = ''
   const hoy = new Date()
+  let primeroSinVotar = null
   for(let i = 0; i < 7; i++){
     const dia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + i)
-    const iso = dia.toISOString().slice(0, 10)
+    // toISOString pasa por UTC y en invierno nos devolveria el dia anterior.
+    const iso = dia.getFullYear() + '-' + pad(dia.getMonth() + 1) + '-' + pad(dia.getDate())
     const si = votados.has(iso)
+    if(!si && !primeroSinVotar) primeroSinVotar = iso
     const col = document.createElement('div')
     const et = document.createElement('span')
     et.className = 'semana__dia'
     et.innerText = DIAS[(dia.getDay() + 6) % 7]
-    const celda = document.createElement('div')
+    // Cada dia lleva a su pagina de votacion: /day?date=AAAA-MM-DD.
+    const celda = document.createElement('a')
     celda.className = 'semana__celda' + (si ? ' semana__celda--si' : '')
+    celda.href = '/day?date=' + iso
     celda.innerText = si ? '✓' : '·'
-    celda.title = iso
+    celda.title = (si ? 'Votado el ' : 'Votar el ') + iso
     col.appendChild(et)
     col.appendChild(celda)
     caja.appendChild(col)
   }
+  const votar = $('pVotar')
+  if(votar) votar.href = '/day?date=' + (primeroSinVotar || (d.dias[0] && d.dias[0].dia))
   texto('pFranjas', d.franjas
     ? d.franjas + (d.franjas === 1 ? ' franja votada' : ' franjas votadas') + ' por delante'
     : 'No tienes ninguna franja votada')
