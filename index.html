@@ -96,7 +96,7 @@
   font-size:30px;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;
   color:var(--vt-text-strong);
   line-height:1;
-}
+}
 .block-row{position:relative;z-index:var(--vt-z-contenido);display:flex;gap:var(--vt-md);align-items:center}
 
 label.small{
@@ -250,9 +250,11 @@ label.small{
   .block-row{align-items:center}
 
   /* Desktop-only 2-column layout for main blocks */
-  .site{ display:grid; grid-template-columns: 1fr 1fr; grid-template-areas: "upload consult" "performance performance" "buzon buzon"; gap:18px }
+  .site{ display:grid; grid-template-columns: 1fr 1fr; grid-template-areas: "upload consult" "avisos comunidad" "performance performance" "buzon buzon"; gap:18px }
   .block--upload{ grid-area: upload }
   .block--consult{ grid-area: consult }
+  .block--avisos{ grid-area: avisos }
+  .block--comunidad{ grid-area: comunidad }
   .block--performance{ grid-area: performance }
   .block--buzon{ grid-area: buzon }
 }
@@ -316,6 +318,46 @@ label.small{
         <div class="controls">
           <button class="btn" onclick="window.location='history.html'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">calendar_month</span>Partidos individuales</button>
           <button class="btn warn" onclick="window.location='tournaments.html'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">emoji_symbols</span>Torneos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block block--avisos">
+    <div class="block-head">
+      <div>
+        <span class="ms block-icon notranslate" translate="no">campaign</span>
+        <div>
+          <div class="block-title">Avisos y novedades</div>
+        </div>
+      </div>
+      <span class="ms ms--lg block-marca notranslate" translate="no" aria-hidden="true">notifications</span>
+    </div>
+    <div class="block-row">
+      <div style="flex:1">
+        <label class="small">Comunicados del grupo: torneos, pistas y equipación</label>
+        <div class="controls">
+          <button class="btn" onclick="window.location='/tablon'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">campaign</span>Ver tablón de avisos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block block--comunidad">
+    <div class="block-head">
+      <div>
+        <span class="ms block-icon notranslate" translate="no">group</span>
+        <div>
+          <div class="block-title">Comunidad</div>
+        </div>
+      </div>
+      <span class="ms ms--lg block-marca notranslate" translate="no" aria-hidden="true">sports_tennis</span>
+    </div>
+    <div class="block-row">
+      <div style="flex:1">
+        <label class="small">El directorio del grupo: lado de pista, nivel y horarios</label>
+        <div class="controls">
+          <button class="btn" onclick="window.location='/comunidad'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">group</span>Ver comunidad</button>
         </div>
       </div>
     </div>

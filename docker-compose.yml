@@ -130,6 +130,8 @@ services:
       - ./admin-jugadores.js:/app/admin-jugadores.js
       - ./valorar.html:/app/valorar.html
       - ./buzon.html:/app/buzon.html
+      - ./tablon.html:/app/tablon.html
+      - ./comunidad.html:/app/comunidad.html
       - ./nivel-votos.js:/app/nivel-votos.js
       - ./rating-inicial.js:/app/rating-inicial.js
       - ./avisos-push.js:/app/avisos-push.js

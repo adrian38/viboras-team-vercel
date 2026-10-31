@@ -117,6 +117,16 @@ que hay.
   no es anónimo, por qué «leído» es de cada administrador, por qué el push no
   lleva el texto y el límite de cinco por hora.
 
+## Lo que lee el grupo
+
+- `tablon_de_avisos.md`: el tablón de `/tablon`; por qué publicar avisa al
+  grupo y editar no, por qué la foto va como data URL dentro de la fila y se
+  pide aparte, los tres estados de la foto al editar, y qué traía la maqueta
+  que no tenía de dónde salir.
+- `comunidad_de_jugadores.md`: el directorio de `/comunidad`; de dónde sale
+  cada casilla de la tarjeta, qué tres datos de admin se abrieron al grupo y
+  qué no (las horas de `/day`), y por qué no enseña rating ni estrellas.
+
 ---
 
 Actualizar estos documentos cuando cambien invariantes, contratos de datos o
