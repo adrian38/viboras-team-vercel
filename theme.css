@@ -400,6 +400,43 @@ button.vt-campana__push:hover{color:var(--vt-gold-light)}
 .vt-push-dialogo p{margin:0;color:var(--vt-muted);font-size:14px;line-height:21px}
 .vt-push-dialogo__botones{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--vt-sm);margin-top:var(--vt-lg)}
 
+/* ------------------------------------------------------ carga en curso -- */
+
+/* El velo de «cargando», para las paginas que piden datos o calculan antes de
+ * tener nada que ensenar. Lo monta y lo quita vt-cargando.js; esto es solo su
+ * pinta.
+ *
+ * Va por encima del contenido pero por debajo del splash: una pagina que
+ * arranca ensena primero el video del grupo y este velo debajo, no al reves.
+ *
+ * Con «reducir movimiento» la rueda deja de girar: se queda el aro quieto y
+ * el texto, que siguen diciendo que algo esta pasando. */
+.vt-cargando{
+  position:fixed;inset:0;z-index:var(--vt-z-velo);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:var(--vt-md);
+  background:rgba(13,14,17,0.82);
+  backdrop-filter:blur(2px);
+  opacity:0;transition:opacity .18s ease;
+}
+.vt-cargando--visible{opacity:1}
+.vt-cargando__rueda{
+  width:44px;height:44px;border-radius:var(--vt-r-full);
+  border:3px solid var(--vt-surface-4);
+  border-top-color:var(--vt-gold);
+  animation:vt-girar .8s linear infinite;
+}
+.vt-cargando__texto{
+  font-family:var(--vt-font-head);
+  font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--vt-gold-soft);
+}
+@keyframes vt-girar{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+  .vt-cargando__rueda{animation:none;border-top-color:var(--vt-gold)}
+  .vt-cargando{transition:none}
+}
+
 /* -------------------------------------------------------------- botones -- */
 
 .vt-btn{

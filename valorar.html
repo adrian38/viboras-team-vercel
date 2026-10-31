@@ -15,6 +15,7 @@
 <script src="/splash.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-client.js" defer></script>
+<script src="/vt-cargando.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -189,15 +190,22 @@ async function iniciar() {
   const caja = document.getElementById('contenido');
   const id = new URLSearchParams(location.search).get('partido');
   try {
-    if (id) pintarPartido(caja, await pedir(`/api/avisos?action=partido&id=${encodeURIComponent(id)}`));
-    else pintarLista(caja, (await pedir('/api/avisos?action=pendientes')).partidos);
+    const datos = await window.vtCargando.mientras(
+      () => pedir(id ? `/api/avisos?action=partido&id=${encodeURIComponent(id)}` : '/api/avisos?action=pendientes'),
+      'Buscando tus partidos'
+    );
+    if (id) pintarPartido(caja, datos);
+    else pintarLista(caja, datos.partidos);
   } catch (e) {
     caja.textContent = '';
     caja.appendChild(el('p', 'estado', e.message));
   }
 }
 
-iniciar();
+// En DOMContentLoaded y no al vuelo: este <script> se ejecuta mientras se
+// parsea la pagina, y para entonces vt-cargando.js —que va con defer— todavia
+// no ha corrido.
+document.addEventListener('DOMContentLoaded', iniciar);
 </script>
 
 </body>

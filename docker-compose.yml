@@ -116,6 +116,7 @@ services:
       - ./submit-result.html:/app/submit-result.html
       - ./cuenta.html:/app/cuenta.html
       - ./cuenta-perfil.js:/app/cuenta-perfil.js
+      - ./vt-cargando.js:/app/vt-cargando.js
       - ./auth-client.js:/app/auth-client.js
       - ./cuenta-correo.js:/app/cuenta-correo.js
       - ./inscripcion.html:/app/inscripcion.html
