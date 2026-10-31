@@ -9,11 +9,9 @@
     "players.html:renderChart": 106,
     "ranking.html:computeTournamentStandings": 64,
     "ranking.html:processRanking": 126,
-    "rating-test.html:calculateEngineRatings": 71,
     "rating-test.html:fetchMatches": 110,
     "rating-test.html:parseTestResults": 115,
     "rating-test.html:buildRealImportText": 78,
-    "rating.html:calculateEngineRatings": 70,
     "rating.html:fetchMatches": 103,
     "rating.html:renderTable": 79,
     "scripts/apply-schema.js:main": 83,
@@ -25,6 +23,6 @@
   },
   "ficheros": {
     "players.html": 623,
-    "rating-test.html": 675
+    "rating-test.html": 603
   }
 }

@@ -24,6 +24,23 @@ function usarJugadorNuevo(fn) {
   nuevoJugador = fn;
 }
 
+// Los votos de «¿estaban en su nivel?» mueven el RD al cerrar cada dia
+// (nivel-votos.js). /rating y /cuenta los aplican; /rating-test no, porque
+// ahi los partidos se pegan a mano y no hay votos de nadie.
+let ajustarPorNivel = (playerMap, dateStr, dayMatches) => window.vtNivel.ajustar(playerMap, dateStr, dayMatches);
+
+function usarAjustePorNivel(fn) {
+  ajustarPorNivel = fn;
+}
+
+// Sumar dias a una fecha ISO, para el decaimiento extra del banco de pruebas.
+function addDaysToIso(iso, days) {
+  if (!iso || !Number.isFinite(days) || days <= 0) return iso;
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().split('T')[0];
+}
+
 const Q = Math.LN10 / 400.0;
 const C_DAILY = 15.0; // Daily decay constant
 const INITIAL_RATING = 1500.0;
@@ -182,11 +199,101 @@ function updatePeriod(playerMap, periodMatches) {
   aplicarObservaciones(playerMap, starting, observacionesDelPeriodo(starting, periodMatches));
 }
 
+// El bucle de dias: el historico entero, dia a dia, con su decaimiento.
+// Hasta el 2026-10-31 estaba en rating.html y en rating-test.html, y las
+// dos copias se diferenciaban en tres lineas: con que ficha nace un jugador
+// nuevo, si se aplican los votos de nivel, y los dias de decaimiento extra
+// del banco de pruebas. Las dos primeras son ganchos y la tercera un
+// parametro, asi que una sola funcion sirve para las dos paginas.
+// Lo que sale de aqui: una fila por jugador, no el Map.
+function salida(playerMap) {
+  return Array.from(playerMap.entries()).map(([name, p]) => ({
+    name,
+    rating: p.rating,
+    rd: p.rd
+  }));
+}
+
+// Los partidos agrupados por dia, en el orden en que se jugaron. El desempate
+// por id no es adorno: dos partidos del mismo dia tienen que entrar al motor
+// siempre en el mismo orden o el resultado baila.
+function porDia(matches) {
+  matches.sort((a, b) => {
+    const dComp = a.date.localeCompare(b.date);
+    return dComp !== 0 ? dComp : (a.id - b.id);
+  });
+
+  const byDate = new Map();
+  matches.forEach(m => {
+    if (!byDate.has(m.date)) byDate.set(m.date, []);
+    byDate.get(m.date).push(m);
+  });
+  return byDate;
+}
+
+// Del primer dia al ultimo, uno por uno, aunque no se jugara: los dias
+// vacios son los que hacen subir el RD de quien no aparece.
+function correrDias(playerMap, byDate, desdeIso, hastaIso) {
+  const [startY, startM, startD] = desdeIso.split('-').map(Number);
+  const [endY, endM, endD] = hastaIso.split('-').map(Number);
+
+  let curTime = Date.UTC(startY, startM - 1, startD);
+  const endTime = Date.UTC(endY, endM - 1, endD);
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+  while (curTime <= endTime) {
+    const d = new Date(curTime);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    const dayMatches = byDate.get(dateStr) || [];
+    const activeToday = new Set();
+
+    dayMatches.forEach(m => {
+      m.team1.concat(m.team2).forEach(p => {
+        if (p && p.trim()) activeToday.add(p.trim());
+      });
+    });
+
+    decayAllPlayersOneDay(playerMap, activeToday);
+
+    if (dayMatches.length > 0) {
+      updatePeriod(playerMap, dayMatches);
+      ajustarPorNivel(playerMap, dateStr, dayMatches);
+    }
+
+    curTime += ONE_DAY_MS;
+  }
+}
+
+function calcularRatings(names, matches, cutoffDateIso, extraDecayDays = 0) {
+  const playerMap = new Map();
+  names.forEach(n => {
+    if (n && n.trim()) playerMap.set(n.trim(), nuevoJugador(n));
+  });
+
+  if (!matches || matches.length === 0) return salida(playerMap);
+
+  matches.forEach(m => {
+    m.team1.concat(m.team2).forEach(pName => {
+      getPlayerOrCreate(playerMap, pName);
+    });
+  });
+
+  const byDate = porDia(matches);
+  const baseEndIso = (cutoffDateIso && typeof cutoffDateIso === 'string') ? cutoffDateIso : matches[matches.length - 1].date;
+  correrDias(playerMap, byDate, matches[0].date, addDaysToIso(baseEndIso, extraDecayDays));
+  return salida(playerMap);
+}
+
 return {
   Q, C_DAILY, INITIAL_RATING, INITIAL_RD, MIN_RD, MAX_RD,
   GlickoPlayer, g, expected, decayAllPlayersOneDay, getPlayerOrCreate,
   getTeamState, getEffectiveObservationR, getEffectiveObservationRd, clamp,
-  getReliabilityWeight, updatePeriod, usarJugadorNuevo
+  getReliabilityWeight, updatePeriod, calcularRatings,
+  usarJugadorNuevo, usarAjustePorNivel
 };
 
 })();
