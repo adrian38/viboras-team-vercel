@@ -50,9 +50,6 @@ function pintarCuenta(c){
   texto('pInicial', iniciales(c.nombre || c.correo))
   ver('pVerificado', c.correoVerificado)
   ver('pActivo', c.estado === 'active')
-  // El numero de socio es el de su cuenta, con tres cifras: no hay otro, y
-  // inventarse una numeracion aparte seria un dato mas que mantener.
-  texto('pSocio', 'Socio #' + String(c.socio).padStart(3, '0'))
   texto('pAlta', fecha(c.alta) || 'fecha desconocida')
   ver('pSalidaFrase', c.salida !== null)
   if(c.salida !== null) texto('pSalida', Math.round(c.salida) + ' pts')
@@ -252,7 +249,11 @@ function pintarPersona(id, dato, sufijo){
   ver(id, Boolean(dato))
   if(!dato) return
   texto(id + 'Nombre', dato.nombre)
-  texto(id + 'Dato', sufijo === '%' ? dato.porcentaje + '% juntos' : dato.veces + ' partidos')
+  // El porcentaje es de partidos GANADOS juntos, no de partidos jugados
+  // juntos: «25% juntos» se leia como lo segundo y era lo primero.
+  texto(id + 'Dato', sufijo === '%'
+    ? dato.veces + ' partidos · ' + dato.porcentaje + '% ganados'
+    : dato.veces + ' partidos')
   const ini = $(id + 'Ini')
   if(ini) ini.innerText = iniciales(dato.nombre)
 }

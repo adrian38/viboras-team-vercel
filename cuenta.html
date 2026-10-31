@@ -313,12 +313,14 @@
           </div>
         </div>
       </div>
+      <!-- La fecha es la del alta de la CUENTA (users.created_at), no la
+           de entrada al grupo: el grupo es anterior a que hubiera cuentas
+           y esa fecha no esta guardada en ninguna parte. -->
       <p class="pie-tarjeta">
         <span>
           <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">calendar_month</span>
-          En el grupo desde el <span id="pAlta"></span>
+          Cuenta creada el <span id="pAlta"></span>
         </span>
-        <span class="vt-label vt-gold" id="pSocio"></span>
       </p>
       <div class="aviso" id="pErrorPerfil" style="display:none">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">error</span>
@@ -335,8 +337,12 @@
       <span class="vt-label vt-gold">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">sports_tennis</span>Lado de pista
       </span>
+      <!-- Lo que se elige aqui se guarda (players.court_side) pero todavia
+           no lo lee nadie: /day forma las parejas sin mirarlo. La frase
+           dice eso y no otra cosa. -->
       <p class="vt-small vt-muted" style="margin-top:var(--vt-xs)">
-        ¿Dónde juegas mejor? Lo verán tus compañeros al formar parejas.
+        ¿Dónde juegas mejor? De momento sólo lo ves tú: al formar las
+        parejas todavía no se tiene en cuenta.
       </p>
       <div class="lado" role="group" aria-label="Lado de pista">
         <button type="button" class="lado__op" data-lado="drive" aria-pressed="false">
@@ -399,7 +405,7 @@
         <div class="persona oculto" id="pCompa">
           <span class="persona__id">
             <span class="inicial inicial--sm" id="pCompaIni"></span>
-            <span><b id="pCompaNombre"></b><span class="vt-label">Mejor compañero</span></span>
+            <span><b id="pCompaNombre"></b><span class="vt-label">Con quien más juegas</span></span>
           </span>
           <b class="vt-gold" id="pCompaDato"></b>
         </div>

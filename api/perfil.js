@@ -281,7 +281,6 @@ async function cuenta(userId) {
     WHERE u.id = ${userId}`;
   const u = rows[0] || {};
   return {
-    socio: userId,
     nombre: u.player_name || null,
     correo: u.email,
     correoVerificado: Boolean(u.email_verified_at),

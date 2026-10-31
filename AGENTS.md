@@ -56,6 +56,34 @@ Nunca interpretar un resultado negativo del grafo como prueba de ausencia. Si la
 memoria no arranca o queda desactualizada, continuar con lectura directa y `rg`,
 y declarar la limitación en la entrega.
 
+## Ningún dato de la pantalla es inventado
+
+Todo número, etiqueta o frase que la app enseñe tiene que salir de la base o de
+un cálculo declarado. Si no hay dato, no se enseña: ni un valor de relleno, ni
+un campo maquetado «para que no quede hueco», ni una etiqueta que prometa algo
+que el código no hace.
+
+Tres maneras de inventar, las tres vistas en `/cuenta` el 2026-10-31:
+
+- **Un dato que no existe.** «Socio #001» era `users.id` con tres cifras, y ese
+  1 sólo decía que fue la primera cuenta creada (su jugador es el 43). El grupo
+  no tiene numeración de socios. Fuera.
+- **Una etiqueta que dice otra cosa que el dato.** «Mejor compañero» lo elegía
+  el servidor por número de partidos, no por resultados, y el `25% juntos` de
+  al lado era el porcentaje ganado, no el de partidos jugados juntos. El dato
+  era bueno; la frase, falsa.
+- **Prometer un comportamiento que no existe.** «Lo verán tus compañeros al
+  formar parejas» bajo el lado de pista: se guarda en `players.court_side` y
+  **no lo lee nadie**. Hasta que alguien lo lea, la pantalla dice que no.
+
+Antes de dar por terminada una pantalla, por cada cosa que enseñe: de dónde
+sale, y contrastarla contra un `SELECT`. Lo que no se pueda contrastar, se
+declara en la entrega.
+
+Un rango o una constante elegidos a ojo no son un dato inventado si se dicen:
+los de la nota de estrellas están en `ai_context/nota_de_estrellas.md` con sus
+números y con el «a ojo» escrito.
+
 ## Invariante: el motor de rating está triplicado
 
 `rating.html`, `players.html` y `rating-test.html` implementan cada uno su
