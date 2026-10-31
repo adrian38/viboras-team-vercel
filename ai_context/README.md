@@ -36,6 +36,10 @@ que hay.
   (ambiente y nivel), cómo los votos de nivel mueven el RD sin tocar el motor
   por dentro, quién puede editar un resultado y el aviso a los demás, y por
   qué sus tablas no están en `ensureSchema()`.
+- `nota_de_estrellas.md`: la nota de 1 a 5 del perfil no se vota, se calcula
+  con el pulgar de ambiente y una fiabilidad que mide cuánto se sabe de cada
+  uno; por qué la proporción de pulgares a secas daba un 5,0 a todo el grupo,
+  qué hace cada pieza de la fórmula y por qué «fiabilidad» aquí no es el RD.
 - `rating_de_partida.md`: las altas nuevas arrancan en el rating de su nivel BK
   (Entreno en 2000,01, no 2000), sólo si no tenían partidos, y por qué un alta
   sin partidos no sale en `/rating` por defecto.

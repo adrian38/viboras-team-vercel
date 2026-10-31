@@ -147,9 +147,45 @@ async function partidos(playerId) {
   };
 }
 
+// La nota de 1 a 5 estrellas.
+//
+// No es una pregunta: nadie puntua de 1 a 5. Sale de combinar lo unico que el
+// grupo vota —el pulgar de «¿que tal el ambiente?»— con cuanto se sabe de ese
+// jugador, que es lo que aqui se llama fiabilidad.
+//
+//   buenRollo  = 👍 / (👍 + 👎)              de 0 a 1
+//   fiabilidad = cuanto hay en que basarse   de 0 a 1
+//   estrellas  = 3 + 2 * fiabilidad * (2 * buenRollo - 1)
+//
+// El 3 no es un relleno: es el centro. Sin fiabilidad la nota se queda ahi,
+// porque no se sabe lo bastante para subir ni para bajar, y segun hay mas
+// votos la nota se separa del centro hacia 5 o hacia 1. Multiplicar en vez de
+// sumar es lo que evita que dos pulgares den un 5 redondo.
+//
+// La fiabilidad mezcla dos cosas que saturan: los votos recibidos y los
+// partidos jugados. Las constantes son el punto medio de cada una —con 6
+// votos se llega a la mitad del peso de los votos, con 10 partidos a la mitad
+// del suyo— y estan elegidas a ojo sobre el grupo que hay, no medidas.
+const VOTOS_MEDIOS = 6;
+const PARTIDOS_MEDIOS = 10;
+const PESO_VOTOS = 0.6;
+
+function fiabilidadDe(votos, partidos) {
+  const porVotos = votos / (votos + VOTOS_MEDIOS);
+  const porPartidos = partidos / (partidos + PARTIDOS_MEDIOS);
+  return PESO_VOTOS * porVotos + (1 - PESO_VOTOS) * porPartidos;
+}
+
+function estrellasDe(buenRollo, fiabilidad) {
+  const nota = 3 + 2 * fiabilidad * (2 * buenRollo - 1);
+  return Math.min(5, Math.max(1, nota));
+}
+
+const unDecimal = (n) => Math.round(n * 10) / 10;
+
 // Lo que le han votado a uno. Mismo filtro que read.js (getNivelVotos): solo
 // cuentan los votos entre jugadores que siguen en el partido.
-async function valoraciones(playerId) {
+async function valoraciones(playerId, jugados) {
   const { rows } = await sql`
     SELECT
       count(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
@@ -164,9 +200,14 @@ async function valoraciones(playerId) {
       AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)`;
   const v = rows[0];
   const pendientes = await partidosParaValorar(playerId);
+  const votos = v.buen_rollo + v.mejorable;
+  const buenRollo = votos ? v.buen_rollo / votos : null;
+  const fiabilidad = fiabilidadDe(votos, jugados);
   return {
-    buenRollo: v.buen_rollo,
-    mejorable: v.mejorable,
+    votos,
+    buenRollo: buenRollo === null ? null : unDecimal(buenRollo * 5),
+    fiabilidad: unDecimal(fiabilidad * 5),
+    estrellas: buenRollo === null ? null : unDecimal(estrellasDe(buenRollo, fiabilidad)),
     nivelVotos: v.nivel_votos,
     nivelNeto: v.nivel_neto,
     pendientes: pendientes.length
@@ -242,7 +283,7 @@ async function todo(req, res, user) {
   if (user.player_id) {
     await ensureAvisosSchema();
     datos.partidos = await partidos(user.player_id);
-    datos.valoraciones = await valoraciones(user.player_id);
+    datos.valoraciones = await valoraciones(user.player_id, datos.partidos.jugados);
     datos.disponibilidad = await disponibilidad(user.player_id);
   }
   res.status(200).json(datos);

@@ -375,15 +375,13 @@
         </div>
         <div class="medidor" style="margin-top:var(--vt-sm)">
           <span class="medidor__nombre">
-            <span class="ms ms--sm vt-muted notranslate" translate="no" aria-hidden="true">calendar_month</span>
+            <span class="ms ms--sm vt-gold notranslate" translate="no" aria-hidden="true">verified_user</span>
             <span>Fiabilidad</span>
           </span>
-          <span class="barra barra--fina"><span style="width:0"></span></span>
-          <span class="medidor__valor vt-muted">—</span>
+          <span class="barra barra--fina"><span id="pBarraFiab"></span></span>
+          <span class="medidor__valor" id="pValorFiab"></span>
         </div>
-        <small style="display:block;margin-top:var(--vt-sm)">
-          La nota es solo el buen rollo: no fallar a los partidos todavía no se mide.
-        </small>
+        <small style="display:block;margin-top:var(--vt-sm)" id="pComoSeCalcula"></small>
       </div>
       <div class="vt-between" style="margin-top:var(--vt-sm);padding-top:var(--vt-sm);border-top:1px solid var(--vt-border)">
         <span><span class="vt-label">Nivel</span> <b class="vt-gold" id="pNivel"></b></span>
@@ -536,6 +534,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="/auth-client.js" defer></script>
 <script src="/cuenta-correo.js" defer></script>
+<script src="/vt-cargando.js" defer></script>
 <script src="/cuenta-perfil.js" defer></script>
 <script>
 const $ = (id) => document.getElementById(id)

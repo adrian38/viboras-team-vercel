@@ -206,22 +206,29 @@ function pintarEstrellas(nota){
   caja.setAttribute('aria-label', nota.toFixed(1).replace('.', ',') + ' sobre 5')
 }
 
-// Hoy la nota es solo el buen rollo: «¿que tal el ambiente?» se vota con dos
-// valores (buen_rollo / mejorable) y de ahi sale la proporcion. La fiabilidad
-// —no fallar a los partidos— no se mide en ningun sitio todavia, asi que su
-// medidor sale vacio en vez de inventarse un numero.
+const coma = (n) => n.toFixed(1).replace('.', ',')
+
+function medidor(barraId, valorId, sobreCinco){
+  const barra = $(barraId)
+  if(barra) barra.style.width = Math.round((sobreCinco / 5) * 100) + '%'
+  texto(valorId, coma(sobreCinco))
+}
+
+// La nota no se vota: la calcula el servidor con el buen rollo y la
+// fiabilidad (api/perfil.js). Aqui solo se pinta, con sus dos partes a la
+// vista para que se entienda de donde sale.
 function pintarValoracion(v){
-  const votos = v.buenRollo + v.mejorable
-  const nota = votos ? (v.buenRollo / votos) * 5 : 0
-  ver('pSinVotos', !votos)
-  ver('pConVotos', Boolean(votos))
-  if(votos){
-    pintarEstrellas(nota)
-    texto('pNota', nota.toFixed(1).replace('.', ','))
-    texto('pVotos', votos + (votos === 1 ? ' valoración' : ' valoraciones'))
-    const barra = $('pBarraRollo')
-    if(barra) barra.style.width = Math.round((v.buenRollo / votos) * 100) + '%'
-    texto('pValorRollo', (nota).toFixed(1).replace('.', ','))
+  ver('pSinVotos', v.estrellas === null)
+  ver('pConVotos', v.estrellas !== null)
+  if(v.estrellas !== null){
+    pintarEstrellas(v.estrellas)
+    texto('pNota', coma(v.estrellas))
+    texto('pVotos', v.votos + (v.votos === 1 ? ' valoración' : ' valoraciones'))
+    medidor('pBarraRollo', 'pValorRollo', v.buenRollo)
+    medidor('pBarraFiab', 'pValorFiab', v.fiabilidad)
+    texto('pComoSeCalcula', v.fiabilidad >= 4
+      ? 'Con tantos partidos y valoraciones, tu nota ya se mueve en todo el rango.'
+      : 'Las notas parten de 3 y se separan según se sabe más de ti: juega y pide que te valoren.')
   }
   texto('pNivel', v.nivelVotos ? NIVEL[signo(v.nivelNeto)] : 'Sin votos')
   texto('pPendientes', v.pendientes
@@ -286,12 +293,17 @@ function pintarDispositivos(d){
 
 // Un fallo aqui no puede tumbar la pagina: lo importante de /cuenta es entrar
 // y salir, y eso no depende de esto. Las tarjetas se quedan escondidas.
+async function pedirPerfil(){
+  const res = await fetch('/api/perfil', {headers:{accept:'application/json'}})
+  const json = await res.json()
+  if(!res.ok || !json.ok) throw new Error(json.error || 'error')
+  return json
+}
+
 async function pintarPerfil(){
   let datos = null
   try{
-    const res = await fetch('/api/perfil', {headers:{accept:'application/json'}})
-    datos = await res.json()
-    if(!res.ok || !datos.ok) throw new Error(datos.error || 'error')
+    datos = await window.vtCargando.mientras(pedirPerfil, 'Cargando tu perfil')
   }catch(err){
     console.error('perfil', err)
     ver('pErrorPerfil', true)
