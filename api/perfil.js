@@ -199,7 +199,12 @@ async function valoraciones(playerId, jugados) {
       AND f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
       AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)`;
   const v = rows[0];
-  const pendientes = await partidosParaValorar(playerId);
+  // El filtro no sobra: partidosParaValorar() devuelve TODOS los partidos
+  // recientes con lo que falta de cada uno, no solo los que tienen algo
+  // pendiente. Sin el, un jugador al dia veia «te faltan 8 valoraciones»
+  // teniendo las ocho hechas. Mismo filtro que la campanita (_avisos.js:132).
+  const pendientes = (await partidosParaValorar(playerId))
+    .filter((p) => p.faltanActitud > 0 || p.faltanNivel > 0);
   const votos = v.buen_rollo + v.mejorable;
   const buenRollo = votos ? v.buen_rollo / votos : null;
   const fiabilidad = fiabilidadDe(votos, jugados);

@@ -224,16 +224,17 @@ function pintarValoracion(v){
     pintarEstrellas(v.estrellas)
     texto('pNota', coma(v.estrellas))
     texto('pVotos', v.votos + (v.votos === 1 ? ' valoración' : ' valoraciones'))
-    medidor('pBarraRollo', 'pValorRollo', v.buenRollo)
     medidor('pBarraFiab', 'pValorFiab', v.fiabilidad)
     texto('pComoSeCalcula', v.fiabilidad >= 4
       ? 'Con tantos partidos y valoraciones, tu nota ya se mueve en todo el rango.'
       : 'Las notas parten de 3 y se separan según se sabe más de ti: juega y pide que te valoren.')
   }
   texto('pNivel', v.nivelVotos ? NIVEL[signo(v.nivelNeto)] : 'Sin votos')
+  // Son partidos por valorar, no valoraciones sueltas: en cada uno hay tres
+  // compañeros y dos preguntas.
   texto('pPendientes', v.pendientes
-    ? 'Te faltan ' + v.pendientes + (v.pendientes === 1 ? ' valoración' : ' valoraciones') + ' de partidos recientes'
-    : 'No tienes valoraciones pendientes')
+    ? (v.pendientes === 1 ? 'Te falta valorar un partido' : 'Te faltan ' + v.pendientes + ' partidos por valorar')
+    : 'Los tienes todos valorados')
   ver('pValorar', v.pendientes > 0)
 }
 
