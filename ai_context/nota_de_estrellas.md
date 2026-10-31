@@ -47,11 +47,13 @@ Medido el 2026-10-31 con los datos de producción, jugador 43: 12 votos (12 👍
 0 👎) y 8 partidos → fiabilidad 0,578 y **4,2 estrellas**, en vez del 5,0 de
 antes. Poniendo 3 de esos 12 votos a 👎, baja a 3,6.
 
-## La tarjeta enseña las dos partes
+## La tarjeta enseña la fiabilidad, no el buen rollo
 
-«Buen rollo» y «Fiabilidad», cada uno sobre 5, debajo de las estrellas. No es
-decoración: una nota compuesta que no dice de qué se compone parece un
-veredicto. El texto del pie cambia según la fiabilidad.
+Debajo de las estrellas va **sólo la fiabilidad**, sobre 5, y un pie que cambia
+según ella. El buen rollo se calcula y no se enseña: lo pidió Adrián el
+2026-10-31, porque en crudo es lo que han votado de ti y la nota ya lo lleva
+dentro. La fiabilidad sí se ve para que la nota no parezca un veredicto sin
+explicación.
 
 ## Lo que no es
 
