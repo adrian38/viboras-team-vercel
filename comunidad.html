@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunidad</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/splash.js"></script>
+<script src="/pwa.js" defer></script>
+<script src="/auth-client.js" defer></script>
+<script src="/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<style>
+.cabeza{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--vt-sm)}
+.buscador{position:relative;margin-top:var(--vt-md)}
+.buscador .vt-input{padding-left:40px}
+.buscador .ms{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--vt-muted);pointer-events:none}
+
+.filtros{display:flex;flex-wrap:wrap;gap:var(--vt-sm);margin-top:var(--vt-md)}
+.filtro{
+  padding:7px 14px;
+  background:var(--vt-surface-3);color:var(--vt-text);
+  border:1px solid var(--vt-border-strong);border-radius:var(--vt-r);
+  font-family:var(--vt-font-body);font-size:13px;font-weight:600;cursor:pointer;
+  text-transform:uppercase;letter-spacing:0.04em;
+}
+.filtro[aria-pressed="true"]{background:var(--vt-gold);border-color:var(--vt-gold);color:#121316;font-weight:700}
+
+.lista{display:flex;flex-direction:column;gap:var(--vt-sm);margin-top:var(--vt-md)}
+.jugador{
+  background:var(--vt-surface);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  padding:var(--vt-md);
+  display:flex;flex-direction:column;gap:var(--vt-sm);
+}
+.jugador[hidden]{display:none}
+.jugador__cabeza{display:flex;align-items:center;gap:var(--vt-sm);min-width:0}
+/* No hay fotos de jugador en el proyecto: el circulo lleva las iniciales del
+   nombre, que es lo que hay. */
+.jugador__iniciales{
+  flex:0 0 auto;width:48px;height:48px;border-radius:var(--vt-r-full);
+  background:var(--vt-surface-3);color:var(--vt-gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--vt-font-head);font-size:19px;font-weight:700;letter-spacing:0.02em;
+}
+.jugador__nombre{
+  margin:0;min-width:0;
+  font-family:var(--vt-font-head);
+  font-size:19px;line-height:23px;font-weight:700;letter-spacing:0.02em;
+  text-transform:uppercase;color:var(--vt-text-strong);
+  overflow-wrap:anywhere;
+}
+.jugador__cuentas{margin-left:auto;flex:0 0 auto;text-align:right}
+.jugador__numero{font-family:var(--vt-font-head);font-size:21px;font-weight:700;color:var(--vt-text-strong);display:block;line-height:1.1}
+.jugador__nota{font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-faint)}
+
+/* Las casillas de datos del mockup: lado, nivel y horarios. Solo se pinta la
+   que tiene dato; un hueco maquetado seria un dato inventado. */
+.datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:var(--vt-sm)}
+.dato{
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+  padding:8px 10px;text-align:center;
+}
+.dato__clave{display:block;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-faint)}
+.dato__valor{display:block;font-size:14px;font-weight:600;color:var(--vt-text);overflow-wrap:anywhere}
+.estado{font-size:14px;color:var(--vt-muted);min-height:20px}
+.aviso{font-size:14px;color:var(--vt-muted);margin:0}
+</style>
+</head>
+
+<body>
+
+<div class="vt-page vt-page--narrow">
+
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h3 class="vt-gold" style="margin-top:var(--vt-sm)">Comunidad</h3>
+    <span class="vt-label">El directorio del grupo</span>
+  </div>
+
+  <div class="vt-card">
+    <div class="cabeza">
+      <h4 style="margin:0">Jugadores en activo</h4>
+      <span class="vt-chip vt-chip--gold" id="cuantos">—</span>
+    </div>
+    <p class="aviso" style="margin-top:var(--vt-sm)">Las horas que marcas en <a href="/day">Disponibilidad</a> no salen aquí: sólo las ve un administrador.</p>
+
+    <div class="buscador">
+      <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">search</span>
+      <label class="vt-label" for="buscar" style="position:absolute;left:-9999px">Buscar jugador</label>
+      <input class="vt-input" id="buscar" type="search" placeholder="Buscar por nombre">
+    </div>
+
+    <div class="filtros" id="filtros" role="group" aria-label="Filtrar jugadores"></div>
+    <div class="lista" id="lista"><p class="estado">Cargando…</p></div>
+  </div>
+
+  <div style="text-align:center;display:flex;flex-wrap:wrap;gap:var(--vt-sm);justify-content:center">
+    <a class="vt-btn vt-btn--ghost" href="/rating">Ver el rating de nivel</a>
+    <a class="vt-btn vt-btn--ghost" href="/">Volver al inicio</a>
+  </div>
+</div>
+
+<script>
+// El directorio del grupo. Todo lo que se enseña aquí sale de /api/read
+// (action=getComunidad): la ficha del jugador y su formulario de alta. No hay
+// fotos de jugador, ni horas libres de hoy, ni rating: el rating vive en
+// /rating, donde lo calcula el motor. Detalle:
+// ai_context/comunidad_de_jugadores.md
+const LADOS = { drive: 'Drive', reves: 'Revés', ambos: 'Drive y revés' };
+let jugadores = [];
+let filtro = 'todos';
+
+function el(tag, clase, texto) {
+  const n = document.createElement(tag);
+  if (clase) n.className = clase;
+  if (texto !== undefined) n.textContent = texto;
+  return n;
+}
+
+// Dos letras como mucho: la primera de cada palabra del nombre.
+function iniciales(nombre) {
+  return String(nombre).split(/\s+/).filter(Boolean).slice(0, 2)
+    .map((p) => p[0].toUpperCase()).join('');
+}
+
+function dato(clave, valor) {
+  const caja = el('div', 'dato');
+  caja.appendChild(el('span', 'dato__clave', clave));
+  caja.appendChild(el('span', 'dato__valor', valor));
+  return caja;
+}
+
+function cabezaDeJugador(j) {
+  const cabeza = el('div', 'jugador__cabeza');
+  cabeza.appendChild(el('div', 'jugador__iniciales', iniciales(j.nombre)));
+  cabeza.appendChild(el('h2', 'jugador__nombre', j.nombre));
+  const cuentas = el('div', 'jugador__cuentas');
+  cuentas.appendChild(el('span', 'jugador__numero', String(j.partidos)));
+  cuentas.appendChild(el('span', 'jugador__nota', j.partidos === 1 ? 'partido jugado' : 'partidos jugados'));
+  cabeza.appendChild(cuentas);
+  return cabeza;
+}
+
+// Solo las casillas con dato. Quien no rellenó el formulario de alta (las
+// cuentas anteriores al 2026-10-17) no tiene nivel ni horarios, y entonces no
+// se pinta la casilla en vez de dejarla vacía.
+function pintarJugador(j) {
+  const caja = el('article', 'jugador');
+  caja.dataset.lado = j.lado;
+  caja.dataset.nombre = j.nombre.toLowerCase();
+  caja.appendChild(cabezaDeJugador(j));
+  const datos = el('div', 'datos');
+  datos.appendChild(dato('Lado', LADOS[j.lado] || j.lado));
+  if (j.nivel) datos.appendChild(dato('Nivel BK', j.nivel));
+  if (j.horarios) datos.appendChild(dato('Horarios', j.horarios));
+  if (j.partidos) datos.appendChild(dato('Ganados', `${j.ganados} de ${j.partidos}`));
+  caja.appendChild(datos);
+  return caja;
+}
+
+// Un filtro por lado de pista, y uno por cada nivel que alguien tenga puesto.
+function pintarFiltros() {
+  const caja = document.getElementById('filtros');
+  caja.textContent = '';
+  const niveles = [...new Set(jugadores.map((j) => j.nivel).filter(Boolean))].sort();
+  const grupos = [['todos', 'Todos']]
+    .concat([['drive', 'Drive'], ['reves', 'Revés']].filter(([l]) => jugadores.some((j) => j.lado === l)))
+    .concat(niveles.map((n) => [`nivel:${n}`, n]));
+  for (const [clave, nombre] of grupos) {
+    const boton = el('button', 'filtro', nombre);
+    boton.type = 'button';
+    boton.setAttribute('aria-pressed', String(clave === filtro));
+    boton.addEventListener('click', () => { filtro = clave; pintarFiltros(); aplicar(); });
+    caja.appendChild(boton);
+  }
+}
+
+function pasaElFiltro(j) {
+  if (filtro === 'todos') return true;
+  if (filtro.startsWith('nivel:')) return j.nivel === filtro.slice(6);
+  return j.lado === filtro;
+}
+
+// El filtro y la búsqueda se aplican juntos: elegir «Drive» y escribir un
+// nombre tiene que cruzar las dos cosas, no quedarse con la última.
+function aplicar() {
+  const busca = document.getElementById('buscar').value.trim().toLowerCase();
+  const lista = document.getElementById('lista');
+  lista.textContent = '';
+  const visibles = jugadores.filter((j) => pasaElFiltro(j) && j.nombre.toLowerCase().includes(busca));
+  if (!visibles.length) {
+    lista.appendChild(el('p', 'estado', 'Ningún jugador encaja con eso.'));
+    return;
+  }
+  visibles.forEach((j) => lista.appendChild(pintarJugador(j)));
+}
+
+async function cargar() {
+  const lista = document.getElementById('lista');
+  try {
+    const res = await fetch('/api/read?action=getComunidad&ts=' + Date.now());
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.ok) throw new Error('No se pudo cargar la comunidad. Inténtalo otra vez.');
+    jugadores = json.jugadores;
+    document.getElementById('cuantos').textContent = `${jugadores.length} en activo`;
+    pintarFiltros();
+    aplicar();
+  } catch (e) {
+    lista.textContent = '';
+    lista.appendChild(el('p', 'estado', e.message));
+  }
+}
+
+document.getElementById('buscar').addEventListener('input', aplicar);
+document.addEventListener('DOMContentLoaded', () => {
+  vtCargando.arranque(cargar, 'Cargando la comunidad');
+});
+</script>
+
+</body>
+</html>

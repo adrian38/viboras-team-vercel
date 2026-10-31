@@ -337,12 +337,13 @@
       <span class="vt-label vt-gold">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">sports_tennis</span>Lado de pista
       </span>
-      <!-- Lo que se elige aqui se guarda (players.court_side) pero todavia
-           no lo lee nadie: /day forma las parejas sin mirarlo. La frase
-           dice eso y no otra cosa. -->
+      <!-- Lo que se elige aqui se guarda en players.court_side y desde el
+           2026-10-31 lo lee /comunidad, donde lo ve el grupo. Lo que sigue
+           sin mirarlo es /day: las parejas se forman sin tenerlo en cuenta.
+           La frase dice eso y no otra cosa. -->
       <p class="vt-small vt-muted" style="margin-top:var(--vt-xs)">
-        ¿Dónde juegas mejor? De momento sólo lo ves tú: al formar las
-        parejas todavía no se tiene en cuenta.
+        ¿Dónde juegas mejor? Lo verá el grupo en <a href="/comunidad">Comunidad</a>.
+        Al formar las parejas todavía no se tiene en cuenta.
       </p>
       <div class="lado" role="group" aria-label="Lado de pista">
         <button type="button" class="lado__op" data-lado="drive" aria-pressed="false">
@@ -483,10 +484,16 @@
         Tu cuenta es anterior al formulario de inscripción, así que no hay nada
         que enseñar aquí.
       </p>
+      <!-- Desde el 2026-10-31 el nivel BK y la disponibilidad general salen
+           en /comunidad, que ve todo el grupo. El resto de la ficha (nombre
+           y apellidos, telefono, liga, torneos, ranking por semana) sigue
+           siendo solo de los administradores. La frase lo distingue. -->
       <p class="pie-tarjeta">
         <span><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">info</span>
-          Estos datos los cambia un administrador. Escríbele por
-          <a href="/buzon">el buzón</a> si hay algo mal.</span>
+          Tu nivel BK y tu disponibilidad los ve el grupo en
+          <a href="/comunidad">Comunidad</a>; el resto, sólo los
+          administradores. Estos datos los cambia un administrador: escríbele
+          por <a href="/buzon">el buzón</a> si hay algo mal.</span>
       </p>
     </section>
 

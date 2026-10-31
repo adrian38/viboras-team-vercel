@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { ensureSchema, formatSet } from './_db.js';
-import { exigirSesion, exigirAdmin } from './_auth.js';
+import { exigirSesion, exigirAdmin, ensureAuthSchema } from './_auth.js';
 import { describirInscripcion } from './_inscripcion.js';
 import { ensureAvisosSchema } from './_avisos.js';
 
@@ -257,6 +257,69 @@ async function getNivelVotos(req, res) {
   }
 }
 
+// El directorio del grupo (/comunidad). Lo que ensena de cada jugador sale de
+// su ficha y de su formulario de alta; nada se calcula aqui. Las horas que
+// vota cada uno en /day NO salen: son privadas
+// (ai_context/disponibilidad_quien_la_ve.md).
+// Detalle: ai_context/comunidad_de_jugadores.md
+function filasDeComunidad() {
+  return sql`
+    WITH marcadores AS (
+      SELECT m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id,
+        (CASE WHEN set1_team1 > set1_team2 THEN 1 ELSE 0 END
+         + CASE WHEN set2_team1 > set2_team2 THEN 1 ELSE 0 END
+         + CASE WHEN set3_team1 > set3_team2 THEN 1 ELSE 0 END) AS sets1,
+        (CASE WHEN set1_team2 > set1_team1 THEN 1 ELSE 0 END
+         + CASE WHEN set2_team2 > set2_team1 THEN 1 ELSE 0 END
+         + CASE WHEN set3_team2 > set3_team1 THEN 1 ELSE 0 END) AS sets2
+      FROM matches m
+    ),
+    -- Un partido organizado y sin jugar esta en la tabla con 0-0, y no es un
+    -- partido jugado: ai_context/contar_partidos_de_un_jugador.md
+    jugados AS (SELECT * FROM marcadores WHERE sets1 + sets2 > 0)
+    SELECT p.id, p.name, p.court_side,
+      (SELECT u.signup_form->>'bkLevel' FROM users u
+        WHERE u.player_id = p.id AND u.status = 'active' ORDER BY u.id LIMIT 1) AS nivel,
+      (SELECT u.signup_form->>'availability' FROM users u
+        WHERE u.player_id = p.id AND u.status = 'active' ORDER BY u.id LIMIT 1) AS horarios,
+      (SELECT count(*) FROM jugados j
+        WHERE p.id IN (j.player1a_id, j.player1b_id, j.player2a_id, j.player2b_id))::int AS partidos,
+      (SELECT count(*) FROM jugados j
+        WHERE (p.id IN (j.player1a_id, j.player1b_id) AND j.sets1 > j.sets2)
+           OR (p.id IN (j.player2a_id, j.player2b_id) AND j.sets2 > j.sets1))::int AS ganados
+    FROM players p
+    WHERE p.active = TRUE
+    ORDER BY LOWER(p.name), p.name`;
+}
+
+async function getComunidad(req, res) {
+  try {
+    await ensureSchema();
+    // court_side y signup_form los crea ensureAuthSchema, no ensureSchema.
+    await ensureAuthSchema();
+    const textos = Object.fromEntries(describirInscripcion().flatMap((c) => c.opciones || []));
+    const { rows } = await filasDeComunidad();
+    res.setHeader('cache-control', 'no-store');
+    res.status(200).json({
+      ok: true,
+      jugadores: rows.map((r) => ({
+        id: r.id,
+        nombre: r.name,
+        // Quien no lo ha elegido cuenta para los dos lados, igual que en
+        // /cuenta (api/perfil.js).
+        lado: ['drive', 'reves', 'ambos'].includes(r.court_side) ? r.court_side : 'ambos',
+        nivel: textos[r.nivel] || null,
+        horarios: textos[r.horarios] || null,
+        partidos: r.partidos,
+        ganados: r.ganados
+      }))
+    });
+  } catch (err) {
+    console.error('read:getComunidad error', err);
+    res.status(500).json({ ok: false, error: 'server_error' });
+  }
+}
+
 // Votos de «¿qué tal el ambiente?» recibidos por cada jugador, para la
 // pantalla Jugadores del panel (admin-jugadores.js). Solo admin y solo
 // cuentas: quien voto no sale de aqui. Mismo filtro que getNivelVotos.
@@ -315,6 +378,8 @@ export default async function handler(req, res) {
       return exportPlayers(req, res);
     case 'getNivelVotos':
       return getNivelVotos(req, res);
+    case 'getComunidad':
+      return getComunidad(req, res);
     case 'getAmbiente':
       return getAmbiente(req, res);
     case 'getRatingsDePartida':
