@@ -118,6 +118,7 @@ services:
       - ./cuenta-perfil.js:/app/cuenta-perfil.js
       - ./vt-cargando.js:/app/vt-cargando.js
       - ./vt-glicko.js:/app/vt-glicko.js
+      - ./vt-categorias.js:/app/vt-categorias.js
       - ./cuenta-rating.js:/app/cuenta-rating.js
       - ./auth-client.js:/app/auth-client.js
       - ./cuenta-correo.js:/app/cuenta-correo.js

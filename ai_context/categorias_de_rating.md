@@ -1,7 +1,17 @@
 # Categorías de rating: cuatro niveles y a quién pertenece el límite
 
-`TIER_DEFINITIONS`, en `rating.html`. Son **presentación**: agrupan en tablas lo
-que calcula el motor, no intervienen en el cálculo ([[motor_de_rating_duplicado]]).
+`TIER_DEFINITIONS`, en **`vt-categorias.js`** desde el 2026-10-31 (antes en
+`rating.html`). Son **presentación**: agrupan en tablas lo que calcula el
+motor, no intervienen en el cálculo ([[motor_de_rating_duplicado]]).
+
+El fichero publica `TIER_DEFINITIONS`, `getFiabilidadConfig(rd)` y
+`categoriaDeRating(rating)` como globales, y lo cargan `rating.html` (tabla y,
+a través de `rating-export.js`, el Excel) y `cuenta.html` (la tarjeta de
+rating). Salió de `rating.html` porque la tarjeta de `/cuenta` nació con su
+propia copia de los cortes —los puntos de salida de la prueba de BK, 1800 y
+1400, que no son éstos— y enseñaba «Intermedio» a un 1679,34, que es
+**Avanzado**. El aviso de más abajo de no esparcir los umbrales ya estaba
+escrito aquí; no sirvió de nada, así que ahora hay un solo sitio donde están.
 
 | Categoría | Rango | Clase CSS |
 | --- | --- | --- |

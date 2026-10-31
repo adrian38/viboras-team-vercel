@@ -23,23 +23,6 @@ function isoDeHace(dias){
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 }
 
-// Las categorias de /rating-info, por si la tarjeta quiere decir en cual cae.
-function categoria(rating){
-  if(rating > 2000) return 'Entreno'
-  if(rating >= 1800) return 'Avanzado'
-  if(rating >= 1400) return 'Intermedio'
-  return 'Iniciación'
-}
-
-// «Alta», «Media»… segun el RD, que es lo seguro que esta el motor de tu
-// numero. Los cortes son los del desplegable de /rating.
-function fiabilidad(rd){
-  if(rd < 140) return 'Alta'
-  if(rd < 190) return 'Media'
-  if(rd < 250) return 'Baja'
-  return 'Muy baja'
-}
-
 // El puesto se calcula aqui y no se comparte con /rating porque alli va
 // pegado al pintado de la tabla. La regla es la suya: por rating de mayor a
 // menor, empates por nombre, y quien empata en rating comparte puesto.
@@ -93,8 +76,8 @@ const coma = (n) => n.toFixed(2).replace('.', ',')
 
 function pintar(hoy, hace30, puesto, curva, salida){
   $('pRating').innerText = coma(hoy.rating)
-  $('pRatingCategoria').innerText = categoria(hoy.rating)
-  $('pRd').innerText = fiabilidad(hoy.rd)
+  $('pRatingCategoria').innerText = window.categoriaDeRating(hoy.rating)
+  $('pRd').innerText = window.getFiabilidadConfig(hoy.rd).label
   $('pPuesto').innerText = puesto ? puesto.puesto + '.º de ' + puesto.de : '—'
   $('pSalida2').innerText = salida === null ? '1500' : String(Math.round(salida))
   if(hace30){
