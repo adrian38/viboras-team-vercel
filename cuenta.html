@@ -635,7 +635,11 @@ function mostrarAviso(texto, ok){
 
 function limpiarAviso(){ $('aviso').classList.remove('visible') }
 
-function pintarSesion(user){
+// `async` y todo lo de dentro esperado: esta funcion es la tarea de
+// arranque del velo, asi que la pagina se destapa cuando ella termina. Lo
+// que se lance aqui sin esperar aparece DESPUES, encima de la pagina ya
+// visible, y eso es un flashazo.
+async function pintarSesion(user){
   $('cargando').classList.add('oculto')
   $('panelSesion').classList.toggle('oculto', !user)
   $('panelAcceso').classList.toggle('oculto', !!user)
@@ -647,10 +651,11 @@ function pintarSesion(user){
   if(user.playerName && !user.playerActive){
     mostrarAviso('Tu jugador está dado de baja, así que tu nombre no saldrá en las listas. Avisa a un administrador.')
   }
-  if(user.role === 'admin') cargarPendientes()
-  // El resto del perfil lo trae /api/perfil (cuenta-perfil.js). Va aparte
-  // porque tarda mas que la sesion y no debe retrasar el "has entrado".
-  if(window.pintarPerfil) window.pintarPerfil()
+  if(user.role === 'admin') await cargarPendientes()
+  // El resto del perfil lo trae /api/perfil (cuenta-perfil.js), y dentro de
+  // el va el rating, que es lo que mas tarda. Se espera: el velo sigue
+  // puesto hasta que la ultima tarjeta esta pintada.
+  if(window.pintarPerfil) await window.pintarPerfil()
 }
 
 // El API devuelve {error, message}: el motivo se enseña tal cual, que para eso

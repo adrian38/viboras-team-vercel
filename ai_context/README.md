@@ -26,6 +26,9 @@ que hay.
   sin maqueta; y la pantalla de bienvenida: el vídeo del grupo recortado, por
   qué se cierra si no arranca en 1,5 s y por qué `sw.js` deja pasar los
   `Range`.
+- `pantalla_de_carga.md`: el velo no se quita hasta que está pintado todo,
+  cálculos incluidos; por qué lo que la tarea de arranque no espera aparece
+  después y se ve como un flashazo, y cómo se mide en milisegundos.
 
 ## El rating
 

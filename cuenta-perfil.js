@@ -431,10 +431,12 @@ async function pedirPerfil(){
   return json
 }
 
+// La llama pintarSesion() y la espera, con el velo de arranque puesto: aqui
+// no se pide otro velo ni se lanza nada por libre.
 async function pintarPerfil(){
   let datos = null
   try{
-    datos = await window.vtCargando.mientras(pedirPerfil, 'Cargando tu perfil')
+    datos = await pedirPerfil()
   }catch(err){
     console.error('perfil', err)
     ver('pErrorPerfil', true)
@@ -458,9 +460,14 @@ async function pintarPerfil(){
     pintarDisponibilidad(datos.disponibilidad)
   }
   pintarDispositivos(datos.dispositivos)
-  // El rating va por su cuenta (cuenta-rating.js): lo calcula el navegador y
-  // tarda mas que todo lo demas junto, asi que no se le espera.
-  if(conJugador && window.pintarRating) window.pintarRating(datos.cuenta.nombre, datos.cuenta.salida)
+  // El rating lo calcula el navegador (cuenta-rating.js) y tarda mas que
+  // todo lo demas junto, pero SE ESPERA: su tarjeta, su grafica y la
+  // calificacion de estrellas tienen que estar pintadas antes de que la
+  // pagina se vea. Si falla, la pagina sale igual y sin su tarjeta.
+  if(conJugador && window.pintarRating){
+    await window.pintarRating(datos.cuenta.nombre, datos.cuenta.salida)
+      .catch((err) => console.error('rating', err))
+  }
 }
 
 window.pintarPerfil = pintarPerfil
