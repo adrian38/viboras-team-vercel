@@ -80,6 +80,7 @@
   <div class="vt-card vt-card--accent" style="text-align:center">
 
     <h1 id="title"></h1>
+    <div id="fecha" class="vt-label" style="margin-top:4px"></div>
 
     <div id="warning" style="margin:10px 0; font-size:0.95rem; display:none;">
       Atención: si queda menos de 48 horas es posible que no haya pistas disponibles
@@ -118,9 +119,18 @@ if(diffDays < 2){
 
 const readonly = params.get("readonly") === "1"
 
+// El dia de la semana por delante: se llega aqui desde el calendario del
+// perfil o desde un enlace del grupo, y lo que uno comprueba es si es el
+// sabado o el martes, no el numero. La fecha sigue, en pequeno, porque
+// «Sabado» a secas no distingue dos sabados.
 const parts = date.split("-")
 const formatted = `${parts[2]}/${parts[1]}/${parts[0]}`
-document.getElementById("title").innerText = formatted
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+// Con los numeros del texto y no con el Date de arriba: `new Date("2026-10-31")`
+// es medianoche UTC, que en invierno cae en el dia anterior aqui.
+const diaDeLaSemana = DIAS_SEMANA[new Date(+parts[0], +parts[1] - 1, +parts[2]).getDay()]
+document.getElementById("title").innerText = diaDeLaSemana
+document.getElementById("fecha").innerText = formatted
 
 const slotsDiv = document.getElementById("slots")
 const slots = []
@@ -143,12 +153,12 @@ async function loadSlots(){
   const data = await res.json()
   document.querySelectorAll(".slot").forEach(el=>{
     const t = el.dataset.time
+    // El numero entre parentesis era cuanta gente habia votado esa hora, y
+    // no lo decia en ninguna parte: aqui se viene a marcar las horas propias
+    // y para ver los votos esta «Ver votos». En solo lectura, la hora que no
+    // vota nadie no se ensena, que es para lo que sigue haciendo falta.
     const count = data[t]?.length || 0
-    if(count===0 && readonly){
-      el.style.display="none"
-    } else {
-      el.innerText = `${t} (${count})`
-    }
+    if(count===0 && readonly) el.style.display="none"
   })
 }
 
@@ -184,12 +194,21 @@ async function submitVote(){
 
 }
 
+// El `volver` viaja con uno: desde los votos se vuelve a este dia, y desde
+// aqui a donde se venia. Sin arrastrarlo, el camino de vuelta se corta a la
+// mitad y acaba en la portada.
 function viewResults(){
-  window.location = `/results?date=${date}`
+  const v = params.get("volver")
+  window.location = `/results?date=${date}` + (v ? `&volver=${encodeURIComponent(v)}` : "")
 }
 
+// A donde se vuelve: lo dice quien trajo aqui, con ?volver=. Solo rutas de
+// este sitio —una que empiece por // o por http seria un redirect abierto—,
+// la misma regla que `destino()` en cuenta.html. Sin ese parametro, a la
+// portada, que es de donde se llega desde el enlace del grupo.
 function goBack(){
-  window.location = "/"
+  const v = params.get("volver") || "/"
+  window.location = (v.startsWith("/") && !v.startsWith("//")) ? v : "/"
 }
 
 vtCargando.arranque(loadSlots, 'Cargando el día')

@@ -198,7 +198,10 @@ function goBack(){
   if(readonly){
     window.location="/"
   }else{
-    window.location=`/day?date=${date}`
+    // Con el `volver` que trajo day.html, para que su «Atrás» siga sabiendo
+    // de donde se venia.
+    const v = params.get("volver")
+    window.location = `/day?date=${date}` + (v ? `&volver=${encodeURIComponent(v)}` : "")
   }
 }
 

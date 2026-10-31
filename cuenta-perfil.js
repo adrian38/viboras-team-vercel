@@ -244,6 +244,8 @@ const DIAS = ['L','M','X','J','V','S','D']
 
 const pad = (n) => String(n).padStart(2, '0')
 
+const enlaceDeDia = (iso) => '/day?date=' + iso + '&volver=' + encodeURIComponent('/cuenta')
+
 // Los siete dias que vienen, empezando hoy. La base no guarda el pasado
 // (getSlots borra las franjas vencidas), asi que esto es lo que hay votado de
 // aqui en adelante, no un historico.
@@ -264,10 +266,11 @@ function pintarDisponibilidad(d){
     const et = document.createElement('span')
     et.className = 'semana__dia'
     et.innerText = DIAS[(dia.getDay() + 6) % 7]
-    // Cada dia lleva a su pagina de votacion: /day?date=AAAA-MM-DD.
+    // Cada dia lleva a su pagina de votacion. El `volver` es lo que hace que
+    // su «Atras» traiga de vuelta aqui y no a la portada.
     const celda = document.createElement('a')
     celda.className = 'semana__celda' + (si ? ' semana__celda--si' : '')
-    celda.href = '/day?date=' + iso
+    celda.href = enlaceDeDia(iso)
     celda.innerText = si ? '✓' : '·'
     celda.title = (si ? 'Votado el ' : 'Votar el ') + iso
     col.appendChild(et)
@@ -275,7 +278,7 @@ function pintarDisponibilidad(d){
     caja.appendChild(col)
   }
   const votar = $('pVotar')
-  if(votar) votar.href = '/day?date=' + (primeroSinVotar || (d.dias[0] && d.dias[0].dia))
+  if(votar) votar.href = enlaceDeDia(primeroSinVotar || (d.dias[0] && d.dias[0].dia))
   texto('pFranjas', d.franjas
     ? d.franjas + (d.franjas === 1 ? ' franja votada' : ' franjas votadas') + ' por delante'
     : 'No tienes ninguna franja votada')
