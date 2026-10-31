@@ -117,6 +117,16 @@
 .inicial--sm{width:28px;height:28px;font-size:12px;border-width:1px}
 .inicial--gris{border-color:var(--vt-border-strong);color:var(--vt-muted)}
 .chips{display:flex;flex-wrap:wrap;gap:var(--vt-sm);margin-top:var(--vt-sm)}
+/* El unico verde de la pagina, el mismo de .aviso--ok: theme.css no tiene
+   token verde porque el sistema es oro sobre carbono, y este chip dice
+   «al dia», que en oro se confundiria con todo lo demas. */
+.chip-verde{
+  border-color:rgba(34,197,94,0.35);
+  background:rgba(34,197,94,0.12);
+  color:#86efac;
+  font-size:10px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;
+}
+.chip-verde__punto{width:6px;height:6px;border-radius:var(--vt-r-full);background:currentColor}
 .pie-tarjeta{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
   gap:var(--vt-sm);margin:var(--vt-md) 0 0;padding-top:var(--vt-sm);
@@ -181,8 +191,17 @@
 .ficha__et{color:var(--vt-muted)}
 .ficha__val{display:flex;align-items:center;gap:var(--vt-sm);text-align:right;font-weight:600}
 /* Lo que no cambia el jugador: apagado y con candado. */
-.ficha__fila--fija .ficha__val{color:var(--vt-muted)}
+.ficha__fila--fija .ficha__val{color:var(--vt-muted);font-weight:500}
 .ficha__fila--fija .ms{color:var(--vt-faint)}
+.ficha__val{color:var(--vt-text-strong)}
+.ficha__lapiz{background:none;border:0;padding:0 0 0 2px;color:var(--vt-gold);cursor:pointer;line-height:1}
+.ficha__lapiz:hover{color:var(--vt-gold-light)}
+/* Al editar, la fila se parte en dos lineas: el control y sus dos botones no
+   caben al lado de la etiqueta en un telefono. */
+.ficha__fila:has(.ficha__input){flex-wrap:wrap}
+.ficha__val:has(.ficha__input){flex-wrap:wrap;justify-content:flex-end;gap:var(--vt-xs)}
+.ficha__input{width:auto;min-width:160px;flex:1 1 160px;text-align:left}
+.ficha__aviso{flex:1 1 100%;text-align:right;color:var(--vt-error)}
 
 .semana{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--vt-xs);text-align:center}
 .semana__dia{font-family:var(--vt-font-head);font-size:12px;font-weight:700;color:var(--vt-muted)}
@@ -273,6 +292,9 @@
           <p class="vt-small vt-muted" id="sesionCorreo" style="margin:2px 0 0">
           </p>
           <div class="chips">
+            <span class="vt-chip chip-verde oculto" id="pActivo">
+              <span class="chip-verde__punto"></span>Miembro activo
+            </span>
             <span class="vt-chip vt-chip--gold oculto" id="pVerificado">
               <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">verified_user</span>Correo verificado
             </span>
@@ -284,6 +306,7 @@
           <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">calendar_month</span>
           En el grupo desde el <span id="pAlta"></span>
         </span>
+        <span class="vt-label vt-gold" id="pSocio"></span>
       </p>
       <div class="aviso" id="pErrorPerfil" style="display:none">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">error</span>
@@ -399,8 +422,15 @@
     </section>
 
     <section class="vt-card">
-      <span class="vt-label">Tu ficha</span>
-      <p class="vt-small vt-muted" style="margin-top:var(--vt-xs)">Lo que contestaste al inscribirte.</p>
+      <div class="vt-between">
+        <div>
+          <span class="vt-label">Tu ficha</span>
+          <p class="vt-small vt-muted" style="margin:var(--vt-xs) 0 0">Datos registrados de tu inscripción</p>
+        </div>
+        <button class="vt-btn vt-btn--ghost vt-btn--sm oculto" id="pEditarFicha" type="button">
+          <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">edit_note</span>Editar
+        </button>
+      </div>
       <div class="ficha" id="pFicha" style="margin-top:var(--vt-sm)"></div>
       <p class="vt-small vt-muted oculto" id="pSinFicha">
         Tu cuenta es anterior al formulario de inscripción, así que no hay nada

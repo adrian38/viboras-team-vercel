@@ -49,15 +49,27 @@ function pintarCuenta(c){
   // /api/auth?action=me, antes de que esto llegue.
   texto('pInicial', iniciales(c.nombre || c.correo))
   ver('pVerificado', c.correoVerificado)
+  ver('pActivo', c.estado === 'active')
+  // El numero de socio es el de su cuenta, con tres cifras: no hay otro, y
+  // inventarse una numeracion aparte seria un dato mas que mantener.
+  texto('pSocio', 'Socio #' + String(c.socio).padStart(3, '0'))
   texto('pAlta', fecha(c.alta) || 'fecha desconocida')
   ver('pSalidaFrase', c.salida !== null)
   if(c.salida !== null) texto('pSalida', Math.round(c.salida) + ' pts')
 }
 
-// Las tres de arriba no las cambia el jugador; el resto son sus respuestas de
-// la inscripcion. El nivel BK va con las fijas aunque venga del formulario:
-// de el salen los puntos de partida.
-const FIJAS = ['bkLevel']
+// Que fila se puede cambiar y cual no lo dice el servidor (campo.editable),
+// que es quien lo tiene que decidir: la pagina solo pinta el candado o el
+// lapiz segun lo que le digan.
+
+function icono(nombre){
+  const n = document.createElement('span')
+  n.className = 'ms ms--sm notranslate'
+  n.setAttribute('translate', 'no')
+  n.setAttribute('aria-hidden', 'true')
+  n.innerText = nombre
+  return n
+}
 
 function filaFicha(titulo, valor, fija){
   const fila = document.createElement('div')
@@ -68,22 +80,107 @@ function filaFicha(titulo, valor, fija){
   const val = document.createElement('span')
   val.className = 'ficha__val'
   val.innerText = valor === null || valor === undefined ? '—' : String(valor)
-  if(fija){
-    const candado = document.createElement('span')
-    candado.className = 'ms ms--sm notranslate'
-    candado.setAttribute('translate', 'no')
-    candado.setAttribute('aria-hidden', 'true')
-    candado.innerText = 'lock'
-    val.appendChild(candado)
-  }
+  if(fija) val.appendChild(icono('lock'))
   fila.appendChild(et)
   fila.appendChild(val)
   return fila
 }
 
+// El lapiz de una fila que si se puede cambiar. Solo se ve en modo edicion:
+// fuera de el, la ficha es una lista que se lee.
+function lapiz(campo, fila){
+  const boton = document.createElement('button')
+  boton.className = 'ficha__lapiz'
+  boton.type = 'button'
+  boton.setAttribute('aria-label', 'Cambiar ' + campo.titulo.toLowerCase())
+  boton.appendChild(icono('edit_note'))
+  boton.addEventListener('click', () => abrirEditor(campo, fila))
+  return boton
+}
+
+// El valor se cambia en la propia fila: un control, guardar y cancelar. Lo
+// que vale cada campo lo dice el servidor (campo.opciones), que es quien lo
+// valida; aqui solo se ofrece.
+function control(campo){
+  if(!campo.opciones){
+    const input = document.createElement('input')
+    input.className = 'vt-input ficha__input'
+    input.type = campo.campo === 'phone' ? 'tel' : 'text'
+    input.value = campo.crudo || ''
+    return input
+  }
+  const select = document.createElement('select')
+  select.className = 'vt-select ficha__input'
+  for(const [valor, texto] of campo.opciones){
+    const op = document.createElement('option')
+    op.value = valor
+    op.textContent = texto
+    if(valor === campo.crudo) op.selected = true
+    select.appendChild(op)
+  }
+  return select
+}
+
+async function guardarCampo(campo, valor, aviso){
+  const res = await fetch('/api/perfil?action=ficha', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({campo: campo.campo, valor})
+  })
+  const json = await res.json().catch(() => ({}))
+  if(!res.ok || !json.ok){
+    aviso.innerText = json.message || 'No se pudo guardar.'
+    return null
+  }
+  return json.ficha
+}
+
+function abrirEditor(campo, fila){
+  const val = fila.querySelector('.ficha__val')
+  val.innerHTML = ''
+  const entrada = control(campo)
+  const aviso = document.createElement('small')
+  aviso.className = 'ficha__aviso'
+  const guardar = document.createElement('button')
+  guardar.className = 'vt-btn vt-btn--sm'
+  guardar.type = 'button'
+  guardar.innerText = 'Guardar'
+  const cancelar = document.createElement('button')
+  cancelar.className = 'vt-btn vt-btn--quiet vt-btn--sm'
+  cancelar.type = 'button'
+  cancelar.innerText = 'Cancelar'
+  cancelar.addEventListener('click', () => pintarFicha(ultimaCuenta))
+  guardar.addEventListener('click', async () => {
+    guardar.disabled = true
+    const ficha = await guardarCampo(campo, entrada.value, aviso)
+    guardar.disabled = false
+    if(!ficha) return
+    ultimaCuenta = {...ultimaCuenta, ficha}
+    pintarFicha(ultimaCuenta)
+  })
+  val.appendChild(entrada)
+  val.appendChild(guardar)
+  val.appendChild(cancelar)
+  fila.appendChild(aviso)
+  entrada.focus()
+}
+
 // innerText y createElement en vez de innerHTML: aqui entra el nombre y el
 // telefono que escribio una persona.
+// La ultima respuesta del API, para repintar la ficha sin volver a pedirla
+// al guardar o al cancelar.
+let ultimaCuenta = null
+let editando = false
+
+function modoEdicion(valor){
+  editando = valor
+  const boton = $('pEditarFicha')
+  if(boton) boton.innerText = valor ? 'Listo' : 'Editar'
+  if(ultimaCuenta) pintarFicha(ultimaCuenta)
+}
+
 function pintarFicha(c){
+  ultimaCuenta = c
   const caja = $('pFicha')
   if(!caja) return
   // Las cuentas anteriores al formulario (2026-10-17) no tienen respuestas:
@@ -95,8 +192,12 @@ function pintarFicha(c){
   caja.appendChild(filaFicha('Correo', c.correo, true))
   if(vacia) return
   for(const campo of c.ficha || []){
-    caja.appendChild(filaFicha(campo.titulo, campo.valor, FIJAS.includes(campo.campo)))
+    const fila = filaFicha(campo.titulo, campo.valor, !campo.editable)
+    if(campo.editable && editando) fila.querySelector('.ficha__val').appendChild(lapiz(campo, fila))
+    caja.appendChild(fila)
   }
+  const boton = $('pEditarFicha')
+  if(boton) boton.classList.toggle('oculto', !(c.ficha || []).some((f) => f.editable))
 }
 
 /* ------------------------------------------------------ lado de pista -- */
@@ -315,6 +416,8 @@ async function pintarPerfil(){
   }
   pintarCuenta(datos.cuenta)
   pintarFicha(datos.cuenta)
+  const editar = $('pEditarFicha')
+  if(editar) editar.addEventListener('click', () => modoEdicion(!editando))
   const conJugador = Boolean(datos.partidos)
   // Sin ficha de jugador no hay donde guardar el lado, asi que la tarjeta no
   // se ensena: seria un boton que no hace nada.

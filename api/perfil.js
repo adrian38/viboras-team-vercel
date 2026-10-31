@@ -19,7 +19,7 @@ import { sql } from '@vercel/postgres';
 import { exigirSesion, sinCache } from './_auth.js';
 import { ensureSchema, readBody } from './_db.js';
 import { ensureAvisosSchema, partidosParaValorar } from './_avisos.js';
-import { describirInscripcion } from './_inscripcion.js';
+import { describirInscripcion, validarInscripcion, telefonoLibre } from './_inscripcion.js';
 import { ensurePushSchema } from './_push.js';
 import { ensureBuzonSchema } from './_buzon.js';
 
@@ -249,12 +249,27 @@ async function dispositivos(userId) {
 // Las respuestas de la inscripcion con su titulo y su texto, en el orden en
 // que se preguntaron. El formulario vive en _inscripcion.js: si cambia una
 // opcion alli, aqui sale sola.
+// El nivel BK no se edita: de el salen los puntos de partida del rating, asi
+// que lo cambia un administrador. El nombre del grupo y el correo tampoco,
+// pero esos ni siquiera estan en el formulario.
+const NO_SE_EDITA = ['bkLevel'];
+
 function ficha(form) {
   const datos = form || {};
+  const hayForm = Boolean(form);
   return describirInscripcion().map(({ campo, titulo, opciones }) => {
     const valor = datos[campo];
     const texto = opciones ? (opciones.find(([v]) => v === valor) || [])[1] : valor;
-    return { campo, titulo, valor: texto || null };
+    return {
+      campo,
+      titulo,
+      valor: texto || null,
+      crudo: valor === undefined ? null : valor,
+      opciones: opciones || null,
+      // Sin formulario no hay nada que editar: las cuentas anteriores al
+      // 2026-10-17 no lo rellenaron y validarlo a medias lo rechazaria entero.
+      editable: hayForm && !NO_SE_EDITA.includes(campo)
+    };
   });
 }
 
@@ -266,6 +281,7 @@ async function cuenta(userId) {
     WHERE u.id = ${userId}`;
   const u = rows[0] || {};
   return {
+    socio: userId,
     nombre: u.player_name || null,
     correo: u.email,
     correoVerificado: Boolean(u.email_verified_at),
@@ -311,10 +327,42 @@ async function guardarLado(req, res, user) {
   res.status(200).json({ ok: true, lado });
 }
 
+// Un campo del formulario de inscripcion. Se valida el formulario ENTERO con
+// el cambio dentro (validarInscripcion), no el campo suelto: es la misma
+// puerta por la que entro el alta, asi que nadie puede dejar aqui algo que no
+// habria podido escribir al registrarse.
+async function guardarFicha(req, res, user) {
+  const datos = await readBody(req);
+  const campo = String(datos?.campo || '');
+  // La sesion no trae el formulario: se lee aqui, que ademas es la version
+  // que hay ahora mismo y no la que vio la pagina hace diez minutos.
+  const { rows } = await sql`SELECT signup_form FROM users WHERE id = ${user.id}`;
+  const actual = rows.length ? rows[0].signup_form : null;
+  const editable = ficha(actual).find((f) => f.campo === campo && f.editable);
+  if (!editable) {
+    res.status(400).json({ ok: false, error: 'bad_field', message: 'Ese dato no se puede cambiar desde aquí.' });
+    return;
+  }
+  const propuesta = { ...actual, [campo]: String(datos?.valor ?? '') };
+  const { form, error, message } = validarInscripcion(propuesta);
+  if (error) {
+    res.status(400).json({ ok: false, error, message });
+    return;
+  }
+  const chocado = campo === 'phone' ? await telefonoLibre(form, user.id) : null;
+  if (chocado) {
+    res.status(409).json({ ok: false, ...chocado });
+    return;
+  }
+  await sql`UPDATE users SET signup_form = ${JSON.stringify(form)}::jsonb WHERE id = ${user.id}`;
+  res.status(200).json({ ok: true, ficha: ficha(form) });
+}
+
 export default async function handler(req, res) {
   const user = await exigirSesion(req, res);
   if (!user) return;
-  const escribe = req.method === 'POST' && String(req.query?.action || '') === 'lado';
+  const accion = String(req.query?.action || '');
+  const escribe = req.method === 'POST' && (accion === 'lado' || accion === 'ficha');
   if (req.method !== 'GET' && !escribe) {
     res.setHeader('allow', 'GET, POST');
     res.status(405).json({ ok: false, error: 'method_not_allowed' });
@@ -323,7 +371,8 @@ export default async function handler(req, res) {
   sinCache(res);
   try {
     await ensureSchema();
-    if (escribe) await guardarLado(req, res, user);
+    if (accion === 'lado' && escribe) await guardarLado(req, res, user);
+    else if (escribe) await guardarFicha(req, res, user);
     else await todo(req, res, user);
   } catch (err) {
     console.error('perfil error', err);
