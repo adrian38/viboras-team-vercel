@@ -1,65 +1,65 @@
-// Paridad del motor de rating entre las paginas que lo implementan.
+// El motor de rating vive en un solo sitio. Esta guarda lo defiende.
 //
 //   node tools/rating-parity.mjs
 //
-// El Glicko esta pegado tres veces (ai_context/motor_de_rating_duplicado.md).
-// Esta guarda vigila las PRIMITIVAS, que tienen que ser identicas. No vigila
-// calculateEngineRatings: ahi la divergencia es intencionada, porque
-// rating-test.html anade extraDecayDays.
+// Hasta el 2026-10-31 el Glicko estaba pegado en tres paginas y esto
+// comprobaba que las copias no se separaran. Ahora esta en vt-glicko.js y lo
+// que hay que impedir es lo contrario: que una pagina vuelva a traerse la
+// suya «para no depender del fichero». Pasaria igual de callado que la
+// divergencia de antes, y el sintoma seria el mismo —un numero que cambia en
+// /rating y no en /players—, asi que la guarda se queda, mirando al reves.
+//
+// Lo que comprueba:
+//
+//   1. vt-glicko.js define las primitivas y las exporta.
+//   2. Ninguna pagina las define por su cuenta.
+//   3. Las tres paginas cargan /vt-glicko.js y traen sus nombres al ambito.
+//
+// No vigila calculateEngineRatings: el bucle de dias es de cada pagina y en
+// rating-test diverge a proposito (extraDecayDays).
+// Detalle: ai_context/motor_de_rating_duplicado.md
 import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 
+const MOTOR = 'vt-glicko.js';
 const PAGINAS = ['rating.html', 'players.html', 'rating-test.html'];
-const PRIMITIVAS = ['g', 'expected', 'getEffectiveObservationRd', 'getReliabilityWeight'];
 
-// Extrae el cuerpo de una funcion equilibrando llaves, y lo normaliza para que
-// la indentacion distinta de cada pagina no cuente como divergencia.
-function extraer(src, nombre) {
-  const m = src.match(new RegExp('function\\s+' + nombre + '\\s*\\('));
-  if (!m) return null;
-  let prof = 0;
-  let j = src.indexOf('{', m.index);
-  for (; j < src.length; j++) {
-    if (src[j] === '{') prof++;
-    else if (src[j] === '}') {
-      prof--;
-      if (prof === 0) { j++; break; }
-    }
-  }
-  return src.slice(m.index, j).replace(/\s+/g, ' ').trim();
-}
+// Las cuatro primitivas de siempre mas las que las acompanan: si una pagina
+// se trae cualquiera de estas, se ha vuelto a partir el motor.
+const DEL_MOTOR = [
+  'g', 'expected', 'getEffectiveObservationRd', 'getReliabilityWeight',
+  'decayAllPlayersOneDay', 'getPlayerOrCreate', 'getTeamState',
+  'getEffectiveObservationR', 'clamp', 'updatePeriod'
+];
 
-const huella = (texto) => createHash('md5').update(texto).digest('hex').slice(0, 8);
+const defineFuncion = (src, nombre) =>
+  new RegExp('function\\s+' + nombre + '\\s*\\(').test(src);
 
-const fuentes = Object.fromEntries(PAGINAS.map((p) => [p, readFileSync(p, 'utf8')]));
+const motor = readFileSync(MOTOR, 'utf8');
 const problemas = [];
 
-for (const fn of PRIMITIVAS) {
-  const huellas = PAGINAS.map((p) => {
-    const cuerpo = extraer(fuentes[p], fn);
-    return { pagina: p, huella: cuerpo ? huella(cuerpo) : null };
-  });
-
-  const ausentes = huellas.filter((h) => h.huella === null);
-  if (ausentes.length) {
-    problemas.push(`${fn}: no existe en ${ausentes.map((a) => a.pagina).join(', ')}`);
-    continue;
+for (const fn of DEL_MOTOR) {
+  if (!defineFuncion(motor, fn)) problemas.push(`${MOTOR} ya no define ${fn}()`);
+  if (!new RegExp('\\b' + fn + '\\b').test(motor.slice(motor.lastIndexOf('return {')))) {
+    problemas.push(`${MOTOR} no exporta ${fn}`);
   }
+}
 
-  const distintas = new Set(huellas.map((h) => h.huella));
-  if (distintas.size > 1) {
-    problemas.push(
-      `${fn}: divergente -> ` + huellas.map((h) => `${h.pagina}=${h.huella}`).join('  ')
-    );
+for (const pagina of PAGINAS) {
+  const src = readFileSync(pagina, 'utf8');
+  const suyas = DEL_MOTOR.filter((fn) => defineFuncion(src, fn));
+  if (suyas.length) {
+    problemas.push(`${pagina} se ha traido su copia de: ${suyas.join(', ')}`);
   }
+  if (!src.includes(`src="/${MOTOR}"`)) problemas.push(`${pagina} no carga /${MOTOR}`);
+  if (!src.includes('window.vtGlicko')) problemas.push(`${pagina} no usa window.vtGlicko`);
 }
 
 if (problemas.length === 0) {
-  console.log(`rating: ${PRIMITIVAS.length} primitivas identicas en ${PAGINAS.length} paginas.`);
+  console.log(`rating: un solo motor (${MOTOR}) y ${PAGINAS.length} paginas que lo usan.`);
   process.exit(0);
 }
 
-console.error('Las copias del motor de rating no coinciden:');
+console.error('El motor de rating se ha vuelto a partir:');
 for (const p of problemas) console.error(`  - ${p}`);
 console.error('\nVer ai_context/motor_de_rating_duplicado.md antes de "arreglarlo".');
 process.exit(1);

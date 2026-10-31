@@ -29,9 +29,11 @@ que hay.
 
 ## El rating
 
-- `motor_de_rating_duplicado.md`: el motor Glicko está implementado tres veces
-  —`rating.html`, `players.html`, `rating-test.html`—, qué partes son idénticas
-  byte a byte, cuál ya divergió a propósito y cómo se toca sin romper las otras; y cómo /players reparte el cambio del día entre sus partidos sin tocar el motor.
+- `motor_de_rating_duplicado.md`: el motor Glicko estaba implementado tres
+  veces y desde el 2026-10-31 vive en `vt-glicko.js`; qué se quedó en cada
+  página (el bucle de días), cuál era la única diferencia escondida, por qué
+  en `players.html` los nombres van con `let`, y cómo /players reparte el
+  cambio del día entre sus partidos sin tocar el motor.
 - `valoraciones_y_avisos.md`: valorar a los compañeros tras un partido
   (ambiente y nivel), cómo los votos de nivel mueven el RD sin tocar el motor
   por dentro, quién puede editar un resultado y el aviso a los demás, y por

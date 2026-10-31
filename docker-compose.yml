@@ -117,6 +117,7 @@ services:
       - ./cuenta.html:/app/cuenta.html
       - ./cuenta-perfil.js:/app/cuenta-perfil.js
       - ./vt-cargando.js:/app/vt-cargando.js
+      - ./vt-glicko.js:/app/vt-glicko.js
       - ./auth-client.js:/app/auth-client.js
       - ./cuenta-correo.js:/app/cuenta-correo.js
       - ./inscripcion.html:/app/inscripcion.html

@@ -1,9 +1,37 @@
-# El motor de rating vive en tres copias
+# El motor de rating: una sola copia desde el 2026-10-31
 
-`players.html`, `rating.html` y `rating-test.html` implementan cada uno su
-propio Glicko, en JavaScript embebido. No hay módulo compartido: no se puede
-importar nada desde una página servida como estática sin reestructurar el
-proyecto, así que el algoritmo está pegado tres veces.
+**Ya no son tres.** El Glicko vive en `vt-glicko.js`, que cargan sin `defer`
+las tres páginas que lo usan —`rating.html`, `players.html` y
+`rating-test.html`— y que publica sus nombres en `window.vtGlicko`. Cada
+página los trae a su ámbito con un `const {…} = window.vtGlicko` y el resto
+de su código se lee igual que cuando el motor estaba pegado dentro.
+
+No hizo falta reestructurar nada ni usar módulos: es un `<script>` clásico
+más, como `splash.js`.
+
+Lo que **sigue** siendo de cada página es `calculateEngineRatings`, el bucle
+de días: en `rating-test.html` acepta `extraDecayDays` y en `players.html` ni
+existe. Juntarlos sería un cambio de comportamiento, no un refactor.
+
+## La única diferencia de motor que había, y estaba escondida
+
+`getPlayerOrCreate` no era igual en las tres, y la guarda vieja no lo
+miraba: `rating.html` y `players.html` creaban al jugador nuevo con
+`window.vtInicial.crear(nombre)` —su rating de partida según el nivel BK— y
+`rating-test.html` con un `GlickoPlayer()` en blanco, porque es un banco de
+pruebas y no tiene esa tabla detrás.
+
+Ahora esa diferencia es una línea a la vista, en `rating-test.html`:
+
+```js
+window.vtGlicko.usarJugadorNuevo(() => new GlickoPlayer());
+```
+
+## Lo que había antes
+
+Las tres páginas implementaban cada una su propio Glicko en JavaScript
+embebido, y una guarda comparaba los md5 de las funciones normalizadas para
+que no se separaran.
 
 Comprobado el 2026-10-08 comparando el md5 de cada función normalizada
 (`node tools/rating-parity.mjs`):
@@ -35,11 +63,23 @@ mismas cuatro primitivas.
 
 ## Qué hacer al tocar el rating
 
-1. Localizar **las tres** páginas antes de editar, no la que abriste.
-2. Si el cambio es en una primitiva compartida, aplicarlo idéntico en las tres y
-   dejar `node tools/rating-parity.mjs` en verde.
-3. Si el cambio es en `calculateEngineRatings`, llevarlo a mano a
-   `rating-test.html` conservando `extraDecayDays`.
+1. Si el cambio es en el motor, se toca `vt-glicko.js` y ya está: las tres
+   páginas lo cargan. **No se copia nada a una página**, por cómoda que
+   parezca la copia; `node tools/rating-parity.mjs` falla si aparece una.
+2. Si el cambio es en `calculateEngineRatings`, hay que llevarlo a mano a
+   `rating-test.html` conservando `extraDecayDays`. Eso sigue igual.
+3. Comprobar el resultado comparando la tabla de `/rating` antes y después:
+   no hay pruebas, y esa tabla es el único testigo. Al sacar el motor, las
+   42 filas salieron idénticas y `/players` mantuvo «1679,34 ± 153,59» para
+   Adrián C.
+
+### Un detalle de JavaScript que muerde
+
+En `players.html` los nombres se traen con `let`, no con `const`:
+`players-aportes.js` envuelve `updatePeriod` reasignándolo, y con `const`
+eso revienta con «Assignment to constant variable». Cuando el motor estaba
+pegado dentro eran declaraciones de función y se dejaban reasignar sin
+quejarse.
 4. Un número que cambia en `/rating` y no en `/players` casi siempre es esto, no
    un bug de datos.
 
