@@ -288,11 +288,153 @@ function calcularRatings(names, matches, cutoffDateIso, extraDecayDays = 0) {
   return salida(playerMap);
 }
 
+// Los partidos del API tal y como los quiere el motor: fecha normalizada,
+// quien gano y cuanto pesa el partido. El peso sale del formato (los de
+// torneo pesan menos) y de lo ajustado que fue, por f_x.
+//
+// Vive aqui desde el 2026-10-31 por lo mismo que el resto: estaba pegado en
+// rating.html y en rating-test.html, y la unica diferencia era que la
+// segunda arrastraba los marcadores en crudo para su exportacion. Se queda
+// esa version: los campos de mas no los mira nadie mas.
+// `matches.date` llega en dos formatos, DD/MM/AAAA y AAAA-MM-DD.
+function toIsoDate(s){
+  if(!s) return null;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const parts = String(s).split('/');
+  if(parts.length===3){
+    const d = String(parts[0]).padStart(2,'0');
+    const m = String(parts[1]).padStart(2,'0');
+    const y = String(parts[2]);
+    return `${y}-${m}-${d}`;
+  }
+  const dt = new Date(s);
+  if(isNaN(dt.getTime())) return null;
+  return dt.toISOString().split('T')[0];
+}
+
+// Cuanto pesa un partido por lo ajustado que fue: un 6-0 6-0 pesa mas que un
+// 7-6 7-6, porque dice mas del nivel de cada uno.
+function f_x(x){
+  const k = 10;
+  const xx = Number(x);
+  if (!Number.isFinite(xx)) return 0.0001;
+  return 0.5 + 1.0 / (1.0 + Math.exp(-k * (xx - 0.60)));
+}
+
+// Un partido del API en lo que el motor necesita, o null si no sirve: sin
+// marcador, o empatado a sets, no dice quien gano.
+// Sets y juegos de cada pareja. El tercer set de un bo3_stb es un super
+// tie-break: cuenta como set ganado, pero como UN juego, porque sus puntos no
+// son juegos y sumarlos tal cual lo volveria el set mas importante del
+// partido.
+function contarSets(s1, s2, fmtLow) {
+        let setsWon1 = 0;
+        let setsWon2 = 0;
+        let totalGames1 = 0;
+        let totalGames2 = 0;
+
+        for (let i = 0; i < 3; i++) {
+          const g1 = s1[i];
+          const g2 = s2[i];
+
+          if (g1 === null || g2 === null) continue;
+
+          if (i === 2 && fmtLow.includes('bo3_stb')) {
+            if (g1 > g2) {
+              setsWon1++;
+              totalGames1 += 1;
+            } else if (g2 > g1) {
+              setsWon2++;
+              totalGames2 += 1;
+            }
+            continue;
+          }
+
+          totalGames1 += g1;
+          totalGames2 += g2;
+
+          if (g1 > g2) setsWon1++;
+          else if (g2 > g1) setsWon2++;
+        }
+
+  return { setsWon1, setsWon2, totalGames1, totalGames2 };
+}
+
+// Lo que pesa el partido: por su formato —los de torneo cuentan menos, que se
+// juegan a tiempo— y por lo ajustado que fue.
+function pesoDelPartido(fmtLow, winnerGames, totalGames) {
+        let w1 = 1.0;
+        if (fmtLow.includes('timed_games_long')) {
+          w1 = 0.6;
+        } else if (fmtLow.includes('timed') || fmtLow.includes('timed_games')) {
+          w1 = 0.3;
+        }
+
+        const x = winnerGames / totalGames;
+        let w2 = f_x(x);
+        if (!Number.isFinite(w2) || w2 <= 0) w2 = 0.0001;
+
+        return w1 * w2;
+}
+
+function partidoDelApi(m, idx) {
+        const dateIso = toIsoDate(m.date) || toIsoDate(m.start_date) || new Date().toISOString().split('T')[0];
+
+        const p1a = (m.p1a || '').trim();
+        const p1b = (m.p1b || '').trim();
+        const p2a = (m.p2a || '').trim();
+        const p2b = (m.p2b || '').trim();
+
+        const s1 = [m.s11, m.s12, m.s13].map(x => { const v = parseInt(String(x||'').trim(),10); return Number.isFinite(v) ? v : null; });
+        const s2 = [m.s21, m.s22, m.s23].map(x => { const v = parseInt(String(x||'').trim(),10); return Number.isFinite(v) ? v : null; });
+
+        const fmtLow = String(m.format || '').toLowerCase();
+        const { setsWon1, setsWon2, totalGames1, totalGames2 } = contarSets(s1, s2, fmtLow);
+
+        const totalGames = totalGames1 + totalGames2;
+        if (totalGames === 0 || setsWon1 === setsWon2) return null;
+
+        const winnerIsTeam1 = setsWon1 > setsWon2;
+        const score = winnerIsTeam1 ? 1.0 : 0.0;
+        const weight = pesoDelPartido(fmtLow, winnerIsTeam1 ? totalGames1 : totalGames2, totalGames);
+
+        return {
+          id: (m.id !== undefined && m.id !== null) ? m.id : idx,
+          date: dateIso,
+          team1: [p1a, p1b],
+          team2: [p2a, p2b],
+          score: score,
+          weight: weight,
+          event_type: (m.event_type || '').toString().toLowerCase(),
+          event_id: (m.event_id !== undefined && m.event_id !== null) ? Number(m.event_id) : null,
+          format: m.format,
+          s11: m.s11,
+          s12: m.s12,
+          s13: m.s13,
+          s21: m.s21,
+          s22: m.s22,
+          s23: m.s23
+        };
+}
+
+// Todos los partidos que cuentan para el rating. Si falla, lista vacia: la
+// pagina ensena lo que pueda en vez de quedarse en blanco.
+function leerPartidos() {
+  return fetch(`/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,compas,doble_ko,legacy&ts=${Date.now()}`)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(db => {
+      const raw = (db && db.matches) ? db.matches : [];
+      return raw.map(partidoDelApi)
+        .filter(m => m && m.date && m.team1[0] && m.team1[1] && m.team2[0] && m.team2[1]);
+    })
+    .catch(e => { console.error('Could not load matches', e); return []; });
+}
+
 return {
   Q, C_DAILY, INITIAL_RATING, INITIAL_RD, MIN_RD, MAX_RD,
   GlickoPlayer, g, expected, decayAllPlayersOneDay, getPlayerOrCreate,
   getTeamState, getEffectiveObservationR, getEffectiveObservationRd, clamp,
-  getReliabilityWeight, updatePeriod, calcularRatings,
+  getReliabilityWeight, updatePeriod, calcularRatings, leerPartidos,
   usarJugadorNuevo, usarAjustePorNivel
 };
 
