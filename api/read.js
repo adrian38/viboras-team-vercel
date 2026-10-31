@@ -276,7 +276,18 @@ function filasDeComunidad() {
     ),
     -- Un partido organizado y sin jugar esta en la tabla con 0-0, y no es un
     -- partido jugado: ai_context/contar_partidos_de_un_jugador.md
-    jugados AS (SELECT * FROM marcadores WHERE sets1 + sets2 > 0)
+    jugados AS (SELECT * FROM marcadores WHERE sets1 + sets2 > 0),
+    ambiente AS (
+      SELECT f.rated_player_id AS player_id,
+        count(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
+        count(*) FILTER (WHERE f.actitud = 'mejorable')::int AS mejorable
+      FROM match_feedback f
+      JOIN matches m ON m.id = f.match_id
+      WHERE f.actitud IS NOT NULL
+        AND f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+        AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+      GROUP BY f.rated_player_id
+    )
     SELECT p.id, p.name, p.court_side,
       (SELECT u.signup_form->>'bkLevel' FROM users u
         WHERE u.player_id = p.id AND u.status = 'active' ORDER BY u.id LIMIT 1) AS nivel,
@@ -287,7 +298,10 @@ function filasDeComunidad() {
       (SELECT count(*) FROM jugados j
         WHERE (p.id IN (j.player1a_id, j.player1b_id) AND j.sets1 > j.sets2)
            OR (p.id IN (j.player2a_id, j.player2b_id) AND j.sets2 > j.sets1))::int AS ganados
+      , COALESCE(a.buen_rollo, 0)::int AS buen_rollo
+      , COALESCE(a.mejorable, 0)::int AS mejorable
     FROM players p
+    LEFT JOIN ambiente a ON a.player_id = p.id
     WHERE p.active = TRUE
     ORDER BY LOWER(p.name), p.name`;
 }
@@ -297,6 +311,7 @@ async function getComunidad(req, res) {
     await ensureSchema();
     // court_side y signup_form los crea ensureAuthSchema, no ensureSchema.
     await ensureAuthSchema();
+    await ensureAvisosSchema();
     const textos = Object.fromEntries(describirInscripcion().flatMap((c) => c.opciones || []));
     const { rows } = await filasDeComunidad();
     res.setHeader('cache-control', 'no-store');
@@ -311,7 +326,9 @@ async function getComunidad(req, res) {
         nivel: textos[r.nivel] || null,
         horarios: textos[r.horarios] || null,
         partidos: r.partidos,
-        ganados: r.ganados
+        ganados: r.ganados,
+        votos: r.buen_rollo + r.mejorable,
+        buenRollo: r.buen_rollo + r.mejorable ? r.buen_rollo / (r.buen_rollo + r.mejorable) : null
       }))
     });
   } catch (err) {

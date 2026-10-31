@@ -13,6 +13,8 @@ Fecha: 2026-10-31. Pantalla `/comunidad`, datos en `getComunidad`
 | Nivel BK | `users.signup_form->>'bkLevel'` |
 | Horarios | `users.signup_form->>'availability'` |
 | Partidos jugados y ganados | `matches`, contados en SQL |
+| Rating y categoría | `vt-glicko.js`, con las mismas entradas que `/rating` |
+| Valoración en estrellas | `match_feedback` + RD, con la fórmula de `/cuenta` |
 
 Nada se calcula a ojo y nada se rellena. **Una casilla sin dato no se pinta**:
 las cuentas anteriores al formulario de inscripción (2026-10-17) no tienen
@@ -40,20 +42,21 @@ traía «Libre para 20:00 hoy», «Disponible previa reserva» y un filtro
 «Disponibles hoy»: los tres salían de ahí y están fuera. La pantalla lo dice
 en voz alta, encima del buscador.
 
-## Por qué no hay rating ni estrellas en la tarjeta
+## Rating y estrellas usan el motor compartido
 
-La maqueta enseñaba «1.842 RATING PTS» y «FIABILIDAD 4,9 ★». Las dos cosas
-existen, pero **se calculan en el navegador**: el rating y el RD los saca el
-motor recorriendo el histórico día a día ([[motor_de_rating_duplicado]],
-[[calificacion_de_estrellas]]). Traerlas aquí obligaría a escribir un cuarto
-bucle de días —`calculateEngineRatings` es de cada página, no está en
-`vt-glicko.js`—, que es justo la divergencia callada contra la que avisa ese
-documento: un número que cambia en `/rating` y no aquí.
+La primera versión dejó fuera «RATING PTS» y las estrellas porque el bucle de
+días estaba duplicado entre páginas. Esa razón caducó cuando
+`calculateEngineRatings` pasó a ser `vtGlicko.calcularRatings` en
+`vt-glicko.js`. Desde el 2026-11-01 `/comunidad` espera las mismas entradas que
+`/rating` (`nivel-votos.js`, `rating-inicial.js` y los partidos) y une el
+resultado por nombre. No hay un cuarto motor.
 
-Así que el rating se queda donde ya está calculado y verificado, y
-`/comunidad` lleva un enlace a `/rating`. Si algún día hace falta el número
-aquí, el camino es sacar el bucle de días a `vt-glicko.js` primero, en su
-propio commit, y comparar la tabla de `/rating` antes y después.
+La estrella es la misma valoración de `/cuenta`: proporción real de buen rollo
+en `match_feedback`, ponderada por la fiabilidad real del RD. `getComunidad`
+devuelve sólo el agregado recibido por cada jugador, nunca quién votó qué.
+En esta tarjeta se formatea con punto (`4.5`) porque así está en su HTML de
+referencia. La estrella es el trazado SVG hueco `star_border` de Material, no
+el carácter de texto `★`.
 
 ## Contar partidos no es un `count(*)`
 
@@ -81,15 +84,35 @@ un partido jugado. Para ganados y perdidos valen los cinco formatos
 - **Los jugadores de baja no salen** (`players.active = TRUE`), igual que en
   `getNames`.
 
+## La composición visual sí sigue la maqueta
+
+Desde el 2026-11-01 la página usa el esqueleto visual de Stitch: barra superior
+compacta, bloque «Directorio oficial», buscador, filtros horizontales y una
+tarjeta independiente por jugador. Antes conservaba la cabecera antigua con el
+logo grande y envolvía todo el directorio en una sola `vt-card`, por eso no se
+parecía a la referencia aunque colores y datos fueran correctos.
+
+Dentro de la ficha, la categoría va como subtítulo del nombre, el número del
+motor a la derecha con la etiqueta `FIABILIDAD` y la matriz queda en
+`Lado · Calificación · Horarios`. El
+nivel BK se usa para los filtros, pero no se repite en la tarjeta. Si falta un dato,
+la rejilla cambia a una o dos columnas: no deja una casilla vacía para mantener tres huecos. Los filtros sí
+desbordan horizontalmente a propósito en móvil, como la maqueta; las tarjetas
+no. Medido a 375 px: tarjeta de 343 px con 16 px de margen. A 320 px: tarjeta
+de 280 px y cero elementos recortados por un ancestro.
+
+La cifra superior usa separador de miles por coma (`1,679`). El enlace «Ver
+evolución» fija también su color oscuro en `hover` y `focus-visible`: la regla
+global `a:hover` lo volvía dorado sobre fondo dorado y el texto desaparecía.
+
 ## Lo que la maqueta traía y se quedó fuera
 
 | En la maqueta | Por qué no está |
 | --- | --- |
 | «Pala Babolat Technical», «Especialista Bandejas», «Juego agresivo de volea» | No hay ningún campo de pala ni de estilo de juego |
-| «#4 TOP», «#2 CLUB», «TOP PARTNER» | El puesto sale del rating, que no se calcula aquí; «TOP PARTNER» no sale de nada |
+| «#4 TOP», «#2 CLUB», «TOP PARTNER» | No existe una clasificación de club o de compañeros en esta pantalla |
 | «Puntualidad 100% en partidos» | No se mide la puntualidad |
 | «Libre para 20:00 hoy», «Disponibles hoy» | Las horas de `/day` son privadas |
-| «FIABILIDAD 4,9 ★» | Necesita el RD del motor, que vive en el navegador |
 | «Temporada Oficial 2025» en el pie | No hay temporadas en el modelo, y además el año estaba mal |
 
 Relacionado: [[disponibilidad_quien_la_ve]], [[cuentas_y_sesiones]],
