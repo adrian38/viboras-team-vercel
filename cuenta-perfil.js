@@ -348,9 +348,6 @@ function pintarCalificacion(rd){
   const barra = $('pBarraFiab')
   if(barra) barra.style.width = Math.round(fiabilidad * 100) + '%'
   texto('pValorFiab', window.getFiabilidadConfig(rd).label)
-  texto('pComoSeCalcula', fiabilidad >= 0.8
-    ? 'El motor ya está seguro de tu rating, así que tu calificación se mueve en todo el rango.'
-    : 'Las calificaciones parten de 3 y se separan según el motor se fía más de tu rating: juega más.')
   ver('pConVotos', true)
 }
 
