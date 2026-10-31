@@ -135,6 +135,10 @@ document.getElementById("fecha").innerText = formatted
 const slotsDiv = document.getElementById("slots")
 const slots = []
 
+// Lo que hay guardado para este dia: hora -> nombres. Se queda aqui para
+// poder volver a marcar las horas propias cuando se sabe quien eres.
+let votos = {}
+
 for(let h=9; h<=21; h++){
   const time = `${h}:00`
   slots.push(time)
@@ -148,9 +152,22 @@ for(let h=9; h<=21; h++){
   slotsDiv.appendChild(div)
 }
 
+// Las horas que uno ya tiene votadas salen marcadas. Hace falta saber
+// quien eres, asi que se llama otra vez cuando el <select> de nombres se
+// rellena y cada vez que cambia.
+function marcarMias(){
+  const yo = document.getElementById('name').value
+  if(readonly) return
+  document.querySelectorAll('.slot').forEach(el=>{
+    const mias = votos[el.dataset.time] || []
+    el.classList.toggle('selected', !!yo && mias.includes(yo))
+  })
+}
+
 async function loadSlots(){
   const res = await fetch(`/api/read?action=getSlots&date=${date}`)
   const data = await res.json()
+  votos = data
   document.querySelectorAll(".slot").forEach(el=>{
     const t = el.dataset.time
     // El numero entre parentesis era cuanta gente habia votado esa hora, y
@@ -160,6 +177,7 @@ async function loadSlots(){
     const count = data[t]?.length || 0
     if(count===0 && readonly) el.style.display="none"
   })
+  marcarMias()
 }
 
 async function submitVote(){
@@ -185,12 +203,10 @@ async function submitVote(){
     return
   }
 
-  document.querySelectorAll(".slot").forEach(el=>{
-    el.classList.remove("selected")
-  })
-
+  // Sin recargar ni desmarcar nada: se vuelve a leer lo guardado y
+  // `marcarMias` deja marcadas las horas que acaban de grabarse. Antes se
+  // recargaba la pagina y volvia en blanco, que parece que no se guardo.
   await loadSlots()
-  window.location.reload()
 
 }
 
@@ -240,8 +256,12 @@ async function loadNames(){
     // auth-client.js lleva defer, asi que normalmente ya ha corrido cuando el
     // fetch vuelve; si no, se espera, que los diferidos corren antes de
     // DOMContentLoaded.
-    const poner = () => window.vtPreseleccionarJugador && window.vtPreseleccionarJugador(sel)
+    const poner = () => {
+      if(window.vtPreseleccionarJugador) window.vtPreseleccionarJugador(sel)
+      marcarMias()
+    }
     if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poner); else poner()
+    sel.addEventListener('change', marcarMias)
   }catch(e){
     console.error('Could not load names',e)
   }
