@@ -1,10 +1,11 @@
 // Los votos de «¿estaban en su nivel?» (/valorar) mueven la fiabilidad del
-// rating. Regla de Adrian (2026-10-17): «en su nivel» o «por encima» suben la
-// fiabilidad; «por debajo» la baja. El rating no se toca, solo el RD.
+// rating. Regla de Adrian (2026-11-01): «en su nivel» sube la fiabilidad;
+// «por encima» o «por debajo» la bajan. El rating no se toca, solo el RD.
 //
 // Cada dia, despues de updatePeriod, el RD de quien jugo y recibio votos se
-// multiplica por (1 - PASO * neto), con neto = votos a favor - votos en
-// contra de ese dia. Tres votos a favor: RD x 0,91. Tres en contra: x 1,09.
+// multiplica por (1 - PASO * neto), con neto = votos «en su nivel» - votos
+// que discrepan ese dia. Tres votos «en su nivel»: RD x 0,91. Tres que
+// discrepan: x 1,09.
 // Siempre entre MIN_RD y MAX_RD, que son de la pagina.
 //
 // Lo cargan rating.html y players.html ANTES de su script: las dos esperan a

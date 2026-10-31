@@ -33,9 +33,12 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    en local insertando dos partidos del mismo día con los mismos cuatro: un
    solo `valorar:345,346` en la campanita, y un tercer partido con otros
    jugadores sigue saliendo aparte.
-2. **El nivel mueve la fiabilidad.** Regla de Adrián: «en su nivel» o «por
-   encima» suben la fiabilidad (bajan el RD); «por debajo» la baja. El ambiente
-   se guarda y **no cuenta** en nada todavía.
+2. **El nivel mueve la fiabilidad.** Desde el 2026-11-01, sólo «en su nivel»
+   sube la fiabilidad (baja el RD). Tanto «por encima» como «por debajo» dicen
+   que el rating no representa bien al jugador y bajan la fiabilidad (suben el
+   RD), para que sus siguientes partidos puedan llevarlo antes a su sitio. El
+   voto no mueve el rating directamente. El ambiente se guarda y **no cuenta**
+   en nada todavía.
 3. **Editar un resultado** lo pueden hacer los cuatro jugadores del partido y
    los administradores. **Desde el 2026-10-18 sólo se avisa si cambia el
    marcador y lo cambia uno de los jugadores del partido** (lo pidió Adrián):
@@ -111,15 +114,17 @@ todo obliga a calcular el rating en el servidor.
   `nivel-votos.js` va **antes** del script de la página, no después.
 - **El ajuste es por día y jugador, no por partido.** Cada día con votos,
   después de `updatePeriod`: `RD × (1 − 0,03 × neto)`, con neto = votos a favor
-  − votos en contra de ese día, entre `MIN_RD` y `MAX_RD`. El rating del día no
-  cambia; lo que cambia es cuánto se moverá en los partidos siguientes.
-  Auditado en local el 2026-10-17 (dos partidos el día 14 y uno el 16, con
-  los mismos cuatro): neto +3 dio RD × 0,9100 exacto (254,74 → 231,82) y neto
-  −4 repartido en dos partidos del mismo día, × 1,1200 (una sola vez, no
-  0,97 dos veces); el rating del día 14 no cambió. En el partido del 16, que
-  perdieron los dos, Julio (+3) bajó 49,34 en vez de 58,71 y Jesús C (−4)
-  70,62 en vez de 58,71. Votos sólo de ambiente, de alguien que no jugó o a
-  alguien que no jugó: no cuentan. `/rating` y `/players`, idénticos.
+   de que está en su nivel − votos que dicen que está por encima o por debajo,
+   entre `MIN_RD` y `MAX_RD`. El rating del día no cambia; lo que cambia es
+   cuánto se moverá en los partidos siguientes.
+  La mecánica se auditó en local el 2026-10-17 con la regla anterior: el ajuste
+  se aplicaba una sola vez por día y no movía el rating de ese día. La regla
+  actual se comprobó el 2026-11-01 sobre 75 votos locales (55 «en su nivel», 3
+  «por debajo» y 17 «por encima»): el API y el `SELECT` dieron las mismas 26
+  combinaciones día/jugador, 21 con neto positivo y 5 con neto negativo, entre
+  −4 y +4. En una prueba aislada con RD 200, un voto «en su nivel» dio 194 y
+  uno discrepante dio 206. Votos sólo de ambiente, de alguien que no jugó o a
+  alguien que no jugó: no cuentan.
 - **Los rivales también notan el voto, en el partido siguiente.** El día del
   voto sólo cambia el RD del votado. Después, quien juega contra él usa ese RD
   en el cálculo: en la auditoría, Álvaro ganó 49,54 en vez de 49,95. Es el
