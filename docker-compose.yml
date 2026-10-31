@@ -115,7 +115,7 @@ services:
       - ./tournaments.html:/app/tournaments.html
       - ./submit-result.html:/app/submit-result.html
       - ./cuenta.html:/app/cuenta.html
-      - ./cuenta-nueva.html:/app/cuenta-nueva.html
+      - ./cuenta-perfil.js:/app/cuenta-perfil.js
       - ./auth-client.js:/app/auth-client.js
       - ./cuenta-correo.js:/app/cuenta-correo.js
       - ./inscripcion.html:/app/inscripcion.html
