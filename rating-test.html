@@ -77,7 +77,7 @@ button {
 
 .calculate-btn {
   background: var(--vt-gold);
-  color: #121316;
+  color: var(--vt-bg);
   letter-spacing: 0.02em;
 }
 .calculate-btn:hover { background: var(--vt-yellow); }
@@ -178,10 +178,10 @@ H,I,J,A,0.3,3-5</textarea>
 
     <div class="controls" style="justify-content: space-between; gap: 12px;">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <button id="importRealBtn" type="button" style="background:#e2e8f0; color:#0f172a; border:1px solid #cbd5e1; border-radius:8px; padding:10px 16px; font:inherit; font-weight:700; cursor:pointer;">Importar real</button>
-        <label style="display:flex; align-items:center; gap:8px; color:#334155; font-weight:600;">
+        <button id="importRealBtn" type="button" style="background:var(--vt-surface-3); color:var(--vt-text); border:1px solid var(--vt-border-strong); border-radius:8px; padding:10px 16px; font:inherit; font-weight:700; cursor:pointer;">Importar real</button>
+        <label style="display:flex; align-items:center; gap:8px; color:var(--vt-muted); font-weight:600;">
           <span>Fecha:</span>
-          <select id="importDate" style="padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; font:inherit;"></select>
+          <select id="importDate" style="padding:8px 10px; border-radius:8px; border:1px solid var(--vt-border-strong); background:var(--vt-surface-2); color:var(--vt-text); font:inherit;"></select>
         </label>
       </div>
       <button class="calculate-btn" id="calculateBtn" type="button">Calcular</button>

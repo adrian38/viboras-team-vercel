@@ -94,11 +94,13 @@
 }
 
 /* Escalera de intensidad: mas oro cuanto mas alta la categoria. El nombre y
-   el rango ya dicen cual es; el tono solo ordena. */
-.tier-entreno .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.30),transparent 70%);color:#ffd79a}
-.tier-avanzado .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.22),transparent 70%);color:#f5c37a}
-.tier-intermedio .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.14),transparent 70%);color:#d9a263}
-.tier-iniciacion .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.06),transparent 70%);color:#b0854f}
+   el rango ya dicen cual es, asi que quien ordena es la opacidad del fondo
+   (0.30 a 0.06). El texto es --vt-gold-soft en los cuatro: antes eran cuatro
+   marrones a mano que no estaban en la paleta. */
+.tier-entreno .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.30),transparent 70%);color:var(--vt-gold-soft)}
+.tier-avanzado .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.22),transparent 70%);color:var(--vt-gold-soft)}
+.tier-intermedio .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.14),transparent 70%);color:var(--vt-gold-soft)}
+.tier-iniciacion .tier-title{background:linear-gradient(90deg,rgba(245,158,11,0.06),transparent 70%);color:var(--vt-gold-soft)}
 
 table{width:100%;border-collapse:collapse;margin-top:0;table-layout:fixed}
 th{
@@ -130,12 +132,12 @@ td.rating-col{
 .muted{color:var(--vt-muted)}
 
 /* Cinco segmentos de fiabilidad. El color lo pone getFiabilidadConfig(), con
-   el mismo rojo -> verde que explican las insignias de rating-info.html,
-   aclarado para que se lea sobre el carbono: f87171, fb923c, facc15, a3e635
-   y 4ade80. El segmento apagado y la cifra de RD tambien se escriben desde
-   el script, en 343538 y d8c3ad. No se comenta ahi porque getFiabilidadConfig
-   vive dentro de renderTable, que esta en el baseline de tools/code-size.mjs
-   y solo puede encoger. */
+   el mismo rojo -> verde que explican las insignias de rating-info.html:
+   --vt-loss, --vt-orange, --vt-yellow, --vt-lime y --vt-win. El segmento
+   apagado y la cifra de RD tambien se escriben desde el script, en
+   --vt-border-strong y --vt-muted. No se comenta ahi porque
+   getFiabilidadConfig vive dentro de renderTable, que esta en el baseline de
+   tools/code-size.mjs y solo puede encoger. */
 .progress-segmented{
   display:inline-flex;
   align-items:center;
@@ -462,7 +464,7 @@ function renderTable(rows) {
 
       let segmentsHtml = '';
       for (let i = 1; i <= 5; i++) {
-        const activeBg = i <= bars ? color : '#343538';
+        const activeBg = i <= bars ? color : 'var(--vt-border-strong)';
         segmentsHtml += `<span class="progress-segment" style="background-color: ${activeBg};"></span>`;
       }
 
@@ -476,7 +478,7 @@ function renderTable(rows) {
       let reliabilityHtml;
       if (showRD) {
         const rdVal = (r.rd === undefined || r.rd === null || !Number.isFinite(Number(r.rd))) ? '-' : Number(Number(r.rd)).toFixed(2).replace('.', ',');
-        reliabilityHtml = `<div style="color:#d8c3ad;font-weight:400;font-variant-numeric:tabular-nums">${rdVal}</div>`;
+        reliabilityHtml = `<div style="color:var(--vt-muted);font-weight:400;font-variant-numeric:tabular-nums">${rdVal}</div>`;
       } else {
         reliabilityHtml = progressHtml;
       }
