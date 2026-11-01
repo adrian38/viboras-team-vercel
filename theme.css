@@ -60,6 +60,19 @@
   --vt-silver:#94a3b8;
   --vt-bronze:#d97706;
 
+  /* Ganar y perder, y la escalera de fiabilidad que va de uno a otro. Son los
+   * valores que ya usaban seis ficheros a mano antes de tener nombre; se
+   * declaran aqui para que sean los mismos en todas partes. La escalera la
+   * recorren `vt-categorias.js` y los distintivos de `rating-info.html`, que
+   * tienen que coincidir: loss, orange, yellow, lime, win.
+   *
+   * No se mezclan con --vt-error: ese es el rojo de un aviso sobre
+   * --vt-error-bg, y este el de un partido perdido. */
+  --vt-loss:#f87171;
+  --vt-orange:#fb923c;
+  --vt-lime:#a3e635;
+  --vt-win:#4ade80;
+
   /* Formas. */
   --vt-r-sm:0.25rem;
   --vt-r:0.5rem;
@@ -118,7 +131,7 @@ body{
   -moz-osx-font-smoothing:grayscale;
 }
 
-body::selection,::selection{background:var(--vt-gold);color:#121316}
+body::selection,::selection{background:var(--vt-gold);color:var(--vt-bg)}
 
 a{color:var(--vt-gold-soft);text-decoration-color:var(--vt-border-gold);text-underline-offset:3px}
 a:hover{color:var(--vt-gold-light)}
@@ -206,7 +219,7 @@ small,.vt-small{font-size:13px;line-height:18px;color:var(--vt-muted)}
 
 /* Texto en degradado dorado, para la palabra destacada de un titular. */
 .vt-gold-grad{
-  background:linear-gradient(135deg,#fef08a 0%,var(--vt-gold) 50%,var(--vt-gold-dark) 100%);
+  background:linear-gradient(135deg,var(--vt-gold-soft) 0%,var(--vt-gold) 50%,var(--vt-gold-dark) 100%);
   -webkit-background-clip:text;
   background-clip:text;
   -webkit-text-fill-color:transparent;
@@ -280,7 +293,7 @@ small,.vt-small{font-size:13px;line-height:18px;color:var(--vt-muted)}
   width:96px;height:96px;
   border-radius:var(--vt-r-lg);
   padding:2px;
-  background:linear-gradient(135deg,var(--vt-gold),var(--vt-gold-dark),#000);
+  background:linear-gradient(135deg,var(--vt-gold),var(--vt-gold-dark),var(--vt-surface-deep));
   box-shadow:var(--vt-shadow-float);
 }
 .vt-header__logo img{width:100%;height:100%;object-fit:cover;border-radius:calc(var(--vt-r-lg) - 2px);display:block}
@@ -328,7 +341,10 @@ small,.vt-small{font-size:13px;line-height:18px;color:var(--vt-muted)}
 .vt-chip--gold{border-color:var(--vt-border-gold);color:var(--vt-gold-light)}
 
 /* Pantalla de bienvenida (splash.js). Hasta que la capa esta montada, el body
-   no se pinta: si no, la pagina asomaria un instante antes del negro. */
+   no se pinta: si no, la pagina asomaria un instante antes del negro.
+   Los tres #000 de aqui son el unico color literal que queda en la hoja, y a
+   proposito: igualan el negro de splash.mp4. Con --vt-surface-deep (#0d0e11)
+   se veria el borde del video contra el fondo de la capa. */
 html.vt-splash{background:#000}
 html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 .vt-splash__capa{
@@ -461,7 +477,7 @@ html.vt-cargando-pagina body > *:not(.vt-cargando){visibility:hidden}
   border:1px solid transparent;
   border-radius:var(--vt-r);
   background:var(--vt-gold);
-  color:#121316;
+  color:var(--vt-bg);
   font-family:var(--vt-font-body);
   font-size:14px;
   line-height:20px;
