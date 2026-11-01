@@ -596,6 +596,21 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 .vt-volver:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
 .vt-volver:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
 
+/* Confirmacion comun de guardados: superpuesta para no mover formularios. */
+.vt-toast{
+  /* `width:max-content` es obligatorio: con `left:50%` el hueco disponible es
+     media pantalla, y sin el el texto se parte en una columna de 188 px. */
+  position:fixed;z-index:var(--vt-z-flotante);left:50%;bottom:24px;
+  width:max-content;max-width:calc(100% - 32px);padding:10px 16px;
+  border:1px solid var(--vt-border-strong);border-radius:var(--vt-r);
+  background:var(--vt-surface-4);color:var(--vt-text);
+  font-size:13px;font-weight:600;text-align:center;
+  box-shadow:0 8px 28px rgba(0,0,0,.48);
+  opacity:0;transform:translate(-50%,12px);pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease;
+}
+.vt-toast--visible{opacity:1;transform:translate(-50%,0)}
+
 /* ----------------------------------------------------------- utilidades -- */
 
 .vt-row{display:flex;gap:var(--vt-md);align-items:center;flex-wrap:wrap}
