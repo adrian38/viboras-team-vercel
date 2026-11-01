@@ -193,7 +193,7 @@ td.rating-col{
 <div class="vt-page">
 
   <div class="vt-cabecera">
-    <button class="vt-volver" type="button" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
+    <button class="vt-volver" type="button" onclick="volverAtras()"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
     <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
     <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Rating</h1>
     <span class="vt-label">Víboras Ranking Circuit</span>
@@ -251,6 +251,16 @@ td.rating-col{
 <script src="/nivel-votos.js"></script>
 <script src="/rating-inicial.js"></script>
 <script>
+// A donde lleva «Atrás»: lo dice quien trajo aqui, con ?volver= (lo pone
+// /cuenta, que enlaza a esta pagina desde dos sitios). Solo rutas de este
+// sitio —una que empiece por // o por http seria un redirect abierto—, la
+// misma regla que `goBack()` en day.html. Sin ese parametro, a la portada,
+// que es de donde se llega desde el menu.
+function volverAtras(){
+  const v = new URLSearchParams(location.search).get('volver') || '/'
+  window.location = (v.startsWith('/') && !v.startsWith('//')) ? v : '/'
+}
+
 // ============================================================================
 // GLICKO ENGINE
 // ============================================================================

@@ -29,6 +29,11 @@ que hay.
 - `pantalla_de_carga.md`: el velo no se quita hasta que está pintado todo,
   cálculos incluidos; por qué lo que la tarea de arranque no espera aparece
   después y se ve como un flashazo, y cómo se mide en milisegundos.
+- `boton_atras_y_parametro_volver.md`: sin router, el botón de atrás va a donde
+  diga su `onclick`, y escribir `/` deja de valer en cuanto una pantalla tiene
+  dos entradas; la convención `?volver=` y su regla contra el redirect abierto,
+  por qué `history.back()` no sirve en una pestaña abierta con `target="_blank"`
+  y por qué la etiqueta «Volver al inicio» tiene que cambiar con ella.
 
 ## El rating
 

@@ -130,7 +130,7 @@ body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
 
 <body>
 <header class="barra">
-  <a class="barra__volver" href="/" aria-label="Volver al inicio"><span class="ms notranslate" translate="no" aria-hidden="true">arrow_back</span></a>
+  <a class="barra__volver" id="volver" href="/" aria-label="Volver"><span class="ms notranslate" translate="no" aria-hidden="true">arrow_back</span></a>
   <img class="barra__logo" src="/image.png" alt="">
   <div class="barra__texto">
     <span class="barra__marca">VÍBORAS TEAM</span>
@@ -172,6 +172,15 @@ body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
 const LADOS = { drive: 'Drive', reves: 'Revés', ambos: 'Ambos' };
 let jugadores = [];
 let filtro = 'todos';
+
+// A donde lleva la flecha de la barra: lo dice quien trajo aquí, con ?volver=
+// (lo pone /cuenta, que enlaza a esta página desde dos sitios). Sólo rutas de
+// este sitio —una que empiece por // o por http sería un redirect abierto—,
+// la misma regla que `goBack()` en day.html. Sin ese parámetro, a la portada.
+(function volverA() {
+  const v = new URLSearchParams(location.search).get('volver') || '/';
+  document.getElementById('volver').href = (v.startsWith('/') && !v.startsWith('//')) ? v : '/';
+})();
 
 function el(tag, clase, texto) {
   const n = document.createElement(tag);

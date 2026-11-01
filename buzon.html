@@ -75,7 +75,7 @@
   </div>
 
   <div style="text-align:center;margin-top:var(--vt-lg)">
-    <a class="vt-btn vt-btn--ghost" href="/">Volver al inicio</a>
+    <a class="vt-btn vt-btn--ghost" id="volver" href="/">Volver al inicio</a>
   </div>
 </div>
 
@@ -85,6 +85,19 @@
 // Detalle: ai_context/buzon_de_quejas.md
 const TIPOS = { queja: 'Queja', sugerencia: 'Sugerencia' };
 let tipoElegido = null;
+
+// A dónde vuelve el botón del pie: lo dice quien trajo aquí, con ?volver= (lo
+// pone /cuenta, que enlaza al buzón desde dos sitios). Sólo rutas de este
+// sitio —una que empiece por // o por http sería un redirect abierto—, la
+// misma regla que `goBack()` en day.html. Sin ese parámetro, a la portada; y
+// la etiqueta cambia, porque «Volver al inicio» sería mentira si no va allí.
+(function volverA() {
+  const v = new URLSearchParams(location.search).get('volver');
+  if (!v || !v.startsWith('/') || v.startsWith('//')) return;
+  const boton = document.getElementById('volver');
+  boton.href = v;
+  boton.textContent = 'Volver';
+})();
 
 function el(tag, clase, texto) {
   const n = document.createElement(tag);

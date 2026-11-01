@@ -303,7 +303,8 @@ function anadirValorar(td, m){
   b.className = 'small-btn'
   b.style.marginLeft = '6px'
   b.innerText = 'Valorar'
-  b.addEventListener('click', ()=>{ location.href = '/valorar?partido=' + id })
+  // Con ?volver=: el «Atrás» de /valorar vuelve aqui, no a la portada.
+  b.addEventListener('click', ()=>{ location.href = '/valorar?partido=' + id + '&volver=%2Fhistory' })
   td.appendChild(b)
 }
 async function cargarValorables(){
