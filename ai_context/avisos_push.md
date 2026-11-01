@@ -202,5 +202,36 @@ molestar a trece personas.
 filas siguen en `backups/prod-clon-20261031-1818.sql` (14 de ellas). Después
 de restaurar, vaciarla otra vez antes de tocar nada que escriba.
 
+## `dev` tiene su propio par VAPID, y por eso no alcanza al grupo
+
+El 2026-11-01, al montar el clon `viboras_dev`, las claves VAPID se copiaron a
+`Preview (dev)` **con el mismo valor que producción**. Parecía aislado y no lo
+estaba: una prueba desde el Preview creó avisos para tres jugadores a las
+14:11 UTC, y sus suscripciones —copiadas del clon— seguían siendo alcanzables.
+La prueba pareció inofensiva porque **la app nunca avisa a quien mete el
+resultado**, así que a quien la hizo no le llegó nada.
+
+Ese mismo día se generó un par nuevo, exclusivo de `Preview (dev)`. Ahora:
+
+```
+produccion  BFjWfHHdkRAk1gMs…
+dev         BJiRe4QI_C39T6KB…
+```
+
+Una suscripción queda atada a la clave con la que se creó, así que las de los
+móviles del grupo **no pueden recibir nada firmado desde `dev`**: el servicio
+responde 403, y `mandarUno` sólo lo apunta en el log —borra la fila con 404 y
+410, no con 403—, así que no se pierde ningún dato.
+
+**La separación es estructural, no de datos.** Resetear el clon desde `main`
+devuelve las dieciséis suscripciones, y siguen sin poder recibir nada.
+
+**Para probar push en `dev` hay que suscribirse desde el propio Preview**: eso
+crea una suscripción firmada con la clave de `dev`, a la que sólo `dev` puede
+empujar. La privada de `dev` vive únicamente en Vercel y no se puede volver a
+leer; si hiciera falta otra, se genera un par nuevo con
+`npx web-push generate-vapid-keys` y se sustituyen las dos variables, a
+sabiendas de que eso invalida las suscripciones hechas desde el Preview.
+
 Relacionado: [[valoraciones_y_avisos]], [[service_worker]],
 [[cuentas_y_sesiones]], [[entorno_local_docker_y_proxies_neon]].
