@@ -69,6 +69,8 @@
 .volver-valoracion{width:100%;min-height:44px;border-radius:12px;font-family:var(--vt-font-head);font-size:14px;font-weight:800;letter-spacing:.045em;text-transform:uppercase;text-decoration:none}
 .volver-valoracion .boton__flecha{color:#848996}
 .valorar-pie{margin:-2px 0 0;color:#6f7482;font-size:11px;line-height:20px;text-align:center}
+.valoracion-toast{position:fixed;z-index:var(--vt-z-flotante);left:50%;bottom:24px;max-width:calc(100% - 32px);padding:10px 16px;border:1px solid var(--vt-border-strong);border-radius:12px;background:var(--vt-surface-4);color:var(--vt-text);font-size:13px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.48);opacity:0;transform:translate(-50%,12px);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.valoracion-toast--visible{opacity:1;transform:translate(-50%,0)}
 .estado{margin-top:var(--vt-sm);font-size:14px;color:var(--vt-muted)}
 .estado:empty{display:none}
 .lista a{display:block;padding:12px 0;border-bottom:1px solid var(--vt-border);color:var(--vt-text);overflow-wrap:anywhere}
@@ -96,6 +98,7 @@
   </div>
   <p class="valorar-pie">Víboras Padel System © 2024 • Valoraciones seguras y confidenciales</p>
 </div>
+<div class="valoracion-toast" id="valoracionToast" role="status" aria-live="polite"></div>
 
 <script src="/vt-glicko.js"></script>
 <script src="/vt-categorias.js"></script>
@@ -232,16 +235,25 @@ function pintarPregunta(ids, pregunta, otros) {
   return { caja, pregunta, elegidos };
 }
 
-async function enviarTodo(ids, controles, boton, estado) {
+let temporizadorToast;
+function mostrarToast(mensaje, duracion = 3000) {
+  const toast = document.getElementById('valoracionToast');
+  clearTimeout(temporizadorToast);
+  toast.textContent = mensaje;
+  toast.classList.add('valoracion-toast--visible');
+  temporizadorToast = setTimeout(() => toast.classList.remove('valoracion-toast--visible'), duracion);
+}
+
+async function enviarTodo(ids, controles, boton) {
   boton.disabled = true;
-  estado.textContent = 'Enviando…';
+  mostrarToast('Enviando…', 10000);
   try {
     const cantidades = await Promise.all(controles.map((c) => enviar(ids, c.pregunta, c.elegidos)));
     const total = cantidades.reduce((suma, n) => suma + n, 0);
-    if (!total) estado.textContent = 'Elige al menos una respuesta.';
-    else estado.textContent = total < 6 ? 'Guardado. Te quedan respuestas por completar.' : 'Guardado. ¡Gracias!';
+    if (!total) mostrarToast('Elige al menos una respuesta.');
+    else mostrarToast(total < 6 ? 'Guardado. Te quedan respuestas por completar.' : 'Guardado. ¡Gracias!');
   } catch (e) {
-    estado.textContent = e.message;
+    mostrarToast(e.message, 5000);
   } finally {
     boton.disabled = false;
   }
@@ -308,10 +320,8 @@ function pintarPartido(caja, datos) {
   boton.type = 'button';
   boton.appendChild(el('span', '', 'Enviar valoración'));
   boton.appendChild(iconoFlecha('M14 5l7 7m0 0l-7 7m7-7H3', '2.5'));
-  const estado = el('div', 'estado');
-  boton.addEventListener('click', () => enviarTodo(ids, controles, boton, estado));
+  boton.addEventListener('click', () => enviarTodo(ids, controles, boton));
   caja.appendChild(boton);
-  caja.appendChild(estado);
 }
 
 async function iniciar() {
