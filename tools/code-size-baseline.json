@@ -5,8 +5,8 @@
     "api/league-admin.js:createLeague": 83,
     "api/read.js:getResults": 80,
     "front/history.js:renderTable": 136,
-    "pantallas/players.html:buildDailyHistoricalSeries": 127,
-    "pantallas/players.html:renderChart": 106,
+    "front/players.js:buildDailyHistoricalSeries": 127,
+    "front/players.js:renderChart": 106,
     "pantallas/ranking.html:computeTournamentStandings": 64,
     "pantallas/ranking.html:processRanking": 126,
     "pantallas/rating-test.html:parseTestResults": 115,
@@ -20,6 +20,6 @@
     "front/tournaments.js:buildTableForMatches": 106
   },
   "ficheros": {
-    "pantallas/players.html": 623
+    "front/players.js": 623
   }
 }

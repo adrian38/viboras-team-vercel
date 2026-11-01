@@ -13,19 +13,30 @@
 //
 //   1. vt-glicko.js define las primitivas y las exporta.
 //   2. Ninguna pagina las define por su cuenta.
-//   3. Las tres paginas cargan /front/vt-glicko.js y traen sus nombres al
+//   3. Las tres pantallas cargan /front/vt-glicko.js y traen sus nombres al
 //      ambito.
+//
+// Una pantalla son hasta dos ficheros: el .html y, si su JavaScript ya salio
+// de dentro, su front/<nombre>.js. Hay que mirar los dos. Mirando solo el
+// .html, el dia que se extrajo players.html esta guarda dijo que la pagina no
+// usaba window.vtGlicko, que era falso: el codigo estaba intacto, dos ficheros
+// mas alla.
 //
 // No vigila calculateEngineRatings: el bucle de dias es de cada pagina y en
 // rating-test diverge a proposito (extraDecayDays).
 // Detalle: ai_context/motor_de_rating_duplicado.md
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 // Vale a la vez como ruta en disco y, con una barra delante, como la URL que
 // cargan las paginas. Por eso el movimiento a front/ se arregla aqui y nada
 // mas abajo cambia.
 const MOTOR = 'front/vt-glicko.js';
-const PAGINAS = ['pantallas/rating.html', 'pantallas/players.html', 'pantallas/rating-test.html'];
+// El fichero propio puede no existir todavia: quedan paginas con su
+// JavaScript dentro del .html.
+const PANTALLAS = ['rating', 'players', 'rating-test'].map((n) => ({
+  pagina: `pantallas/${n}.html`,
+  propio: `front/${n}.js`
+}));
 
 // Las cuatro primitivas de siempre mas las que las acompanan: si una pagina
 // se trae cualquiera de estas, se ha vuelto a partir el motor.
@@ -48,18 +59,22 @@ for (const fn of DEL_MOTOR) {
   }
 }
 
-for (const pagina of PAGINAS) {
-  const src = readFileSync(pagina, 'utf8');
-  const suyas = DEL_MOTOR.filter((fn) => defineFuncion(src, fn));
+for (const { pagina, propio } of PANTALLAS) {
+  const html = readFileSync(pagina, 'utf8');
+  // El codigo de la pantalla, este donde este.
+  const codigo = html + '\n' + (existsSync(propio) ? readFileSync(propio, 'utf8') : '');
+  const suyas = DEL_MOTOR.filter((fn) => defineFuncion(codigo, fn));
   if (suyas.length) {
     problemas.push(`${pagina} se ha traido su copia de: ${suyas.join(', ')}`);
   }
-  if (!src.includes(`src="/${MOTOR}"`)) problemas.push(`${pagina} no carga /${MOTOR}`);
-  if (!src.includes('window.vtGlicko')) problemas.push(`${pagina} no usa window.vtGlicko`);
+  // El <script src> es del .html siempre: a su fichero propio no se le carga
+  // el motor, se lo carga la pagina.
+  if (!html.includes(`src="/${MOTOR}"`)) problemas.push(`${pagina} no carga /${MOTOR}`);
+  if (!codigo.includes('window.vtGlicko')) problemas.push(`${pagina} no usa window.vtGlicko`);
 }
 
 if (problemas.length === 0) {
-  console.log(`rating: un solo motor (${MOTOR}) y ${PAGINAS.length} paginas que lo usan.`);
+  console.log(`rating: un solo motor (${MOTOR}) y ${PANTALLAS.length} pantallas que lo usan.`);
   process.exit(0);
 }
 
