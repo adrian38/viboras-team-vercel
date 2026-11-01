@@ -5,9 +5,9 @@ import { exigirSesion, cerrarSesionesDe } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
 import { avisarEdicion, avisarPartidoNuevo, avisarResultadoNuevo } from './_avisos.js';
 
-// Dar de alta jugadores y borrar partidos es de administradores desde el
-// 2026-10-17: las paginas solo lo ensenaban a ellos, pero el API lo dejaba a
-// cualquiera con sesion. Responde 403 y devuelve false si no lo es.
+// Dar de alta jugadores es de administradores desde el 2026-10-17: la pagina
+// solo lo ensenaba a ellos, pero el API lo dejaba a cualquiera con sesion.
+// Responde 403 y devuelve false si no lo es.
 function esAdmin(user, res) {
   if (user.role === 'admin') return true;
   res.status(403).json({ ok: false, error: 'forbidden' });
@@ -212,7 +212,6 @@ async function submitResult(req, res, user) {
 }
 
 async function deleteResult(req, res, user) {
-  if (!esAdmin(user, res)) return;
   try {
     await ensureSchema();
     const data = await readBody(req);
@@ -222,6 +221,11 @@ async function deleteResult(req, res, user) {
     const p1b_id = await getPlayerId(data.p1b);
     const p2a_id = await getPlayerId(data.p2a);
     const p2b_id = await getPlayerId(data.p2b);
+    const jugadores = [p1a_id, p1b_id, p2a_id, p2b_id];
+    if (user.role !== 'admin' && !(user.player_id && jugadores.includes(user.player_id))) {
+      res.status(403).json({ ok: false, error: 'forbidden', message: 'Solo pueden eliminar este partido sus jugadores y los administradores.' });
+      return;
+    }
 
     // Por id, como la edicion: por fecha y jugadores se borraban tambien las
     // revanchas del mismo dia. El resto confirma que es el partido que se veia.

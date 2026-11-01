@@ -523,7 +523,7 @@ function renderTable(matches){
       delBtn.addEventListener('click',()=> deleteMatch(m))
 
       tdAct.appendChild(editBtn); anadirValorar(tdAct, m)
-      if(isAdmin) tdAct.appendChild(delBtn)
+      tdAct.appendChild(delBtn)
       tr.appendChild(tdAct)
     }
 

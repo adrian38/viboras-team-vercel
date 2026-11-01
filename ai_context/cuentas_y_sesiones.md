@@ -505,7 +505,6 @@ le dice que no y no abre nada.
 | --- | --- |
 | Crear ligas, cuadros, pozos, compás y cambiar sustituciones | todo `api/league-admin.js`, en el `handler` |
 | Dar de alta o reactivar un jugador (`submitName`) | `api/write.js`, `esAdmin` |
-| Borrar un partido (`deleteResult`) | `api/write.js`, `esAdmin` |
 | Dar de baja (`deleteName`) y editar fichas (`updatePlayer`) | `api/write.js`, ya lo eran |
 
 A los demás les responde 403. Esconder un botón no cierra nada: un miembro
@@ -521,3 +520,9 @@ avisa «Solo puedes apuntar tu propia disponibilidad».
 `_original` sólo deja a los cuatro jugadores del partido y a los admins (403 a
 los demás). Subir un partido nuevo sigue abierto a cualquier miembro. Detalle:
 [[valoraciones_y_avisos]].
+
+**Eliminar un partido** tiene la misma autorización desde el 2026-11-01: sus
+cuatro jugadores y los administradores. La API contrasta el `player_id` de la
+sesión con los cuatro jugadores recibidos y el `DELETE` exige además que esos
+jugadores, la fecha y el id sigan coincidiendo con la fila. Detalle:
+[[borrado_de_partidos]].

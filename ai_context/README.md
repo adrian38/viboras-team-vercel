@@ -116,6 +116,9 @@ que hay.
 - `buzon_de_quejas.md`: el buzón de quejas y sugerencias de `/buzon`; por qué
   no es anónimo, por qué «leído» es de cada administrador, por qué el push no
   lleva el texto y el límite de cinco por hora.
+- `borrado_de_partidos.md`: por qué pueden eliminar un partido sus cuatro
+  participantes y los administradores, y cómo la API comprueba la sesión y la
+  identidad exacta de la fila antes de borrarla.
 
 ## Lo que lee el grupo
 
