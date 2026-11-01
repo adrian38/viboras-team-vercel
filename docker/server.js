@@ -97,11 +97,15 @@ const PANTALLAS = readdirSync(path.join(ROOT, 'front/pantallas'), { withFileType
 const pagina = (nombre) => (_req, res) =>
   res.sendFile(path.join(ROOT, 'front/pantallas', nombre, 'index.html'));
 
-app.get('/', pagina('index'));
+// La portada vive en portada/, no en index/. Con cleanUrls, Vercel colapsa
+// tanto el index.html como un segmento llamado «index», y la carpeta se
+// queda sin ninguna ruta que la sirva: /front/pantallas/index/ redirige y
+// /front/pantallas/ da 404. Con cualquier otro nombre funciona.
+app.get('/', pagina('portada'));
 // sw.js lo precachea por este nombre; sin esta ruta, cache.addAll falla entero.
-app.get('/index.html', pagina('index'));
+app.get('/index.html', pagina('portada'));
 for (const nombre of PANTALLAS) {
-  if (nombre !== 'index') app.get(`/${nombre}`, pagina(nombre));
+  if (nombre !== 'portada') app.get(`/${nombre}`, pagina(nombre));
 }
 
 app.listen(PORT, '0.0.0.0', () => {

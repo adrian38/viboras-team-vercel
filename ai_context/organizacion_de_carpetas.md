@@ -49,6 +49,31 @@ Por eso `vercel.json` tiene **una regla por pantalla**: 21 rewrites que mapean
 no depender de en qué orden mira Vercel el sistema de ficheros y las
 reescrituras.
 
+### El destino del rewrite es la ruta que Vercel SIRVE, no el fichero
+
+Esto tiró el primer despliegue entero: **las veinte páginas daban 404**, y en
+local las veinte daban 200.
+
+Con `cleanUrls`, Vercel sirve `front/pantallas/rating/index.html` en
+`/front/pantallas/rating`, y convierte `/front/pantallas/rating/index.html`
+en una **redirección 308** hacia esa ruta limpia. Un rewrite cuyo destino es
+un 308 no resuelve: da 404.
+
+```
+/front/pantallas/rating/index.html   308   <- lo que ponia el destino
+/front/pantallas/rating              200   <- lo que hay que poner
+```
+
+En `docker/server.js` no se nota porque ahí el destino es un `sendFile` con
+la ruta real en disco, que existe. Es la diferencia entre local y producción
+más cara de todas las que han aparecido.
+
+**Y la portada no puede vivir en una carpeta llamada `index`.** `cleanUrls`
+colapsa tanto el `index.html` como un segmento llamado `index`, y la carpeta
+se queda sin ninguna ruta que la sirva: `/front/pantallas/index/` redirige y
+`/front/pantallas/` da 404. Por eso se llama `portada/`. Con cualquier otro
+nombre funciona, y `tools`/`rewrites` lo comprueban al generar el fichero.
+
 ### Dos reglas que no son como las demás
 
 `/index.html` tiene la suya porque **`sw.js` precachea la portada por ese
