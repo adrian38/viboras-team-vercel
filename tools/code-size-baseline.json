@@ -13,8 +13,8 @@
     "pantallas/rating-test.html:buildRealImportText": 78,
     "pantallas/rating.html:renderTable": 79,
     "scripts/apply-schema.js:main": 83,
-    "pantallas/statistics.html:computeStats": 218,
-    "pantallas/statistics.html:renderTable": 115,
+    "front/statistics.js:computeStats": 218,
+    "front/statistics.js:renderTable": 115,
     "pantallas/tournaments.html:computeRating": 88,
     "pantallas/tournaments.html:renderTable": 149,
     "pantallas/tournaments.html:buildTableForMatches": 106
