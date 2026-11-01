@@ -431,6 +431,7 @@ async function guardar() {
     });
     verFormulario(false);
     await cargar();
+    window.vtToast(editando ? 'Aviso guardado' : 'Aviso publicado');
   } catch (e) {
     estado.textContent = e.message;
   } finally {

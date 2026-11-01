@@ -604,6 +604,7 @@ async function saved(res){
   if(json && (json.error === 'forbidden' || json.error === 'bad_match')){ alert(json.message); return false }
   if(json && json.error === 'conflict'){ alert(json.message); loadData(); return false }
   if(!res.ok || !json.ok){ alert('Error al guardar'); return false }
+  window.vtToast('Resultado guardado')
   return true
 }
 

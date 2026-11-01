@@ -166,6 +166,28 @@ de `rating.html`, que se salía 13 px.
 Las filas de botones al pie de una tarjeta usan `.vt-acciones`, que envuelve y
 por debajo de 560 px apila a lo ancho completo.
 
+## El toast común de los guardados
+
+Desde el 2026-11-01, las confirmaciones breves de guardado usan
+`window.vtToast(mensaje, duracion)` de `pwa.js`; su aspecto vive en `.vt-toast`
+de `theme.css`. Es `position: fixed` a propósito: un texto de estado dentro del
+formulario cambia el hueco entre sus botones mientras se guarda. La función
+crea un único nodo con `role="status"` y `aria-live="polite"`, reutiliza ese
+nodo y reinicia el temporizador si llega otro mensaje.
+
+Lleva `width: max-content` y no es adorno: con `left: 50%` el hueco que le
+queda a la caja es media pantalla, así que sin él un mensaje largo se parte en
+una columna de 188 px con la pantalla a 375. Medido el 2026-11-01 con el aviso
+del buzón: 343 px de ancho y dos líneas a 375, 350 px y una a 1280.
+
+Esto cubre valoraciones, disponibilidad, resultados, torneos, jugadores,
+perfil, tablón, buzón y el formulario de inscripción. Los avisos que contienen
+un siguiente paso o información que debe permanecer —por ejemplo, confirmar el
+correo tras crear una cuenta— siguen siendo bloques persistentes, no toasts.
+`pwa.js` y `theme.css` están en las veinte páginas; al añadir el toast se subió
+la caché del service worker a `viboras-v3` para no mezclar el JavaScript nuevo
+con estilos antiguos.
+
 ## El traductor del navegador rompe los iconos
 
 Los iconos se pintan **por ligadura**: el contenido del elemento es el nombre

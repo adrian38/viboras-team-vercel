@@ -220,7 +220,8 @@ async function elegirLado(lado, anterior){
     })
     const json = await res.json().catch(() => ({}))
     if(!res.ok || !json.ok) throw new Error(json.message || 'error')
-    texto('pLadoPie', 'Guardado.')
+    texto('pLadoPie', '')
+    window.vtToast('Guardado.')
   }catch(err){
     marcarLado(anterior)
     texto('pLadoPie', 'No se pudo guardar. Vuelve a intentarlo.')

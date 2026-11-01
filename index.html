@@ -625,7 +625,7 @@ async function submitCompasTournament(){
     const json = await res.json().catch(() => ({}))
     if(!res.ok || !json.ok){ throw new Error(json && json.error ? json.error : 'Error al guardar el torneo') }
 
-    alert('Torneo Compás guardado')
+    window.vtToast('Torneo Compás guardado')
     closeAdmin()
   }catch(e){ console.error(e); alert(e && e.message ? e.message : 'Error al guardar el torneo') }
 }
@@ -661,7 +661,7 @@ async function submitPozoTournament(){
       throw new Error(json && json.error ? json.error : 'Error al guardar el torneo')
     }
 
-    alert('Torneo Pozo guardado')
+    window.vtToast('Torneo Pozo guardado')
     closeAdmin()
   }catch(e){
     console.error(e)
@@ -678,7 +678,7 @@ async function registerPlayer(){
     const res = await fetch('/api/write?action=submitName',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})})
     const j = await res.json()
     if(j && j.ok){
-      if(j.added){ alert('Jugador guardado'); el.value = '' }
+      if(j.added){ window.vtToast('Jugador guardado'); el.value = '' }
       else alert('Nombre ya registrado')
     } else {
       alert('Error al guardar')

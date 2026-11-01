@@ -121,7 +121,8 @@ async function enviar() {
     });
     caja.value = '';
     contarLetras();
-    estado.textContent = 'Enviado. Gracias, los administradores ya lo tienen.';
+    estado.textContent = '';
+    window.vtToast('Enviado. Gracias, los administradores ya lo tienen.');
   } catch (e) {
     estado.textContent = e.message;
   } finally {

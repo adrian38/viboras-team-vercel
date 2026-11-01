@@ -320,6 +320,7 @@
       await post('/api/write?action=updatePlayer', cuerpoDe(f, campos));
       await cambiarEstado(f, campos);
       await abrir();
+      window.vtToast('Jugador guardado');
     } catch (err) {
       alert('No se pudo guardar: ' + err.message);
       boton.disabled = false;

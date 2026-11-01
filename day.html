@@ -206,6 +206,7 @@ async function submitVote(){
   // `marcarMias` deja marcadas las horas que acaban de grabarse. Antes se
   // recargaba la pagina y volvia en blanco, que parece que no se guardo.
   await loadSlots()
+  window.vtToast('Disponibilidad guardada')
 
 }
 

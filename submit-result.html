@@ -359,8 +359,10 @@ async function submitResult(){
     if(json && json.error === 'invalid_score'){ mostrarAviso(json.message || 'El partido no está terminado.'); return }
     if(json && json.error === 'bad_match'){ mostrarAviso(json.message); return }
     if(!res.ok || !json.ok){ throw new Error('save_failed') }
-    alert('Resultado guardado')
-    window.location='/'
+    window.vtToast('Resultado guardado')
+    // El toast vive en la pagina que se abandona: 1200 ms es lo que tarda en
+    // leerse (180 ms de entrada incluidos) antes de que el navegador cambie.
+    setTimeout(() => { window.location='/' }, 1200)
   }catch(e){ console.error(e); mostrarAviso('No se pudo guardar. Mira la conexión y vuelve a intentarlo.') } finally {
     submitInFlight = false
     if(saveButton){

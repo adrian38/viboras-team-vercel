@@ -179,6 +179,7 @@ form.onsubmit = (ev) => {
   }
   const listo = document.getElementById('listo')
   listo.classList.add('visible')
+  window.vtToast('Formulario guardado')
   listo.scrollIntoView({behavior:'smooth', block:'center'})
 }
 
