@@ -164,5 +164,35 @@ Entre el 201 del servicio y el `push` del service worker no hay código
 nuestro, así que eso es del teléfono (entrega diferida de FCM o el canal de
 avisos de la app instalada) y queda sin resolver.
 
+## El entorno local manda avisos a móviles de verdad
+
+Esto no es una advertencia teórica. El 2026-11-01, antes de probar la
+publicación del tablón en local, se comprobó qué pasaría:
+
+- `.env` le da al contenedor **las claves VAPID de producción**, no unas de
+  juguete. `docker-compose.yml` las deja vacías por defecto, pero en cuanto
+  están en `.env` el contenedor las coge.
+- El Postgres local tiene **13 filas en `push_subscriptions`**, restauradas
+  del volcado. No son de mentira: apuntan a Apple (5), Google (4), Microsoft
+  (3) y Mozilla (1). Son los móviles del grupo.
+- Publicar en `/tablon` llama a `crearAviso` (`api/_tablon.js`), y ésa es
+  **la única puerta**: siempre empuja.
+
+O sea que un «aviso de prueba» escrito en `http://localhost:3000` sale a
+Internet y suena en trece teléfonos ajenos. Lo mismo vale para `/valorar`,
+`/buzon` y todo lo que acabe en `crearAviso`.
+
+Correo no: `SMTP_HOST` apunta a Mailpit y se queda en
+`http://localhost:8025`. El peligro es sólo el push.
+
+**Cómo probar sin despertar a nadie.** Dos vías, y conviene no improvisar
+una tercera:
+
+- Sembrar las filas **por SQL directo**, que no pasa por `crearAviso`. Es lo
+  que se hizo para verificar la extracción del tablón.
+- O vaciar `push_subscriptions` en la base local antes de tocar nada. Son
+  datos de producción que en local no pintan nada; el precio es que luego no
+  se puede probar el push de verdad.
+
 Relacionado: [[valoraciones_y_avisos]], [[service_worker]],
-[[cuentas_y_sesiones]].
+[[cuentas_y_sesiones]], [[entorno_local_docker_y_proxies_neon]].
