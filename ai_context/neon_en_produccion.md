@@ -23,7 +23,10 @@ Variables que inyecta la integración (no se crean a mano):
 (directa), `DATABASE_URL`, `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`.
 
 Tampoco se marcan las casillas «Create database branch for deployment»: crean
-una rama de Neon por despliegue, y los datos viven en la rama principal.
+una rama de Neon distinta por despliegue. Producción vive en `main`; el Preview
+de la rama Git `dev` usa el clon persistente y administrado `viboras_dev`, con
+overrides propios para las 15 variantes de conexión. Detalle y puerta de
+seguridad: [[entorno_dev_y_clon_neon]].
 
 ## La región de la base y la de las funciones tienen que coincidir
 
@@ -66,4 +69,5 @@ SELECT md5(string_agg(x,'|' ORDER BY x)) FROM (SELECT md5(matches::text) x FROM 
 `.env.local` guarda las cadenas de conexión y está en `.gitignore` (`.env*`).
 `backups/` también está ignorado: contiene nombres de personas.
 
-Relacionado: [[rama_viboras_es_produccion]], [[esquema_duplicado_y_desfasado]].
+Relacionado: [[rama_viboras_es_produccion]], [[entorno_dev_y_clon_neon]],
+[[esquema_duplicado_y_desfasado]].
