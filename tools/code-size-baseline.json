@@ -15,9 +15,9 @@
     "scripts/apply-schema.js:main": 83,
     "front/statistics.js:computeStats": 218,
     "front/statistics.js:renderTable": 115,
-    "pantallas/tournaments.html:computeRating": 88,
-    "pantallas/tournaments.html:renderTable": 149,
-    "pantallas/tournaments.html:buildTableForMatches": 106
+    "front/tournaments.js:computeRating": 88,
+    "front/tournaments.js:renderTable": 149,
+    "front/tournaments.js:buildTableForMatches": 106
   },
   "ficheros": {
     "pantallas/players.html": 623
