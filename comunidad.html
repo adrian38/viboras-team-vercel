@@ -253,14 +253,14 @@ function pintarJugador(j) {
   return caja;
 }
 
-// Un filtro por lado de pista, y uno por cada nivel que alguien tenga puesto.
+// Un filtro por lado de pista y uno por cada categoria actual del rating.
 function pintarFiltros() {
   const caja = document.getElementById('filtros');
   caja.textContent = '';
-  const niveles = [...new Set(jugadores.map((j) => j.nivel).filter(Boolean))].sort();
+  const categorias = [...new Set(jugadores.map((j) => j.categoria).filter(Boolean))].sort();
   const grupos = [['todos', `Todos (${jugadores.length})`]]
     .concat([['drive', 'Drive'], ['reves', 'Revés']].filter(([l]) => jugadores.some((j) => j.lado === l || j.lado === 'ambos')))
-    .concat(niveles.map((n) => [`nivel:${n}`, n]));
+    .concat(categorias.map((c) => [`categoria:${c}`, c]));
   for (const [clave, nombre] of grupos) {
     const boton = el('button', 'filtro', nombre);
     boton.type = 'button';
@@ -272,7 +272,7 @@ function pintarFiltros() {
 
 function pasaElFiltro(j) {
   if (filtro === 'todos') return true;
-  if (filtro.startsWith('nivel:')) return j.nivel === filtro.slice(6);
+  if (filtro.startsWith('categoria:')) return j.categoria === filtro.slice(10);
   return j.lado === filtro || j.lado === 'ambos';
 }
 
@@ -283,7 +283,7 @@ function aplicar() {
   const lista = document.getElementById('lista');
   lista.textContent = '';
   const visibles = jugadores.filter((j) => {
-    const texto = [j.nombre, j.nivel, j.categoria, LADOS[j.lado]].filter(Boolean).join(' ').toLowerCase();
+    const texto = [j.nombre, j.categoria, LADOS[j.lado]].filter(Boolean).join(' ').toLowerCase();
     return pasaElFiltro(j) && texto.includes(busca);
   });
   if (!visibles.length) {

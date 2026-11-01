@@ -20,7 +20,7 @@ async function crearTablas() {
       match_id INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
       rater_player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
       rated_player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-      actitud TEXT CHECK (actitud IN ('buen_rollo', 'mejorable')),
+      actitud TEXT CHECK (actitud IN ('buen_rollo', 'neutro', 'mejorable')),
       nivel TEXT CHECK (nivel IN ('por_debajo', 'en_su_nivel', 'por_encima')),
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -42,10 +42,26 @@ async function crearTablas() {
   `;
 }
 
+async function estadoNeutro() {
+  await sql`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'match_feedback_actitud_check'
+          AND pg_get_constraintdef(oid) NOT LIKE '%neutro%'
+      ) THEN
+        ALTER TABLE match_feedback DROP CONSTRAINT match_feedback_actitud_check;
+        ALTER TABLE match_feedback ADD CONSTRAINT match_feedback_actitud_check
+          CHECK (actitud IN ('buen_rollo', 'neutro', 'mejorable'));
+      END IF;
+    END $$`;
+}
+
 // Memoizada y reintentable, como ensureAuthSchema: si falla, la siguiente
 // peticion lo vuelve a intentar.
 export function ensureAvisosSchema() {
-  if (!listo) listo = crearTablas().catch((err) => { listo = null; throw err; });
+  if (!listo) listo = crearTablas().then(estadoNeutro).catch((err) => { listo = null; throw err; });
   return listo;
 }
 

@@ -280,6 +280,7 @@ function filasDeComunidad() {
     ambiente AS (
       SELECT f.rated_player_id AS player_id,
         count(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
+        count(*) FILTER (WHERE f.actitud = 'neutro')::int AS neutro,
         count(*) FILTER (WHERE f.actitud = 'mejorable')::int AS mejorable
       FROM match_feedback f
       JOIN matches m ON m.id = f.match_id
@@ -289,8 +290,6 @@ function filasDeComunidad() {
       GROUP BY f.rated_player_id
     )
     SELECT p.id, p.name, p.court_side,
-      (SELECT u.signup_form->>'bkLevel' FROM users u
-        WHERE u.player_id = p.id AND u.status = 'active' ORDER BY u.id LIMIT 1) AS nivel,
       (SELECT u.signup_form->>'availability' FROM users u
         WHERE u.player_id = p.id AND u.status = 'active' ORDER BY u.id LIMIT 1) AS horarios,
       (SELECT count(*) FROM jugados j
@@ -299,6 +298,7 @@ function filasDeComunidad() {
         WHERE (p.id IN (j.player1a_id, j.player1b_id) AND j.sets1 > j.sets2)
            OR (p.id IN (j.player2a_id, j.player2b_id) AND j.sets2 > j.sets1))::int AS ganados
       , COALESCE(a.buen_rollo, 0)::int AS buen_rollo
+      , COALESCE(a.neutro, 0)::int AS neutro
       , COALESCE(a.mejorable, 0)::int AS mejorable
     FROM players p
     LEFT JOIN ambiente a ON a.player_id = p.id
@@ -323,12 +323,12 @@ async function getComunidad(req, res) {
         // Quien no lo ha elegido cuenta para los dos lados, igual que en
         // /cuenta (api/perfil.js).
         lado: ['drive', 'reves', 'ambos'].includes(r.court_side) ? r.court_side : 'ambos',
-        nivel: textos[r.nivel] || null,
         horarios: textos[r.horarios] || null,
         partidos: r.partidos,
         ganados: r.ganados,
-        votos: r.buen_rollo + r.mejorable,
-        buenRollo: r.buen_rollo + r.mejorable ? r.buen_rollo / (r.buen_rollo + r.mejorable) : null
+        votos: r.buen_rollo + r.neutro + r.mejorable,
+        buenRollo: r.buen_rollo + r.neutro + r.mejorable
+          ? r.buen_rollo / (r.buen_rollo + r.neutro + r.mejorable) : null
       }))
     });
   } catch (err) {
@@ -347,6 +347,7 @@ async function getAmbiente(req, res) {
     const { rows } = await sql`
       SELECT f.rated_player_id AS player_id,
         COUNT(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
+        COUNT(*) FILTER (WHERE f.actitud = 'neutro')::int AS neutro,
         COUNT(*) FILTER (WHERE f.actitud = 'mejorable')::int AS mejorable
       FROM match_feedback f
       JOIN matches m ON m.id = f.match_id

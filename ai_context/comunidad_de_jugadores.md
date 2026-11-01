@@ -10,7 +10,6 @@ Fecha: 2026-10-31. Pantalla `/comunidad`, datos en `getComunidad`
 | Nombre | `players.name` |
 | Iniciales del círculo | calculadas del nombre, en la página |
 | Lado de pista | `players.court_side`, con `ambos` por defecto |
-| Nivel BK | `users.signup_form->>'bkLevel'` |
 | Horarios | `users.signup_form->>'availability'` |
 | Partidos jugados y ganados | `matches`, contados en SQL |
 | Rating y categoría | `vt-glicko.js`, con las mismas entradas que `/rating` |
@@ -18,7 +17,7 @@ Fecha: 2026-10-31. Pantalla `/comunidad`, datos en `getComunidad`
 
 Nada se calcula a ojo y nada se rellena. **Una casilla sin dato no se pinta**:
 las cuentas anteriores al formulario de inscripción (2026-10-17) no tienen
-nivel ni horarios, y ahí la tarjeta enseña dos casillas en vez de cuatro.
+horarios, y ahí la tarjeta no deja una casilla vacía.
 
 ## Esto abrió al grupo tres datos que antes eran de admin
 
@@ -30,11 +29,11 @@ tarjeta del Stitch».
   ejemplo de dato inventado de `AGENTS.md`). Ahora `/cuenta` dice que lo verá
   el grupo en `/comunidad`, y sigue diciendo que `/day` no lo mira al formar
   las parejas, porque no lo mira.
-- **Nivel BK y disponibilidad general** salían sólo en la pantalla Jugadores
-  del panel (`admin-jugadores.js`). El pie de la ficha de `/cuenta` lo
-  distingue ahora: esos dos los ve el grupo, el resto —nombre y apellidos,
-  teléfono, liga, torneos, ranking por semana— sigue siendo de los
-  administradores.
+- **La disponibilidad general** salía sólo en la pantalla Jugadores del panel
+  (`admin-jugadores.js`). El nivel BK del formulario no se reutiliza como nivel
+  actual: filtros, búsqueda y tarjetas usan la categoría calculada por el
+  rating. El nivel BK queda como dato histórico de inscripción para el propio
+  usuario y los administradores.
 
 **Lo que NO se abrió: las horas de `/day`.** Son privadas y la restricción
 está en el API, no en la pantalla ([[disponibilidad_quien_la_ve]]). La maqueta
@@ -94,8 +93,8 @@ parecía a la referencia aunque colores y datos fueran correctos.
 
 Dentro de la ficha, la categoría va como subtítulo del nombre, el número del
 motor a la derecha con la etiqueta `FIABILIDAD` y la matriz queda en
-`Lado · Calificación · Horarios`. El
-nivel BK se usa para los filtros, pero no se repite en la tarjeta. Si falta un dato,
+`Lado · Calificación · Horarios`. La categoría actual se usa también para
+los filtros. Si falta un dato,
 la rejilla cambia a una o dos columnas: no deja una casilla vacía para mantener tres huecos. Los filtros sí
 desbordan horizontalmente a propósito en móvil, como la maqueta; las tarjetas
 no. Medido a 375 px: tarjeta de 343 px con 16 px de margen. A 320 px: tarjeta

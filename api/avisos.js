@@ -7,7 +7,7 @@ import { readBody, toInt, formatSet } from './_db.js';
 import { exigirSesion, sinCache } from './_auth.js';
 import { ensureAvisosSchema, partidosParaValorar, marcarAvisoVisto } from './_avisos.js';
 
-const ACTITUDES = ['buen_rollo', 'mejorable'];
+const ACTITUDES = ['buen_rollo', 'neutro', 'mejorable'];
 const NIVELES = ['por_debajo', 'en_su_nivel', 'por_encima'];
 
 async function pendientes(req, res, user) {
@@ -28,13 +28,14 @@ async function partidosDe(user, matchIds) {
   const propios = matchIds.filter((id) => abiertos.some((p) => p.id === id));
   if (!propios.length) return [];
   const { rows } = await sql`
-    SELECT m.id, m.date, m.format,
+    SELECT m.id, m.date, m.format, e.name AS event_name,
       m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id,
       p1a.name AS p1a, p1b.name AS p1b, p2a.name AS p2a, p2b.name AS p2b,
       m.set1_team1, m.set1_team2, m.set2_team1, m.set2_team2, m.set3_team1, m.set3_team2
     FROM matches m
     JOIN players p1a ON p1a.id = m.player1a_id JOIN players p1b ON p1b.id = m.player1b_id
     JOIN players p2a ON p2a.id = m.player2a_id JOIN players p2b ON p2b.id = m.player2b_id
+    LEFT JOIN events e ON e.id = m.event_id
     WHERE m.id = ANY(${propios})`;
   return rows;
 }
@@ -45,7 +46,8 @@ async function partidosDe(user, matchIds) {
 function datosPartido(m) {
   const sets = [[m.set1_team1, m.set1_team2], [m.set2_team1, m.set2_team2], [m.set3_team1, m.set3_team2]]
     .filter(([a, b]) => a !== null && b !== null).map(([a, b]) => `${formatSet(a)}-${formatSet(b)}`);
-  return { id: m.id, fecha: m.date, sets, equipo1: [m.p1a, m.p1b], equipo2: [m.p2a, m.p2b] };
+  return { id: m.id, fecha: m.date, sets, evento: m.event_name || null,
+    equipo1: [m.p1a, m.p1b], equipo2: [m.p2a, m.p2b] };
 }
 
 async function partido(req, res, user) {

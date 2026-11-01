@@ -40,11 +40,11 @@
   // Desde el 2026-10-17. Detalle: ai_context/valoraciones_y_avisos.md
   function ambienteDe(f) {
     var a = f.playerId ? estado.ambiente[f.playerId] : null;
-    return a && (a.buen_rollo || a.mejorable) ? a : null;
+    return a && (a.buen_rollo || a.neutro || a.mejorable) ? a : null;
   }
 
   function resumenAmbiente(a) {
-    return '👍 ' + a.buen_rollo + ' · 👎 ' + a.mejorable;
+    return '👍 ' + a.buen_rollo + ' · 😐 ' + a.neutro + ' · 👎 ' + a.mejorable;
   }
 
   function estilos() {
@@ -239,6 +239,7 @@
       return;
     }
     form.appendChild(dato('👍 Buen rollo', String(a.buen_rollo)));
+    form.appendChild(dato('😐 Neutro', String(a.neutro)));
     form.appendChild(dato('👎 No tan bien', String(a.mejorable)));
     form.appendChild(el('div', { className: 'aj-sub aj-ancho', textContent: 'Votos anónimos de sus compañeros de pista al terminar cada partido.' }));
   }

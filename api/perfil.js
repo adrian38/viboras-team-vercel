@@ -163,6 +163,7 @@ async function valoraciones(playerId) {
   const { rows } = await sql`
     SELECT
       count(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
+      count(*) FILTER (WHERE f.actitud = 'neutro')::int AS neutro,
       count(*) FILTER (WHERE f.actitud = 'mejorable')::int AS mejorable,
       count(*) FILTER (WHERE f.nivel IS NOT NULL)::int AS nivel_votos,
       COALESCE(SUM(CASE f.nivel
@@ -179,7 +180,7 @@ async function valoraciones(playerId) {
   // teniendo las ocho hechas. Mismo filtro que la campanita (_avisos.js:132).
   const pendientes = (await partidosParaValorar(playerId))
     .filter((p) => p.faltanActitud > 0 || p.faltanNivel > 0);
-  const votos = v.buen_rollo + v.mejorable;
+  const votos = v.buen_rollo + v.neutro + v.mejorable;
   return {
     votos,
     // De 0 a 1, en crudo: la nota se compone en el navegador. null cuando

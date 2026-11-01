@@ -20,6 +20,18 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    iguales, y en la campanita. La lista de `/valorar` enseña también las dos
    parejas, para distinguir dos partidos del mismo día.
 
+   **Desde el 2026-11-01 el ambiente tiene tres estados:** buen rollo, neutro y
+   no tan bien. `ensureAvisosSchema()` migra el `CHECK` de `match_feedback`
+   porque `CREATE TABLE IF NOT EXISTS` no modifica la tabla existente. El
+   neutro cuenta como una valoración recibida, pero no como buen rollo: por eso
+   entra en el denominador de la proporción que usan `/comunidad` y
+   `/cuenta-nueva`. La pantalla nueva adapta la maqueta de Stitch con datos
+   reales: el chip del partido sale de `events.name` y los badges son la
+   categoría actual calculada por `vt-glicko.js` y `vt-categorias.js`, igual que
+   en `/rating`. Si uno de esos datos no existe, no se pinta. Por eso no se
+   copia literalmente «Oficial Padel Tour» ni un nivel de la maqueta cuando la
+   base o el motor dicen otra cosa.
+
    **Desde el 2026-10-24, varios partidos del mismo día entre los mismos
    cuatro jugadores comparten un solo aviso** (Adrián: una revancha no debe
    doblar la notificación). `agruparPorDiaYJugadores` en `_avisos.js` junta

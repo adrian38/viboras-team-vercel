@@ -20,37 +20,69 @@
 <meta name="theme-color" content="#121316">
 
 <style>
-/* Dos preguntas por partido, cada una con su boton: se contestan por separado
-   y la campanita avisa de cada una mientras falte. */
-.partido{display:flex;flex-direction:column;gap:var(--vt-xs);margin-bottom:var(--vt-md)}
-.partido__equipos{font-weight:600;color:var(--vt-text-strong)}
-.partido__sets{color:var(--vt-gold-light);font-family:var(--vt-font-head);font-size:18px}
-.pregunta{margin-top:var(--vt-lg);padding-top:var(--vt-md);border-top:1px solid var(--vt-border)}
-.pregunta h4{margin:0 0 var(--vt-xs)}
-.pregunta p{margin:0 0 var(--vt-md);color:var(--vt-muted);font-size:14px}
-.voto{display:flex;flex-direction:column;gap:var(--vt-xs);margin-bottom:var(--vt-md)}
-.voto__nombre{font-weight:600}
-.opciones{display:flex;flex-wrap:wrap;gap:var(--vt-xs)}
+.valorar-page{max-width:430px;padding-top:6px;gap:22px}
+.valorar-cabecera{text-align:center;margin-bottom:0}
+.valorar-cabecera img{width:96px;height:96px;border:2px solid rgba(245,158,11,.55);box-shadow:0 0 24px rgba(245,158,11,.2)}
+.valorar-cabecera h3{margin:12px 0 1px;font-size:29px;line-height:34px;font-weight:800;letter-spacing:.055em}
+.valorar-cabecera .vt-label{font-size:15px;letter-spacing:.12em;color:#a9adba}
+.detalle{display:flex;flex-direction:column;gap:16px}
+.resumen,.pregunta{background:#18191d;border:1px solid #30323a;border-radius:20px;padding:20px;box-shadow:0 8px 24px -4px rgba(0,0,0,.55)}
+.resumen{position:relative;overflow:hidden}
+.resumen::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.partido{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.partido+.partido{border-top:1px solid #292b32;margin-top:14px;padding-top:18px}
+.partido__meta{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.partido__fecha{display:flex;align-items:center;gap:8px;color:#ffb000;font-family:var(--vt-font-head);font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.partido__fecha::before{content:"";width:10px;height:10px;border-radius:50%;background:#13a36f;flex:0 0 auto}
+.partido__evento{max-width:52%;padding:3px 10px;border:1px solid #3a3d46;border-radius:999px;color:#aab0bf;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.equipo{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;font-size:17px;font-weight:700;line-height:24px;color:#f6f7fa}
+.equipo--ganador{color:#ffc000}
+.equipo__sets{font-family:var(--vt-font-head);font-size:20px;font-weight:800;letter-spacing:.08em;color:#aeb3c2}
+.equipo--ganador .equipo__sets{color:#ffc000}
+.privacidad{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 0;padding-top:12px;border-top:1px solid #292b32;font-size:13px;color:#aab0bf}
+.privacidad__texto{display:flex;align-items:center;gap:8px;min-width:0}
+.privacidad__candado{color:#ffc000;font-size:16px}
+.privacidad__total{color:#ffc000;white-space:nowrap}
+.pregunta{padding:20px}
+.pregunta__titulo{display:flex;align-items:center;gap:10px}
+.pregunta__marca{width:12px;height:12px;border-radius:2px;background:#f59e0b;flex:0 0 auto}
+.pregunta h4{margin:0;color:#ffb000;font-size:23px;line-height:27px;font-weight:800;letter-spacing:.025em}
+.pregunta>p{margin:1px 0 16px;color:#aab0bf;font-size:14px}
+.voto{display:flex;flex-direction:column;gap:9px;padding:17px 0;border-top:1px solid #25272e}
+.voto:first-of-type{border-top:0;padding-top:0}
+.voto:last-child{padding-bottom:0}
+.voto__cabecera{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.voto__nombre{font-weight:700;font-size:16px;color:#f4f5f8}
+.voto__nivel{padding:3px 9px;border:1px solid rgba(245,158,11,.55);border-radius:7px;background:rgba(245,158,11,.08);color:#ffb000;font-family:var(--vt-font-head);font-size:11px;font-weight:800;letter-spacing:.035em;text-transform:uppercase}
+.opciones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .opcion{
-  flex:1 1 0;min-width:0;padding:10px 8px;
-  background:var(--vt-surface-3);color:var(--vt-text);
-  border:1px solid var(--vt-border-strong);border-radius:var(--vt-r);
-  font-family:var(--vt-font-body);font-size:14px;cursor:pointer;
+  min-width:0;height:48px;padding:4px 3px;background:#23252b;color:#f2f3f6;
+  border:1px solid #30323a;border-radius:13px;font-family:var(--vt-font-body);
+  font-size:11px;font-weight:600;line-height:1.1;cursor:pointer;white-space:normal;
 }
-.opcion[aria-pressed="true"]{background:var(--vt-gold);border-color:var(--vt-gold);color:#121316;font-weight:700}
-.estado{margin-top:var(--vt-sm);font-size:14px;color:var(--vt-muted);min-height:20px}
+.pregunta--nivel .opcion{height:44px;font-size:12px}
+.opcion__icono{display:block;margin-bottom:2px;font-size:14px}
+.opcion[aria-pressed="true"]{background:linear-gradient(135deg,#f59e0b,#ea8d00);border-color:#ffab00;color:#090a0c;font-weight:700;box-shadow:0 7px 17px rgba(245,158,11,.36)}
+.enviar-valoracion{width:100%;min-height:48px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:.04em;box-shadow:0 7px 20px rgba(245,158,11,.38)}
+.enviar-valoracion__flecha{font-family:var(--vt-font-body);font-size:18px;line-height:1}
+.acciones-volver{margin-top:-12px}
+.volver-valoracion{width:100%;min-height:44px;border-radius:12px;font-family:var(--vt-font-head);font-size:14px;font-weight:800;letter-spacing:.045em;text-transform:uppercase;text-decoration:none}
+.volver-valoracion__flecha{color:#848996;font-family:var(--vt-font-body);font-size:24px;font-weight:400}
+.estado{margin-top:var(--vt-sm);font-size:14px;color:var(--vt-muted)}
+.estado:empty{display:none}
 .lista a{display:block;padding:12px 0;border-bottom:1px solid var(--vt-border);color:var(--vt-text);overflow-wrap:anywhere}
 .lista a span{color:var(--vt-muted);font-size:13px}
+@media(max-width:359px){.resumen,.pregunta{padding:16px}.opciones{gap:5px}.opcion{padding-inline:2px;font-size:11px}.equipo{font-size:15px}}
 </style>
 </head>
 
 <body>
 
-<div class="vt-page">
+<div class="vt-page valorar-page">
 
-  <div style="text-align:center">
-    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
-    <h3 class="vt-gold" style="margin-top:var(--vt-sm)">Víboras Team</h3>
+  <div class="valorar-cabecera">
+    <img src="/image.png" alt="Víboras Team" width="80" height="80" style="border-radius:var(--vt-r-lg)">
+    <h3 class="vt-gold">Víboras Team</h3>
     <span class="vt-label">Valorar partido</span>
   </div>
 
@@ -58,11 +90,15 @@
     <p class="estado">Cargando…</p>
   </div>
 
-  <div style="text-align:center;margin-top:var(--vt-lg)">
-    <a class="vt-btn vt-btn--ghost" href="/">Volver al inicio</a>
+  <div class="acciones-volver">
+    <a class="vt-btn vt-btn--ghost volver-valoracion" href="/"><span class="volver-valoracion__flecha">←</span> Volver al inicio</a>
   </div>
 </div>
 
+<script src="/vt-glicko.js"></script>
+<script src="/vt-categorias.js"></script>
+<script src="/nivel-votos.js"></script>
+<script src="/rating-inicial.js"></script>
 <script>
 // Las valoraciones son anonimas: nadie ve quien voto que. «Nivel» cuenta en
 // la fiabilidad del rating (nivel-votos.js); «ambiente» se guarda y no cuenta.
@@ -71,12 +107,12 @@ const PREGUNTAS = [
   {
     campo: 'actitud', titulo: '¿Qué tal el ambiente?',
     texto: 'Cómo te sentiste jugando con cada uno.',
-    opciones: [['buen_rollo', '👍 Buen rollo'], ['mejorable', '👎 No tan bien']]
+    opciones: [['buen_rollo', '👍', 'Buen rollo'], ['neutro', '😐', 'Neutro'], ['mejorable', '👎', 'No tan bien']]
   },
   {
     campo: 'nivel', titulo: '¿Estaban en su nivel?',
     texto: 'Comparado con su rating: ¿jugó como cabía esperar?',
-    opciones: [['por_debajo', 'Por debajo'], ['en_su_nivel', 'En su nivel'], ['por_encima', 'Por encima']]
+    opciones: [['por_debajo', '', 'Por debajo'], ['en_su_nivel', '', 'En su nivel'], ['por_encima', '', 'Por encima']]
   }
 ];
 
@@ -122,11 +158,16 @@ function pintarLista(caja, partidos) {
 // Una fila por compañero con un boton por opcion; pulsar marca y desmarca.
 function pintarVoto(pregunta, jugador, elegidos) {
   const fila = el('div', 'voto');
-  fila.appendChild(el('div', 'voto__nombre', jugador.name));
+  const cabecera = el('div', 'voto__cabecera');
+  cabecera.appendChild(el('div', 'voto__nombre', jugador.name));
+  if (jugador.categoria) cabecera.appendChild(el('span', 'voto__nivel', `Nivel ${jugador.categoria}`));
+  fila.appendChild(cabecera);
   const opciones = el('div', 'opciones');
-  pregunta.opciones.forEach(([valor, etiqueta]) => {
-    const b = el('button', 'opcion', etiqueta);
+  pregunta.opciones.forEach(([valor, icono, etiqueta]) => {
+    const b = el('button', 'opcion');
     b.type = 'button';
+    if (icono) b.appendChild(el('span', 'opcion__icono', icono));
+    b.appendChild(el('span', '', etiqueta));
     b.setAttribute('aria-pressed', String(jugador[pregunta.campo] === valor));
     b.addEventListener('click', () => {
       const ya = elegidos.get(jugador.id) === valor;
@@ -140,50 +181,108 @@ function pintarVoto(pregunta, jugador, elegidos) {
   return fila;
 }
 
-async function enviar(ids, pregunta, elegidos, estado) {
+async function enviar(ids, pregunta, elegidos) {
   const votos = [...elegidos].filter(([, v]) => v).map(([playerId, v]) => ({ playerId, [pregunta.campo]: v }));
-  if (!votos.length) { estado.textContent = 'Elige al menos una respuesta.'; return; }
-  estado.textContent = 'Enviando…';
-  try {
-    await pedir('/api/avisos?action=valorar', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ partido: ids.join(','), votos })
-    });
-    estado.textContent = votos.length < 3 ? 'Guardado. Te queda alguien por valorar.' : 'Guardado. ¡Gracias!';
-  } catch (e) {
-    estado.textContent = e.message;
-  }
+  if (!votos.length) return 0;
+  await pedir('/api/avisos?action=valorar', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partido: ids.join(','), votos })
+  });
+  return votos.length;
 }
 
 function pintarPregunta(ids, pregunta, otros) {
-  const caja = el('div', 'pregunta');
-  caja.appendChild(el('h4', '', pregunta.titulo));
+  const caja = el('div', `pregunta pregunta--${pregunta.campo}`);
+  const titulo = el('div', 'pregunta__titulo');
+  titulo.appendChild(el('span', 'pregunta__marca'));
+  titulo.appendChild(el('h4', '', pregunta.titulo));
+  caja.appendChild(titulo);
   caja.appendChild(el('p', '', pregunta.texto));
   const elegidos = new Map(otros.map((j) => [j.id, j[pregunta.campo]]));
   otros.forEach((j) => caja.appendChild(pintarVoto(pregunta, j, elegidos)));
-  const boton = el('button', 'vt-btn', 'Enviar');
-  boton.type = 'button';
-  const estado = el('div', 'estado');
-  boton.addEventListener('click', () => enviar(ids, pregunta, elegidos, estado));
-  caja.appendChild(boton);
-  caja.appendChild(estado);
-  return caja;
+  return { caja, pregunta, elegidos };
+}
+
+async function enviarTodo(ids, controles, boton, estado) {
+  boton.disabled = true;
+  estado.textContent = 'Enviando…';
+  try {
+    const cantidades = await Promise.all(controles.map((c) => enviar(ids, c.pregunta, c.elegidos)));
+    const total = cantidades.reduce((suma, n) => suma + n, 0);
+    if (!total) estado.textContent = 'Elige al menos una respuesta.';
+    else estado.textContent = total < 6 ? 'Guardado. Te quedan respuestas por completar.' : 'Guardado. ¡Gracias!';
+  } catch (e) {
+    estado.textContent = e.message;
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+async function ponerCategorias(datos) {
+  const nombres = datos.otros.map((j) => j.name);
+  const [, , partidos] = await Promise.all([
+    window.vtNivel.listo, window.vtInicial.listo, window.vtGlicko.leerPartidos()
+  ]);
+  const ratings = new Map(window.vtGlicko.calcularRatings(nombres, partidos).map((r) => [r.name, r.rating]));
+  datos.otros.forEach((j) => { j.categoria = window.categoriaDeRating(ratings.get(j.name)); });
+  return datos;
+}
+
+function marcadorDelPartido(p) {
+  const tanteos = p.sets.map((s) => s.split('-').map(Number));
+  const juegos1 = tanteos.map((s) => s[0]).join(' · ');
+  const juegos2 = tanteos.map((s) => s[1]).join(' · ');
+  const sets1 = tanteos.filter((s) => s[0] > s[1]).length;
+  const sets2 = tanteos.filter((s) => s[1] > s[0]).length;
+  return { juegos1, juegos2, ganador: sets1 === sets2 ? 0 : (sets1 > sets2 ? 1 : 2) };
+}
+
+function pintarResumen(partidos, total) {
+  const resumen = el('div', 'resumen');
+  partidos.forEach((p) => {
+    const cabecera = el('div', 'partido');
+    const meta = el('div', 'partido__meta');
+    meta.appendChild(el('span', 'partido__fecha', `Partido del ${diaYMes(p.fecha)}`));
+    if (p.evento) meta.appendChild(el('span', 'partido__evento', p.evento));
+    cabecera.appendChild(meta);
+    const marcador = marcadorDelPartido(p);
+    const equipo1 = el('div', `equipo${marcador.ganador === 1 ? ' equipo--ganador' : ''}`);
+    equipo1.appendChild(el('span', '', p.equipo1.join(' / ')));
+    equipo1.appendChild(el('span', 'equipo__sets', marcador.juegos1));
+    const equipo2 = el('div', `equipo${marcador.ganador === 2 ? ' equipo--ganador' : ''}`);
+    equipo2.appendChild(el('span', '', p.equipo2.join(' / ')));
+    equipo2.appendChild(el('span', 'equipo__sets', marcador.juegos2));
+    cabecera.appendChild(equipo1);
+    cabecera.appendChild(equipo2);
+    resumen.appendChild(cabecera);
+  });
+  const privacidad = el('div', 'privacidad');
+  const texto = el('span', 'privacidad__texto');
+  texto.appendChild(el('span', 'privacidad__candado', '🔒'));
+  texto.appendChild(el('span', '', 'Las respuestas son 100% anónimas'));
+  privacidad.appendChild(texto);
+  privacidad.appendChild(el('span', 'privacidad__total', `${total} evaluados`));
+  resumen.appendChild(privacidad);
+  return resumen;
 }
 
 // Uno o varios partidos (mismo dia, mismos cuatro): una cabecera por partido
 // y las preguntas una sola vez, para todos a la vez.
 function pintarPartido(caja, datos) {
   caja.textContent = '';
-  datos.partidos.forEach((p) => {
-    const cabecera = el('div', 'partido');
-    cabecera.appendChild(el('span', 'vt-label', `Partido del ${diaYMes(p.fecha)}`));
-    cabecera.appendChild(el('span', 'partido__equipos', `${p.equipo1.join(' / ')}  vs  ${p.equipo2.join(' / ')}`));
-    cabecera.appendChild(el('span', 'partido__sets', p.sets.join('  ')));
-    caja.appendChild(cabecera);
-  });
-  caja.appendChild(el('p', 'estado', 'Las respuestas son anónimas.'));
+  caja.className = 'detalle';
+  caja.appendChild(pintarResumen(datos.partidos, datos.otros.length));
   const ids = datos.partidos.map((p) => p.id);
-  PREGUNTAS.forEach((q) => caja.appendChild(pintarPregunta(ids, q, datos.otros)));
+  const controles = PREGUNTAS.map((q) => pintarPregunta(ids, q, datos.otros));
+  controles.forEach((c) => caja.appendChild(c.caja));
+  const boton = el('button', 'vt-btn enviar-valoracion');
+  boton.type = 'button';
+  boton.appendChild(el('span', '', 'Enviar valoración'));
+  boton.appendChild(el('span', 'enviar-valoracion__flecha', '→'));
+  const estado = el('div', 'estado');
+  boton.addEventListener('click', () => enviarTodo(ids, controles, boton, estado));
+  caja.appendChild(boton);
+  caja.appendChild(estado);
 }
 
 async function iniciar() {
@@ -191,7 +290,10 @@ async function iniciar() {
   const id = new URLSearchParams(location.search).get('partido');
   try {
     const datos = await window.vtCargando.arranque(
-      () => pedir(id ? `/api/avisos?action=partido&id=${encodeURIComponent(id)}` : '/api/avisos?action=pendientes'),
+      async () => {
+        const cargados = await pedir(id ? `/api/avisos?action=partido&id=${encodeURIComponent(id)}` : '/api/avisos?action=pendientes');
+        return id ? ponerCategorias(cargados) : cargados;
+      },
       'Buscando tus partidos'
     );
     if (id) pintarPartido(caja, datos);
