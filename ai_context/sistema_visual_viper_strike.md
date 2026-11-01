@@ -166,6 +166,75 @@ de `rating.html`, que se salía 13 px.
 Las filas de botones al pie de una tarjeta usan `.vt-acciones`, que envuelve y
 por debajo de 560 px apila a lo ancho completo.
 
+## La normalización de colores del 2026-11-01
+
+Hasta ese día había **95 usos de un color que no estaba en la paleta y 47 que
+escribían a mano un valor que sí tenía token**, en 12 de las 20 páginas.
+Ninguno daba error y la app seguía siendo de carbono y oro, que es por lo que
+duró tanto: un color suelto no se nota de uno en uno.
+
+Lo que de verdad se veía en pantalla:
+
+- **`comunidad.html` tenía una paleta sepia propia** —`#d8c3ad`, `#a08e7a`,
+  `#534434`, `#613b00`—. El nivel del jugador se pintaba `rgb(216,195,173)`
+  mientras su nombre, al lado, era `rgb(227,226,230)`. ΔE 18,8 y 21,5 contra
+  los grises de la paleta: marrón contra gris frío, no un matiz.
+- **`valorar.html` tenía medio sistema paralelo**: cuatro oros (`#ffb000`,
+  `#ffc000`, `#ea8d00`, `#ffab00`), cuatro grises de texto, cuatro bordes,
+  tres blancos y un verde `#13a36f` que no se parecía a nada.
+- **`history.html` tenía un panel blanco** (`background:#fff`) en una app
+  oscura, con su borde en `rgba(15,23,42,0.06)`: invisible.
+- **`rating-test.html` tenía un botón y un desplegable de tema claro**, con una
+  etiqueta `#334155` que sobre carbono no se leía.
+
+Y dos tokens, `--vt-outline` y `--vt-outline-variant`, que **no existían**:
+`players.html`, `statistics.html` e `index.html` los usaban con reserva
+(`var(--vt-outline, #a08e7a)`), así que siempre ganaba la reserva, que era
+sepia. De ahí salía el color de los ejes de la gráfica.
+
+### Lo que se decidió
+
+- **Cuatro tokens nuevos**, y sólo cuatro: `--vt-loss`, `--vt-orange`,
+  `--vt-lime` y `--vt-win`. No son inventados: `#f87171` y `#4ade80` ya los
+  usaban seis ficheros a mano para ganar y perder, y los cuatro forman la
+  escalera de fiabilidad que recorren `vt-categorias.js` y los distintivos de
+  `rating-info.html`, que tienen que coincidir. **No se mezclan con
+  `--vt-error`**: ése es el rojo de un aviso sobre `--vt-error-bg`.
+- **Todo lo demás cae en un token que ya existía.** Las etiquetas de evento de
+  `players.html` pasan de un lila y un celeste a plata y bronce, el mismo trío
+  que las posiciones del podio. La escalera de categorías de `rating.html` deja
+  sus cuatro marrones y usa `--vt-gold-soft` en los cuatro: quien ordena es la
+  opacidad del fondo, que ya iba de 0,30 a 0,06.
+- **La barra de `statistics.html` sigue siendo una rampa continua**, porque es
+  el dato, pero ahora es `color-mix(in oklab, var(--vt-loss), var(--vt-win)
+  N%)` en vez de un `hsl()` con sus propios extremos.
+- **El texto sobre oro es `--vt-bg`** en todas partes. Era lo que ya hacían
+  trece páginas con `#121316` escrito a mano; `comunidad` ponía `#613b00`.
+
+### Las dos excepciones, y por qué
+
+- **El negro del splash** (`#000`, tres veces en `theme.css`): iguala el negro
+  de `splash.mp4`. Con `--vt-surface-deep` se vería el borde del vídeo.
+- **El verde de WhatsApp** en `results.html`: es información sobre a dónde
+  lleva el botón, no decoración.
+
+### Lo que la guarda no ve
+
+`tools/palette.mjs` no mira los `rgba()`. CSS no deja meter una `var()` dentro
+de `rgba()`, así que el literal es la única vía: `rgba(74,222,128,0.12)` tiene
+que seguir siendo `--vt-win` a mano y nadie avisa si se separa. Al tocar un
+token de color, buscar también su `rgba()`:
+
+```bash
+grep -rn 'rgba(74, \?222, \?128' *.html *.js    # --vt-win
+```
+
+Comprobado el 2026-11-01 recorriendo las 20 páginas en el navegador y leyendo
+el color calculado de cada elemento: ninguna usa un color que no sea de la
+paleta. Lo único que sale en ese barrido es `--vt-error-bg`, que es un `rgba()`
+y por eso no cuadra con ningún hexadecimal, y el `fill` negro por defecto de
+`<svg>`, `<defs>` y `<line>`, que no pinta nada.
+
 ## El toast común de los guardados
 
 Desde el 2026-11-01, las confirmaciones breves de guardado usan

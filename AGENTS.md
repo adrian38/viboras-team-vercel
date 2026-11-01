@@ -105,6 +105,18 @@ frío. `scripts/schema.sql` es una copia manual **desfasada** que hoy rechaza
 datos existentes en producción. Para cambiar el esquema se edita `_db.js`.
 Detalle: `ai_context/esquema_duplicado_y_desfasado.md`.
 
+## Invariante: el color sale de `theme.css`
+
+Ningún color literal fuera del `:root` de `theme.css`. Se declara ahí y se usa
+con `var(--vt-*)`; si de verdad tiene que ser literal —el negro que iguala
+`splash.mp4`, el verde de WhatsApp— va a `EXCEPCIONES` en la guarda, con su
+motivo.
+
+- Guarda: `node tools/palette.mjs`.
+- No ve los `rgba()`: CSS no deja una `var()` dentro, así que ahí el literal es
+  la única vía y nadie vigila que su color base siga pegado a su token.
+- Detalle: `ai_context/sistema_visual_viper_strike.md`.
+
 ## Invariante: el `<head>` se cambia en las 20 páginas
 
 No hay plantilla ni layout compartido: cada `.html` repite su `<head>`. Los
@@ -183,8 +195,8 @@ manual y está descrita aquí.
    npm run check
    ```
 
-   Ejecuta `tools/ai-context-index.mjs`, `tools/rating-parity.mjs` y
-   `tools/code-size.mjs`.
+   Ejecuta `tools/ai-context-index.mjs`, `tools/rating-parity.mjs`,
+   `tools/code-size.mjs` y `tools/palette.mjs`.
 
 2. **Entorno local**, que replica Vercel con Postgres propio. **Se actualiza
    al terminar cada corrección, antes de comprobar nada**:
