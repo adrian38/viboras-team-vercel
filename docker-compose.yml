@@ -136,6 +136,11 @@ services:
       - ./rating-inicial.js:/app/rating-inicial.js
       - ./avisos-push.js:/app/avisos-push.js
       - ./sw.js:/app/sw.js
+      # Los dos ficheros que comparten las veinte paginas. Sin su linea aqui
+      # habia que reconstruir la imagen para ver un cambio de estilo o del
+      # toast, y mientras tanto el contenedor servia la copia vieja sin avisar.
+      - ./theme.css:/app/theme.css
+      - ./pwa.js:/app/pwa.js
     depends_on:
       wsproxy:
         condition: service_started
