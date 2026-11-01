@@ -101,6 +101,21 @@
 .enlace{background:none;border:0;padding:4px 0;color:var(--vt-gold-light);font:inherit;font-size:13px;cursor:pointer;align-self:center;text-decoration:underline}
 .pendiente .vt-select{width:auto;min-height:0;padding-top:6px;padding-bottom:6px;font-size:13px}
 
+/* La columna de esta pagina. El diseno deja las tarjetas a 16px del borde de
+   la pantalla, y aqui se sumaban los 12px laterales del body de theme.css y
+   los 16 de la columna: 28, con lo que en un telefono de 375 la tarjeta se
+   quedaba en 319px y los chips de la cabecera y el dato del companero no
+   cabian en su linea. Se le quita el lateral al body —solo en esta pagina— y los
+   16px los pone la columna. Con un margin-inline negativo habria valido
+   igual, pero pisa el `margin:0 auto` de .vt-page y la descentra en una
+   pantalla ancha. Arriba la columna no pone nada: los 16px del body ya son
+   la separacion que el diseno deja sobre la cabecera. */
+body{padding-inline:0}
+.vt-page{
+  padding:0 var(--vt-md) var(--vt-lg);
+  gap:var(--vt-md);
+}
+
 /* El perfil de quien ha entrado. Todo con las variables de theme.css: lo que
    no tiene pieza alli son la cuadricula de cifras, los medidores, la lista de
    la ficha y la semana. */
@@ -116,7 +131,11 @@
 }
 .inicial--sm{width:28px;height:28px;font-size:12px;border-width:1px}
 .inicial--gris{border-color:var(--vt-border-strong);color:var(--vt-muted)}
+/* Los dos chips van en una sola linea, como en el diseno. En Inter no caben
+   en los 239px que deja la inicial; en la condensada de los titulos ocupan
+   unos 25px menos cada uno y entran de sobra. */
 .chips{display:flex;flex-wrap:wrap;gap:var(--vt-sm);margin-top:var(--vt-sm)}
+.chips .vt-chip{font-family:var(--vt-font-head);font-size:10px;letter-spacing:0.06em}
 /* El unico verde de la pagina, el mismo de .aviso--ok: theme.css no tiene
    token verde porque el sistema es oro sobre carbono, y este chip dice
    «al dia», que en oro se confundiria con todo lo demas. */
@@ -179,6 +198,12 @@
 .persona__id{display:flex;align-items:center;gap:var(--vt-sm);min-width:0}
 .persona__id .vt-label,.persona__id b{display:block}
 .persona__id b{font-size:13px}
+/* La fila es de 309px y en Inter pide 373: el rotulo y el dato se partian en
+   dos lineas cada uno. En la condensada piden 304 y entran los dos de una.
+   Son los nombres del grupo y pueden ser mas largos, asi que si no cabe
+   sigue partiendo, pero con los de hoy no hace falta. */
+.persona .vt-label{font-family:var(--vt-font-head);letter-spacing:0.04em}
+.persona > b{font-family:var(--vt-font-head);font-size:15px}
 
 .nota{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-md)}
 .estrellas{display:flex;gap:2px;color:var(--vt-gold-light)}
@@ -187,13 +212,26 @@
 .nota__cifra b{font-family:var(--vt-font-head);font-size:38px;font-weight:800;color:var(--vt-text-strong)}
 
 .medidor{display:flex;align-items:center;gap:var(--vt-sm);font-size:13px}
-.medidor__nombre{display:flex;align-items:center;gap:var(--vt-xs);width:120px;flex:0 0 auto}
+/* Sin ancho fijo: «Fiabilidad del rating» pide 135px y en 120 se partia en
+   dos lineas. Lo que sobra se lo lleva la barra, que no tiene medida propia. */
+.medidor__nombre{display:flex;align-items:center;gap:var(--vt-xs);flex:0 0 auto}
 .medidor__nombre span:last-child{
   font-family:var(--vt-font-head);font-size:12px;font-weight:700;
   letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-text-strong);
 }
 .medidor .barra{flex:1;min-width:0}
-.medidor__valor{width:28px;text-align:right;font-family:var(--vt-font-head);font-size:15px;font-weight:700;color:var(--vt-gold-light)}
+/* Sin ancho fijo: aqui no siempre va una cifra de tres caracteres, tambien
+   va «Media» o «Alta», y en una caja de 28px se salia por la derecha. */
+.medidor__valor{min-width:28px;text-align:right;font-family:var(--vt-font-head);font-size:15px;font-weight:700;color:var(--vt-gold-light)}
+
+/* El boton de editar va a la derecha del titulo, no debajo. Con .vt-between a
+   secas el bloque del titulo pedia 215px y el boton 90, 321 en una fila de
+   311, y el boton caia a la linea siguiente pegado a la izquierda. El wrap
+   se decide por el tamano que pide cada hueco, no por el que acepta, asi que
+   no basta con dejar encoger al texto: hay que quitarle el wrap a la fila. */
+.ficha__cab{flex-wrap:nowrap}
+.ficha__cab > div{flex:1 1 auto;min-width:0}
+.ficha__cab > button{flex:0 0 auto}
 
 .ficha__fila{
   display:flex;align-items:center;justify-content:space-between;gap:var(--vt-md);
@@ -238,9 +276,15 @@
 .ajuste b{display:block;font-size:13px;color:var(--vt-text-strong)}
 .ajuste small{display:block;font-size:12px}
 
-@media(max-width:380px){
+/* El umbral baja de 380 a 356 porque la columna gano 24px al dejar de sumar
+   el padding del body y el suyo: lo que antes se apretaba en un telefono de
+   375 ahora cabe. */
+@media(max-width:356px){
   .medidor__nombre{width:92px}
   .lado__op{font-size:12px;letter-spacing:0.02em}
+  /* Cinco estrellas de 28 mas la cifra piden 227px y en un telefono de 320
+     la caja tiene 224. A 24 caben. */
+  .estrellas svg{width:24px;height:24px}
 }
 
 /* Al final del bloque y no al principio: .campos y .separador declaran su
@@ -268,7 +312,7 @@
   </defs>
 </svg>
 
-<div class="vt-page vt-page--narrow" style="padding:var(--vt-lg) var(--vt-md)">
+<div class="vt-page vt-page--narrow">
 
   <header class="vt-between" style="padding-bottom:var(--vt-md);border-bottom:1px solid var(--vt-border)">
     <div class="vt-row" style="gap:var(--vt-md)">
@@ -470,7 +514,7 @@
     </section>
 
     <section class="vt-card">
-      <div class="vt-between">
+      <div class="vt-between ficha__cab">
         <div>
           <span class="vt-label">Tu ficha</span>
           <p class="vt-small vt-muted" style="margin:var(--vt-xs) 0 0">Datos registrados de tu inscripción</p>
