@@ -27,8 +27,11 @@ tarjeta del Stitch».
 - **`players.court_side` tenía por fin un lector.** Hasta ese día se guardaba
   y no lo leía nadie, y `/cuenta` lo decía con esas palabras (es el tercer
   ejemplo de dato inventado de `AGENTS.md`). Ahora `/cuenta` dice que lo verá
-  el grupo en `/comunidad`, y sigue diciendo que `/day` no lo mira al formar
-  las parejas, porque no lo mira.
+  el grupo en `/comunidad`. La coletilla de que `/day` no lo mira al formar
+  las parejas estuvo un día y se quitó el 2026-11-01 por sobrar: el texto ya
+  no promete nada de las parejas, así que no hace falta desmentirlo. **`/day`
+  sigue sin leer `court_side`**, de modo que si algún día la frase vuelve a
+  hablar de parejas hay que comprobar antes si eso cambió.
 - **La disponibilidad general** salía sólo en la pantalla Jugadores del panel
   (`admin-jugadores.js`). El nivel BK del formulario no se reutiliza como nivel
   actual: filtros, búsqueda y tarjetas usan la categoría calculada por el
