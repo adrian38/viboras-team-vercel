@@ -180,6 +180,14 @@ queda a la caja es media pantalla, así que sin él un mensaje largo se parte en
 una columna de 188 px con la pantalla a 375. Medido el 2026-11-01 con el aviso
 del buzón: 343 px de ancho y dos líneas a 375, 350 px y una a 1280.
 
+Y va en `--vt-z-toast` (2002), por encima del velo y del modal. Con los 100 de
+`--vt-z-flotante` quedaba **debajo del panel de administración**, que es un
+velo de 2000: los tres guardados que viven ahí —registrar jugador, torneo
+Compás, torneo Pozo— enseñaban un toast que no se veía. Comprobado el
+2026-11-01 con el panel abierto: `elementFromPoint` sobre el centro del toast
+devuelve `adminOverlay` con z-index 100 y el toast con 2002. Por debajo sigue
+el `splash` (3000), que tiene que taparlo todo.
+
 Esto cubre valoraciones, disponibilidad, resultados, torneos, jugadores,
 perfil, tablón, buzón y el formulario de inscripción. Los avisos que contienen
 un siguiente paso o información que debe permanecer —por ejemplo, confirmar el

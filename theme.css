@@ -85,6 +85,9 @@
   --vt-z-flotante:100;
   --vt-z-velo:2000;
   --vt-z-modal:2001;
+  /* El toast confirma guardados que se hacen dentro del panel de
+     administracion, que es un velo: con 100 quedaba debajo y no se veia. */
+  --vt-z-toast:2002;
   --vt-z-splash:3000;
 
   /* Profundidad. */
@@ -600,7 +603,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 .vt-toast{
   /* `width:max-content` es obligatorio: con `left:50%` el hueco disponible es
      media pantalla, y sin el el texto se parte en una columna de 188 px. */
-  position:fixed;z-index:var(--vt-z-flotante);left:50%;bottom:24px;
+  position:fixed;z-index:var(--vt-z-toast);left:50%;bottom:24px;
   width:max-content;max-width:calc(100% - 32px);padding:10px 16px;
   border:1px solid var(--vt-border-strong);border-radius:var(--vt-r);
   background:var(--vt-surface-4);color:var(--vt-text);
