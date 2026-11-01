@@ -14,7 +14,7 @@
     "rating.html:renderTable": 79,
     "scripts/apply-schema.js:main": 83,
     "statistics.html:computeStats": 218,
-    "statistics.html:renderTable": 116,
+    "statistics.html:renderTable": 115,
     "tournaments.html:computeRating": 88,
     "tournaments.html:renderTable": 149,
     "tournaments.html:buildTableForMatches": 106

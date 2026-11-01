@@ -12,7 +12,7 @@
   // Sólo los estados que existen en la app. «Bloqueado» no está: la acción
   // existe en el API pero ninguna pantalla la usa.
   var COLORES = {
-    'Activo': '#4ade80', 'Pendiente': 'var(--vt-yellow)', 'Rechazado': '#f87171',
+    'Activo': 'var(--vt-win)', 'Pendiente': 'var(--vt-yellow)', 'Rechazado': 'var(--vt-loss)',
     'De baja': 'var(--vt-faint)', 'Sin cuenta': 'var(--vt-silver)'
   };
   var ROLES = { member: 'Jugador', admin: 'Admin' };

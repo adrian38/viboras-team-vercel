@@ -45,7 +45,7 @@
   transition:background .15s ease,color .15s ease,border-color .15s ease;
 }
 .view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}
-.view-btn.active{background:var(--vt-gold);color:#121316;border-color:var(--vt-gold);font-weight:700}
+.view-btn.active{background:var(--vt-gold);color:var(--vt-bg);border-color:var(--vt-gold);font-weight:700}
 
 .select{
   padding:9px 30px 9px 12px;
@@ -69,7 +69,7 @@
   padding:9px 16px;
   background:var(--vt-gold);
   border:none;border-radius:var(--vt-r);
-  color:#121316;
+  color:var(--vt-bg);
   font-family:var(--vt-font-body);
   font-size:14px;font-weight:700;letter-spacing:0.02em;
   cursor:pointer;
@@ -122,8 +122,8 @@ tbody tr:hover td{background:var(--vt-surface-2)}
   color:var(--vt-text);
   font-size:13px;font-weight:600;
 }
-.tag.win{background:rgba(74,222,128,0.12);color:#4ade80;border-color:rgba(74,222,128,0.35)}
-.tag.lose{background:rgba(248,113,113,0.10);color:#f87171;border-color:rgba(248,113,113,0.30)}
+.tag.win{background:rgba(74,222,128,0.12);color:var(--vt-win);border-color:rgba(74,222,128,0.35)}
+.tag.lose{background:rgba(248,113,113,0.10);color:var(--vt-loss);border-color:rgba(248,113,113,0.30)}
 .tag.tie{background:var(--vt-surface-3);color:var(--vt-muted);border-color:var(--vt-border-strong)}
 .set-list{display:flex;gap:6px;flex-wrap:wrap}
 .set-item{display:inline-block}
@@ -153,9 +153,9 @@ tbody tr:hover td{background:var(--vt-surface-2)}
   font-size:17px;font-weight:700;
 }
 .rating-name{display:flex;align-items:center}
-.pos-badge.pos-1{background:var(--vt-gold);border-color:var(--vt-gold-light);color:#121316;box-shadow:0 0 14px -2px rgba(245,158,11,0.5)}
-.pos-badge.pos-2{background:var(--vt-silver);border-color:#cbd5e1;color:#121316}
-.pos-badge.pos-3{background:var(--vt-bronze);border-color:#e8964a;color:#121316}
+.pos-badge.pos-1{background:var(--vt-gold);border-color:var(--vt-gold-light);color:var(--vt-bg);box-shadow:0 0 14px -2px rgba(245,158,11,0.5)}
+.pos-badge.pos-2{background:var(--vt-silver);border-color:var(--vt-text);color:var(--vt-bg)}
+.pos-badge.pos-3{background:var(--vt-bronze);border-color:var(--vt-gold-soft);color:var(--vt-bg)}
 
 @media(max-width:720px){
   th,td{padding:8px 6px}

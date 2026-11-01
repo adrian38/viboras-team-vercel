@@ -36,12 +36,12 @@ function getFiabilidadConfig(rd) {
   const v = Number(rd);
   if (!Number.isFinite(v)) return { bars: 0, color: '', label: '' };
 
-  if (v >= 350) return { bars: 0, color: '#f87171', label: 'Sin fiabilidad' };
-  if (v < 100) return { bars: 5, color: '#4ade80', label: 'Muy alta' };
-  if (v < 140) return { bars: 4, color: '#a3e635', label: 'Alta' };
-  if (v < 190) return { bars: 3, color: '#facc15', label: 'Media' };
-  if (v < 250) return { bars: 2, color: '#fb923c', label: 'Baja' };
-  return { bars: 1, color: '#f87171', label: 'Muy baja' };
+  if (v >= 350) return { bars: 0, color: 'var(--vt-loss)', label: 'Sin fiabilidad' };
+  if (v < 100) return { bars: 5, color: 'var(--vt-win)', label: 'Muy alta' };
+  if (v < 140) return { bars: 4, color: 'var(--vt-lime)', label: 'Alta' };
+  if (v < 190) return { bars: 3, color: 'var(--vt-yellow)', label: 'Media' };
+  if (v < 250) return { bars: 2, color: 'var(--vt-orange)', label: 'Baja' };
+  return { bars: 1, color: 'var(--vt-loss)', label: 'Muy baja' };
 }
 
 // Globales a pelo porque asi los usan rating.html y rating-export.js desde

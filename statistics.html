@@ -42,7 +42,7 @@ td{padding:8px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--vt-surface-3)}
 .muted{color:var(--vt-muted)}
-.sortable-ind{margin-left:6px;color:var(--vt-outline,#a08e7a);opacity:.65;font-size:15px;vertical-align:middle}
+.sortable-ind{margin-left:6px;color:var(--vt-muted);opacity:.65;font-size:15px;vertical-align:middle}
 
 /* El panel que envuelve la tabla tambien se monta con estilos en linea: sus
    valores claros se sobreescriben desde aqui. */
@@ -67,7 +67,7 @@ tbody tr:hover td{background:var(--vt-surface-3)}
   transition:background .15s ease,color .15s ease,border-color .15s ease;
 }
 .view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}
-.view-btn.active{background:var(--vt-gold);color:#121316;border-color:var(--vt-gold);font-weight:700}
+.view-btn.active{background:var(--vt-gold);color:var(--vt-bg);border-color:var(--vt-gold);font-weight:700}
 
 .event-type-filter{display:flex;gap:var(--vt-sm);flex-wrap:wrap;align-items:center;padding:var(--vt-sm) 0 var(--vt-md)}
 .event-checkbox{
@@ -88,7 +88,7 @@ tbody tr:hover td{background:var(--vt-surface-3)}
   background:var(--vt-gold);
   border:none;
   border-radius:var(--vt-r);
-  color:#121316;
+  color:var(--vt-bg);
   font-family:var(--vt-font-body);
   font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
   cursor:pointer;
@@ -96,9 +96,11 @@ tbody tr:hover td{background:var(--vt-surface-3)}
 }
 .update-btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
 
-/* Celda de metrica: la barra la colorea createMetricCell() con un hsl() que
-   va de rojo a verde segun el porcentaje. Es el dato, asi que se conserva;
-   solo sube la opacidad, que sobre carbono se quedaba corta. */
+/* Celda de metrica: la barra la colorea createMetricCell() mezclando
+   --vt-loss y --vt-win segun el porcentaje. La rampa es el dato, asi que se
+   conserva; lo que cambia es que sus dos extremos ya son los mismos rojo y
+   verde que el resto de la app, y no un hsl() aparte. La opacidad va subida
+   porque sobre carbono se quedaba corta. */
 .metric-col{min-width:120px;padding-right:12px}
 .name-col{max-width:280px}
 .td-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
@@ -553,9 +555,8 @@ function renderTable(statsArr){
     const percent = Math.round(pct*100)
     const bar = document.createElement('div')
     bar.className = 'bar'
-    const hue = Math.round((pct||0)*120)
     bar.style.width = Math.max(4, percent) + '%'
-    bar.style.background = `hsl(${hue},70%,60%)`
+    bar.style.background = `color-mix(in oklab, var(--vt-loss), var(--vt-win) ${percent}%)`
 
     td.appendChild(bar)
     const lblWrap = document.createElement('div')

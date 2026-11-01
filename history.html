@@ -90,7 +90,7 @@ td:nth-child(3){
   background:var(--vt-gold);
   border:1px solid transparent;
   border-radius:var(--vt-r);
-  color:#121316;
+  color:var(--vt-bg);
   font-family:var(--vt-font-body);
   font-size:14px;font-weight:700;letter-spacing:0.02em;
   cursor:pointer;
@@ -156,8 +156,8 @@ td:nth-child(3){
   font-size:13px;
   font-weight:600;
 }
-.tag.win{background:rgba(74,222,128,0.12);color:#4ade80;border-color:rgba(74,222,128,0.35)}
-.tag.lose{background:rgba(248,113,113,0.10);color:#f87171;border-color:rgba(248,113,113,0.30)}
+.tag.win{background:rgba(74,222,128,0.12);color:var(--vt-win);border-color:rgba(74,222,128,0.35)}
+.tag.lose{background:rgba(248,113,113,0.10);color:var(--vt-loss);border-color:rgba(248,113,113,0.30)}
 .tag.tie{background:var(--vt-surface-3);color:var(--vt-muted);border-color:var(--vt-border-strong)}
 
 @media(max-width:720px){.admin-match-grid{grid-template-columns:1fr}.admin-format-option{font-size:12px}}
@@ -245,7 +245,7 @@ td:nth-child(3){
 
     <div id="summary" class="muted"></div>
 
-    <div id="adminPanel" style="display:none;margin-top:12px;padding:10px;border-radius:8px;border:1px dashed rgba(15,23,42,0.06);background:#fff">
+    <div id="adminPanel" style="display:none;margin-top:12px;padding:10px;border-radius:8px;border:1px dashed var(--vt-border);background:var(--vt-surface-2)">
       <div style="font-weight:700;margin-bottom:8px">Administración</div>
       <div class="admin-match-grid">
         <input id="a_date" class="select" placeholder="DD/MM/YYYY" />
