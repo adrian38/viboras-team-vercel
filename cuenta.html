@@ -151,6 +151,13 @@ body{padding-inline:0}
   gap:var(--vt-sm);margin:var(--vt-md) 0 0;padding-top:var(--vt-sm);
   border-top:1px solid var(--vt-border);font-size:12px;color:var(--vt-muted);
 }
+/* El icono del pie mide 17px al lado de un texto de 12 y, pegado a la linea
+   base, le saca la cabeza a la primera linea en vez de empezarla. Se baja a
+   14 y se centra sobre la linea. Se queda en linea a proposito: con un flex
+   en el <span> cada enlace y cada hueco de dato de dentro se convierte en
+   item suelto y le entra el gap, que es como salia «Cuenta creada el» con
+   dos espacios antes de la fecha. */
+.pie-tarjeta .ms{font-size:14px;vertical-align:-3px}
 
 /* Las tres opciones del lado de pista, como un interruptor de tres. */
 .lado{
@@ -343,8 +350,9 @@ body{padding-inline:0}
       <div class="identidad">
         <div class="inicial" id="pInicial"></div>
         <div class="vt-grow">
-          <span class="vt-label vt-gold">Has entrado</span>
-          <h4 id="sesionJugador" style="margin-top:var(--vt-xs)"></h4>
+          <!-- Sin rotulo encima del nombre: la cabecera ya dice «Tu cuenta» y
+               la pagina entera es la de quien ha entrado. -->
+          <h4 id="sesionJugador"></h4>
           <p class="vt-small vt-muted" id="sesionCorreo" style="margin:2px 0 0">
           </p>
           <div class="chips">
