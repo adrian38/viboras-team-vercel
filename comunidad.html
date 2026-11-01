@@ -22,7 +22,7 @@
 <meta name="theme-color" content="#121316">
 
 <style>
-body{padding:64px 0 var(--vt-lg);background:#121316}
+body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
 .barra{
   position:fixed;inset:0 0 auto;z-index:var(--vt-z-flotante);height:64px;
   padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
@@ -33,36 +33,36 @@ body{padding:64px 0 var(--vt-lg);background:#121316}
 .barra__logo{width:32px;height:32px;border-radius:var(--vt-r-full);box-shadow:var(--vt-glow)}
 .barra__texto{display:flex;flex-direction:column;min-width:0}
 .barra__marca{font-family:var(--vt-font-head);font-size:12px;line-height:14px;font-weight:700;letter-spacing:.1em;color:var(--vt-gold-soft)}
-.barra__titulo{font-family:var(--vt-font-head);font-size:18px;line-height:20px;font-weight:700;text-transform:uppercase;color:#e3e2e6}
+.barra__titulo{font-family:var(--vt-font-head);font-size:18px;line-height:20px;font-weight:700;text-transform:uppercase;color:var(--vt-text)}
 .comunidad{max-width:760px;gap:0;padding:var(--vt-sm) 16px 0}
 .presentacion{position:relative;margin-bottom:var(--vt-sm)}
 .presentacion::before{content:'';position:absolute;inset:-30px 20% auto;height:80px;background:rgba(245,158,11,.08);filter:blur(32px);pointer-events:none}
 .cabeza{position:relative;display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm)}
 .cabeza__texto{display:flex;flex-direction:column}
-.cabeza h1{margin:0;font-size:22px;line-height:26px;color:#e3e2e6;text-transform:uppercase}
+.cabeza h1{margin:0;font-size:22px;line-height:26px;color:var(--vt-text);text-transform:uppercase}
 .cabeza .vt-label{color:var(--vt-gold-soft)}
-.contador{border:0;border-radius:var(--vt-r-full);background:#292a2d;color:#ffc174;white-space:nowrap;font-family:var(--vt-font-head)}
+.contador{border:0;border-radius:var(--vt-r-full);background:var(--vt-surface-3);color:var(--vt-gold-soft);white-space:nowrap;font-family:var(--vt-font-head)}
 .contador::before{content:'';display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:var(--vt-gold)}
 .buscador{position:relative;margin-top:var(--vt-md)}
-.buscador .vt-input{padding:12px 40px;background:#1b1b1f;border:0;border-radius:var(--vt-r-md)}
-.buscador .ms{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#d8c3ad;pointer-events:none}
-.buscador .vt-input{color:#e3e2e6}
-.buscador .vt-input::placeholder{color:#534434}
+.buscador .vt-input{padding:12px 40px;background:var(--vt-surface);border:0;border-radius:var(--vt-r-md)}
+.buscador .ms{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--vt-muted);pointer-events:none}
+.buscador .vt-input{color:var(--vt-text)}
+.buscador .vt-input::placeholder{color:var(--vt-faint)}
 
 .filtros{display:flex;gap:var(--vt-sm);margin:0 -16px;padding:var(--vt-md) 16px;overflow-x:auto;scrollbar-width:none}
 .filtros::-webkit-scrollbar{display:none}
 .filtro{
   flex:0 0 auto;padding:7px 14px;
-  background:#292a2d;color:#d8c3ad;
+  background:var(--vt-surface-3);color:var(--vt-muted);
   border:0;border-radius:var(--vt-r-full);
   font-family:var(--vt-font-head);font-size:14px;line-height:18px;font-weight:700;cursor:pointer;
   text-transform:uppercase;letter-spacing:0.05em;
 }
-.filtro[aria-pressed="true"]{background:#f59e0b;color:#613b00;font-weight:700}
+.filtro[aria-pressed="true"]{background:var(--vt-gold);color:var(--vt-bg);font-weight:700}
 
 .lista{display:flex;flex-direction:column;gap:12px;margin-top:0}
 .jugador{
-  background:#1b1b1f;
+  background:var(--vt-surface);
   border:0;
   border-radius:var(--vt-r-md);
   padding:16px;
@@ -75,12 +75,12 @@ body{padding:64px 0 var(--vt-lg);background:#121316}
    vez de empujar al numero de la derecha fuera de la tarjeta. */
 .jugador__id{display:flex;flex:1 1 auto;flex-direction:column;gap:2px;min-width:0}
 .jugador__linea{display:flex;align-items:center;gap:8px;min-width:0}
-.jugador__nivel{font-size:12px;line-height:16px;color:#d8c3ad;overflow-wrap:anywhere}
+.jugador__nivel{font-size:12px;line-height:16px;color:var(--vt-muted);overflow-wrap:anywhere}
 /* No hay fotos de jugador en el proyecto: el circulo lleva las iniciales del
    nombre, que es lo que hay. */
 .jugador__iniciales{
   flex:0 0 auto;width:48px;height:48px;border-radius:var(--vt-r-full);
-  background:#292a2d;color:#ffc174;
+  background:var(--vt-surface-3);color:var(--vt-gold-soft);
   display:flex;align-items:center;justify-content:center;
   font-family:var(--vt-font-head);font-size:18px;font-weight:700;letter-spacing:0.02em;
 }
@@ -88,12 +88,12 @@ body{padding:64px 0 var(--vt-lg);background:#121316}
   margin:0;min-width:0;
   font-family:var(--vt-font-head);
   font-size:18px;line-height:22px;font-weight:700;letter-spacing:0.02em;
-  text-transform:uppercase;color:#e3e2e6;
+  text-transform:uppercase;color:var(--vt-text);
   overflow-wrap:anywhere;
 }
 .jugador__cuentas{margin-left:auto;flex:0 0 auto;text-align:right}
-.jugador__numero{font-family:var(--vt-font-head);font-size:18px;line-height:22px;font-weight:700;color:#ffc174;display:block}
-.jugador__nota{font-family:var(--vt-font-head);font-size:12px;line-height:14px;letter-spacing:0.06em;text-transform:uppercase;color:#a08e7a}
+.jugador__numero{font-family:var(--vt-font-head);font-size:18px;line-height:22px;font-weight:700;color:var(--vt-gold-soft);display:block}
+.jugador__nota{font-family:var(--vt-font-head);font-size:12px;line-height:14px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-muted)}
 
 /* La tira de tres casillas de la maqueta: lado, ganados y horarios. Tres en
    fila incluso a 375 px, como alli; `minmax(0,1fr)` y no `auto-fit` para que
@@ -109,17 +109,17 @@ body{padding:64px 0 var(--vt-lg);background:#121316}
   padding:4px;text-align:center;
   display:flex;flex-direction:column;justify-content:center;gap:2px;
 }
-.dato__clave{display:block;font-family:var(--vt-font-head);font-size:12px;line-height:14px;letter-spacing:0.06em;text-transform:uppercase;color:#534434}
-.dato__valor{display:flex;align-items:center;justify-content:center;gap:2px;font-family:var(--vt-font-head);font-size:14px;line-height:18px;font-weight:700;color:#e3e2e6;overflow-wrap:anywhere}
-.dato--gold .dato__valor{color:#ffc174;text-transform:uppercase}
-.dato--calificacion .dato__valor{color:#ffc640}
+.dato__clave{display:block;font-family:var(--vt-font-head);font-size:12px;line-height:14px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-faint)}
+.dato__valor{display:flex;align-items:center;justify-content:center;gap:2px;font-family:var(--vt-font-head);font-size:14px;line-height:18px;font-weight:700;color:var(--vt-text);overflow-wrap:anywhere}
+.dato--gold .dato__valor{color:var(--vt-gold-soft);text-transform:uppercase}
+.dato--calificacion .dato__valor{color:var(--vt-gold-light)}
 .dato:last-child .dato__valor{font-family:var(--vt-font-body);font-size:12px;line-height:16px;font-weight:500}
-.estrella{display:block;width:14px;height:14px;fill:#ffc640}
+.estrella{display:block;width:14px;height:14px;fill:var(--vt-gold-light)}
 .jugador__pie{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);min-height:36px}
-.jugador__resumen{font-size:12px;line-height:16px;color:#ffc640}
+.jugador__resumen{font-size:12px;line-height:16px;color:var(--vt-gold-light)}
 .jugador__resumen::before{content:'';display:inline-block;width:8px;height:8px;margin-right:7px;border-radius:50%;background:var(--vt-gold);vertical-align:1px}
-.jugador__accion{min-height:36px;padding:7px 16px;border-radius:var(--vt-r-full);background:#f59e0b;color:#613b00;font-family:var(--vt-font-head);font-size:14px;line-height:18px;letter-spacing:.05em;text-transform:uppercase}
-.jugador__accion:hover,.jugador__accion:focus-visible{color:#613b00}
+.jugador__accion{min-height:36px;padding:7px 16px;border-radius:var(--vt-r-full);background:var(--vt-gold);color:var(--vt-bg);font-family:var(--vt-font-head);font-size:14px;line-height:18px;letter-spacing:.05em;text-transform:uppercase}
+.jugador__accion:hover,.jugador__accion:focus-visible{color:var(--vt-bg)}
 .estado{font-size:14px;color:var(--vt-muted);min-height:20px}
 .aviso{font-size:14px;color:var(--vt-muted);margin:0}
 .acciones{margin-top:var(--vt-xl);display:flex;flex-wrap:wrap;gap:var(--vt-sm);justify-content:center}
