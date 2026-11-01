@@ -7,17 +7,17 @@
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
-<script src="/splash.js"></script>
-<script src="/pwa.js" defer></script>
-<script src="/auth-client.js" defer></script>
-<script src="/vt-cargando.js"></script>
-<script src="/vt-glicko.js"></script>
+<script src="/front/splash.js"></script>
+<script src="/front/pwa.js" defer></script>
+<script src="/front/auth-client.js" defer></script>
+<script src="/front/vt-cargando.js"></script>
+<script src="/front/vt-glicko.js"></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/theme.css">
+<link rel="stylesheet" href="/front/theme.css">
 <style>
 /* Pagina de pruebas del motor, sin maqueta propia. Se deriva de rating.html:
    mismos tokens y la misma tabla, con el banco de pruebas en monoespaciada.
@@ -198,7 +198,7 @@ H,I,J,A,0.3,3-5</textarea>
 // GLICKO ENGINE (copiado literalmente de rating.html)
 // ============================================================================
 
-// El motor vive en /vt-glicko.js, uno solo para las tres paginas que lo
+// El motor vive en /front/vt-glicko.js, uno solo para las tres paginas que lo
 // usan. Se traen sus nombres a este ambito para que el resto del fichero
 // siga leyendose igual que cuando el motor estaba pegado aqui.
 const {
@@ -231,7 +231,7 @@ window.vtGlicko.usarJugadorNuevo(() => new GlickoPlayer());
 // partidos se pegan a mano. En /rating esto mueve el RD al cerrar cada dia.
 window.vtGlicko.usarAjustePorNivel(() => {});
 
-// El bucle de dias tambien vive en /vt-glicko.js: era el mismo en las dos
+// El bucle de dias tambien vive en /front/vt-glicko.js: era el mismo en las dos
 // paginas salvo tres lineas, que ahora son dos ganchos y un parametro.
 const calculateEngineRatings = window.vtGlicko.calcularRatings;
 
@@ -239,7 +239,7 @@ const calculateEngineRatings = window.vtGlicko.calcularRatings;
 // DATA FETCHING & UI RENDER (copia literal de rating.html)
 // ============================================================================
 
-// Leer los partidos del API tambien vive en /vt-glicko.js.
+// Leer los partidos del API tambien vive en /front/vt-glicko.js.
 const fetchMatches = window.vtGlicko.leerPartidos;
 
 function buildDateOptionsFromMatches(matches) {

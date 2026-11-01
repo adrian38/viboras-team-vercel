@@ -1,6 +1,89 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/index.html" }
+    {
+      "source": "/",
+      "destination": "/pantallas/index.html"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/pantallas/index.html"
+    },
+    {
+      "source": "/buzon",
+      "destination": "/pantallas/buzon.html"
+    },
+    {
+      "source": "/comunidad",
+      "destination": "/pantallas/comunidad.html"
+    },
+    {
+      "source": "/cuenta",
+      "destination": "/pantallas/cuenta.html"
+    },
+    {
+      "source": "/day",
+      "destination": "/pantallas/day.html"
+    },
+    {
+      "source": "/group-normativa",
+      "destination": "/pantallas/group-normativa.html"
+    },
+    {
+      "source": "/history",
+      "destination": "/pantallas/history.html"
+    },
+    {
+      "source": "/inscripcion",
+      "destination": "/pantallas/inscripcion.html"
+    },
+    {
+      "source": "/players",
+      "destination": "/pantallas/players.html"
+    },
+    {
+      "source": "/ranking",
+      "destination": "/pantallas/ranking.html"
+    },
+    {
+      "source": "/ranking-info",
+      "destination": "/pantallas/ranking-info.html"
+    },
+    {
+      "source": "/rating",
+      "destination": "/pantallas/rating.html"
+    },
+    {
+      "source": "/rating-info",
+      "destination": "/pantallas/rating-info.html"
+    },
+    {
+      "source": "/rating-test",
+      "destination": "/pantallas/rating-test.html"
+    },
+    {
+      "source": "/results",
+      "destination": "/pantallas/results.html"
+    },
+    {
+      "source": "/statistics",
+      "destination": "/pantallas/statistics.html"
+    },
+    {
+      "source": "/submit-result",
+      "destination": "/pantallas/submit-result.html"
+    },
+    {
+      "source": "/tablon",
+      "destination": "/pantallas/tablon.html"
+    },
+    {
+      "source": "/tournaments",
+      "destination": "/pantallas/tournaments.html"
+    },
+    {
+      "source": "/valorar",
+      "destination": "/pantallas/valorar.html"
+    }
   ]
 }

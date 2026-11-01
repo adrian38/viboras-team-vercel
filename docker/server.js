@@ -81,6 +81,12 @@ app.get('/health', async (_req, res) => {
 // que es lo que hace que /day resuelva a day.html.
 app.use(express.static(ROOT, { extensions: ['html'] }));
 
+// Y las paginas, que viven en pantallas/ pero se sirven desde la raiz: es el
+// equivalente local de los rewrites de vercel.json. Sin esta linea /day daria
+// 404 en local y 200 en produccion, que es la clase de diferencia que hace
+// perder una tarde.
+app.use(express.static(path.join(ROOT, 'pantallas'), { extensions: ['html'] }));
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`app escuchando en http://localhost:${PORT}`);
 });

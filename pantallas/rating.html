@@ -7,19 +7,19 @@
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
-<script src="/splash.js"></script>
-<script src="/pwa.js" defer></script>
-<script src="/auth-client.js" defer></script>
-<script src="/vt-cargando.js"></script>
-<script src="/vt-glicko.js"></script>
-<script src="/vt-categorias.js"></script>
+<script src="/front/splash.js"></script>
+<script src="/front/pwa.js" defer></script>
+<script src="/front/auth-client.js" defer></script>
+<script src="/front/vt-cargando.js"></script>
+<script src="/front/vt-glicko.js"></script>
+<script src="/front/vt-categorias.js"></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/theme.css">
+<link rel="stylesheet" href="/front/theme.css">
 <style>
 /* Las cuatro categorias y sus clases .tier-<key> estan descritas en
    ai_context/categorias_de_rating.md: cada una necesita su pareja de reglas
@@ -248,8 +248,8 @@ td.rating-col{
   </div>
 </div>
 
-<script src="/nivel-votos.js"></script>
-<script src="/rating-inicial.js"></script>
+<script src="/front/nivel-votos.js"></script>
+<script src="/front/rating-inicial.js"></script>
 <script>
 // A donde lleva «Atrás»: lo dice quien trajo aqui, con ?volver= (lo pone
 // /cuenta, que enlaza a esta pagina desde dos sitios). Solo rutas de este
@@ -265,7 +265,7 @@ function volverAtras(){
 // GLICKO ENGINE
 // ============================================================================
 
-// El motor vive en /vt-glicko.js, uno solo para las tres paginas que lo
+// El motor vive en /front/vt-glicko.js, uno solo para las tres paginas que lo
 // usan. Se traen sus nombres a este ambito para que el resto del fichero
 // siga leyendose igual que cuando el motor estaba pegado aqui.
 const {
@@ -288,7 +288,7 @@ const {
   updatePeriod
 } = window.vtGlicko;
 
-// El bucle de dias tambien vive en /vt-glicko.js: era el mismo en las dos
+// El bucle de dias tambien vive en /front/vt-glicko.js: era el mismo en las dos
 // paginas salvo tres lineas, que ahora son dos ganchos y un parametro.
 const calculateEngineRatings = window.vtGlicko.calcularRatings;
 
@@ -298,7 +298,7 @@ const calculateEngineRatings = window.vtGlicko.calcularRatings;
 
 let cachedEntries = [];
 
-// Leer los partidos del API tambien vive en /vt-glicko.js.
+// Leer los partidos del API tambien vive en /front/vt-glicko.js.
 const fetchMatches = window.vtGlicko.leerPartidos;
 
 function buildDateOptionsFromMatches(matches) {
@@ -429,7 +429,7 @@ function computeRatings(entries, includeInactive = false, minReliability = 'any'
   return out;
 }
 
-// getFiabilidadConfig y TIER_DEFINITIONS viven en /vt-categorias.js, que
+// getFiabilidadConfig y TIER_DEFINITIONS viven en /front/vt-categorias.js, que
 // los publica como globales: los usan esta tabla, rating-export.js y la
 // tarjeta de /cuenta (ai_context/categorias_de_rating.md).
 
@@ -553,8 +553,8 @@ async function init() {
 vtCargando.arranque(init, 'Calculando el rating');
 </script>
 <!-- defer: necesita window.vtMe, que pone auth-client.js, también diferido. -->
-<script src="/excel-export.js" defer></script>
-<script src="/rating-export.js" defer></script>
+<script src="/front/excel-export.js" defer></script>
+<script src="/front/rating-export.js" defer></script>
 
 </body>
 </html>

@@ -13,15 +13,19 @@
 //
 //   1. vt-glicko.js define las primitivas y las exporta.
 //   2. Ninguna pagina las define por su cuenta.
-//   3. Las tres paginas cargan /vt-glicko.js y traen sus nombres al ambito.
+//   3. Las tres paginas cargan /front/vt-glicko.js y traen sus nombres al
+//      ambito.
 //
 // No vigila calculateEngineRatings: el bucle de dias es de cada pagina y en
 // rating-test diverge a proposito (extraDecayDays).
 // Detalle: ai_context/motor_de_rating_duplicado.md
 import { readFileSync } from 'node:fs';
 
-const MOTOR = 'vt-glicko.js';
-const PAGINAS = ['rating.html', 'players.html', 'rating-test.html'];
+// Vale a la vez como ruta en disco y, con una barra delante, como la URL que
+// cargan las paginas. Por eso el movimiento a front/ se arregla aqui y nada
+// mas abajo cambia.
+const MOTOR = 'front/vt-glicko.js';
+const PAGINAS = ['pantallas/rating.html', 'pantallas/players.html', 'pantallas/rating-test.html'];
 
 // Las cuatro primitivas de siempre mas las que las acompanan: si una pagina
 // se trae cualquiera de estas, se ha vuelto a partir el motor.

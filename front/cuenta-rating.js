@@ -1,5 +1,5 @@
 // La tarjeta de rating de /cuenta. Calcula el rating del jugador con el motor
-// compartido (/vt-glicko.js), el mismo que usa /rating: aqui no hay ninguna
+// compartido (/front/vt-glicko.js), el mismo que usa /rating: aqui no hay ninguna
 // copia del Glicko ni de la lectura de partidos.
 //
 // Lo que cuesta: el motor recorre el historico dia a dia, asi que sacar la

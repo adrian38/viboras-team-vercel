@@ -8,7 +8,7 @@
 // cuatro oros y cinco grises propios, y cambiar --vt-muted no movia nada de
 // eso. Un color suelto no se nota de uno en uno; se nota cuando ya son cien.
 //
-// Lo que comprueba, en los .html, .js y .css de la raiz:
+// Lo que comprueba, en los .html, .js y .css de CARPETAS:
 //
 //   1. Ningun color literal fuera de la lista de excepciones.
 //   2. Ningun valor de la paleta escrito a mano en vez de su var(--vt-*).
@@ -22,18 +22,30 @@
 //   de su token, esto no lo nota.
 // - Lo que hay dentro de un comentario, que se borra antes de mirar: en los
 //   comentarios se explican los colores y nombrarlos no es usarlos.
+// - Una carpeta nueva de presentacion que nadie anada a CARPETAS. No recorre
+//   el arbol: la lista es explicita y hay que mantenerla.
 //
 // Detalle: ai_context/sistema_visual_viper_strike.md
 import { readFileSync, readdirSync } from 'node:fs';
 
-const HOJA = 'theme.css';
+const HOJA = 'front/theme.css';
+
+// Donde vive la presentacion: las veinte paginas, el JavaScript y el CSS que
+// comparten, y lo que queda en la raiz (sw.js). Hasta el 2026-11-01 esto era
+// un readdirSync('.') y bastaba, porque todo estaba en la raiz.
+//
+// api/ se queda fuera a proposito: sus quince colores literales son el HTML
+// de los correos (api/_correo.js), donde una var() no vale porque el cliente
+// de correo no carga theme.css. Meterlos aqui serian quince excepciones que
+// no defienden nada.
+const CARPETAS = ['.', 'front', 'pantallas'];
 
 // Lo que puede llevar un color literal, y por que.
 const EXCEPCIONES = [
-  { fichero: 'theme.css', color: '#000', motivo: 'iguala el negro de splash.mp4' },
-  { fichero: 'results.html', color: '#25d366', motivo: 'verde de WhatsApp' },
-  { fichero: 'results.html', color: '#1ebe5d', motivo: 'verde de WhatsApp, al pasar por encima' },
-  { fichero: 'results.html', color: '#07301a', motivo: 'texto sobre el verde de WhatsApp' }
+  { fichero: 'front/theme.css', color: '#000', motivo: 'iguala el negro de splash.mp4' },
+  { fichero: 'pantallas/results.html', color: '#25d366', motivo: 'verde de WhatsApp' },
+  { fichero: 'pantallas/results.html', color: '#1ebe5d', motivo: 'verde de WhatsApp, al pasar por encima' },
+  { fichero: 'pantallas/results.html', color: '#07301a', motivo: 'texto sobre el verde de WhatsApp' }
 ];
 
 const normalizar = (c) => {
@@ -70,7 +82,9 @@ const permitido = (fichero, color) => EXCEPCIONES.some(
 );
 
 const problemas = [];
-const ficheros = readdirSync('.').filter((f) => /\.(html|css|js)$/.test(f)).sort();
+const ficheros = CARPETAS.flatMap((carpeta) => readdirSync(carpeta, { withFileTypes: true })
+  .filter((e) => e.isFile() && /\.(html|css|js)$/.test(e.name))
+  .map((e) => (carpeta === '.' ? e.name : `${carpeta}/${e.name}`))).sort();
 
 for (const fichero of ficheros) {
   const lineas = sinComentarios(readFileSync(fichero, 'utf8')).split('\n');
