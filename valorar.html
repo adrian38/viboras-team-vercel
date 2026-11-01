@@ -63,11 +63,12 @@
 .pregunta--nivel .opcion{height:44px;font-size:12px}
 .opcion__icono{display:block;margin-bottom:2px;font-size:14px}
 .opcion[aria-pressed="true"]{background:linear-gradient(135deg,#f59e0b,#ea8d00);border-color:#ffab00;color:#090a0c;font-weight:700;box-shadow:0 7px 17px rgba(245,158,11,.36)}
-.enviar-valoracion{width:100%;min-height:48px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:.04em;box-shadow:0 7px 20px rgba(245,158,11,.38)}
-.enviar-valoracion__flecha{font-family:var(--vt-font-body);font-size:18px;line-height:1}
+.enviar-valoracion{width:100%;min-height:48px;margin-top:8px;border-radius:12px;font-family:var(--vt-font-head);font-size:16px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 7px 20px rgba(245,158,11,.38)}
+.boton__flecha{width:16px;height:16px;flex:none;fill:none;stroke:currentColor}
 .acciones-volver{margin-top:-12px}
 .volver-valoracion{width:100%;min-height:44px;border-radius:12px;font-family:var(--vt-font-head);font-size:14px;font-weight:800;letter-spacing:.045em;text-transform:uppercase;text-decoration:none}
-.volver-valoracion__flecha{color:#848996;font-family:var(--vt-font-body);font-size:24px;font-weight:400}
+.volver-valoracion .boton__flecha{color:#848996}
+.valorar-pie{margin:-2px 0 0;color:#6f7482;font-size:11px;line-height:20px;text-align:center}
 .estado{margin-top:var(--vt-sm);font-size:14px;color:var(--vt-muted)}
 .estado:empty{display:none}
 .lista a{display:block;padding:12px 0;border-bottom:1px solid var(--vt-border);color:var(--vt-text);overflow-wrap:anywhere}
@@ -91,8 +92,9 @@
   </div>
 
   <div class="acciones-volver">
-    <a class="vt-btn vt-btn--ghost volver-valoracion" href="/"><span class="volver-valoracion__flecha">←</span> Volver al inicio</a>
+    <a class="vt-btn vt-btn--ghost volver-valoracion" href="/" id="volverInicio">Volver al inicio</a>
   </div>
+  <p class="valorar-pie">Víboras Padel System © 2024 • Valoraciones seguras y confidenciales</p>
 </div>
 
 <script src="/vt-glicko.js"></script>
@@ -136,6 +138,20 @@ function iconoCandado() {
   return svg;
 }
 
+function iconoFlecha(d, ancho) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'boton__flecha');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('stroke-width', ancho);
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(path);
+  return svg;
+}
+
 function diaYMes(fecha) {
   const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(fecha || ''));
   return iso ? `${iso[3]}/${iso[2]}` : String(fecha || '').slice(0, 5);
@@ -173,7 +189,7 @@ function pintarVoto(pregunta, jugador, elegidos) {
   const fila = el('div', 'voto');
   const cabecera = el('div', 'voto__cabecera');
   cabecera.appendChild(el('div', 'voto__nombre', jugador.name));
-  if (jugador.categoria) cabecera.appendChild(el('span', 'voto__nivel', `Nivel ${jugador.categoria}`));
+  if (jugador.categoria) cabecera.appendChild(el('span', 'voto__nivel', jugador.categoria));
   fila.appendChild(cabecera);
   const opciones = el('div', 'opciones');
   pregunta.opciones.forEach(([valor, icono, etiqueta]) => {
@@ -291,7 +307,7 @@ function pintarPartido(caja, datos) {
   const boton = el('button', 'vt-btn enviar-valoracion');
   boton.type = 'button';
   boton.appendChild(el('span', '', 'Enviar valoración'));
-  boton.appendChild(el('span', 'enviar-valoracion__flecha', '→'));
+  boton.appendChild(iconoFlecha('M14 5l7 7m0 0l-7 7m7-7H3', '2.5'));
   const estado = el('div', 'estado');
   boton.addEventListener('click', () => enviarTodo(ids, controles, boton, estado));
   caja.appendChild(boton);
@@ -319,6 +335,7 @@ async function iniciar() {
 
 // En DOMContentLoaded y no al vuelo: pintarLista toca el DOM de la pagina,
 // que este <script> todavia esta parseando cuando corre.
+document.getElementById('volverInicio').prepend(iconoFlecha('M10 19l-7-7m0 0l7-7m-7 7h18', '2'));
 document.addEventListener('DOMContentLoaded', iniciar);
 </script>
 
