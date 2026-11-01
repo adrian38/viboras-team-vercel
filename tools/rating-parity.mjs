@@ -3,7 +3,7 @@
 //   node tools/rating-parity.mjs
 //
 // Hasta el 2026-10-31 el Glicko estaba pegado en tres paginas y esto
-// comprobaba que las copias no se separaran. Ahora esta en vt-glicko.js y lo
+// comprobaba que las copias no se separaran. Ahora esta en un solo fichero y lo
 // que hay que impedir es lo contrario: que una pagina vuelva a traerse la
 // suya «para no depender del fichero». Pasaria igual de callado que la
 // divergencia de antes, y el sintoma seria el mismo —un numero que cambia en
@@ -13,14 +13,14 @@
 //
 //   1. vt-glicko.js define las primitivas y las exporta.
 //   2. Ninguna pagina las define por su cuenta.
-//   3. Las tres pantallas cargan /front/vt-glicko.js y traen sus nombres al
-//      ambito.
+//   3. Las tres pantallas cargan /front/comun/vt-glicko.js y traen sus
+//      nombres al ambito.
 //
-// Una pantalla son hasta dos ficheros: el .html y, si su JavaScript ya salio
-// de dentro, su front/<nombre>.js. Hay que mirar los dos. Mirando solo el
-// .html, el dia que se extrajo players.html esta guarda dijo que la pagina no
-// usaba window.vtGlicko, que era falso: el codigo estaba intacto, dos ficheros
-// mas alla.
+// Una pantalla son dos ficheros: su index.html y el front/pantallas/<n>/<n>.js
+// que salio de el. Hay que mirar los dos. Mirando solo el index.html, el dia
+// que se extrajo players esta guarda dijo que la pagina no usaba
+// window.vtGlicko, que era falso: el codigo estaba intacto, dos ficheros mas
+// alla.
 //
 // No vigila calculateEngineRatings: el bucle de dias es de cada pagina y en
 // rating-test diverge a proposito (extraDecayDays).
@@ -28,14 +28,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 // Vale a la vez como ruta en disco y, con una barra delante, como la URL que
-// cargan las paginas. Por eso el movimiento a front/ se arregla aqui y nada
-// mas abajo cambia.
-const MOTOR = 'front/vt-glicko.js';
-// El fichero propio puede no existir todavia: quedan paginas con su
-// JavaScript dentro del .html.
+// cargan las paginas. Por eso un cambio de carpeta se arregla aqui y nada mas
+// abajo cambia.
+const MOTOR = 'front/comun/vt-glicko.js';
+
+// Cada pantalla es una carpeta: su index.html y el fichero que salio de el.
 const PANTALLAS = ['rating', 'players', 'rating-test'].map((n) => ({
-  pagina: `pantallas/${n}.html`,
-  propio: `front/${n}.js`
+  pagina: `front/pantallas/${n}/index.html`,
+  propio: `front/pantallas/${n}/${n}.js`
 }));
 
 // Las cuatro primitivas de siempre mas las que las acompanan: si una pagina

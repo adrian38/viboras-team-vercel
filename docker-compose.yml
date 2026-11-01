@@ -104,12 +104,11 @@ services:
       - ./api:/app/api
       - ./docker:/app/docker
       - ./data:/app/data
-      # Las dos carpetas enteras: desde que el codigo vive en front/ y en
-      # pantallas/ no hace falta una linea por fichero, y un fichero nuevo
-      # recarga sin reconstruir la imagen. Antes eran 37 lineas y lo que no
-      # estuviera en la lista se servia viejo sin avisar.
+      # front/ entera: dentro viven comun/ y pantallas/<nombre>/, asi que
+      # con una linea se monta todo el codigo de la aplicacion y un fichero
+      # nuevo recarga sin reconstruir la imagen. Antes esto eran 37 lineas y
+      # lo que no estuviera en la lista se servia viejo sin avisar.
       - ./front:/app/front
-      - ./pantallas:/app/pantallas
       # sw.js se queda en la raiz: el alcance de un service worker es su
       # propia ruta, y desde /front solo controlaria /front.
       - ./sw.js:/app/sw.js

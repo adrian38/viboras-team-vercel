@@ -151,7 +151,7 @@
   function cargarPush(user) {
     if (!user) return;
     var s = document.createElement('script');
-    s.src = '/front/avisos-push.js';
+    s.src = '/front/comun/avisos-push.js';
     s.defer = true;
     document.head.appendChild(s);
   }

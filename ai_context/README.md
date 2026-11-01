@@ -99,11 +99,11 @@ que hay.
   `/neondb` no identifica la rama, la trampa de las variables Preview
   heredadas de producción, la auditoría reproducible y qué servicios externos
   siguen compartidos.
-- `organizacion_de_carpetas.md`: qué hay en `pantallas/`, en `front/` y en la
-  raíz; por qué la URL de cada página no cambió al moverla y los 21 rewrites de
+- `organizacion_de_carpetas.md`: una carpeta por pantalla dentro de `front/`,
+  con `comun/` al lado; por qué la URL no cambió nunca y los 21 rewrites de
   `vercel.json` que lo sostienen; por qué `/index.html` tiene regla propia y
-  `sw.js` no se puede mover; y qué guardas miraban a la raíz y habrían pasado
-  verde vigilando la nada.
+  `sw.js` no se puede mover; los cuatro botones que esto rompió; y qué guardas
+  miraban a la raíz y habrían pasado verde vigilando la nada.
 - `entorno_local_docker_y_proxies_neon.md`: los dos proxies que imitan a Neon en
   local, la trampa del `-pooler.` en la cadena de conexión y por qué un fichero
   estático nuevo da 404 hasta reconstruir la imagen.

@@ -1,8 +1,8 @@
 # Lo que NO se publica en Vercel. Sin este fichero, todo lo versionado se
 # sirve como estatico, sin sesion: /AGENTS.md, /ai_context/... (con el correo
 # del administrador y como esta cerrada la app), /docker-compose.yml, etc.
-# Lo que las paginas necesitan (pantallas/, front/, iconos, manifest, sw.js,
-# api/ y package.json) no esta aqui.
+# Lo que las paginas necesitan (front/, con comun/ y pantallas/ dentro, mas
+# los iconos, el manifest, sw.js, api/ y package.json) no esta aqui.
 # Detalle: ai_context/rama_viboras_es_produccion.md
 
 # documentacion y contexto para agentes

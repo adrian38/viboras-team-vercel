@@ -11,6 +11,7 @@ import './neon-local.js'; // <- primero: configura el driver antes de cualquier 
 
 import express from 'express';
 import path from 'node:path';
+import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -77,15 +78,31 @@ app.get('/health', async (_req, res) => {
   }
 });
 
-// Estaticos. `extensions: ['html']` reproduce el cleanUrls de vercel.json,
-// que es lo que hace que /day resuelva a day.html.
+// Estaticos: front/, sw.js, los iconos y el manifiesto.
 app.use(express.static(ROOT, { extensions: ['html'] }));
 
-// Y las paginas, que viven en pantallas/ pero se sirven desde la raiz: es el
-// equivalente local de los rewrites de vercel.json. Sin esta linea /day daria
-// 404 en local y 200 en produccion, que es la clase de diferencia que hace
-// perder una tarde.
-app.use(express.static(path.join(ROOT, 'pantallas'), { extensions: ['html'] }));
+// Y las paginas. Cada una es front/pantallas/<nombre>/index.html y se sirve
+// en /<nombre>: es el equivalente local de los rewrites de vercel.json.
+//
+// Va DESPUES de los estaticos a proposito, porque Vercel mira primero el
+// sistema de ficheros y solo despues las reescrituras.
+//
+// Y son rutas explicitas, una por pantalla, no un express.static de
+// front/pantallas: ese serviria /day/ con barra final y redirigiria /day a
+// /day/, que Vercel no hace. Una diferencia asi entre local y produccion es
+// justo lo que esta linea existe para evitar.
+const PANTALLAS = readdirSync(path.join(ROOT, 'front/pantallas'), { withFileTypes: true })
+  .filter((e) => e.isDirectory()).map((e) => e.name);
+
+const pagina = (nombre) => (_req, res) =>
+  res.sendFile(path.join(ROOT, 'front/pantallas', nombre, 'index.html'));
+
+app.get('/', pagina('index'));
+// sw.js lo precachea por este nombre; sin esta ruta, cache.addAll falla entero.
+app.get('/index.html', pagina('index'));
+for (const nombre of PANTALLAS) {
+  if (nombre !== 'index') app.get(`/${nombre}`, pagina(nombre));
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`app escuchando en http://localhost:${PORT}`);

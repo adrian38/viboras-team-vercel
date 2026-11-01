@@ -7,17 +7,17 @@
   <link rel="icon" href="/image.png" type="image/png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
-  <script src="/front/splash.js"></script>
-  <script src="/front/pwa.js" defer></script>
-<script src="/front/auth-client.js" defer></script>
-<script src="/front/vt-cargando.js"></script>
-<script src="/front/vt-glicko.js"></script>
+  <script src="/front/comun/splash.js"></script>
+  <script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<script src="/front/comun/vt-glicko.js"></script>
   <meta name="apple-mobile-web-app-title" content="Viboras">
   <meta name="theme-color" content="#121316">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/front/theme.css">
+  <link rel="stylesheet" href="/front/comun/theme.css">
   <style>
     /* La grafica la monta renderChart() como una cadena de SVG. Ya no lleva
        ningun color: los atributos de presentacion no admiten var(), y los que
@@ -341,12 +341,12 @@
     </div>
   </div>
 
-  <script src="/front/nivel-votos.js"></script>
-  <script src="/front/rating-inicial.js"></script>
-  <script src="/front/players.js"></script>
+  <script src="/front/comun/nivel-votos.js"></script>
+  <script src="/front/comun/rating-inicial.js"></script>
+  <script src="/front/pantallas/players/players.js"></script>
   <!-- Despues del script de la pagina y antes de DOMContentLoaded: envuelve
        updatePeriod y buildMatchLineHtml para poner al lado de cada partido
        lo que aporto al cambio del dia. -->
-  <script src="/front/players-aportes.js"></script>
+  <script src="/front/pantallas/players/players-aportes.js"></script>
 </body>
 </html>

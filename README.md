@@ -28,17 +28,24 @@ lo que no se ve leyendo el código, en `ai_context/` (empezar por su
 │   ├── _db.js             # ensureSchema(): el esquema que de verdad corre
 │   └── _auth.js, _google.js, _correo.js, _avisos.js, _push.js,
 │       _buzon.js, _inscripcion.js, _score.js, _ligas.js, _logo.js
-├── pantallas/             # las 20 páginas, cada una con su <head> completo
-├── front/                 # lo que comparten: JavaScript fuera del HTML
-│                          #   (auth-client.js, pwa.js, splash.js…) y theme.css
+├── front/
+│   ├── comun/             # lo que usan 2+ pantallas: auth-client.js, pwa.js,
+│   │                      #   splash.js, vt-glicko.js… y theme.css
+│   └── pantallas/
+│       ├── rating/        # una carpeta por pantalla:
+│       │   ├── index.html #   la página, con su <head> completo
+│       │   ├── rating.js  #   su JavaScript
+│       │   └── rating-export.js   # lo que sólo usa ella
+│       └── … 19 más
 ├── sw.js                  # en la raíz a la fuerza: el alcance de un service
 │                          #   worker es su propia ruta
 ├── tools/                 # las guardas de `npm run check`
 ├── scripts/               # schema.sql (copia DESFASADA) y apply-schema.js
 ├── docker/, docker-compose.yml   # entorno local, abajo
 ├── .vercelignore          # lo que no se publica (docs, entorno local, tools…)
-└── vercel.json            # 21 rewrites: /rating sirve pantallas/rating.html,
-                           #   para que mover las páginas no cambiara la URL
+└── vercel.json            # 21 rewrites: /rating sirve
+                           #   front/pantallas/rating/index.html, para que
+                           #   mover las páginas no cambiara la URL
 ```
 
 Todo `api/` exige sesión salvo `auth.js` y `correo.js`, que son la puerta de

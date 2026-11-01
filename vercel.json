@@ -3,87 +3,87 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/pantallas/index.html"
+      "destination": "/front/pantallas/index/index.html"
     },
     {
       "source": "/index.html",
-      "destination": "/pantallas/index.html"
+      "destination": "/front/pantallas/index/index.html"
     },
     {
       "source": "/buzon",
-      "destination": "/pantallas/buzon.html"
+      "destination": "/front/pantallas/buzon/index.html"
     },
     {
       "source": "/comunidad",
-      "destination": "/pantallas/comunidad.html"
+      "destination": "/front/pantallas/comunidad/index.html"
     },
     {
       "source": "/cuenta",
-      "destination": "/pantallas/cuenta.html"
+      "destination": "/front/pantallas/cuenta/index.html"
     },
     {
       "source": "/day",
-      "destination": "/pantallas/day.html"
+      "destination": "/front/pantallas/day/index.html"
     },
     {
       "source": "/group-normativa",
-      "destination": "/pantallas/group-normativa.html"
+      "destination": "/front/pantallas/group-normativa/index.html"
     },
     {
       "source": "/history",
-      "destination": "/pantallas/history.html"
+      "destination": "/front/pantallas/history/index.html"
     },
     {
       "source": "/inscripcion",
-      "destination": "/pantallas/inscripcion.html"
+      "destination": "/front/pantallas/inscripcion/index.html"
     },
     {
       "source": "/players",
-      "destination": "/pantallas/players.html"
+      "destination": "/front/pantallas/players/index.html"
     },
     {
       "source": "/ranking",
-      "destination": "/pantallas/ranking.html"
+      "destination": "/front/pantallas/ranking/index.html"
     },
     {
       "source": "/ranking-info",
-      "destination": "/pantallas/ranking-info.html"
+      "destination": "/front/pantallas/ranking-info/index.html"
     },
     {
       "source": "/rating",
-      "destination": "/pantallas/rating.html"
+      "destination": "/front/pantallas/rating/index.html"
     },
     {
       "source": "/rating-info",
-      "destination": "/pantallas/rating-info.html"
+      "destination": "/front/pantallas/rating-info/index.html"
     },
     {
       "source": "/rating-test",
-      "destination": "/pantallas/rating-test.html"
+      "destination": "/front/pantallas/rating-test/index.html"
     },
     {
       "source": "/results",
-      "destination": "/pantallas/results.html"
+      "destination": "/front/pantallas/results/index.html"
     },
     {
       "source": "/statistics",
-      "destination": "/pantallas/statistics.html"
+      "destination": "/front/pantallas/statistics/index.html"
     },
     {
       "source": "/submit-result",
-      "destination": "/pantallas/submit-result.html"
+      "destination": "/front/pantallas/submit-result/index.html"
     },
     {
       "source": "/tablon",
-      "destination": "/pantallas/tablon.html"
+      "destination": "/front/pantallas/tablon/index.html"
     },
     {
       "source": "/tournaments",
-      "destination": "/pantallas/tournaments.html"
+      "destination": "/front/pantallas/tournaments/index.html"
     },
     {
       "source": "/valorar",
-      "destination": "/pantallas/valorar.html"
+      "destination": "/front/pantallas/valorar/index.html"
     }
   ]
 }

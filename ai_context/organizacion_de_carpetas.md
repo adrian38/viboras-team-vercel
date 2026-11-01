@@ -1,20 +1,42 @@
-# Las carpetas: `pantallas/`, `front/`, `api/`, y la raíz que queda
+# Las carpetas: una por pantalla, `comun/`, `api/`, y la raíz que queda
 
 Hasta el 2026-11-01 todo vivía en la raíz: 20 páginas, 18 ficheros de
 JavaScript, `theme.css` y los binarios, 58 ficheros versionados en un solo
-sitio. Ahora son tres carpetas y 23 ficheros en la raíz.
+sitio. Ese mismo día se hizo el camino entero, en tres tramos.
 
-| Carpeta | Qué hay | Quién lo sirve |
-| --- | --- | --- |
-| `pantallas/` | las 20 `.html` | rewrites de `vercel.json` |
-| `front/` | los 16 `.js` compartidos y `theme.css` | su propia URL, `/front/...` |
-| `api/` | las 10 funciones serverless | Vercel, por nombre de fichero |
+```
+api/                       el backend, sin tocar
+front/
+  comun/                   los 10 .js que usan 2+ pantallas, y theme.css
+  pantallas/
+    <nombre>/
+      index.html           la página
+      <nombre>.js          su JavaScript
+      <otros>.js           lo que sólo usa ella
+sw.js                      en la raíz a la fuerza
+```
 
-## La URL no cambió, y eso no era optativo
+## Por qué una carpeta por pantalla, y por qué no antes
 
-Con `cleanUrls` el nombre del fichero **es** la URL: `day.html` en la raíz se
-servía como `/day`. Movido a `pantallas/` pasaría a ser `/pantallas/day`, y esa
-URL está escrita en sitios que no controla este repositorio:
+La primera idea fue `pantallas/` y `front/` como hermanas. Está mal: las
+páginas **son** front, así que el nombre mentía. Pero anidar sin más tampoco
+servía, porque **16 de las 20 páginas no tenían ningún `.js` propio**: su
+JavaScript —4785 líneas, el 63 % del total— estaba dentro del `.html`. Una
+carpeta por pantalla habría dado 20 carpetas, 16 con un solo fichero dentro.
+
+Por eso el orden fue: separar, **sacar el JavaScript de los veinte `.html`**, y
+sólo entonces agrupar. Al revés se construyen carpetas vacías de contenido.
+
+A `comun/` baja lo que usan dos pantallas o más. Son diez: `auth-client`,
+`pwa` y `splash` (las 20), `vt-cargando` (15), `vt-glicko` (6),
+`nivel-votos` y `rating-inicial` (5), `vt-categorias` (4), `excel-export` (2)
+y `avisos-push`, que no lo carga ninguna página porque lo inyecta
+`auth-client` en caliente.
+
+## La URL no cambió nunca, y eso no era optativo
+
+Con `cleanUrls` el nombre del fichero **es** la URL. Movida la página, `/day`
+pasaría a ser otra cosa, y esa URL está escrita donde el repositorio no manda:
 
 - **en la base**: `avisos.enlace` guarda `/valorar`, `/buzon`, `/cuenta` y
   `/tablon` (`api/_avisos.js`, `api/_buzon.js`, `api/_campana.js`,
@@ -22,74 +44,85 @@ URL está escrita en sitios que no controla este repositorio:
   campanita y los avisos push llevan a ese enlace;
 - **en los móviles del grupo**, en el acceso directo de la PWA.
 
-Por eso `vercel.json` tiene **una regla por página**: 21 rewrites que mapean
-`/day` a `/pantallas/day.html`. Explícitas y no una comodín, para no depender de
-en qué orden mira Vercel el sistema de ficheros y las reescrituras.
+Por eso `vercel.json` tiene **una regla por pantalla**: 21 rewrites que mapean
+`/day` a `/front/pantallas/day/index.html`. Explícitas y no una comodín, para
+no depender de en qué orden mira Vercel el sistema de ficheros y las
+reescrituras.
 
-### `/index.html` tiene su propia regla, y es la que puede romper el móvil
+### Dos reglas que no son como las demás
 
-`sw.js` precachea `/index.html` por ese nombre. Mientras el fichero estaba en la
-raíz, `cleanUrls` lo redirigía a `/` y la cosa funcionaba sola. Ya no hay
-fichero ahí, así que sin su rewrite `/index.html` daría 404 — y
-`cache.addAll()` es todo o nada: **una entrada que falla tumba el `install`
-entero y el service worker no llega a registrarse**. Es el mismo motivo por el
-que `site.webmanifest` no está en `PRECACHE` (`service_worker.md`).
+`/index.html` tiene la suya porque **`sw.js` precachea la portada por ese
+nombre**, y `cache.addAll()` es todo o nada: una entrada que falla tumba el
+`install` entero y el service worker no llega a registrarse. Es el mismo
+motivo por el que `site.webmanifest` no está en `PRECACHE`
+(`service_worker.md`).
 
-Al mover `theme.css` se cambió también su línea del `PRECACHE` y se subió
-`CACHE` a `viboras-v4`, para que los navegadores tiren la copia vieja.
+Y ninguna regla cubre la forma con extensión. **Eso ya rompió cuatro botones**:
+los de ida y vuelta entre `/ranking` y `/ranking-info`, y entre `/rating` y
+`/rating-info`, navegaban a `/ranking.html`. Antes funcionaba porque
+`cleanUrls` redirigía; después daría 404 en Vercel. En local daban 200, porque
+el `express.static` servía el fichero por ese nombre, así que ninguna barrida
+lo cazó. Se corrigieron a la forma canónica.
 
 ## `sw.js` se queda en la raíz
 
 El alcance de un service worker es la ruta desde la que se sirve. Desde
-`/front/sw.js` sólo controlaría `/front/`, es decir, nada de lo que el grupo
-usa. No es orden; es la única ubicación posible.
+`/front/` sólo controlaría `/front/`, es decir, nada de lo que el grupo usa.
+No es orden; es la única ubicación posible.
 
 Los binarios —iconos, `favicon.ico`, `splash.mp4`, `splash-final.jpg`,
 `image.png`— y `site.webmanifest` también siguen en la raíz. Moverlos tocaría
-los cinco elementos PWA de las 20 páginas por un orden que no se puede
+los cinco elementos PWA de las veinte páginas por un orden que no se puede
 comprobar en local, que es donde se ven los iconos de iOS.
 
 ## Lo que hubo que tocar en las guardas
 
 Mover ficheros deja guardas que siguen pasando mientras miran a otro sitio:
 
-- **`tools/palette.mjs`** hacía `readdirSync('.')`, que no recorre el árbol: con
-  el código en carpetas habría pasado verde vigilando la nada. Ahora tiene una
-  lista explícita, `CARPETAS = ['.', 'front', 'pantallas']`. **No es recursiva a
-  propósito**: barrer todo arrastraría los 15 colores literales de
-  `api/_correo.js`, que son el HTML de los correos, donde una `var()` no vale
-  porque el cliente de correo no carga `theme.css`. El precio es que una carpeta
-  de presentación nueva hay que añadirla a mano.
-- **`tools/rating-parity.mjs`**: su constante `MOTOR` vale a la vez como ruta en
-  disco y, con una barra delante, como la URL que cargan las páginas. Por eso
-  bastó cambiarla a `front/vt-glicko.js`.
-- **`tools/code-size-baseline.json`**: sus claves son rutas. 14 entradas
-  reapuntadas a `pantallas/`. No se usó `--write`, que no habría añadido las
-  nuevas y habría dado por caducadas las viejas.
+- **`tools/palette.mjs`** hacía `readdirSync('.')`, que no recorre el árbol.
+  Pasó por una lista explícita de carpetas y hoy **recorre `front/` entera**,
+  que es posible porque la presentación ya tiene un solo tronco. `api/` se
+  queda fuera a propósito: sus quince colores literales son el HTML de los
+  correos, donde una `var()` no vale porque el cliente de correo no carga
+  `theme.css`.
+- **`tools/rating-parity.mjs`** tuvo que aprender que **una pantalla son dos
+  ficheros**. Comprobaba `window.vtGlicko` mirando sólo el `.html`, y el día
+  que se extrajo `players` dijo que la página no usaba el motor; era falso, el
+  código estaba intacto dos ficheros más allá. Ahora mira la página y su
+  fichero propio. Probado que sigue cazando: con una copia de `expected()` en
+  el fichero extraído falla, y renombrando `window.vtGlicko` también.
+- **`tools/code-size-baseline.json`**: sus claves son rutas, así que cada
+  movimiento las invalida. Ver la sección del trinquete en
+  `tamano_del_codigo_y_trinquete.md`, que es donde muerde de verdad.
 
-## El entorno local: 37 líneas de `volumes:` a dos carpetas
+## El entorno local
 
 `docker-compose.yml` montaba **un fichero por línea**, y lo que no estuviera en
 la lista se servía desde la imagen, viejo y sin avisar
-(`entorno_local_docker_y_proxies_neon.md`). Ahora monta `./front` y
-`./pantallas` enteras, así que un fichero nuevo recarga sin reconstruir.
+(`entorno_local_docker_y_proxies_neon.md`). Ahora monta `./front` entera: con
+una línea está todo el código de la aplicación.
 
-`docker/server.js` necesita su propia línea para las páginas:
+`docker/server.js` necesita **una ruta explícita por pantalla**:
 
 ```js
-app.use(express.static(path.join(ROOT, 'pantallas'), { extensions: ['html'] }));
+app.get('/', pagina('index'));
+app.get('/index.html', pagina('index'));
+for (const nombre of PANTALLAS) if (nombre !== 'index') app.get(`/${nombre}`, pagina(nombre));
 ```
 
-Es el equivalente local de los rewrites. Sin ella `/day` daría 404 en local y
-200 en producción.
+Y van **después** de los estáticos, porque Vercel mira primero el sistema de
+ficheros. No se usa un `express.static` de `front/pantallas`: ése serviría
+`/day/` con barra final y redirigiría `/day` a `/day/`, cosa que Vercel no
+hace, y esa diferencia entre local y producción es justo lo que estas líneas
+existen para evitar.
 
 ## Lo que no se pudo comprobar
 
-Los rewrites de `vercel.json` **no corren en local**: lo que se comprobó es su
-equivalente de `express.static`. Que el mapeo real funcione sólo se ve en el
-primer despliegue, y afecta a las 20 páginas a la vez.
+Los rewrites de `vercel.json` **no corren en local**: lo comprobado es su
+equivalente en `docker/server.js`. Que el mapeo real funcione sólo se ve en el
+primer despliegue, y afecta a las veinte páginas a la vez.
 
 El registro del service worker tampoco: falla en local con «unknown error when
-fetching the script» aunque `/sw.js` se sirva con 200 y su sintaxis sea válida.
-Lo que sí se midió es que **las seis entradas de `PRECACHE` responden 200**, que
-es lo que tumbaría el `install`.
+fetching the script» aunque `/sw.js` se sirva con 200 y su sintaxis sea
+válida. Lo que sí se midió es que **las seis entradas de `PRECACHE` responden
+200**, que es lo que tumbaría el `install`.
