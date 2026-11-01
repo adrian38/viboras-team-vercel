@@ -82,6 +82,18 @@ nombre**, y `cache.addAll()` es todo o nada: una entrada que falla tumba el
 motivo por el que `site.webmanifest` no está en `PRECACHE`
 (`service_worker.md`).
 
+Dicho eso, **esa regla hoy no llega a dispararse**, y conviene saberlo para no
+tocarla creyendo que sostiene algo. Medido en el Preview del 2026-11-01:
+
+```
+/index.html   308 -> /   200   (sirve la portada)
+```
+
+`cleanUrls` redirige `/index.html` antes de que se miren las reescrituras, y
+el `/` al que llega sí tiene la suya. La entrada del `PRECACHE` funciona por
+esa redirección, no por la regla. La regla se queda como red por si algún día
+se quita `cleanUrls`, que es cuando sería la única vía.
+
 Y ninguna regla cubre la forma con extensión. **Eso ya rompió cuatro botones**:
 los de ida y vuelta entre `/ranking` y `/ranking-info`, y entre `/rating` y
 `/rating-info`, navegaban a `/ranking.html`. Antes funcionaba porque
