@@ -41,7 +41,7 @@
 .equipo--ganador .equipo__sets{color:#ffc000}
 .privacidad{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 0;padding-top:12px;border-top:1px solid #292b32;font-size:13px;color:#aab0bf}
 .privacidad__texto{display:flex;align-items:center;gap:8px;min-width:0}
-.privacidad__candado{color:#ffc000;font-size:16px}
+.privacidad__candado{width:14px;height:14px;flex:none;color:#fbbf24;fill:currentColor}
 .privacidad__total{color:#ffc000;white-space:nowrap}
 .pregunta{padding:20px}
 .pregunta__titulo{display:flex;align-items:center;gap:10px}
@@ -121,6 +121,19 @@ function el(tag, clase, texto) {
   if (clase) n.className = clase;
   if (texto !== undefined) n.textContent = texto;
   return n;
+}
+
+function iconoCandado() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'privacidad__candado');
+  svg.setAttribute('viewBox', '0 0 20 20');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('fill-rule', 'evenodd');
+  path.setAttribute('clip-rule', 'evenodd');
+  path.setAttribute('d', 'M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z');
+  svg.appendChild(path);
+  return svg;
 }
 
 function diaYMes(fecha) {
@@ -258,7 +271,7 @@ function pintarResumen(partidos, total) {
   });
   const privacidad = el('div', 'privacidad');
   const texto = el('span', 'privacidad__texto');
-  texto.appendChild(el('span', 'privacidad__candado', '🔒'));
+  texto.appendChild(iconoCandado());
   texto.appendChild(el('span', '', 'Las respuestas son 100% anónimas'));
   privacidad.appendChild(texto);
   privacidad.appendChild(el('span', 'privacidad__total', `${total} evaluados`));
