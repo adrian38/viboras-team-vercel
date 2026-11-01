@@ -44,7 +44,7 @@ descubrirlo a mitad de una tarea:
   `rating-test.html`.
 
   Es decir: el grafo cubre `api/`, `scripts/`, `docker/`, `tools/`, `sw.js` y
-  `pwa.js`, y nada más. Para el código de las páginas —rating, tablas,
+  `front/pwa.js`, y nada más. Para el código de las páginas —rating, tablas,
   formularios, toda la interfaz— la vía fiable es `rg` sobre el nombre de la
   función. Un `search_graph` vacío **no significa que el símbolo no exista**.
 
@@ -105,9 +105,9 @@ frío. `scripts/schema.sql` es una copia manual **desfasada** que hoy rechaza
 datos existentes en producción. Para cambiar el esquema se edita `_db.js`.
 Detalle: `ai_context/esquema_duplicado_y_desfasado.md`.
 
-## Invariante: el color sale de `theme.css`
+## Invariante: el color sale de `front/theme.css`
 
-Ningún color literal fuera del `:root` de `theme.css`. Se declara ahí y se usa
+Ningún color literal fuera del `:root` de `front/theme.css`. Se declara ahí y se usa
 con `var(--vt-*)`; si de verdad tiene que ser literal —el negro que iguala
 `splash.mp4`, el verde de WhatsApp— va a `EXCEPCIONES` en la guarda, con su
 motivo.
@@ -121,15 +121,16 @@ motivo.
 
 No hay plantilla ni layout compartido: cada `.html` repite su `<head>`. Los
 cinco elementos de la PWA —favicon, `apple-touch-icon`, `manifest`,
-`apple-mobile-web-app-title`, `theme-color`— y el `<script src="/pwa.js">` están
-copiados en las 20 páginas (y `/auth-client.js` y `/splash.js` también; este
-último **sin** `defer`, a propósito: ver `ai_context/sistema_visual_viper_strike.md`).
+`apple-mobile-web-app-title`, `theme-color`— y el `<script src="/front/pwa.js">`
+están copiados en las 20 páginas (y `/front/auth-client.js` y
+`/front/splash.js` también; este último **sin** `defer`, a propósito: ver
+`ai_context/sistema_visual_viper_strike.md`).
 
 Añadir uno a una sola página no da error: simplemente no funciona en las otras
 diecisiete. Al tocar el `<head>`, recorrer todas y comprobar el resultado:
 
 ```bash
-grep -c '<etiqueta que sea>' *.html
+grep -c '<etiqueta que sea>' pantallas/*.html
 ```
 
 ## Tamaño del código: 60 líneas por función, 600 de JavaScript por fichero
@@ -206,10 +207,11 @@ manual y está descrita aquí.
    # -> http://localhost:3000   /health dice si la base responde
    ```
 
-   No es ceremonia. `docker-compose.yml` monta unos cuantos ficheros uno a
-   uno y el resto —`theme.css`, `sw.js`, `pwa.js`, los iconos y las páginas
-   que no estén en esa lista— vive dentro de la imagen. Editas uno de esos y
-   el contenedor sigue sirviendo la copia vieja **sin dar ningún error**.
+   No es ceremonia. `docker-compose.yml` monta `./front` y `./pantallas`
+   enteras, así que el código de las páginas recarga en caliente; lo que no
+   está en `volumes:` —los iconos, `splash.mp4`, `site.webmanifest`— vive
+   dentro de la imagen. Editas uno de esos y el contenedor sigue sirviendo la
+   copia vieja **sin dar ningún error**.
 
    Eso no es una molestia, es una comprobación que miente. Pasó el
    2026-10-16: `/group-normativa` no redirigía al cerrar la app y el fichero
