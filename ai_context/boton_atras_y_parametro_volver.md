@@ -37,12 +37,26 @@ la página sin sesión y `auth-client.js` te devolvería a `/cuenta` en bucle.
 **no hacía absolutamente nada**, sin error ni aviso. Lo mismo valdría para
 cualquier página a la que se entre por un aviso push o por un enlace pegado.
 
+## Quien entra sin `?volver=`: la campanita y el push
+
+A `/valorar` no se llega sólo por un enlace de otra pantalla. La campanita
+(`api/_avisos.js`) y los avisos push enlazan a `/valorar?partido=3,7`, un grupo
+de partidos concreto, y los genera el servidor: no hay un «de dónde vienes»
+que puedan poner. Mandarlos a la portada dejaba al jugador sin ver el resto de
+partidos que le faltan por valorar.
+
+Por eso el orden del botón en `valorar.html` es: el `?volver=` de quien enlazó;
+si no lo hay pero sí `?partido=`, la lista `/valorar`, que es la pantalla madre
+del detalle; y si no, la portada. Una pantalla con detalle y lista propias
+puede necesitar lo mismo.
+
 ## Si la etiqueta dice «al inicio», tiene que ir al inicio
 
 `buzon.html` y `valorar.html` rotulan el botón «Volver al inicio». Cuando hay
-`?volver=`, el texto pasa a «Volver»: dejarlo sería una etiqueta que promete
-otra cosa que el código hace. En `valorar.html` el texto se cambia **antes** de
-colgar el icono de flecha, porque `textContent` vacía el enlace.
+`?volver=` el texto pasa a «Volver», y en `/valorar` con `?partido=` a «Volver
+a tus partidos»: dejarlo sería una etiqueta que promete otra cosa que el
+código hace. En `valorar.html` el texto se cambia **antes** de colgar el icono
+de flecha, porque `textContent` vacía el enlace.
 
 ## Al añadir un enlace nuevo entre pantallas
 

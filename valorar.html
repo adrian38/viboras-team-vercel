@@ -331,18 +331,29 @@ async function iniciar() {
   }
 }
 
-// A donde vuelve el boton del pie: lo dice quien trajo aqui, con ?volver=
-// (lo ponen /cuenta y /history, que entran aqui con un partido ya elegido).
-// Solo rutas de este sitio —una que empiece por // o por http seria un
-// redirect abierto—, la misma regla que `goBack()` en day.html. Sin ese
-// parametro, a la portada; y la etiqueta cambia, porque «Volver al inicio»
-// seria mentira si no va alli. El texto antes que la flecha: `textContent`
-// vacia el enlace y se llevaria el icono por delante.
+// A donde vuelve el boton del pie, por orden:
+//
+// 1. El ?volver= de quien enlazo, que lo ponen /cuenta y /history. Solo rutas
+//    de este sitio —una que empiece por // o por http seria un redirect
+//    abierto—, la misma regla que `goBack()` en day.html.
+// 2. Sin ese parametro pero con ?partido=, la lista, que es la pantalla madre
+//    del detalle. Asi entran la campanita y los avisos push, que enlazan a un
+//    partido concreto y no pasan por la lista: mandarlos a la portada los
+//    dejaba sin ver el resto de partidos que les faltan por valorar.
+// 3. Y si no, la portada.
+//
+// La etiqueta cambia con el destino: «Volver al inicio» cuando no va al
+// inicio seria una frase que promete otra cosa que el codigo hace. El texto
+// antes que la flecha: `textContent` vacia el enlace y se llevaria el icono.
 const volverBoton = document.getElementById('volverInicio');
-const volverA = new URLSearchParams(location.search).get('volver');
+const parametros = new URLSearchParams(location.search);
+const volverA = parametros.get('volver');
 if (volverA && volverA.startsWith('/') && !volverA.startsWith('//')) {
   volverBoton.href = volverA;
   volverBoton.textContent = 'Volver';
+} else if (parametros.get('partido')) {
+  volverBoton.href = '/valorar';
+  volverBoton.textContent = 'Volver a tus partidos';
 }
 
 // En DOMContentLoaded y no al vuelo: pintarLista toca el DOM de la pagina,
