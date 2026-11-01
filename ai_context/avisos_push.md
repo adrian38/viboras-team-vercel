@@ -190,9 +190,17 @@ una tercera:
 
 - Sembrar las filas **por SQL directo**, que no pasa por `crearAviso`. Es lo
   que se hizo para verificar la extracción del tablón.
-- O vaciar `push_subscriptions` en la base local antes de tocar nada. Son
-  datos de producción que en local no pintan nada; el precio es que luego no
-  se puede probar el push de verdad.
+- O vaciar `push_subscriptions` en la base local antes de tocar nada.
+
+**Se vació el 2026-11-01**, y por eso hoy el entorno local es seguro: las dos
+vías de envío (`pushAJugadores` y `pushAAdmins`, `api/_push.js:103` y `:110`)
+leen sólo de esa tabla, así que sin filas no sale nada a Internet. El precio
+es que el push no se puede probar en local —pero tampoco se podía antes sin
+molestar a trece personas.
+
+**Vuelve a aparecer cada vez que se restaura un volcado de producción.** Las
+filas siguen en `backups/prod-clon-20261031-1818.sql` (14 de ellas). Después
+de restaurar, vaciarla otra vez antes de tocar nada que escriba.
 
 Relacionado: [[valoraciones_y_avisos]], [[service_worker]],
 [[cuentas_y_sesiones]], [[entorno_local_docker_y_proxies_neon]].
