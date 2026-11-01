@@ -167,7 +167,9 @@
 
     /* Colores de la grafica. renderChart() ya no escribe ninguno: los
        atributos de presentacion no admiten var(), asi que manda esto. */
-    .chart-shell svg text { fill: var(--vt-faint); }
+    /* --vt-muted y no --vt-faint: son las cifras de los ejes a 11 px, y con
+       --vt-faint se quedan en 3,7 de contraste sobre la tarjeta. */
+    .chart-shell svg text { fill: var(--vt-muted); }
     .chart-shell svg line { stroke: var(--vt-border-strong); }
     .chart-shell svg polyline { stroke: var(--vt-gold); }
     .chart-shell svg circle { fill: var(--vt-gold); stroke: var(--vt-bg); }

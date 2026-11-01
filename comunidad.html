@@ -109,7 +109,9 @@ body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
   padding:4px;text-align:center;
   display:flex;flex-direction:column;justify-content:center;gap:2px;
 }
-.dato__clave{display:block;font-family:var(--vt-font-head);font-size:12px;line-height:14px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-faint)}
+/* --vt-muted, como `.jugador__nota` de arriba y como las etiquetas de
+   /tournaments: con --vt-faint estas 12 px se quedan en 3,4 de contraste. */
+.dato__clave{display:block;font-family:var(--vt-font-head);font-size:12px;line-height:14px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-muted)}
 .dato__valor{display:flex;align-items:center;justify-content:center;gap:2px;font-family:var(--vt-font-head);font-size:14px;line-height:18px;font-weight:700;color:var(--vt-text);overflow-wrap:anywhere}
 .dato--gold .dato__valor{color:var(--vt-gold-soft);text-transform:uppercase}
 .dato--calificacion .dato__valor{color:var(--vt-gold-light)}

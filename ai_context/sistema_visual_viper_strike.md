@@ -218,6 +218,38 @@ sepia. De ahí salía el color de los ejes de la gráfica.
 - **El verde de WhatsApp** en `results.html`: es información sobre a dónde
   lleva el botón, no decoración.
 
+### El contraste, medido después
+
+Barridas las 20 páginas calculando el contraste WCAG de cada texto contra su
+fondo compuesto. Quitar el sepia **sube** el contraste donde estaba peor y lo
+**baja** donde sobraba, pero nada queda por debajo de 4,5:
+
+| | antes | ahora |
+| --- | --- | --- |
+| `/rating-test`, etiqueta «Fecha» | 1,79 | 7,32 |
+| `/comunidad`, clave del dato | 1,88 | 6,53 |
+| `/results`, aviso de pocos jugadores | 3,42 | 10,94 |
+| `/comunidad`, texto sobre oro | 4,58 | 8,65 |
+| `/rating`, categoría más baja | 5,59 | 11,62 |
+| `/comunidad`, nivel del jugador | 10,31 | 6,92 |
+| `/valorar`, texto secundario | 8,09 | 6,92 |
+
+Las bajadas son todas de un gris cálido muy claro a `--vt-muted`, que sigue
+sobrado. Dos sitios se corrigieron **después** de medir, porque la primera
+elección los dejaba cortos: la clave del dato de `/comunidad` y las cifras de
+los ejes de `/players` estaban en `--vt-faint` (3,4 y 3,7) y pasaron a
+`--vt-muted`, que además es lo que ya usaban `.jugador__nota` y las etiquetas
+de `/tournaments`.
+
+**`--vt-faint` no llega a 4,5 en ningún fondo** y eso es de siempre, no de este
+cambio: 3,90 sobre `--vt-bg`, 3,69 sobre `--vt-surface`, 3,45 sobre
+`--vt-surface-2` y 3,02 sobre `--vt-surface-3`. Lo usan el contador de letras
+de `/buzon`, tres marcadores de posición, dos cosas de `/cuenta` y el estado
+«De baja» de la administración de jugadores. Para que llegara a 4,5 en el peor
+fondo habría que subirlo hasta `#8592ab`, y ahí ya casi no se distingue de
+`--vt-silver` (`#94a3b8`) ni de `--vt-muted` (`#9ca3af`): es una decisión de
+diseño, no de normalización, y se dejó sin tocar.
+
 ### Lo que la guarda no ve
 
 `tools/palette.mjs` no mira los `rgba()`. CSS no deja meter una `var()` dentro
