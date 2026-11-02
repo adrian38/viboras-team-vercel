@@ -7,6 +7,7 @@
 // navegador no ofrece activarlos. Detalle: ai_context/avisos_push.md
 import { sql } from '@vercel/postgres';
 import webpush from 'web-push';
+import { randomUUID } from 'node:crypto';
 import { ensureAuthSchema } from './_auth.js';
 
 let listo = null;
@@ -25,6 +26,22 @@ async function crearTabla() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS push_delivery_tests (
+      id SERIAL PRIMARY KEY,
+      batch_id TEXT NOT NULL,
+      receipt_token TEXT NOT NULL UNIQUE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      service TEXT NOT NULL,
+      send_status INTEGER,
+      send_error TEXT,
+      received_at TIMESTAMPTZ,
+      shown_at TIMESTAMPTZ,
+      clicked_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS push_delivery_tests_batch ON push_delivery_tests (user_id, batch_id)`;
 }
 
 export function ensurePushSchema() {
@@ -70,7 +87,7 @@ async function mandarUno(s, cuerpo) {
     await webpush.sendNotification(
       { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
       cuerpo,
-      { TTL: 60 * 60 * 24, timeout: 5000 }
+      { TTL: 60 * 60 * 24, timeout: 5000, urgency: 'high' }
     );
   } catch (err) {
     if (err.statusCode === 404 || err.statusCode === 410) {
@@ -79,6 +96,90 @@ async function mandarUno(s, cuerpo) {
       console.error('push: envio fallido', err.statusCode || '', err.body || err.message);
     }
   }
+}
+
+function servicioDe(endpoint) {
+  try { return new URL(endpoint).hostname; } catch { return '?'; }
+}
+
+async function guardarResultadoPrueba(receiptToken, estado, error = null) {
+  await sql`
+    UPDATE push_delivery_tests
+    SET send_status = ${estado}, send_error = ${error}
+    WHERE receipt_token = ${receiptToken}`;
+}
+
+async function probarUno(userId, batchId, s) {
+  const receiptToken = randomUUID();
+  const servicio = servicioDe(s.endpoint);
+  await sql`
+    INSERT INTO push_delivery_tests (batch_id, receipt_token, user_id, service)
+    VALUES (${batchId}, ${receiptToken}, ${userId}, ${servicio})`;
+  const cuerpo = JSON.stringify({
+    title: 'Víboras Team',
+    body: 'Aviso de prueba: si lo ves, pulsa la notificación.',
+    url: '/cuenta',
+    tag: 'prueba',
+    receiptToken
+  });
+  try {
+    const r = await webpush.sendNotification(
+      { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+      cuerpo,
+      { TTL: 60, timeout: 5000, urgency: 'high', topic: 'vt-prueba' }
+    );
+    await guardarResultadoPrueba(receiptToken, r.statusCode);
+    return { servicio, estado: r.statusCode };
+  } catch (err) {
+    const estado = err.statusCode || 0;
+    if (estado === 404 || estado === 410) await sql`DELETE FROM push_subscriptions WHERE id = ${s.id}`;
+    const error = String(err.body || err.message).slice(0, 120);
+    await guardarResultadoPrueba(receiptToken, estado, error);
+    return { servicio, estado, error };
+  }
+}
+
+export async function pushDePrueba(userId) {
+  if (!configurar()) return { ok: false, error: 'sin_claves' };
+  await ensurePushSchema();
+  await sql`DELETE FROM push_delivery_tests WHERE created_at < now() - interval '7 days'`;
+  const { rows } = await sql`
+    SELECT id, endpoint, p256dh, auth
+    FROM push_subscriptions WHERE user_id = ${userId}`;
+  const testId = randomUUID();
+  const dispositivos = await Promise.all(rows.map((s) => probarUno(userId, testId, s)));
+  return { ok: true, testId, dispositivos };
+}
+
+export async function estadoPrueba(userId, testId) {
+  const { rows } = await sql`
+    SELECT service AS servicio, send_status AS estado, send_error AS error,
+      received_at IS NOT NULL AS recibido,
+      shown_at IS NOT NULL AS mostrado,
+      clicked_at IS NOT NULL AS pulsado
+    FROM push_delivery_tests
+    WHERE user_id = ${userId} AND batch_id = ${testId}
+    ORDER BY id`;
+  return { ok: true, dispositivos: rows };
+}
+
+export async function confirmarPrueba(receiptToken, fase) {
+  if (!/^[0-9a-f-]{36}$/.test(receiptToken)) return false;
+  let resultado;
+  if (fase === 'recibido') {
+    resultado = await sql`UPDATE push_delivery_tests SET received_at = COALESCE(received_at, now())
+      WHERE receipt_token = ${receiptToken} RETURNING id`;
+  } else if (fase === 'mostrado') {
+    resultado = await sql`UPDATE push_delivery_tests SET shown_at = COALESCE(shown_at, now())
+      WHERE receipt_token = ${receiptToken} RETURNING id`;
+  } else if (fase === 'pulsado') {
+    resultado = await sql`UPDATE push_delivery_tests SET clicked_at = COALESCE(clicked_at, now())
+      WHERE receipt_token = ${receiptToken} RETURNING id`;
+  } else {
+    return false;
+  }
+  const { rows } = resultado;
+  return rows.length > 0;
 }
 
 // Nunca lanza: un push que no sale no puede tumbar el guardado de un partido.

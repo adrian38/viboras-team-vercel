@@ -4,7 +4,10 @@
 import { sql } from '@vercel/postgres';
 import { readBody } from './_db.js';
 import { exigirSesion, sinCache } from './_auth.js';
-import { ensurePushSchema, clavePublica, endpointValido } from './_push.js';
+import {
+  ensurePushSchema, clavePublica, endpointValido, pushDePrueba,
+  estadoPrueba, confirmarPrueba
+} from './_push.js';
 
 // Null si el servidor no tiene claves: la pagina entonces no ofrece nada.
 async function clave(req, res) {
@@ -37,16 +40,47 @@ async function baja(req, res, user) {
   res.status(200).json({ ok: true });
 }
 
+async function probar(req, res, user) {
+  res.status(200).json(await pushDePrueba(user.id));
+}
+
+async function estado(req, res, user) {
+  const testId = String(req.query?.id || '');
+  res.status(200).json(await estadoPrueba(user.id, testId));
+}
+
+// El token aleatorio identifica una sola entrega. No exige sesion porque el
+// service worker puede despertarse cuando la cookie ya haya caducado.
+async function confirmar(req, res) {
+  const data = await readBody(req);
+  const ok = await confirmarPrueba(String(data?.token || ''), String(data?.fase || ''));
+  res.status(ok ? 200 : 400).json({ ok });
+}
+
 const ACCIONES = {
   clave: ['GET', clave],
   suscribir: ['POST', suscribir],
-  baja: ['POST', baja]
+  baja: ['POST', baja],
+  probar: ['POST', probar],
+  estado: ['GET', estado]
 };
 
 export default async function handler(req, res) {
+  const action = String(req.query?.action || '').trim();
+  sinCache(res);
+  if (action === 'confirmar') {
+    if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+    try {
+      await ensurePushSchema();
+      await confirmar(req, res);
+    } catch (err) {
+      console.error('push:confirmar error', err);
+      if (!res.headersSent) res.status(500).json({ ok: false, error: 'server_error' });
+    }
+    return;
+  }
   const user = await exigirSesion(req, res);
   if (!user) return;
-  const action = String(req.query?.action || '').trim();
   const entrada = Object.prototype.hasOwnProperty.call(ACCIONES, action) ? ACCIONES[action] : null;
   if (!entrada) {
     res.status(404).json({ ok: false, error: 'unknown_action' });
@@ -57,7 +91,6 @@ export default async function handler(req, res) {
     res.status(405).json({ ok: false, error: 'method_not_allowed' });
     return;
   }
-  sinCache(res);
   try {
     await ensurePushSchema();
     await entrada[1](req, res, user);

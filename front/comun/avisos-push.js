@@ -115,6 +115,58 @@
     sinClaves: 'Avisos al móvil sin configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.'
   };
 
+  function nombreServicio(host) {
+    return String(host || '?').split('.').slice(-3).join('.');
+  }
+
+  function estadoDispositivo(d) {
+    var nombre = nombreServicio(d.servicio);
+    if (d.pulsado) return nombre + ': pulsado';
+    if (d.mostrado) return nombre + ': mostrado por el navegador';
+    if (d.recibido) return nombre + ': recibido por el navegador';
+    if (d.estado >= 200 && d.estado < 300) return nombre + ': aceptado por el servicio (' + d.estado + ')';
+    return nombre + ': rechazado (' + (d.estado || 'sin respuesta') + ')';
+  }
+
+  function resumenPrueba(j) {
+    if (!j || !j.ok) return j && j.error === 'sin_claves' ? 'El servidor no tiene claves.' : 'No se pudo probar.';
+    var dispositivos = j.dispositivos || [];
+    if (!dispositivos.length) return 'Ningún dispositivo suscrito.';
+    return dispositivos.map(estadoDispositivo).join(' · ');
+  }
+
+  function seguirPrueba(testId, b, intentos) {
+    return api('estado&id=' + encodeURIComponent(testId)).then(function (j) {
+      b.textContent = resumenPrueba(j);
+      var pendientes = j && j.dispositivos && j.dispositivos.some(function (d) { return !d.pulsado; });
+      if (pendientes && intentos < 15) {
+        return new Promise(function (resolve) { setTimeout(resolve, 2000); })
+          .then(function () { return seguirPrueba(testId, b, intentos + 1); });
+      }
+      b.disabled = false;
+      b.title = 'Pulsa para repetir la prueba';
+      return j;
+    });
+  }
+
+  function botonProbar() {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'vt-campana__item vt-campana__push';
+    b.textContent = 'Probar aviso';
+    b.addEventListener('click', function () {
+      b.disabled = true;
+      b.textContent = 'Mandando aviso de prueba…';
+      api('probar', {}).then(function (j) {
+        b.textContent = resumenPrueba(j);
+        if (j && j.ok && j.testId) return seguirPrueba(j.testId, b, 0);
+        b.disabled = false;
+        return null;
+      });
+    });
+    return b;
+  }
+
   // El bloque de arriba de la campanita. Se repinta entero cada vez: la
   // campanita borra su panel al rellenarlo. Sin claves en el servidor no
   // salia nada, igual que con todo bien, y no habia forma de saberlo
@@ -122,8 +174,7 @@
   function pintarEnCampana(panel) {
     Promise.all([estado, window.vtMe]).then(function (r) {
       var e = r[0];
-      var viejo = panel.querySelector('.vt-campana__push');
-      if (viejo) viejo.remove();
+      Array.prototype.forEach.call(panel.querySelectorAll('.vt-campana__push'), function (v) { v.remove(); });
       if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
       if (!TEXTOS[e]) return;
       var el = document.createElement(e === 'pendiente' ? 'button' : 'div');
@@ -136,6 +187,7 @@
         });
       }
       panel.insertBefore(el, panel.firstChild);
+      if (e === 'activo') panel.insertBefore(botonProbar(), el.nextSibling);
     });
   }
 

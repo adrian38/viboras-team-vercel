@@ -75,6 +75,16 @@ self.addEventListener('fetch', (event) => {
 
 // Avisos push (api/_push.js). Llegan con la app cerrada; el texto es el mismo
 // que el de la campanita. Detalle: ai_context/avisos_push.md
+function confirmarPrueba(token, fase) {
+  if (!token) return Promise.resolve();
+  return fetch('/api/push?action=confirmar', {
+    method: 'POST',
+    credentials: 'omit',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token, fase })
+  }).catch(() => null);
+}
+
 self.addEventListener('push', (event) => {
   let d = {};
   try {
@@ -82,11 +92,16 @@ self.addEventListener('push', (event) => {
   } catch (e) {
     d = { body: event.data ? event.data.text() : '' };
   }
-  event.waitUntil(self.registration.showNotification(d.title || 'Víboras Team', {
+  const opciones = {
     body: d.body || '',
     icon: '/icon-192.png',
-    data: { url: d.url || '/' }
-  }));
+    tag: d.tag || undefined,
+    data: { url: d.url || '/', receiptToken: d.receiptToken || null }
+  };
+  const recibido = confirmarPrueba(d.receiptToken, 'recibido');
+  const mostrado = self.registration.showNotification(d.title || 'Víboras Team', opciones)
+    .then(() => confirmarPrueba(d.receiptToken, 'mostrado'));
+  event.waitUntil(Promise.all([recibido, mostrado]));
 });
 
 // Solo enlaces de la propia app: lo que venga de fuera abre la portada.
@@ -99,15 +114,15 @@ function destino(url) {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = destino(event.notification.data && event.notification.data.url);
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+  const receiptToken = event.notification.data && event.notification.data.receiptToken;
+  const abrir = self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
       const abierta = ventanas.find((v) => new URL(v.url).origin === self.location.origin);
       if (!abierta) return self.clients.openWindow(url);
       return abierta.focus()
         .then((v) => (v || abierta).navigate(url))
         .catch(() => self.clients.openWindow(url));
-    })
-  );
+    });
+  event.waitUntil(Promise.all([confirmarPrueba(receiptToken, 'pulsado'), abrir]));
 });
 
 // --- Reponer la suscripcion cuando el navegador la rota ------------------

@@ -133,8 +133,8 @@ que hay.
 - `avisos_push.md`: los avisos de la campanita como notificación del móvil;
   qué manda push y desde dónde, por qué la pregunta sale una vez por cuenta y
   dispositivo y el permiso sólo desde un clic, el iPhone sin instalar, las
-  variables VAPID de Vercel y cómo se probó sin poder registrar el service
-  worker en local.
+  variables VAPID de Vercel, la prioridad alta y el diagnóstico verificable
+  de aceptado/recibido/mostrado/pulsado.
 
 ## Lo que escriben los miembros
 

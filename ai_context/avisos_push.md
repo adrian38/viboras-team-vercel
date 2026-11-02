@@ -164,6 +164,46 @@ Entre el 201 del servicio y el `push` del service worker no hay código
 nuestro, así que eso es del teléfono (entrega diferida de FCM o el canal de
 avisos de la app instalada) y queda sin resolver.
 
+## Prioridad alta y diagnóstico por etapas (2026-11-02)
+
+El envío usaba la prioridad Web Push predeterminada: `web-push` genera
+`Urgency: normal` si no se le pasa nada. Eso permite que el servicio retrase el
+mensaje por batería o reposo. Todos los avisos de esta app son visibles y muy
+infrecuentes, así que `mandarUno` los envía ahora con `urgency: 'high'`; el
+aviso de prueba también. No es una garantía del sistema operativo, pero sí la
+indicación estándar para intentar entrega inmediata.
+
+La campanita tiene «Probar aviso» cuando este dispositivo ya está suscrito. La
+prueba no llama «entregado» a un HTTP 201: crea una fila por dispositivo en
+`push_delivery_tests` y distingue cuatro etapas reales:
+
+1. **Aceptado por el servicio**: Google, Apple, Mozilla o Microsoft respondió
+   al POST del servidor. Todavía no prueba que el móvil lo recibiera.
+2. **Recibido por el navegador**: el evento `push` arrancó el service worker y
+   éste confirmó el token aleatorio de esa entrega.
+3. **Mostrado por el navegador**: resolvió `showNotification()`.
+4. **Pulsado**: el usuario tocó la notificación.
+
+El botón consulta el estado cada dos segundos durante treinta segundos. El
+token de confirmación es un UUID impredecible incluido dentro del payload
+cifrado; por eso `/api/push?action=confirmar` no depende de la cookie de sesión:
+el worker puede despertarse mucho después de que caduque. El token sólo permite
+marcar las tres horas de su propia fila y las pruebas se borran a los siete
+días. Consultar el resultado sí exige la cuenta que creó la prueba.
+
+Así se interpreta un fallo:
+
+- aceptado, pero no recibido: retraso o bloqueo entre el servicio push y el
+  navegador/WebAPK;
+- recibido, pero no mostrado: fallo de `showNotification`;
+- mostrado, pero el teléfono no alertó: canal de Android silencioso, permisos
+  del sistema o política del fabricante;
+- pulsado: el camino entero funciona.
+
+Para medir la app cerrada, la prueba se lanza desde otro dispositivo con la
+misma cuenta y se deja el móvil bloqueado. Lanzarla desde el propio móvil lo
+despierta y falsea justo el caso que se quiere comprobar.
+
 ## El entorno local manda avisos a móviles de verdad
 
 Esto no es una advertencia teórica. El 2026-11-01, antes de probar la
