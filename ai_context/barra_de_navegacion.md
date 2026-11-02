@@ -88,6 +88,39 @@ administración (velo de 2000), del toast (2002) y del splash (3000), que es lo
 que tiene que pasar; y por encima del contenido de las tarjetas, que usan
 `--vt-z-contenido`.
 
+## El fundido entre pantallas no se la lleva
+
+El velo de [[transicion_entre_pantallas]] es `--vt-z-transicion` (2003), o sea
+que tapa la barra. Tal cual, la barra **desaparecía en cada salto**: los 160 ms
+de la salida más lo que tardara en cargar la siguiente pantalla, unos 400 ms
+sin barra. Lo vio Adrián el 2026-11-02 y es lo primero que se nota, porque la
+barra es la misma en las veinte pantallas y lo único que no debería moverse.
+
+Tres piezas, y las tres hacen falta:
+
+- `vt-nav.js` pone la clase `vt-nav-puesta` en el `<html>` **en la misma tarea
+  que el `appendChild`** de la barra.
+- `theme.css` recorta el velo sólo con esa clase:
+  `html.vt-transicion.vt-nav-puesta::before{bottom:calc(var(--vt-nav-alto) +
+  env(safe-area-inset-bottom,0px))}`.
+- Y mientras el velo tapa, la barra va opaca
+  (`html.vt-transicion--tapa .vt-nav{background:var(--vt-bg)}`).
+
+**Por qué la clase y no recortar el velo siempre.** En la pantalla que entra,
+el velo está puesto desde el primer pintado y la barra todavía no existe: la
+monta un script con `defer`, que corre después. Con el velo recortado desde el
+principio, ahí abajo se vería la franja de fondo vacía donde debería estar la
+barra. Tapada hasta que la barra está y destapada en cuanto lo está, la barra
+aparece ya hecha y se queda.
+
+**Por qué opaca mientras tapa.** La barra es `--vt-bg` al 94 %. Con el velo
+puesto es lo único sin tapar, así que por ese 6 % asomaría en fantasma la fila
+de la tabla que tenga debajo. Medido con `/rating` desplazado 600 px.
+
+Comprobado el 2026-11-02 en local: con `vt-nav-puesta` el velo mide
+`bottom: 58px` y sin ella `0px`; con el velo forzado opaco, la captura enseña
+la pantalla entera tapada y la barra entera legible.
+
 `sw.js` subió a `viboras-v6` con este cambio: `theme.css` está en el
 `PRECACHE`, así que sin subir la caché un móvil podría montar la barra nueva
 con los estilos viejos y verla sin ningún aspecto.

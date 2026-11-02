@@ -78,6 +78,10 @@
     }
     nav.appendChild(lista);
     document.body.appendChild(nav);
+    // En la misma tarea que el appendChild, no en la siguiente: el velo del
+    // fundido se recorta con esta clase, y si se pintara el recorte un cuadro
+    // antes que la barra se veria la franja de fondo vacia.
+    document.documentElement.classList.add('vt-nav-puesta');
   }
 
   // Se carga con defer, asi que el body ya existe; el if cubre que alguien lo

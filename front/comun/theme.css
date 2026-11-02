@@ -511,6 +511,21 @@ html.vt-transicion::before{
 }
 html.vt-transicion--tapa::before{opacity:1}
 
+/* El velo no tapa la barra de pestanas. La barra es la misma en las veinte
+ * pantallas, asi que verla irse y volver en cada salto es justo lo que se
+ * nota: desaparecia unos 400 ms, los 160 de la salida mas lo que tarde en
+ * cargar la siguiente.
+ *
+ * La condicion es `vt-nav-puesta`, que pone vt-nav.js al colgar la barra, y
+ * no basta con recortar el velo siempre: en la pagina que entra, el velo esta
+ * puesto desde el primer pintado y la barra todavia no existe, asi que ahi
+ * abajo se veria la franja de fondo vacia donde deberia estar. Tapada hasta
+ * que la barra esta, y destapada en cuanto lo esta, la barra aparece ya hecha
+ * y se queda. */
+html.vt-transicion.vt-nav-puesta::before{
+  bottom:calc(var(--vt-nav-alto) + env(safe-area-inset-bottom,0px));
+}
+
 /* -------------------------------------------------------------- botones -- */
 
 .vt-btn{
@@ -774,6 +789,11 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 }
 
 .vt-nav__texto{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Mientras el velo del fundido tapa, la barra va opaca. Es lo unico que queda
+   sin tapar, y por su 6 % de transparencia asomaria en fantasma la fila de la
+   tabla que tenga debajo, que es justo lo que el fundido viene a evitar. */
+html.vt-transicion--tapa .vt-nav{background:var(--vt-bg)}
 
 /* "Rendimiento" es la palabra larga y a 320 px no entra: medido, pide 60 px y
    le quedaban 57, asi que salia con puntos suspensivos. A 9 px pide 54 y
