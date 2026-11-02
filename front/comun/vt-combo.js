@@ -37,12 +37,31 @@ window.vtCombo = (function () {
     return (primera && primera.value === '') ? primera.textContent : 'Buscar';
   }
 
+  // Lo que se escribe es casi siempre el principio de un nombre, asi que
+  // «i» tiene que sacar a Iñigo antes que a Alicia. Tres grados: empieza por
+  // ahi, empieza por ahi un apellido, o lo lleva dentro. -1 es que no cuadra.
+  function grado(nombre, buscado) {
+    var plano = normalizar(nombre);
+    var donde = plano.indexOf(buscado);
+    if (donde === -1) return -1;
+    if (donde === 0) return 0;
+    while (donde !== -1) {
+      if (plano.charAt(donde - 1) === ' ') return 1;
+      donde = plano.indexOf(buscado, donde + 1);
+    }
+    return 2;
+  }
+
+  // Dentro de cada grado se conserva el orden alfabetico con el que llegan.
   function coincidencias(c, escrito) {
     var buscado = normalizar(escrito).trim();
     if (buscado === '') return c.nombres.slice();
-    return c.nombres.filter(function (n) {
-      return normalizar(n).indexOf(buscado) !== -1;
+    var grados = [[], [], []];
+    c.nombres.forEach(function (n) {
+      var cual = grado(n, buscado);
+      if (cual !== -1) grados[cual].push(n);
     });
+    return grados[0].concat(grados[1], grados[2]);
   }
 
   // El campo de texto hereda las clases del select para que cada pagina lo
