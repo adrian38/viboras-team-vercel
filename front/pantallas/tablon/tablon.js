@@ -97,7 +97,37 @@ function fotoDeAviso(a) {
   const img = el('img', 'aviso__foto');
   img.alt = `Foto del aviso: ${a.titulo}`;
   img.dataset.aviso = String(a.id);
+  img.tabIndex = 0;
+  img.setAttribute('role', 'button');
+  img.title = 'Ver la foto a pantalla completa';
+  img.addEventListener('click', () => abrirVisor(img));
+  img.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    abrirVisor(img);
+  });
   return img;
+}
+
+// En la tarjeta la foto va limitada a 70vh; un cartel con letra pequena no se
+// lee ahi. Tocarla la abre entera en un <dialog> modal, que al estar en la top
+// layer no necesita z-index, y un toque o Escape lo cierran. Se crea y se
+// destruye en cada apertura: no hay estado que mantener.
+function abrirVisor(img) {
+  if (!img.src) return;
+  const visor = el('dialog', 'visor');
+  const grande = el('img', 'visor__foto');
+  grande.src = img.src;
+  grande.alt = img.alt;
+  visor.appendChild(grande);
+  // Cerrar y retirar a la vez, como el dialogo de avisos-push: el evento
+  // `close` no es fiable para limpiar (en el navegador de pruebas no llego
+  // nunca), y un <dialog> cerrado que se queda en el DOM se acumula.
+  const cerrar = () => { visor.close(); visor.remove(); };
+  visor.addEventListener('click', cerrar);
+  visor.addEventListener('cancel', cerrar);
+  document.body.appendChild(visor);
+  visor.showModal();
 }
 
 const observador = new IntersectionObserver((entradas) => {
