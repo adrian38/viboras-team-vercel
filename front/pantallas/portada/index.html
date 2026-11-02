@@ -36,27 +36,27 @@
 
 .site{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:var(--vt-md)}
 
-/* Portada: logo y nombre del club, con el boton de normativa encima. */
+/* Portada: el logo, que ya lleva dentro el nombre del club. */
 .hero{max-width:1100px;margin:0 auto var(--vt-lg);text-align:center}
-/* El logo colgaba del boton de NORMATIVA: la barra mide 56 px y sus botones
-   40 centrados, asi que entre el pie del boton y el borde de la imagen solo
-   quedaban 8 px, y el resplandor del logo los comia. display:block para que
-   el margin de arriba no lo trague la linea de texto. */
-/* El mismo aire arriba y abajo del logo, y el mismo hasta la primera
-   tarjeta: en movil el bloque tenia 25 px encima, 16 debajo y 24 hasta las
-   tarjetas, y el escalon se leia como apreton. El margen del titulo estaba
-   en un style= en linea; desde aqui, que si no gana el de la linea. */
-/* El cuadrado negro de debajo del logo es del propio image.png: es opaco y su
+/* El h1 es el logo: el dibujo ya dice «VÍBORAS TEAM» y debajo se repetia en
+   letra. Sigue siendo h1 —la pagina necesita su encabezado— y quien use
+   lector de pantalla oye el alt de la imagen, que es el mismo nombre.
+   El margin del h1 a 0: el del navegador descuadraba el aire de abajo.
+
+   El cuadrado negro que se veia bajo el logo es del propio PNG: es opaco y su
    fondo es #010101, que sobre --vt-bg (#121316) se lee como un recuadro.
    Recortarlo a transparente no se puede sin estropearlo —el cuerpo negro de la
    serpiente toca el fondo, asi que un relleno desde el borde se la comeria—, y
    con mix-blend-mode:screen el negro se funde en el fondo y el logo queda
    suelto. Funciona porque la pagina es casi negra: sobre un fondo claro esto
-   se rompe. Y con el screen puesto, el drop-shadow dorado se quedaba como un
-   rectangulo de luz con la forma del cuadrado, asi que fuera. */
+   se rompe. Con el screen puesto, el drop-shadow dorado que llevaba antes se
+   quedaba como un rectangulo de luz con la forma del cuadrado, asi que fuera.
+
+   display:block para que el margin de arriba no lo trague la linea de texto,
+   y ese mismo aire —var(--vt-lg)— arriba del logo y de ahi a la primera
+   tarjeta, que es el que tenia antes de agrandarlo. */
+.hero h1{margin:0}
 .hero img{display:block;margin:var(--vt-lg) auto 0;mix-blend-mode:screen}
-.hero h1{margin-top:var(--vt-lg);font-size:48px;line-height:52px;letter-spacing:0.01em}
-@media(max-width:720px){.hero h1{font-size:34px;line-height:38px}}
 
 /* Tarjeta de modulo. El resplandor dorado de la esquina es el del mockup. */
 .block{
@@ -288,8 +288,10 @@ label.small{
      estan en las veinte paginas y no solo aqui. La normativa bajo al pie de
      las tarjetas. Lo primero de la portada vuelve a ser el logo. -->
 <div class="hero">
-  <img src="/image.png" alt="Víboras Team" width="112" height="112">
-  <h1><span class="vt-gold-grad">Víboras Team</span></h1>
+  <!-- icon-512.png y no image.png: es el mismo dibujo a 512 px. El de 256
+       valia a 112, pero a 200 en una pantalla de 2x o 3x se desharia la
+       letra fina de «VÍBORAS TEAM» que lleva dentro. -->
+  <h1><img src="/icon-512.png" alt="Víboras Team" width="200" height="200" style="max-width:62vw;height:auto"></h1>
 </div>
 
 <div class="site">
