@@ -62,7 +62,10 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
   tarjeta «Tus avisos» de `/tablon`. La versión `v3` no reutiliza el antiguo
   «ya preguntado» de `v2`, porque se guardó sin ofrecer una decisión explícita
   permanente. No sale en `/cuenta`, `/inscripcion` ni `/group-normativa`, y
-  espera a que termine la pantalla de bienvenida.
+  espera a que termine la pantalla de bienvenida. También se repite si el
+  permiso está bloqueado: el diálogo explica que hay que recuperarlo en los
+  ajustes del navegador o del teléfono, porque la web no puede volver a
+  solicitar automáticamente un permiso denegado.
 - **El permiso del navegador se pide sólo desde un clic.** iOS lo exige y
   Chrome silencia a las webs que lo piden al cargar. Por eso la pregunta es un
   `<dialog>` propio con un botón, no `requestPermission()` directo.

@@ -289,7 +289,7 @@
           if (siguiente === 'sinProbar' || siguiente === 'fallo') preguntarAlAbrir(user, siguiente);
         });
       }
-      else if (e === 'pendiente' || e === 'instalar' || e === 'sinProbar') preguntarAlAbrir(user, e);
+      else if (e === 'pendiente' || e === 'instalar' || e === 'sinProbar' || e === 'bloqueado') preguntarAlAbrir(user, e);
     });
   });
 
@@ -351,6 +351,8 @@
     var texto = document.createElement('p');
     texto.textContent = e === 'instalar'
       ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono para activar los avisos.'
+      : e === 'bloqueado'
+        ? 'Los avisos están bloqueados en este dispositivo. Actívalos en los ajustes de notificaciones del navegador o del teléfono; también verás el estado y las instrucciones en la pestaña Avisos.'
       : e === 'sinProbar'
         ? 'El permiso ya está concedido. Enviaremos una prueba y sólo daremos los avisos por activados cuando este dispositivo confirme que la mostró.'
         : 'Te llegará un aviso con lo mismo que la pestaña Avisos: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
@@ -364,7 +366,7 @@
     opcion.appendChild(document.createTextNode('No volver a recordármelo en este dispositivo'));
     var recordarDecision = function () { if (noVolver.checked) guardarNoRecordar(user); };
     var cerrar = function () { recordarDecision(); d.close(); d.remove(); };
-    if (e === 'instalar') {
+    if (e === 'instalar' || e === 'bloqueado') {
       botones.appendChild(boton('Entendido', 'vt-btn', cerrar));
     } else {
       botones.appendChild(boton('Ahora no', 'vt-btn vt-btn--quiet', cerrar));
