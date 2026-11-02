@@ -191,6 +191,11 @@ el worker puede despertarse mucho después de que caduque. El token sólo permit
 marcar las tres horas de su propia fila y las pruebas se borran a los siete
 días. Consultar el resultado sí exige la cuenta que creó la prueba.
 
+El `fetch` del acuse sí usa `credentials: 'same-origin'`: no para autenticar la
+cuenta, sino porque el Preview protegido necesita su cookie de Vercel antes de
+dejar que la petición alcance la función. Con `omit`, la notificación podía
+mostrarse y el diagnóstico seguía diciendo «no recibido».
+
 Así se interpreta un fallo:
 
 - aceptado, pero no recibido: retraso o bloqueo entre el servicio push y el

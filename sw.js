@@ -79,7 +79,9 @@ function confirmarPrueba(token, fase) {
   if (!token) return Promise.resolve();
   return fetch('/api/push?action=confirmar', {
     method: 'POST',
-    credentials: 'omit',
+    // La API no exige la sesion de la app, pero Preview sí necesita la cookie
+    // de Deployment Protection para dejar que la peticion llegue a la API.
+    credentials: 'same-origin',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ token, fase })
   }).catch(() => null);
