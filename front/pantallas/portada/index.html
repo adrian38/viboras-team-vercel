@@ -43,9 +43,13 @@
    40 centrados, asi que entre el pie del boton y el borde de la imagen solo
    quedaban 8 px, y el resplandor del logo los comia. display:block para que
    el margin de arriba no lo trague la linea de texto. */
+/* El mismo aire arriba y abajo del logo, y el mismo hasta la primera
+   tarjeta: en movil el bloque tenia 25 px encima, 16 debajo y 24 hasta las
+   tarjetas, y el escalon se leia como apreton. El margen del titulo estaba
+   en un style= en linea; desde aqui, que si no gana el de la linea. */
 .hero img{display:block;margin:var(--vt-lg) auto 0}
-.hero h1{font-size:48px;line-height:52px;letter-spacing:0.01em}
-@media(max-width:720px){.hero h1{font-size:34px;line-height:38px}.hero img{margin-top:var(--vt-md)}}
+.hero h1{margin-top:var(--vt-lg);font-size:48px;line-height:52px;letter-spacing:0.01em}
+@media(max-width:720px){.hero h1{font-size:34px;line-height:38px}}
 
 /* Tarjeta de modulo. El resplandor dorado de la esquina es el del mockup. */
 .block{
@@ -290,7 +294,7 @@ label.small{
     </div>
   </div>
   <img src="/image.png" alt="Víboras Team" width="112" height="112" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 6px 24px rgba(245,158,11,0.3))">
-  <h1 style="margin-top:var(--vt-md)"><span class="vt-gold-grad">Víboras Team</span></h1>
+  <h1><span class="vt-gold-grad">Víboras Team</span></h1>
 </div>
 
 <div class="site">
