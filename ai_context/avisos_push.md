@@ -89,14 +89,25 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
   2026-10-18: Adrián no veía ni el botón ni la pregunta, y en local, simulando
   `clave: null` desde un Android emulado, la campanita quedaba idéntica a su
   captura.
-- **«Bloqueados» también se pulsa** (desde el 2026-11-02). Antes era un `div`
-  muerto: el único sitio donde reintentarlo era el diálogo de la apertura, que
-  se puede haber silenciado. Ahora es un `<button>` como «Activar avisos en
-  este dispositivo», y al pulsarlo pide el permiso otra vez. Si el sistema no
-  deja preguntar, la fila se queda con las instrucciones de los ajustes **y no
-  se repinta**: repintar devolvería el texto que invita a pulsar, sin decir que
-  el navegador ni siquiera preguntó. Lo mismo vale para «Activar avisos» cuando
-  el intento acaba en denegado.
+- **«Bloqueados» abre los pasos de los ajustes** (desde el 2026-11-02). Antes
+  era un `div` muerto. Reintentar `requestPermission()` tampoco servía: con el
+  permiso denegado contesta `'denied'` sin abrir nada, así que pulsar sólo
+  cambiaba una frase por otra parecida y parecía estropeado. Ahora el toque
+  abre un `<dialog>` con los pasos del sistema, que `pasosDesbloqueo()` elige
+  según iPhone, Android instalada o navegador. **En Android instalada son dos
+  interruptores distintos**: el de la app (Ajustes → Aplicaciones) y el del
+  sitio dentro de Chrome (Configuración de sitios → Notificaciones); permitir
+  el primero no levanta el segundo, y por eso el cuarto paso nombra el
+  `location.host`.
+- **El permiso se vuelve a mirar al volver a la pantalla.** Permitirlo ocurre
+  fuera de la web y al regresar no hay recarga, así que sin esto la tarjeta
+  seguiría diciendo «bloqueados» con el permiso ya concedido. Lo hace
+  `refrescarPermiso()`, enganchado a `navigator.permissions.query` —su
+  `onchange`— y a `visibilitychange` como red de seguridad. Sólo registra el
+  dispositivo si veníamos de `bloqueado` o `pendiente`: en los demás estados ya
+  hay una suscripción en marcha y repetirla en cada vuelta mandaría una prueba
+  detrás de otra. El botón «Ya los he permitido» del diálogo es ese mismo
+  camino a mano.
 - **Con el permiso concedido, cada carga reenvía la suscripción.** Cubre el
   cerrar sesión y volver a entrar, y que el navegador la renueve.
 - **Al cerrar sesión el dispositivo se da de baja** y la suscripción se

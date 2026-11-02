@@ -140,7 +140,7 @@
     pendiente: 'Activar avisos en este dispositivo',
     instalar: 'Para recibir avisos en el iPhone, instala la app: Compartir → «Añadir a pantalla de inicio».',
     noSoportado: 'Este navegador no admite avisos push. Los avisos siguen disponibles en la pestaña Avisos.',
-    bloqueado: 'Los avisos están bloqueados en este navegador. Pulsa para intentarlo de nuevo, o actívalos en sus ajustes para esta web.',
+    bloqueado: 'Los avisos están bloqueados en este navegador. Pulsa para ver cómo activarlos.',
     sinClaves: 'Avisos al móvil sin configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.'
   };
 
@@ -272,13 +272,15 @@
       if (interactivo) {
         el.type = 'button';
         el.addEventListener('click', function () {
+          // Bloqueado no se arregla desde aqui: requestPermission() contesta
+          // 'denied' sin abrir nada, y el unico efecto visible era cambiar una
+          // frase por otra parecida. Se abre el diálogo con los pasos.
+          if (e === 'bloqueado') return dialogoDesbloqueo();
           activar(e === 'fallo' || e === 'falloEntrega', function (texto) {
             el.textContent = texto;
           }).then(function (ok) {
-            // Repintar volveria a poner TEXTOS.bloqueado, que invita a pulsar
-            // otra vez sin decir que el navegador ni siquiera pregunto.
-            if (!ok && siguePermisoDenegado()) el.textContent = AJUSTES_BLOQUEADO;
-            else pintarEnLista(panel);
+            if (!ok && siguePermisoDenegado()) dialogoDesbloqueo();
+            pintarEnLista(panel);
           });
         });
       }
@@ -287,6 +289,53 @@
       if (e === 'activo' && acciones) {
         acciones.insertBefore(botonProbar(function (texto) { el.textContent = texto; }), acciones.firstChild);
       }
+    });
+  }
+
+  function repintarTarjeta() {
+    var p = document.querySelector('#vtAvisos .vt-avisos__lista');
+    if (p) pintarEnLista(p);
+  }
+
+  // Permitir los avisos se hace fuera de la web, en los ajustes del sistema, y
+  // al volver no hay recarga: sin esto la tarjeta seguiria diciendo
+  // «bloqueados» con el permiso ya concedido hasta la siguiente apertura.
+  function refrescarPermiso() {
+    if (!soporta) return Promise.resolve();
+    return estado.then(function (e) {
+      if (e === 'sinClaves' || e === 'noSoportado' || e === 'instalar') return;
+      var p = Notification.permission;
+      if (p === 'denied') {
+        if (e !== 'bloqueado') { estado = Promise.resolve('bloqueado'); repintarTarjeta(); }
+        return;
+      }
+      if (p === 'default') {
+        if (e !== 'pendiente') { estado = Promise.resolve('pendiente'); repintarTarjeta(); }
+        return;
+      }
+      // Concedido. Solo se actua si veniamos de no tenerlo: en los demas
+      // estados ya hay una suscripcion en marcha y repetirla en cada vuelta a
+      // la pantalla mandaria una prueba detras de otra.
+      if (e !== 'bloqueado' && e !== 'pendiente') return;
+      estado = Promise.resolve('comprobando');
+      repintarTarjeta();
+      return suscribir(false).then(function (j) {
+        estado = Promise.resolve(j && j.ok ? (j.verificado ? 'activo' : 'sinProbar') : 'fallo');
+        repintarTarjeta();
+      });
+    });
+  }
+
+  if (soporta) {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'notifications' })
+        .then(function (st) { st.onchange = function () { refrescarPermiso(); }; })
+        .catch(function () { /* Safari viejo no lo consulta */ });
+    }
+    // La red de seguridad: volver de los ajustes del sistema a la app siempre
+    // pasa por aqui, aunque el navegador no avise del cambio de permiso.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) refrescarPermiso();
     });
   }
 
@@ -360,6 +409,119 @@
     return b;
   }
 
+  // Lo util con el permiso denegado no es reintentar, que el navegador
+  // contesta que no sin preguntar: es decir donde esta el interruptor. El
+  // camino cambia con el sistema y con si la app esta instalada. En iPhone
+  // sin instalar no hay push, asi que ese caso es 'instalar' y no llega aqui.
+  function pasosDesbloqueo() {
+    if (esIOS) {
+      return ['Abre los Ajustes del iPhone.',
+        'Baja hasta «Viboras Team» en la lista de apps y entra.',
+        'Entra en Notificaciones y activa «Permitir notificaciones».'];
+    }
+    if (instalada) {
+      // Dos interruptores distintos: el de la app en Android y el del sitio
+      // dentro de Chrome. Permitir el primero no levanta el segundo.
+      return ['Abre los Ajustes del teléfono.',
+        'Entra en Aplicaciones y busca «Viboras Team».',
+        'Entra en Notificaciones y permítelas.',
+        'Si ya estaban permitidas, abre Chrome y entra en su menú de tres ' +
+          'puntos → Ajustes → Configuración de sitios → Notificaciones, y ' +
+          'busca ' + location.host + '.'];
+    }
+    return ['Abre el menú de tres puntos del navegador, arriba a la derecha.',
+      'Entra en Información del sitio → Permisos → Notificaciones.',
+      'Cámbialo a «Permitir» y vuelve aquí.'];
+  }
+
+  function listaPasos() {
+    var ol = document.createElement('ol');
+    ol.className = 'vt-push-dialogo__pasos';
+    pasosDesbloqueo().forEach(function (paso) {
+      var li = document.createElement('li');
+      li.textContent = paso;
+      ol.appendChild(li);
+    });
+    return ol;
+  }
+
+  // El mensaje se pone antes de esperar nada: registrar el dispositivo puede
+  // tardar, y el boton no puede quedarse en «comprobando…» sin decir en que
+  // quedo el permiso, que es lo que el usuario acaba de ir a tocar.
+  function comprobarDeNuevo(decir) {
+    if (Notification.permission === 'denied') {
+      decir('Este dispositivo sigue diciendo que están bloqueados. Repasa los pasos y vuelve a pulsar.');
+      return Promise.resolve();
+    }
+    if (Notification.permission === 'default') {
+      decir('Pidiendo permiso al navegador…');
+      return activar(false, decir).then(function (ok) {
+        decir(ok
+          ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
+          : 'El navegador no dio el permiso. Revísalo en sus ajustes y vuelve a pulsar.');
+      });
+    }
+    decir('Permiso concedido. Registrando este dispositivo…');
+    return refrescarPermiso().then(function () {
+      return estado.then(function (e) { if (TEXTOS[e]) decir(TEXTOS[e]); });
+    });
+  }
+
+  // Lo que se abre al pulsar «bloqueados» en la tarjeta: los pasos del
+  // sistema y un boton para volver a mirar el permiso al regresar de ellos.
+  function dialogoDesbloqueo() {
+    var d = document.createElement('dialog');
+    d.className = 'vt-push-dialogo';
+    var titulo = document.createElement('h2');
+    titulo.textContent = 'Avisos bloqueados en este dispositivo';
+    var texto = document.createElement('p');
+    texto.textContent = 'El navegador no nos deja volver a pedirlo: hay que permitirlo en los ajustes.';
+    var botones = document.createElement('div');
+    botones.className = 'vt-push-dialogo__botones';
+    var cerrar = function () { d.close(); d.remove(); };
+    botones.appendChild(boton('Cerrar', 'vt-btn vt-btn--quiet', cerrar));
+    botones.appendChild(boton('Ya los he permitido', 'vt-btn', function () {
+      comprobarDeNuevo(function (mensaje) { texto.textContent = mensaje; });
+    }));
+    d.appendChild(titulo);
+    d.appendChild(texto);
+    d.appendChild(listaPasos());
+    d.appendChild(botones);
+    document.body.appendChild(d);
+    d.showModal();
+  }
+
+  // El boton que de verdad hace algo en la pregunta de la apertura. Con el
+  // permiso denegado no intenta registrar nada: vuelve a mirar el permiso,
+  // que es lo unico que cambia yendo a los ajustes, y deja volver a pulsar.
+  function botonPrincipal(c) {
+    return boton(c.e === 'sinProbar' ? 'Comprobar avisos' : 'Activar avisos', 'vt-btn', function () {
+      c.recordarDecision();
+      var todos = c.botones.querySelectorAll('button');
+      Array.prototype.forEach.call(todos, function (b) { b.disabled = true; });
+      var decir = function (mensaje) { c.texto.textContent = mensaje; };
+      if (c.e === 'bloqueado') {
+        return comprobarDeNuevo(decir).then(function () {
+          Array.prototype.forEach.call(todos, function (b) { b.disabled = false; });
+          repintarTarjeta();
+        });
+      }
+      decir('Registrando este dispositivo…');
+      activar(false, decir).then(function (ok) {
+        var denegado = siguePermisoDenegado();
+        decir(ok
+          ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
+          : denegado
+            ? AJUSTES_BLOQUEADO
+            : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la pestaña Avisos.');
+        if (denegado) c.d.insertBefore(listaPasos(), c.opcion);
+        while (c.botones.firstChild) c.botones.firstChild.remove();
+        c.botones.appendChild(boton('Cerrar', 'vt-btn', c.cerrar));
+        repintarTarjeta();
+      });
+    });
+  }
+
   function mostrarDialogo(user, e) {
     var d = document.createElement('dialog');
     d.className = 'vt-push-dialogo';
@@ -369,7 +531,7 @@
     texto.textContent = e === 'instalar'
       ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono para activar los avisos.'
       : e === 'bloqueado'
-        ? AJUSTES_BLOQUEADO + ' También verás el estado y las instrucciones en la pestaña Avisos.'
+        ? AJUSTES_BLOQUEADO + ' El navegador no nos deja volver a preguntártelo, así que el interruptor está fuera de la app:'
       : e === 'sinProbar'
         ? 'El permiso ya está concedido. Enviaremos una prueba y sólo daremos los avisos por activados cuando este dispositivo confirme que la mostró.'
         : 'Te llegará un aviso con lo mismo que la pestaña Avisos: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
@@ -387,26 +549,16 @@
       botones.appendChild(boton('Entendido', 'vt-btn', cerrar));
     } else {
       botones.appendChild(boton('Ahora no', 'vt-btn vt-btn--quiet', cerrar));
-      botones.appendChild(boton(e === 'sinProbar' ? 'Comprobar avisos' : 'Activar avisos', 'vt-btn', function () {
-        recordarDecision();
-        Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = true; });
-        texto.textContent = e === 'bloqueado' ? 'Pidiendo permiso al navegador…' : 'Registrando este dispositivo…';
-        activar(false, function (mensaje) { texto.textContent = mensaje; }).then(function (ok) {
-          var denegado = siguePermisoDenegado();
-          texto.textContent = ok
-            ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
-            : denegado
-              ? AJUSTES_BLOQUEADO
-              : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la pestaña Avisos.';
-          while (botones.firstChild) botones.firstChild.remove();
-          botones.appendChild(boton('Cerrar', 'vt-btn', cerrar));
-          var p = document.querySelector('#vtAvisos .vt-avisos__lista');
-          if (p) pintarEnLista(p);
-        });
+      botones.appendChild(botonPrincipal({
+        d: d, e: e, texto: texto, botones: botones, opcion: opcion,
+        cerrar: cerrar, recordarDecision: recordarDecision
       }));
     }
     d.appendChild(titulo);
     d.appendChild(texto);
+    // Con el permiso denegado los pasos van desde el principio: son lo unico
+    // que puede arreglarlo, y el boton solo sirve despues de darlos.
+    if (e === 'bloqueado') d.appendChild(listaPasos());
     d.appendChild(opcion);
     d.appendChild(botones);
     d.addEventListener('cancel', recordarDecision);

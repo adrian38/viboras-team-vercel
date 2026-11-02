@@ -445,6 +445,8 @@ button.vt-avisos__push:hover{color:var(--vt-gold-light)}
 .vt-push-dialogo p{margin:0;color:var(--vt-muted);font-size:14px;line-height:21px}
 .vt-push-dialogo__no-recordar{display:flex;align-items:center;gap:var(--vt-sm);margin-top:var(--vt-lg);color:var(--vt-muted);font-size:13px;line-height:18px;cursor:pointer}
 .vt-push-dialogo__no-recordar input{width:18px;height:18px;margin:0;accent-color:var(--vt-gold)}
+.vt-push-dialogo__pasos{margin:var(--vt-md) 0 0;padding-left:22px;color:var(--vt-text);font-size:14px;line-height:21px}
+.vt-push-dialogo__pasos li{margin-top:var(--vt-xs)}
 .vt-push-dialogo__botones{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--vt-sm);margin-top:var(--vt-lg)}
 
 /* ------------------------------------------------------ carga en curso -- */
