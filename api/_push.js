@@ -41,6 +41,14 @@ async function crearTabla() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_received_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_shown_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_clicked_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_send_status INTEGER`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_send_error TEXT`;
+  await sql`ALTER TABLE push_delivery_tests ADD COLUMN IF NOT EXISTS subscription_id INTEGER REFERENCES push_subscriptions(id) ON DELETE SET NULL`;
   await sql`CREATE INDEX IF NOT EXISTS push_delivery_tests_batch ON push_delivery_tests (user_id, batch_id)`;
 }
 
@@ -80,21 +88,52 @@ export function endpointValido(texto) {
   return SERVICIOS.some((s) => url.hostname.endsWith(s));
 }
 
-// 404 y 410 son el servicio diciendo que esa suscripcion ya no existe (app
-// desinstalada, permiso retirado): se borra para no insistir.
-async function mandarUno(s, cuerpo) {
+async function guardarResultadoEntrega(subscriptionId, receiptToken, estado, error = null) {
+  await sql`
+    UPDATE push_delivery_tests
+    SET send_status = ${estado}, send_error = ${error}
+    WHERE receipt_token = ${receiptToken}`;
+  await sql`
+    UPDATE push_subscriptions
+    SET last_send_status = ${estado}, last_send_error = ${error}, updated_at = now()
+    WHERE id = ${subscriptionId}`;
+}
+
+async function registrarEntrega(userId, batchId, s) {
+  const receiptToken = randomUUID();
+  await sql`
+    INSERT INTO push_delivery_tests (batch_id, receipt_token, user_id, service, subscription_id)
+    VALUES (${batchId}, ${receiptToken}, ${userId}, ${servicioDe(s.endpoint)}, ${s.id})`;
+  return receiptToken;
+}
+
+async function enviarUno(userId, batchId, s, aviso, opciones) {
+  const receiptToken = await registrarEntrega(userId, batchId, s);
+  const envio = { TTL: opciones.ttl, timeout: 5000, urgency: 'high' };
+  if (opciones.topic) envio.topic = opciones.topic;
+  const cuerpo = JSON.stringify({
+    title: aviso.title || 'Víboras Team', body: aviso.body || '',
+    url: aviso.url || '/', tag: aviso.tag, receiptToken
+  });
   try {
-    await webpush.sendNotification(
+    const r = await webpush.sendNotification(
       { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
       cuerpo,
-      { TTL: 60 * 60 * 24, timeout: 5000, urgency: 'high' }
+      envio
     );
+    await guardarResultadoEntrega(s.id, receiptToken, r.statusCode);
+    return { servicio: servicioDe(s.endpoint), estado: r.statusCode };
   } catch (err) {
+    const estado = err.statusCode || 0;
+    // 404 y 410: la app se desinstalo o el permiso se retiro.
     if (err.statusCode === 404 || err.statusCode === 410) {
       await sql`DELETE FROM push_subscriptions WHERE id = ${s.id}`;
     } else {
       console.error('push: envio fallido', err.statusCode || '', err.body || err.message);
     }
+    const error = String(err.body || err.message).slice(0, 120);
+    await guardarResultadoEntrega(s.id, receiptToken, estado, error);
+    return { servicio: servicioDe(s.endpoint), estado, error };
   }
 }
 
@@ -102,41 +141,11 @@ function servicioDe(endpoint) {
   try { return new URL(endpoint).hostname; } catch { return '?'; }
 }
 
-async function guardarResultadoPrueba(receiptToken, estado, error = null) {
-  await sql`
-    UPDATE push_delivery_tests
-    SET send_status = ${estado}, send_error = ${error}
-    WHERE receipt_token = ${receiptToken}`;
-}
-
 async function probarUno(userId, batchId, s) {
-  const receiptToken = randomUUID();
-  const servicio = servicioDe(s.endpoint);
-  await sql`
-    INSERT INTO push_delivery_tests (batch_id, receipt_token, user_id, service)
-    VALUES (${batchId}, ${receiptToken}, ${userId}, ${servicio})`;
-  const cuerpo = JSON.stringify({
-    title: 'Víboras Team',
-    body: 'Aviso de prueba: si lo ves, pulsa la notificación.',
-    url: '/cuenta',
-    tag: 'prueba',
-    receiptToken
-  });
-  try {
-    const r = await webpush.sendNotification(
-      { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-      cuerpo,
-      { TTL: 60, timeout: 5000, urgency: 'high', topic: 'vt-prueba' }
-    );
-    await guardarResultadoPrueba(receiptToken, r.statusCode);
-    return { servicio, estado: r.statusCode };
-  } catch (err) {
-    const estado = err.statusCode || 0;
-    if (estado === 404 || estado === 410) await sql`DELETE FROM push_subscriptions WHERE id = ${s.id}`;
-    const error = String(err.body || err.message).slice(0, 120);
-    await guardarResultadoPrueba(receiptToken, estado, error);
-    return { servicio, estado, error };
-  }
+  return enviarUno(userId, batchId, s, {
+    title: 'Víboras Team', body: 'Aviso de prueba: la entrega funciona.',
+    url: '/cuenta', tag: 'prueba'
+  }, { ttl: 60, topic: 'vt-prueba' });
 }
 
 export async function pushDePrueba(userId, endpoint) {
@@ -169,17 +178,24 @@ export async function confirmarPrueba(receiptToken, fase) {
   let resultado;
   if (fase === 'recibido') {
     resultado = await sql`UPDATE push_delivery_tests SET received_at = COALESCE(received_at, now())
-      WHERE receipt_token = ${receiptToken} RETURNING id`;
+      WHERE receipt_token = ${receiptToken} RETURNING id, subscription_id`;
   } else if (fase === 'mostrado') {
     resultado = await sql`UPDATE push_delivery_tests SET shown_at = COALESCE(shown_at, now())
-      WHERE receipt_token = ${receiptToken} RETURNING id`;
+      WHERE receipt_token = ${receiptToken} RETURNING id, subscription_id`;
   } else if (fase === 'pulsado') {
     resultado = await sql`UPDATE push_delivery_tests SET clicked_at = COALESCE(clicked_at, now())
-      WHERE receipt_token = ${receiptToken} RETURNING id`;
+      WHERE receipt_token = ${receiptToken} RETURNING id, subscription_id`;
   } else {
     return false;
   }
   const { rows } = resultado;
+  const subscriptionId = rows[0]?.subscription_id;
+  if (subscriptionId && fase === 'recibido') await sql`
+    UPDATE push_subscriptions SET last_received_at = now() WHERE id = ${subscriptionId}`;
+  if (subscriptionId && fase === 'mostrado') await sql`
+    UPDATE push_subscriptions SET last_shown_at = now(), verified_at = COALESCE(verified_at, now()) WHERE id = ${subscriptionId}`;
+  if (subscriptionId && fase === 'pulsado') await sql`
+    UPDATE push_subscriptions SET last_clicked_at = now() WHERE id = ${subscriptionId}`;
   return rows.length > 0;
 }
 
@@ -189,9 +205,11 @@ async function mandar(consulta, aviso) {
   if (!configurar()) return;
   try {
     await ensurePushSchema();
+    await sql`DELETE FROM push_delivery_tests WHERE created_at < now() - interval '7 days'`;
     const { rows } = await consulta();
-    const cuerpo = JSON.stringify({ title: 'Víboras Team', body: aviso.texto, url: aviso.enlace || '/' });
-    await Promise.all(rows.map((s) => mandarUno(s, cuerpo)));
+    const batchId = randomUUID();
+    const cuerpo = { title: 'Víboras Team', body: aviso.texto, url: aviso.enlace || '/' };
+    await Promise.all(rows.map((s) => enviarUno(s.user_id, batchId, s, cuerpo, { ttl: 60 * 60 * 24 })));
   } catch (err) {
     console.error('push: error', err);
   }
@@ -202,14 +220,14 @@ export function pushAJugadores(playerIds, aviso) {
   const ids = [...new Set(playerIds.filter(Boolean))];
   if (!ids.length) return Promise.resolve();
   return mandar(() => sql`
-    SELECT s.id, s.endpoint, s.p256dh, s.auth
+    SELECT s.id, s.user_id, s.endpoint, s.p256dh, s.auth
     FROM push_subscriptions s JOIN users u ON u.id = s.user_id
     WHERE u.status = 'active' AND u.player_id = ANY(${ids}::int[])`, aviso);
 }
 
 export function pushAAdmins(aviso) {
   return mandar(() => sql`
-    SELECT s.id, s.endpoint, s.p256dh, s.auth
+    SELECT s.id, s.user_id, s.endpoint, s.p256dh, s.auth
     FROM push_subscriptions s JOIN users u ON u.id = s.user_id
     WHERE u.status = 'active' AND u.role = 'admin'`, aviso);
 }

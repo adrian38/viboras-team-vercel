@@ -53,9 +53,11 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
 - **`avisos-push.js` no está en ningún `<head>`.** Lo inyecta `auth-client.js`
   cuando hay sesión, así que llega a las 18 páginas sin tocarlas.
 - **La pregunta sale una vez por cuenta y dispositivo** (`localStorage`,
-  `vt-push-preguntado:<correo>`), no al pulsar nada. Petición de Adrián: al
-  entrar por primera vez tras ser aceptado. Si dice que no, queda el botón de
-  la campanita. No sale en `/cuenta`, `/inscripcion` ni `/group-normativa`, y
+  `vt-push-configurado-v2:<correo>`), no al pulsar nada. Petición de Adrián: al
+  entrar por primera vez tras ser aceptado. La versión `v2` fuerza una única
+  comprobación guiada también a quienes ya habían aceptado el permiso antes
+  del 2026-11-02. Si dice que no o la entrega falla, queda el botón de la
+  campanita. No sale en `/cuenta`, `/inscripcion` ni `/group-normativa`, y
   espera a que termine la pantalla de bienvenida.
 - **El permiso del navegador se pide sólo desde un clic.** iOS lo exige y
   Chrome silencia a las webs que lo piden al cargar. Por eso la pregunta es un
@@ -184,7 +186,7 @@ prueba no llama «entregado» a un HTTP 201: crea una fila por dispositivo en
 3. **Mostrado por el navegador**: resolvió `showNotification()`.
 4. **Pulsado**: el usuario tocó la notificación.
 
-El botón consulta el estado cada dos segundos durante treinta segundos. El
+El botón consulta el estado cada dos segundos durante cincuenta segundos. El
 token de confirmación es un UUID impredecible incluido dentro del payload
 cifrado; por eso `/api/push?action=confirmar` no depende de la cookie de sesión:
 el worker puede despertarse mucho después de que caduque. El token sólo permite
@@ -227,6 +229,31 @@ fila de esa cuenta. Si responde 404 o 410, el cliente hace una sola reparación:
 desuscribe el endpoint muerto, crea otro con la VAPID vigente, lo guarda y
 repite la prueba. La campana tampoco llama «activo» al mero permiso: primero
 espera a que el alta del endpoint responda bien y, si no, ofrece reintentar.
+
+### Activación verificada y acuse para todos los avisos (2026-11-02)
+
+Conceder el permiso y guardar un endpoint ya no significa «avisos activados».
+La activación completa hace este recorrido desde el mismo diálogo:
+
+1. pide el permiso desde el clic del usuario;
+2. crea o renueva la suscripción y la guarda para esa cuenta;
+3. manda una prueba sólo a ese endpoint;
+4. enseña en directo si el servicio la aceptó, el worker la recibió y el
+   navegador la mostró;
+5. sólo guarda `verified_at` y dice «activados» después de `mostrado`.
+
+Si el navegador no implementa Web Push, la interfaz lo declara expresamente y
+la campanita interna sigue siendo el respaldo. En iOS se conserva el requisito
+de instalar la web en la pantalla de inicio; en cualquier plataforma el sistema
+operativo aún puede silenciar o retrasar una notificación pese a que
+`showNotification()` haya resuelto, algo que una web no puede sobreescribir.
+
+El acuse ya no pertenece sólo al botón de prueba. Cada envío real crea su fila
+en `push_delivery_tests`, mete un `receiptToken` en el payload y actualiza en
+`push_subscriptions` el último estado del servicio, error, recibido, mostrado y
+pulsado. Las filas de entrega se conservan siete días. Así se puede distinguir
+un fallo de la app, del servicio push y del teléfono sin adivinar ni llamar
+«entregado» a un 201.
 
 ## El entorno local manda avisos a móviles de verdad
 

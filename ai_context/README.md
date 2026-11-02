@@ -134,9 +134,10 @@ que hay.
 - `avisos_push.md`: los avisos de la campanita como notificación del móvil;
   qué manda push y desde dónde, por qué la pregunta sale una vez por cuenta y
   dispositivo y el permiso sólo desde un clic, el iPhone sin instalar, las
-  variables VAPID de Vercel, la prioridad alta y el diagnóstico verificable
-  de aceptado/recibido/mostrado/pulsado; y el caso de Nothing OS que retenía el
-  trabajo de Chrome por un estado térmico severo atascado.
+  variables VAPID de Vercel, la activación verificada con una entrega real, el
+  acuse de todos los avisos y el diagnóstico de aceptado/recibido/mostrado/
+  pulsado; y el caso de Nothing OS que retenía el trabajo de Chrome por un
+  estado térmico severo atascado.
 
 ## Lo que escriben los miembros
 

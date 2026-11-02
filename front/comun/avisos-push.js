@@ -44,7 +44,7 @@
   // tiene VAPID: solo se lo dice a los administradores) o null.
   var estado = clave.then(function (k) {
     if (!k) return 'sinClaves';
-    if (!soporta) return esIOS && !instalada ? 'instalar' : null;
+    if (!soporta) return esIOS && !instalada ? 'instalar' : 'noSoportado';
     if (Notification.permission === 'denied') return 'bloqueado';
     return Notification.permission === 'granted' ? 'comprobando' : 'pendiente';
   });
@@ -79,23 +79,35 @@
         return renovar(reg, s, r[1], Boolean(forzar));
       });
     }).then(function (s) {
-      return api('suscribir', s.toJSON()).then(function (j) { return Boolean(j && j.ok); });
+      return api('suscribir', s.toJSON());
     }).catch(function (err) {
       console.warn('No se pudieron activar los avisos:', err);
-      return false;
+      return null;
     });
   }
 
-  function activar(forzar) {
+  function activar(forzar, actualizar) {
     return Notification.requestPermission().then(function (p) {
       if (p !== 'granted') {
         estado = Promise.resolve(p === 'denied' ? 'bloqueado' : 'pendiente');
         return false;
       }
       estado = Promise.resolve('comprobando');
-      return suscribir(forzar).then(function (ok) {
-        estado = Promise.resolve(ok ? 'activo' : 'fallo');
-        return ok;
+      return suscribir(forzar).then(function (j) {
+        if (!j || !j.ok) {
+          estado = Promise.resolve('fallo');
+          return false;
+        }
+        if (j.verificado) {
+          estado = Promise.resolve('activo');
+          return true;
+        }
+        estado = Promise.resolve('sinProbar');
+        return mandarPrueba(actualizar || function () {}, false).then(function (prueba) {
+          var ok = pruebaMostrada(prueba);
+          estado = Promise.resolve(ok ? 'activo' : 'falloEntrega');
+          return ok;
+        });
       });
     });
   }
@@ -118,8 +130,11 @@
     activo: 'Avisos activados en este dispositivo.',
     comprobando: 'Comprobando avisos en este dispositivo…',
     fallo: 'El permiso está activo, pero no se pudo registrar este dispositivo. Reintentar.',
+    sinProbar: 'El dispositivo está registrado, pero falta comprobar que recibe avisos. Probar ahora.',
+    falloEntrega: 'El servicio aceptó la prueba, pero este dispositivo no confirmó que la mostrara. Revisar y reintentar.',
     pendiente: 'Activar avisos en este dispositivo',
     instalar: 'Para recibir avisos en el iPhone, instala la app: Compartir → «Añadir a pantalla de inicio».',
+    noSoportado: 'Este navegador no admite avisos push. Los avisos siguen disponibles en la campanita.',
     bloqueado: 'Los avisos están bloqueados en este navegador. Actívalos en sus ajustes para esta web.',
     sinClaves: 'Avisos al móvil sin configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.'
   };
@@ -144,16 +159,23 @@
     return dispositivos.map(estadoDispositivo).join(' · ');
   }
 
-  function seguirPrueba(testId, b, intentos) {
+  function pruebaMostrada(j) {
+    return Boolean(j && j.dispositivos && j.dispositivos.some(function (d) { return d.mostrado; }));
+  }
+
+  function pruebaPendiente(j) {
+    return Boolean(j && j.dispositivos && j.dispositivos.some(function (d) {
+      return d.estado >= 200 && d.estado < 300 && !d.mostrado;
+    }));
+  }
+
+  function seguirPrueba(testId, actualizar, intentos) {
     return api('estado&id=' + encodeURIComponent(testId)).then(function (j) {
-      b.textContent = resumenPrueba(j);
-      var pendientes = j && j.dispositivos && j.dispositivos.some(function (d) { return !d.pulsado; });
-      if (pendientes && intentos < 15) {
+      actualizar(resumenPrueba(j));
+      if (pruebaPendiente(j) && intentos < 25) {
         return new Promise(function (resolve) { setTimeout(resolve, 2000); })
-          .then(function () { return seguirPrueba(testId, b, intentos + 1); });
+          .then(function () { return seguirPrueba(testId, actualizar, intentos + 1); });
       }
-      b.disabled = false;
-      b.title = 'Pulsa para repetir la prueba';
       return j;
     });
   }
@@ -164,26 +186,25 @@
   }
 
   function prepararPrueba(forzar) {
-    return suscribir(forzar).then(function (ok) {
-      if (!ok) return null;
+    return suscribir(forzar).then(function (j) {
+      if (!j || !j.ok) return null;
       return navigator.serviceWorker.ready.then(function (reg) {
         return reg.pushManager.getSubscription();
       });
     });
   }
 
-  function mandarPrueba(b, reparado) {
+  function mandarPrueba(actualizar, reparado) {
     return prepararPrueba(reparado).then(function (s) {
       if (!s) return null;
       return api('probar', { endpoint: s.endpoint });
     }).then(function (j) {
       if (!reparado && pruebaCaducada(j)) {
-        b.textContent = 'Renovando la suscripción caducada…';
-        return mandarPrueba(b, true);
+        actualizar('Renovando la suscripción caducada…');
+        return mandarPrueba(actualizar, true);
       }
-      b.textContent = resumenPrueba(j);
-      if (j && j.ok && j.testId) return seguirPrueba(j.testId, b, 0);
-      b.disabled = false;
+      actualizar(resumenPrueba(j));
+      if (j && j.ok && j.testId) return seguirPrueba(j.testId, actualizar, 0);
       return j;
     });
   }
@@ -196,7 +217,11 @@
     b.addEventListener('click', function () {
       b.disabled = true;
       b.textContent = 'Mandando aviso de prueba…';
-      mandarPrueba(b, false);
+      mandarPrueba(function (texto) { b.textContent = texto; }, false).then(function (j) {
+        estado = Promise.resolve(pruebaMostrada(j) ? 'activo' : 'falloEntrega');
+        b.disabled = false;
+        b.title = 'Pulsa para repetir la prueba';
+      });
     });
     return b;
   }
@@ -211,14 +236,16 @@
       Array.prototype.forEach.call(panel.querySelectorAll('.vt-campana__push'), function (v) { v.remove(); });
       if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
       if (!TEXTOS[e]) return;
-      var interactivo = e === 'pendiente' || e === 'fallo';
+      var interactivo = e === 'pendiente' || e === 'fallo' || e === 'sinProbar' || e === 'falloEntrega';
       var el = document.createElement(interactivo ? 'button' : 'div');
       el.className = 'vt-campana__item vt-campana__push';
       el.textContent = TEXTOS[e];
       if (interactivo) {
         el.type = 'button';
         el.addEventListener('click', function () {
-          activar(e === 'fallo').then(function () { pintarEnCampana(panel); });
+          activar(e === 'fallo' || e === 'falloEntrega', function (texto) {
+            el.textContent = texto;
+          }).then(function () { pintarEnCampana(panel); });
         });
       }
       panel.insertBefore(el, panel.firstChild);
@@ -235,23 +262,25 @@
     if (!user) return;
     estado.then(function (e) {
       if (e === 'comprobando') {
-        suscribir(false).then(function (ok) {
-          estado = Promise.resolve(ok ? 'activo' : 'fallo');
+        suscribir(false).then(function (j) {
+          var siguiente = j && j.ok ? (j.verificado ? 'activo' : 'sinProbar') : 'fallo';
+          estado = Promise.resolve(siguiente);
           if (panel) pintarEnCampana(panel);
+          if (siguiente === 'sinProbar') preguntarUnaVez(user, siguiente);
         });
       }
-      else if (e === 'pendiente' || e === 'instalar') preguntarUnaVez(user, e);
+      else if (e === 'pendiente' || e === 'instalar' || e === 'sinProbar') preguntarUnaVez(user, e);
     });
   });
 
   // --- La pregunta de la primera vez -------------------------------------
 
   function yaPreguntado(user) {
-    try { return localStorage.getItem('vt-push-preguntado:' + user.email) === '1'; } catch (e) { return true; }
+    try { return localStorage.getItem('vt-push-configurado-v2:' + user.email) === '1'; } catch (e) { return true; }
   }
 
   function marcarPreguntado(user) {
-    try { localStorage.setItem('vt-push-preguntado:' + user.email, '1'); } catch (e) { /* sin almacenamiento */ }
+    try { localStorage.setItem('vt-push-configurado-v2:' + user.email, '1'); } catch (e) { /* sin almacenamiento */ }
   }
 
   // En estas se esta entrando o dandose de alta: no es el momento.
@@ -293,7 +322,9 @@
     var texto = document.createElement('p');
     texto.textContent = e === 'instalar'
       ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono y te lo volveremos a preguntar.'
-      : 'Te llegará un aviso con lo mismo que la campanita: partidos para valorar, resultados que alguien ha editado… Si ahora no, puedes activarlos luego desde la campanita.';
+      : e === 'sinProbar'
+        ? 'El permiso ya está concedido. Enviaremos una prueba y sólo daremos los avisos por activados cuando este dispositivo confirme que la mostró.'
+        : 'Te llegará un aviso con lo mismo que la campanita: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
     var botones = document.createElement('div');
     botones.className = 'vt-push-dialogo__botones';
     var cerrar = function () { marcarPreguntado(user); d.close(); d.remove(); };
@@ -301,12 +332,19 @@
       botones.appendChild(boton('Entendido', 'vt-btn', cerrar));
     } else {
       botones.appendChild(boton('Ahora no', 'vt-btn vt-btn--quiet', cerrar));
-      botones.appendChild(boton('Activar avisos', 'vt-btn', function () {
-        activar().then(function () {
+      botones.appendChild(boton(e === 'sinProbar' ? 'Comprobar avisos' : 'Activar avisos', 'vt-btn', function () {
+        marcarPreguntado(user);
+        Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = true; });
+        texto.textContent = 'Registrando este dispositivo…';
+        activar(false, function (mensaje) { texto.textContent = mensaje; }).then(function (ok) {
+          texto.textContent = ok
+            ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
+            : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la campanita.';
+          while (botones.firstChild) botones.firstChild.remove();
+          botones.appendChild(boton('Cerrar', 'vt-btn', cerrar));
           var p = document.querySelector('#vtCampana .vt-campana__panel');
           if (p) pintarEnCampana(p);
         });
-        cerrar();
       }));
     }
     d.appendChild(titulo);

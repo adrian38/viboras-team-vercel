@@ -25,12 +25,17 @@ async function suscribir(req, res, user) {
     res.status(400).json({ ok: false, error: 'bad_subscription' });
     return;
   }
-  await sql`
+  const { rows } = await sql`
     INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
     VALUES (${user.id}, ${endpoint}, ${p256dh}, ${auth})
     ON CONFLICT (endpoint) DO UPDATE SET
-      user_id = EXCLUDED.user_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth`;
-  res.status(200).json({ ok: true });
+      user_id = EXCLUDED.user_id,
+      verified_at = CASE
+        WHEN push_subscriptions.p256dh = EXCLUDED.p256dh AND push_subscriptions.auth = EXCLUDED.auth
+        THEN push_subscriptions.verified_at ELSE NULL END,
+      p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, updated_at = now()
+    RETURNING verified_at IS NOT NULL AS verificado`;
+  res.status(200).json({ ok: true, verificado: Boolean(rows[0]?.verificado) });
 }
 
 // Al cerrar sesion (cuenta.html): ese movil deja de recibir los avisos.
