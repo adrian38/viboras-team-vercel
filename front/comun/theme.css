@@ -101,6 +101,9 @@
   /* El toast confirma guardados que se hacen dentro del panel de
      administracion, que es un velo: con 100 quedaba debajo y no se veia. */
   --vt-z-toast:2002;
+  /* El velo del cambio de pantalla, encima de todo lo de la pagina que se
+     esta yendo —velos y modales incluidos— y debajo del splash. */
+  --vt-z-transicion:2003;
   --vt-z-splash:3000;
 
   /* Alto de la barra de pestanas inferior. Lo usan la barra, el hueco que le
@@ -483,6 +486,31 @@ html.vt-cargando-pagina body > *:not(.vt-cargando){visibility:hidden}
   .vt-cargando{transition:none}
 }
 
+/* ------------------------------------------------- cambio de pantalla -- */
+
+/* El velo del fundido entre pantallas. Lo pone y lo quita vt-transicion.js;
+ * esto es solo su pinta.
+ *
+ * Es un ::before del <html> y no un <div>, por dos razones. El script va en
+ * el <head> y sin defer, asi que cuando corre todavia no hay body donde
+ * colgar nada; y un elemento mas dentro del body crearia contexto de
+ * apilamiento, que es justo lo que descoloca las barras fijas de las
+ * paginas.
+ *
+ * pointer-events:none: los 160 ms de salida no se comen el siguiente toque.
+ *
+ * Los .16s son los mismos 160 ms que el DURACION del script. Si cambia uno,
+ * el otro tambien. Con «reducir movimiento» no hay regla que apagar: el
+ * script no se activa y la clase no llega a ponerse. */
+html.vt-transicion::before{
+  content:"";
+  position:fixed;inset:0;z-index:var(--vt-z-transicion);
+  background:var(--vt-bg);
+  opacity:0;pointer-events:none;
+  transition:opacity .16s ease;
+}
+html.vt-transicion--tapa::before{opacity:1}
+
 /* -------------------------------------------------------------- botones -- */
 
 .vt-btn{
@@ -754,7 +782,6 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   .vt-nav{padding-inline:0}
   .vt-nav__texto{font-size:9px}
 }
-
 
 /* ----------------------------------------------------------- utilidades -- */
 
