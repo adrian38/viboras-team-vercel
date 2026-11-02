@@ -88,9 +88,10 @@ function confirmarPrueba(token, fase) {
 }
 
 // El badge del icono con la app cerrada. Es el mismo numero que la pestana
-// Avisos (auth-client.js, pintarNumero), y por eso sale del mismo sitio: la
-// Badging API no deja leer el badge puesto, asi que aqui no se puede sumar uno
-// a ciegas —eso inventaria un numero— y se pregunta al API.
+// Avisos (auth-client.js, pintarNumero). En los avisos reales llega ya
+// calculado dentro del push; asi no depende de una cookie de sesion cuando el
+// navegador despierta el worker. Los push antiguos y el aviso de prueba usan
+// la consulta como respaldo.
 //
 // La peticion lleva la cookie de sesion: mismo origen y SameSite=Lax. Sin red
 // o sin soporte se deja el badge como estaba; el aviso se ve igual y al abrir
@@ -100,8 +101,13 @@ function confirmarPrueba(token, fase) {
 // avisos, asi que las dos borran el badge. Es lo que corresponde en los dos
 // casos: sin sesion la app redirige a /cuenta, que tampoco ensena ninguno, y
 // un aviso de prueba no es un aviso de la campanita y no debe contar.
-function pintarBadge() {
+function pintarBadge(cantidad) {
   if (!self.navigator.setAppBadge) return Promise.resolve();
+  if (Number.isInteger(cantidad) && cantidad >= 0) {
+    return cantidad
+      ? self.navigator.setAppBadge(cantidad)
+      : self.navigator.clearAppBadge();
+  }
   return fetch('/api/auth?action=notifications', {
     credentials: 'same-origin',
     headers: { accept: 'application/json' },
@@ -133,7 +139,7 @@ self.addEventListener('push', (event) => {
   const recibido = confirmarPrueba(d.receiptToken, 'recibido');
   const mostrado = self.registration.showNotification(d.title || 'Víboras Team', opciones)
     .then(() => confirmarPrueba(d.receiptToken, 'mostrado'));
-  event.waitUntil(Promise.all([recibido, mostrado, pintarBadge()]));
+  event.waitUntil(Promise.all([recibido, mostrado, pintarBadge(d.unread)]));
 });
 
 // Solo enlaces de la propia app: lo que venga de fuera abre la portada.

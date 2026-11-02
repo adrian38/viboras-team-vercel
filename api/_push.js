@@ -110,10 +110,12 @@ async function registrarEntrega(userId, batchId, s) {
 async function enviarUno(userId, batchId, s, aviso, opciones) {
   const receiptToken = await registrarEntrega(userId, batchId, s);
   const envio = { TTL: opciones.ttl, timeout: 5000, urgency: 'high' };
-  const cuerpo = JSON.stringify({
+  const datos = {
     title: aviso.title || 'Víboras Team', body: aviso.body || '',
     url: aviso.url || '/', tag: aviso.tag, receiptToken
-  });
+  };
+  if (Number.isInteger(aviso.unread)) datos.unread = aviso.unread;
+  const cuerpo = JSON.stringify(datos);
   try {
     const r = await webpush.sendNotification(
       { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
@@ -198,6 +200,27 @@ export async function confirmarPrueba(receiptToken, fase) {
   return rows.length > 0;
 }
 
+// El numero viaja cifrado dentro del push. Calcularlo aqui evita depender de
+// que el service worker conserve una cookie de sesion cuando despierta con la
+// app cerrada. La fuente sigue siendo exactamente la misma que la campanita.
+async function contarAvisos(rows) {
+  const ids = [...new Set(rows.map((s) => s.user_id).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const { avisosDeCampana } = await import('./_campana.js');
+  const { rows: users } = await sql`
+    SELECT id, player_id, role FROM users
+    WHERE status = 'active' AND id = ANY(${ids}::int[])`;
+  const pares = await Promise.all(users.map(async (user) => {
+    try {
+      return [user.id, (await avisosDeCampana(user)).length];
+    } catch (err) {
+      console.error('push: no se pudo contar la campana', user.id, err);
+      return [user.id, null];
+    }
+  }));
+  return new Map(pares);
+}
+
 // Nunca lanza: un push que no sale no puede tumbar el guardado de un partido.
 // Se espera a que salgan todos: en Vercel la funcion se congela al responder.
 async function mandar(consulta, aviso) {
@@ -208,7 +231,11 @@ async function mandar(consulta, aviso) {
     const { rows } = await consulta();
     const batchId = randomUUID();
     const cuerpo = { title: 'Víboras Team', body: aviso.texto, url: aviso.enlace || '/' };
-    return await Promise.all(rows.map((s) => enviarUno(s.user_id, batchId, s, cuerpo, { ttl: 60 * 60 * 24 })));
+    const cantidades = await contarAvisos(rows);
+    return await Promise.all(rows.map((s) => enviarUno(
+      s.user_id, batchId, s, { ...cuerpo, unread: cantidades.get(s.user_id) },
+      { ttl: 60 * 60 * 24 }
+    )));
   } catch (err) {
     console.error('push: error', err);
     return [];

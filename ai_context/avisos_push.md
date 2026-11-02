@@ -404,13 +404,17 @@ con la app cerrada:
 | Cuándo | Dónde | Cómo |
 | --- | --- | --- |
 | Al cargar cualquier página con sesión, y al pulsar «Limpiar» | `auth-client.js`, `pintarBadgeDelIcono` dentro de `pintarNumero` | el mismo `items.length` que la pestaña |
-| Al llegar un push con la app cerrada | `sw.js`, `pintarBadge`, dentro del `waitUntil` del evento `push` | pregunta al API |
+| Al llegar un push con la app cerrada | `_push.js`, `mandar`, y `sw.js`, `pintarBadge` | el servidor incluye `unread` cifrado en el push y el worker lo aplica directamente |
 
 **El service worker no puede sumar uno al badge que haya**: la Badging API
 escribe (`setAppBadge`, `clearAppBadge`) pero no deja leerlo. Sumar a ciegas
-inventaría un número que no es el de la pestaña, así que pregunta al API. La
-petición va con `credentials: 'same-origin'`; la cookie de sesión es del mismo
-origen y `SameSite=Lax`, así que viaja.
+inventaría un número que no es el de la pestaña. Antes se preguntaba al API
+desde el worker, pero eso dependía de que el navegador conservara y enviara la
+cookie al despertarlo con la app cerrada: el teléfono recibía el push y podía
+dejar sólo el punto del sistema. Ahora `_push.js` calcula `avisosDeCampana(user)`
+antes de cada envío y mete su longitud en el payload cifrado como `unread`; el
+worker llama a `setAppBadge(unread)` sin necesitar sesión. La consulta anterior
+queda como respaldo para pushes antiguos y para el aviso técnico de prueba.
 
 Decisiones que parecen errores:
 
