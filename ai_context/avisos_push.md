@@ -255,6 +255,12 @@ pulsado. Las filas de entrega se conservan siete días. Así se puede distinguir
 un fallo de la app, del servicio push y del teléfono sin adivinar ni llamar
 «entregado» a un 201.
 
+La prueba no envía el encabezado Web Push `Topic`. El 2026-11-02 Apple rechazó
+con `BadWebPushTopic` una suscripción creada con la VAPID correcta, aunque el
+valor usado cumplía aparentemente el alfabeto y tamaño de RFC 8030. El tema sólo
+sirve para reemplazar mensajes pendientes y una prueba no necesita esa
+optimización; omitirlo evita una diferencia innecesaria entre Apple y FCM.
+
 ## El entorno local manda avisos a móviles de verdad
 
 Esto no es una advertencia teórica. El 2026-11-01, antes de probar la

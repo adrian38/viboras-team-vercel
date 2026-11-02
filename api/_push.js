@@ -110,7 +110,6 @@ async function registrarEntrega(userId, batchId, s) {
 async function enviarUno(userId, batchId, s, aviso, opciones) {
   const receiptToken = await registrarEntrega(userId, batchId, s);
   const envio = { TTL: opciones.ttl, timeout: 5000, urgency: 'high' };
-  if (opciones.topic) envio.topic = opciones.topic;
   const cuerpo = JSON.stringify({
     title: aviso.title || 'Víboras Team', body: aviso.body || '',
     url: aviso.url || '/', tag: aviso.tag, receiptToken
@@ -145,7 +144,7 @@ async function probarUno(userId, batchId, s) {
   return enviarUno(userId, batchId, s, {
     title: 'Víboras Team', body: 'Aviso de prueba: la entrega funciona.',
     url: '/cuenta', tag: 'prueba'
-  }, { ttl: 60, topic: 'vt-prueba' });
+  }, { ttl: 60 });
 }
 
 export async function pushDePrueba(userId, endpoint) {
