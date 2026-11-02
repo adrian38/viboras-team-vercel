@@ -261,6 +261,14 @@ valor usado cumplía aparentemente el alfabeto y tamaño de RFC 8030. El tema s�
 sirve para reemplazar mensajes pendientes y una prueba no necesita esa
 optimización; omitirlo evita una diferencia innecesaria entre Apple y FCM.
 
+Safari instalado no siempre expone `subscription.options.applicationServerKey`.
+Eso no significa que la suscripción use otra VAPID: tratarlo como distinto hizo
+que una sola activación de iPhone renovara tres veces y dejara cada endpoint
+anterior en la base. Si Apple oculta la clave, se conserva la suscripción; sólo
+se fuerza la renovación si la prueba devuelve 404, 410 o
+`VapidPkHashMismatch`. Al renovar se llama primero a `baja` con el endpoint
+anterior para que tampoco quede una fila huérfana.
+
 ## El entorno local manda avisos a móviles de verdad
 
 Esto no es una advertencia teórica. El 2026-11-01, antes de probar la

@@ -55,7 +55,9 @@
   // Reusarla sin mirar dejaria el movil mudo para siempre.
   function mismaClave(s, clavePublica) {
     var actual = (s.options || {}).applicationServerKey;
-    if (!actual) return false;
+    // Safari instalado puede ocultarla. Ausencia no demuestra que sea otra:
+    // la prueba del servidor renovara si Apple responde VapidPkHashMismatch.
+    if (!actual) return true;
     var mia = bytes(clavePublica);
     var suya = new Uint8Array(actual);
     if (mia.length !== suya.length) return false;
@@ -66,7 +68,11 @@
   // Darse de baja antes de rehacerla: el navegador no deja tener dos.
   function renovar(reg, s, clavePublica, forzar) {
     if (!forzar && s && mismaClave(s, clavePublica)) return Promise.resolve(s);
+    var endpointAnterior = s && s.endpoint;
     return (s ? s.unsubscribe().catch(function () { return null; }) : Promise.resolve(null))
+      .then(function () {
+        return endpointAnterior ? api('baja', { endpoint: endpointAnterior }) : null;
+      })
       .then(function () {
         return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(clavePublica) });
       });
@@ -182,7 +188,9 @@
 
   function pruebaCaducada(j) {
     var d = j && j.dispositivos && j.dispositivos[0];
-    return d && (d.estado === 404 || d.estado === 410);
+    var error = String(d && d.error || '');
+    return d && (d.estado === 404 || d.estado === 410 ||
+      /VapidPkHashMismatch|VAPID credentials/i.test(error));
   }
 
   function prepararPrueba(forzar) {
