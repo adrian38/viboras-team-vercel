@@ -297,5 +297,28 @@ leer; si hiciera falta otra, se genera un par nuevo con
 `npx web-push generate-vapid-keys` y se sustituyen las dos variables, a
 sabiendas de que eso invalida las suscripciones hechas desde el Preview.
 
+## FCM aceptaba, pero Nothing OS retenía el trabajo por estado térmico
+
+El 2026-11-02, en un Nothing A142 con Android 16 y Chrome 155, FCM devolvía 201
+con la app cerrada, pero no se ejecutaban las confirmaciones `recibido` ni
+`mostrado`; al abrir la WebAPK aparecía el aviso pendiente. Logcat demostró que
+FCM sí despertaba `com.android.chrome` mediante `FirebaseInstanceIdReceiver`.
+No era el payload ni Doze: Chrome estaba en bucket `ACTIVE`, con
+`DEVICE_NOT_DOZING`, `BACKGROUND_NOT_RESTRICTED` y cuota satisfecha.
+
+La causa visible en `dumpsys jobscheduler com.android.chrome` era literal:
+`Restricted due to: thermal` y `Ready: false`. `dumpsys thermalservice` mostraba
+la contradicción que lo provocaba: estado global 3 y una muestra cacheada de
+piel a 41,088 °C/status 3, mientras el HAL actual daba 28,9 °C/status 0, batería
+a 27 °C y headroom 0,495. No era calor actual sino un estado térmico atascado.
+
+La prueba causal se hizo con `thermalservice override-status 0` sólo durante un
+envío: FCM respondió 201, el worker confirmó `recibido` a los 2 s y `mostrado`
+a los 4 s con la app cerrada. Un `finally` ejecutó `thermalservice reset`; el
+estado automático volvió a 3. **El override no es una solución**: desactiva una
+protección del sistema y nunca debe dejarse activo. La salida segura es
+reiniciar el teléfono y, si recurre con sensores fríos, actualizar o reportar
+Nothing OS.
+
 Relacionado: [[valoraciones_y_avisos]], [[service_worker]],
 [[cuentas_y_sesiones]], [[entorno_local_docker_y_proxies_neon]].

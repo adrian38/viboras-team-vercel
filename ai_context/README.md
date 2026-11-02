@@ -135,7 +135,8 @@ que hay.
   qué manda push y desde dónde, por qué la pregunta sale una vez por cuenta y
   dispositivo y el permiso sólo desde un clic, el iPhone sin instalar, las
   variables VAPID de Vercel, la prioridad alta y el diagnóstico verificable
-  de aceptado/recibido/mostrado/pulsado.
+  de aceptado/recibido/mostrado/pulsado; y el caso de Nothing OS que retenía el
+  trabajo de Chrome por un estado térmico severo atascado.
 
 ## Lo que escriben los miembros
 
