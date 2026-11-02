@@ -162,7 +162,10 @@ async function loadNamesIntoSelects(){
     const db = await res.json()
     const names = (db && db.names) ? (db.names.slice().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))) : []
     const ids = ['p1a','p1b','p2a','p2b']
-    for(const id of ids){ const sel=document.getElementById(id); if(!sel) continue; sel.innerHTML=''; const empty=document.createElement('option'); empty.value=''; empty.innerText='-- Nombre --'; sel.appendChild(empty); for(const n of names){ const opt=document.createElement('option'); opt.value=n; opt.innerText=n; sel.appendChild(opt) } }
+    // El select se rellena igual que siempre y queda oculto detras del
+    // buscador: sigue siendo el valor que lee submitResult(), asi que aqui no
+    // se puede escribir un nombre que no este en la lista.
+    for(const id of ids){ const sel=document.getElementById(id); if(!sel) continue; sel.innerHTML=''; const empty=document.createElement('option'); empty.value=''; empty.innerText='-- Nombre --'; sel.appendChild(empty); for(const n of names){ const opt=document.createElement('option'); opt.value=n; opt.innerText=n; sel.appendChild(opt) } window.vtCombo.montar(sel) }
     // Con sesion abierta, el primer hueco ya viene con tu nombre. Va aqui y no
     // en auth-client.js porque los <select> acaban de rellenarse.
     // auth-client.js lleva defer: si el fetch volvio antes que el, se espera.

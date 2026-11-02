@@ -537,6 +537,54 @@ html.vt-cargando-pagina body > *:not(.vt-cargando){visibility:hidden}
 
 input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;height:16px;cursor:pointer}
 
+/* ------------------------------------------------- buscador de opciones -- */
+
+/* La pinta de vt-combo.js: el campo que se pone delante de un <select> para
+   poder buscar sus opciones con el teclado. El <select> sigue ahi, oculto, y
+   sigue siendo el valor.
+
+   La lista va en el flujo, no flotando: la tarjeta de /submit-result es
+   .vt-card--accent, que lleva overflow:hidden, y una capa absoluta quedaria
+   cortada por el borde de la tarjeta. */
+.vt-combo__fuente{display:none}
+.vt-combo__caja{position:relative;display:block}
+/* Dos clases para ganarle al `.input`/`.vt-input` de la pagina, que viene
+   despues en la cascada y trae su propio padding. */
+.vt-combo .vt-combo__campo{padding-right:34px;cursor:text}
+.vt-combo__lupa{
+  position:absolute;
+  right:12px;top:50%;
+  transform:translateY(-50%);
+  color:var(--vt-muted);
+  pointer-events:none;
+}
+.vt-combo--abierto .vt-combo__lupa{color:var(--vt-gold)}
+
+.vt-combo__lista{
+  display:none;
+  margin:var(--vt-xs) 0 0;
+  padding:var(--vt-xs);
+  max-height:230px;
+  overflow-y:auto;
+  list-style:none;
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  box-shadow:var(--vt-shadow-float);
+}
+.vt-combo--abierto .vt-combo__lista{display:block}
+
+.vt-combo__opcion{
+  padding:11px 12px;
+  border-radius:var(--vt-r-sm);
+  color:var(--vt-text);
+  font-size:15px;line-height:20px;
+  cursor:pointer;
+}
+.vt-combo__opcion--activa{background:var(--vt-surface-4);color:var(--vt-text-strong)}
+.vt-combo__opcion--elegida{color:var(--vt-gold);font-weight:600}
+.vt-combo__vacio{padding:11px 12px;color:var(--vt-muted);font-size:14px;line-height:20px}
+
 /* ---------------------------------------------------------------- tabla -- */
 
 .vt-table-wrap{overflow-x:auto;border-radius:var(--vt-r-lg);border:1px solid var(--vt-border)}
