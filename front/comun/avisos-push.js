@@ -217,15 +217,20 @@
     });
   }
 
-  function botonProbar() {
+  // «Probar», arriba a la derecha de la tarjeta, al lado de «Limpiar». Lo que
+  // cuenta la prueba va a `actualizar`, que escribe en la linea de estado de
+  // la lista: antes lo escribia en su propia etiqueta y el boton se quedaba
+  // con el resumen puesto, sin forma de volver a pulsarlo a sabiendas.
+  function botonProbar(actualizar) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'vt-avisos__item vt-avisos__push';
-    b.textContent = 'Probar aviso';
+    b.className = 'vt-btn vt-btn--sm vt-btn--quiet vt-avisos__accion vt-avisos__accion--probar';
+    b.textContent = 'Probar';
+    b.title = 'Manda un aviso de prueba a este dispositivo';
     b.addEventListener('click', function () {
       b.disabled = true;
-      b.textContent = 'Mandando aviso de prueba…';
-      mandarPrueba(function (texto) { b.textContent = texto; }, false).then(function (j) {
+      actualizar('Mandando aviso de prueba…');
+      mandarPrueba(actualizar, false).then(function (j) {
         estado = Promise.resolve(pruebaMostrada(j) ? 'activo' : 'falloEntrega');
         b.disabled = false;
         b.title = 'Pulsa para repetir la prueba';
@@ -242,6 +247,11 @@
     Promise.all([estado, window.vtMe]).then(function (r) {
       var e = r[0];
       Array.prototype.forEach.call(panel.querySelectorAll('.vt-avisos__push'), function (v) { v.remove(); });
+      // «Probar» no vive en la lista: esta en la cabecera de la tarjeta, que
+      // es hermana de la lista, no suya.
+      var acciones = panel.parentNode && panel.parentNode.querySelector('.vt-avisos__acciones');
+      var probar = acciones && acciones.querySelector('.vt-avisos__accion--probar');
+      if (probar) probar.remove();
       if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
       if (!TEXTOS[e]) return;
       var interactivo = e === 'pendiente' || e === 'fallo' || e === 'sinProbar' || e === 'falloEntrega';
@@ -257,7 +267,10 @@
         });
       }
       panel.insertBefore(el, panel.firstChild);
-      if (e === 'activo') panel.insertBefore(botonProbar(), el.nextSibling);
+      // A la izquierda de «Limpiar», que auth-client.js ya habra anadido.
+      if (e === 'activo' && acciones) {
+        acciones.insertBefore(botonProbar(function (texto) { el.textContent = texto; }), acciones.firstChild);
+      }
     });
   }
 

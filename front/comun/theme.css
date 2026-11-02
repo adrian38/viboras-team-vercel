@@ -406,6 +406,15 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
    ni flota: la rellena auth-client.js en cualquier pagina con un #vtAvisos. */
 .vt-avisos{flex:0 0 auto}
 .vt-avisos[hidden]{display:none}
+/* El titulo y, a su derecha, «Probar» (avisos-push.js) y «Limpiar»
+   (auth-client.js). Hasta el 2026-11-02 los dos eran filas de la lista, donde
+   se confundian con los avisos; «Probar» ademas contaba la prueba en su propia
+   etiqueta y se quedaba luego con el resumen puesto, asi que el boton
+   desaparecia de la lista. Ahora la cuenta en la linea de estado. */
+.vt-avisos__cabeza{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--vt-sm)}
+.vt-avisos__cabeza h4{margin:0}
+.vt-avisos__acciones{display:flex;align-items:center;gap:var(--vt-xs)}
+.vt-avisos__accion[disabled]{opacity:.5;cursor:default}
 .vt-avisos__lista{
   overflow:hidden;
   background:var(--vt-surface-2);border:1px solid var(--vt-border);border-radius:var(--vt-r);
@@ -423,14 +432,6 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 .vt-avisos__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
 button.vt-avisos__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
 button.vt-avisos__push:hover{color:var(--vt-gold-light)}
-/* «Limpiar todas», al pie de la lista (auth-client.js). */
-.vt-avisos__limpiar{
-  display:block;width:100%;padding:10px 12px;border:0;background:transparent;
-  color:var(--vt-muted);font:inherit;font-size:13px;text-align:center;cursor:pointer;
-}
-.vt-avisos__limpiar:hover{color:var(--vt-gold-light);background:var(--vt-surface-3)}
-.vt-avisos__limpiar[disabled]{opacity:.5;cursor:default}
-
 /* La pregunta de la primera vez (avisos-push.js). <dialog> nativo: trae el
    fondo, el foco y el Esc hechos. */
 .vt-push-dialogo{

@@ -96,9 +96,16 @@
       }
       panel.appendChild(a);
     });
-    if (items.length) panel.appendChild(botonLimpiar(caja));
-    // Arriba, los botones de activar y probar los avisos push
-    // (avisos-push.js), si toca.
+    // «Limpiar», arriba a la derecha de la tarjeta. Se repinta entera cada
+    // vez, asi que primero se quita el de la vuelta anterior.
+    var acciones = caja.querySelector('.vt-avisos__acciones');
+    if (acciones) {
+      var viejo = acciones.querySelector('.vt-avisos__accion--limpiar');
+      if (viejo) viejo.remove();
+      if (items.length) acciones.appendChild(botonLimpiar(caja));
+    }
+    // La linea de estado de los avisos push y, si estan activos, su boton
+    // «Probar» al lado de «Limpiar» (avisos-push.js).
     if (window.vtPush) window.vtPush.pintarEnLista(panel);
   }
 
@@ -136,8 +143,9 @@
   function botonLimpiar(caja) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'vt-avisos__limpiar';
-    b.textContent = 'Limpiar todas';
+    b.className = 'vt-btn vt-btn--sm vt-btn--quiet vt-avisos__accion vt-avisos__accion--limpiar';
+    b.textContent = 'Limpiar';
+    b.title = 'Descarta los avisos que hay ahora';
     b.addEventListener('click', function () {
       b.disabled = true;
       fetch('/api/auth?action=clearNotifications', { method: 'POST', headers: { accept: 'application/json' } })
