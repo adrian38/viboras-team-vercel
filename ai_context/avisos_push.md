@@ -89,6 +89,14 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
   2026-10-18: Adrián no veía ni el botón ni la pregunta, y en local, simulando
   `clave: null` desde un Android emulado, la campanita quedaba idéntica a su
   captura.
+- **«Bloqueados» también se pulsa** (desde el 2026-11-02). Antes era un `div`
+  muerto: el único sitio donde reintentarlo era el diálogo de la apertura, que
+  se puede haber silenciado. Ahora es un `<button>` como «Activar avisos en
+  este dispositivo», y al pulsarlo pide el permiso otra vez. Si el sistema no
+  deja preguntar, la fila se queda con las instrucciones de los ajustes **y no
+  se repinta**: repintar devolvería el texto que invita a pulsar, sin decir que
+  el navegador ni siquiera preguntó. Lo mismo vale para «Activar avisos» cuando
+  el intento acaba en denegado.
 - **Con el permiso concedido, cada carga reenvía la suscripción.** Cubre el
   cerrar sesión y volver a entrar, y que el navegador la renueve.
 - **Al cerrar sesión el dispositivo se da de baja** y la suscripción se

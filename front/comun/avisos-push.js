@@ -140,9 +140,20 @@
     pendiente: 'Activar avisos en este dispositivo',
     instalar: 'Para recibir avisos en el iPhone, instala la app: Compartir → «Añadir a pantalla de inicio».',
     noSoportado: 'Este navegador no admite avisos push. Los avisos siguen disponibles en la pestaña Avisos.',
-    bloqueado: 'Los avisos están bloqueados en este navegador. Actívalos en sus ajustes para esta web.',
+    bloqueado: 'Los avisos están bloqueados en este navegador. Pulsa para intentarlo de nuevo, o actívalos en sus ajustes para esta web.',
     sinClaves: 'Avisos al móvil sin configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.'
   };
+
+  // Un permiso denegado no se puede volver a pedir desde la web:
+  // requestPermission() resuelve 'denied' sin abrir ninguna pregunta. La unica
+  // salida son los ajustes del sistema, asi que esto es lo que se dice cuando
+  // el intento no llego a preguntar nada, tanto en la lista como en el dialogo.
+  var AJUSTES_BLOQUEADO = 'Los avisos están bloqueados en este dispositivo. ' +
+    'Actívalos en los ajustes de notificaciones del navegador o del teléfono.';
+
+  function siguePermisoDenegado() {
+    return soporta && Notification.permission === 'denied';
+  }
 
   function nombreServicio(host) {
     return String(host || '?').split('.').slice(-3).join('.');
@@ -253,7 +264,8 @@
       if (probar) probar.remove();
       if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
       if (!TEXTOS[e]) return;
-      var interactivo = e === 'pendiente' || e === 'fallo' || e === 'sinProbar' || e === 'falloEntrega';
+      var interactivo = e === 'pendiente' || e === 'fallo' || e === 'sinProbar' ||
+        e === 'falloEntrega' || e === 'bloqueado';
       var el = document.createElement(interactivo ? 'button' : 'div');
       el.className = 'vt-avisos__item vt-avisos__push';
       el.textContent = TEXTOS[e];
@@ -262,7 +274,12 @@
         el.addEventListener('click', function () {
           activar(e === 'fallo' || e === 'falloEntrega', function (texto) {
             el.textContent = texto;
-          }).then(function () { pintarEnLista(panel); });
+          }).then(function (ok) {
+            // Repintar volveria a poner TEXTOS.bloqueado, que invita a pulsar
+            // otra vez sin decir que el navegador ni siquiera pregunto.
+            if (!ok && siguePermisoDenegado()) el.textContent = AJUSTES_BLOQUEADO;
+            else pintarEnLista(panel);
+          });
         });
       }
       panel.insertBefore(el, panel.firstChild);
@@ -343,14 +360,6 @@
     return b;
   }
 
-  // Un permiso denegado no se puede volver a pedir desde la web:
-  // requestPermission() resuelve 'denied' sin abrir ninguna pregunta. La unica
-  // salida son los ajustes, asi que el mismo texto sirve antes de intentarlo y
-  // despues de un intento que el sistema no dejo preguntar.
-  var AJUSTES_BLOQUEADO = 'Los avisos están bloqueados en este dispositivo. ' +
-    'Actívalos en los ajustes de notificaciones del navegador o del teléfono; ' +
-    'también verás el estado y las instrucciones en la pestaña Avisos.';
-
   function mostrarDialogo(user, e) {
     var d = document.createElement('dialog');
     d.className = 'vt-push-dialogo';
@@ -360,7 +369,7 @@
     texto.textContent = e === 'instalar'
       ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono para activar los avisos.'
       : e === 'bloqueado'
-        ? AJUSTES_BLOQUEADO
+        ? AJUSTES_BLOQUEADO + ' También verás el estado y las instrucciones en la pestaña Avisos.'
       : e === 'sinProbar'
         ? 'El permiso ya está concedido. Enviaremos una prueba y sólo daremos los avisos por activados cuando este dispositivo confirme que la mostró.'
         : 'Te llegará un aviso con lo mismo que la pestaña Avisos: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
@@ -383,7 +392,7 @@
         Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = true; });
         texto.textContent = e === 'bloqueado' ? 'Pidiendo permiso al navegador…' : 'Registrando este dispositivo…';
         activar(false, function (mensaje) { texto.textContent = mensaje; }).then(function (ok) {
-          var denegado = soporta && Notification.permission === 'denied';
+          var denegado = siguePermisoDenegado();
           texto.textContent = ok
             ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
             : denegado
