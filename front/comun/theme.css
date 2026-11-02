@@ -182,6 +182,15 @@ hr,.vt-divider{border:0;border-top:1px solid var(--vt-border);margin:var(--vt-lg
   white-space:nowrap;
   direction:ltr;
   flex:0 0 auto;
+  /* El dibujo del glifo esta centrado en su caja, y la caja mide lo que el
+     icono: 17 o 20 px al lado de un texto de 12 o 13. Pegada a la linea base
+     —lo que hace el navegador si nadie dice otra cosa— esa caja le saca la
+     cabeza al texto: medido en /tablon, el reloj de la fecha quedaba 5 px
+     por encima del centro del texto. `middle` pone el centro del icono a la
+     altura de la mitad de la x, que es donde esta el centro optico de una
+     linea de texto. No hace nada dentro de un flex o un grid (ahi manda
+     align-items), asi que solo toca los iconos que van en linea. */
+  vertical-align:middle;
   user-select:none;
   -webkit-font-feature-settings:'liga';
   font-feature-settings:'liga';

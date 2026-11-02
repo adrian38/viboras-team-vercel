@@ -100,6 +100,38 @@ obliga a tocar `renderTable`, que está en el techo de líneas; y los
 `expand_more` de los desplegables y el `play_arrow` de los spoilers, que ya se
 dibujan con CSS y no necesitan fuente.
 
+## Por qué `.ms` lleva `vertical-align:middle`
+
+Un icono al lado de un texto se centra solo **si su contenedor es flex**, que
+es como está montada la mayoría de la aplicación: `align-items:center` cuadra
+el centro del icono con el centro de la caja de línea del texto. En cuanto el
+contenedor es normal —un `<span>` con el icono y la fecha dentro, como la
+cabecera de cada aviso del tablón— el icono es un `inline-block` y el navegador
+lo pega a la línea base. Y ahí no queda centrado: el glifo está centrado dentro
+de su caja, la caja mide lo que el icono (17 o 20 px) y el texto mide 12 o 13,
+así que el icono le saca la cabeza a la línea.
+
+Medido en `/tablon` sobre `02/11/2026, 17:10` a 13 px con el icono a 17: el
+centro del reloj caía 8,5 px sobre la línea base y el centro de la tinta del
+texto a 3,5 px. **Cinco píxeles de desfase**, que es lo que se ve.
+
+`vertical-align:middle` en `.ms` pone el centro del icono a media altura de la
+x del texto: medido otra vez, 3,55 px contra 3,5. Sirve para cualquier tamaño
+de texto, y **dentro de un flex o un grid no hace nada** —ahí `vertical-align`
+se ignora—, así que no toca los iconos que ya estaban bien.
+
+Queda ~1 px por debajo del centro de las mayúsculas, que es a donde apunta el
+flex. Es la diferencia entre media x (0,273 em) y media mayúscula (0,364 em) y
+no se puede igualar con una sola regla: el desfase exacto depende del tamaño
+del texto y `vertical-align` sólo sabe del tamaño del icono.
+
+Si un icono suelto aparece descolocado, mirar primero el `display` de su padre:
+
+```js
+[...document.querySelectorAll('.ms')]
+  .filter(e => !/flex|grid/.test(getComputedStyle(e.parentElement).display))
+```
+
 ## La página sin maqueta
 
 `rating-test.html` no tiene maqueta en ninguna de las dos exportaciones. Se
