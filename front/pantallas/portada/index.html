@@ -39,8 +39,13 @@
 
 /* Portada: logo y nombre del club, con el boton de normativa encima. */
 .hero{max-width:1100px;margin:0 auto var(--vt-lg);text-align:center}
+/* El logo colgaba del boton de NORMATIVA: la barra mide 56 px y sus botones
+   40 centrados, asi que entre el pie del boton y el borde de la imagen solo
+   quedaban 8 px, y el resplandor del logo los comia. display:block para que
+   el margin de arriba no lo trague la linea de texto. */
+.hero img{display:block;margin:var(--vt-lg) auto 0}
 .hero h1{font-size:48px;line-height:52px;letter-spacing:0.01em}
-@media(max-width:720px){.hero h1{font-size:34px;line-height:38px}}
+@media(max-width:720px){.hero h1{font-size:34px;line-height:38px}.hero img{margin-top:var(--vt-md)}}
 
 /* Tarjeta de modulo. El resplandor dorado de la esquina es el del mockup. */
 .block{
