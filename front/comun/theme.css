@@ -399,47 +399,37 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 }
 .vt-splash__capa--animando .vt-splash__escena{opacity:1}
 
-/* Campanita de avisos. La rellena auth-client.js en cualquier pagina que
-   tenga un #vtCampana; hoy solo index.html. */
-.vt-campana{position:relative;flex:0 0 auto}
-.vt-campana[hidden]{display:none}
-.vt-campana > .vt-chip{cursor:pointer;font:inherit;font-size:12px;line-height:16px}
-/* El numero va sobre la esquina y no al lado: en la barra de index.html a
-   320 px no queda sitio para que la campana crezca. */
-.vt-campana__num{
-  position:absolute;top:-6px;right:-6px;
-  min-width:16px;height:16px;padding:0 4px;border-radius:var(--vt-r-full);
-  background:var(--vt-gold);color:var(--vt-surface-deep);
-  font-size:11px;line-height:16px;font-weight:800;text-align:center;
-}
-.vt-campana__num[hidden]{display:none}
-.vt-campana__panel{
-  position:absolute;right:0;top:calc(100% + 6px);z-index:var(--vt-z-flotante);
-  width:min(280px, calc(100vw - 32px));max-height:60vh;overflow:auto;
+/* Tus avisos. Hasta el 2026-11-02 era una campanita desplegable en la barra
+   de arriba de la portada, y por tanto fuera del alcance de las otras
+   diecinueve paginas; ahora es una tarjeta de /tablon, que es a donde lleva
+   la pestana «Avisos» (ai_context/barra_de_navegacion.md). Ya no se despliega
+   ni flota: la rellena auth-client.js en cualquier pagina con un #vtAvisos. */
+.vt-avisos{flex:0 0 auto}
+.vt-avisos[hidden]{display:none}
+.vt-avisos__lista{
+  overflow:hidden;
   background:var(--vt-surface-2);border:1px solid var(--vt-border);border-radius:var(--vt-r);
-  box-shadow:0 12px 32px rgba(0,0,0,0.5);
-  text-align:left; /* en index.html hereda el center del .hero */
+  text-align:left;
 }
-.vt-campana__panel[hidden]{display:none}
-.vt-campana__item{
+.vt-avisos__item{
   display:block;padding:10px 12px;border-bottom:1px solid var(--vt-border);
   color:var(--vt-text);text-decoration:none;font-size:13px;line-height:18px;
 }
-.vt-campana__item:last-child{border-bottom:0}
-.vt-campana__item:hover{background:var(--vt-surface-3)}
-.vt-campana__vacio{padding:12px;color:var(--vt-muted);font-size:13px}
-/* Activar los avisos push (avisos-push.js). Es un <button> cuando se puede
-   pulsar y un <div> cuando solo explica; los dos con la pinta de un aviso. */
-.vt-campana__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
-button.vt-campana__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
-button.vt-campana__push:hover{color:var(--vt-gold-light)}
+.vt-avisos__item:last-child{border-bottom:0}
+.vt-avisos__item:hover{background:var(--vt-surface-3)}
+.vt-avisos__vacio{padding:12px;color:var(--vt-muted);font-size:13px}
+/* Activar y probar los avisos push (avisos-push.js). Es un <button> cuando se
+   puede pulsar y un <div> cuando solo explica; los dos con pinta de aviso. */
+.vt-avisos__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
+button.vt-avisos__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
+button.vt-avisos__push:hover{color:var(--vt-gold-light)}
 /* «Limpiar todas», al pie de la lista (auth-client.js). */
-.vt-campana__limpiar{
+.vt-avisos__limpiar{
   display:block;width:100%;padding:10px 12px;border:0;background:transparent;
   color:var(--vt-muted);font:inherit;font-size:13px;text-align:center;cursor:pointer;
 }
-.vt-campana__limpiar:hover{color:var(--vt-gold-light);background:var(--vt-surface-3)}
-.vt-campana__limpiar[disabled]{opacity:.5;cursor:default}
+.vt-avisos__limpiar:hover{color:var(--vt-gold-light);background:var(--vt-surface-3)}
+.vt-avisos__limpiar[disabled]{opacity:.5;cursor:default}
 
 /* La pregunta de la primera vez (avisos-push.js). <dialog> nativo: trae el
    fondo, el foco y el Esc hechos. */
@@ -807,6 +797,18 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
    que el glifo para que el punto de la activa no baile. */
 .vt-nav__icono{position:relative;display:flex;align-items:center;justify-content:center;height:26px}
 .vt-nav__icono .ms{font-size:26px}
+/* El numero de «Avisos», sobre la esquina del icono (auth-client.js). Cuenta
+   lo mismo que ensena la tarjeta de /tablon, que es a donde lleva la pestana:
+   el dato y el destino son el mismo. El borde del color de la barra lo
+   despega del icono cuando se solapan. */
+.vt-nav__num{
+  position:absolute;top:-2px;right:-8px;
+  min-width:16px;height:16px;padding:0 4px;border-radius:var(--vt-r-full);
+  background:var(--vt-gold);color:var(--vt-surface-deep);
+  border:2px solid var(--vt-bg);
+  font-size:10px;line-height:12px;font-weight:800;text-align:center;
+}
+.vt-nav__num[hidden]{display:none}
 /* El punto bajo el icono de la pestana activa, como en la maqueta. */
 .vt-nav__item[aria-current="page"] .vt-nav__icono::after{
   content:'';position:absolute;bottom:-3px;

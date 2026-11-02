@@ -42,7 +42,7 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
 | Tabla `push_subscriptions` y el envío | `api/_push.js` |
 | Alta y baja de un dispositivo, clave pública | `api/push.js` (`clave`, `suscribir`, `baja`) |
 | Mostrar la notificación y abrirla | `sw.js`, `push` y `notificationclick` |
-| Pregunta de la primera vez, botón de la campanita | `avisos-push.js` |
+| Pregunta de la primera vez, botones de «Tus avisos» | `avisos-push.js` |
 | Lo carga | `auth-client.js`, sólo con sesión |
 | Dar de baja al cerrar sesión | `cuenta.html`, `btnSalir` |
 
@@ -57,7 +57,7 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
   entrar por primera vez tras ser aceptado. La versión `v2` fuerza una única
   comprobación guiada también a quienes ya habían aceptado el permiso antes
   del 2026-11-02. Si dice que no o la entrega falla, queda el botón de la
-  campanita. No sale en `/cuenta`, `/inscripcion` ni `/group-normativa`, y
+  tarjeta «Tus avisos» de `/tablon`. No sale en `/cuenta`, `/inscripcion` ni `/group-normativa`, y
   espera a que termine la pantalla de bienvenida.
 - **El permiso del navegador se pide sólo desde un clic.** iOS lo exige y
   Chrome silencia a las webs que lo piden al cargar. Por eso la pregunta es un
@@ -175,7 +175,8 @@ infrecuentes, así que `mandarUno` los envía ahora con `urgency: 'high'`; el
 aviso de prueba también. No es una garantía del sistema operativo, pero sí la
 indicación estándar para intentar entrega inmediata.
 
-La campanita tiene «Probar aviso» cuando este dispositivo ya está suscrito. La
+La tarjeta «Tus avisos» de `/tablon` tiene «Probar aviso» cuando este
+dispositivo ya está suscrito. La
 prueba no llama «entregado» a un HTTP 201: crea una fila por dispositivo en
 `push_delivery_tests` y distingue cuatro etapas reales:
 

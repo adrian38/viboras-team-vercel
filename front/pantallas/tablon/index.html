@@ -114,7 +114,7 @@
 <div class="vt-nav__lista">
 <a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
 <a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
-<a class="vt-nav__item" href="/tablon" aria-current="page"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item" href="/tablon" aria-current="page"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
 <a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
 <a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
 </div>
@@ -126,6 +126,16 @@
     <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
     <h3 class="vt-gold" style="margin-top:var(--vt-sm)">Tablón de avisos</h3>
     <span class="vt-label">Comunicados oficiales de Víboras Team</span>
+  </div>
+
+  <!-- Tus avisos. Lo rellena auth-client.js, que tambien pone aqui los
+       botones de activar y probar los avisos push (avisos-push.js). Hasta el
+       2026-11-02 todo esto era la campanita de la portada, a la que no se
+       llegaba desde ninguna otra pantalla. Nace oculto: sin sesion no hay
+       nada que ensenar, y un hueco vacio seria peor que no estar. -->
+  <div class="vt-card vt-avisos" id="vtAvisos" hidden>
+    <h4><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">notifications</span> Tus avisos</h4>
+    <div class="vt-avisos__lista" style="margin-top:var(--vt-md)"></div>
   </div>
 
   <div class="vt-card vt-card--accent" id="panel" hidden>

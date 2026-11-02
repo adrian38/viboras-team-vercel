@@ -84,21 +84,57 @@ desde las tarjetas de la portada, que es de donde se llegaba antes de que la
 barra existiera; lo que perdieron el 2026-11-02 es el atajo desde cualquier
 página, no el acceso.
 
-## El número de la maqueta no se portó
+## El número de la pestaña «Avisos»
 
-La maqueta pinta un «1» dorado sobre el icono de «Avisos». **No está**, y es
-deliberado: el único número de verdad que hay es el de la campanita
-(`api/_campana.js`), y cuenta los avisos **personales** —partidos por valorar,
-resultados editados, y para administradores las altas pendientes y el buzón—,
-que no son lo que enseña `/tablon`. Un número de una cosa sobre una pestaña que
-lleva a otra es exactamente la etiqueta que miente de la que avisa `CLAUDE.md`.
-La maqueta anterior ponía el mismo punto sobre el buzón y tampoco se portó, por
+La maqueta pinta un «1» dorado sobre el icono de «Avisos», y está: lo rellena
+`auth-client.js` con lo que devuelve `GET /api/auth?action=notifications`
+(`avisosDeCampana`, `api/_campana.js`).
+
+**El número es honrado porque el destino es el mismo dato.** Esa cuenta son los
+avisos personales —partidos por valorar, resultados editados, y para
+administradores las altas pendientes y el buzón—, y lo que enseña `/tablon` es,
+desde el 2026-11-02, exactamente esa lista: la tarjeta «Tus avisos», lo primero
+de la pantalla. Pulsar la pestaña lleva a lo que el número cuenta. Si algún día
+el número y la tarjeta dejan de salir de la misma llamada, esto vuelve a ser la
+etiqueta que miente de la que avisa `CLAUDE.md`.
+
+El primer intento del día sí lo dejó fuera, y la razón era buena mientras duró:
+la pestaña llevaba a un tablón que no enseñaba esos avisos.
+
+- El hueco (`<span class="vt-nav__num" hidden>`) está escrito en las veinte
+  páginas, como el resto de la barra, y nace oculto: sin sesión, con cero
+  avisos o si la petición falla, no se pinta nada. Un número inventado sería
+  peor que ninguno.
+- Una sola petición rellena las dos cosas (`cargarAvisos`): la tarjeta donde
+  haya un `#vtAvisos` y el número en las veinte.
+- El `aria-label` de la pestaña pasa a «Avisos, N sin leer» cuando hay número:
+  un «3» suelto no lo lee un lector de pantalla.
+
+La maqueta anterior ponía un punto sobre el buzón y aquél **no** se portó, por
 la razón de siempre: no había dato detrás.
 
-La campanita **sigue en la barra de arriba de la portada**, y tiene que seguir:
-además de la lista de avisos, su panel es el único sitio donde se activan y se
-prueban los avisos push (`front/comun/avisos-push.js` escribe en
-`#vtCampana .vt-campana__panel`). Quitarla de ahí deja el push sin interfaz.
+## Lo que se fue de la barra de arriba de la portada
+
+La portada ya no tiene barra de arriba. Sus tres cosas se repartieron:
+
+| Estaba arriba | Está en |
+| --- | --- |
+| Campanita de avisos | Tarjeta «Tus avisos» de `/tablon` (pestaña «Avisos») |
+| Chip de cuenta | Pestaña «Perfil» (`/cuenta`) |
+| Botón de normativa | Fila `.normativa`, al pie de las tarjetas |
+
+Las tres estaban **sólo en la portada**: desde `/history` o `/rating` no se
+llegaba a ninguna. Ahora las dos primeras están en las veinte páginas.
+
+Con la campanita se mudó lo que colgaba de ella, que es lo que de verdad había
+que mirar: su panel era el único sitio donde se **activan y se prueban los
+avisos push**. `front/comun/avisos-push.js` escribía en
+`#vtCampana .vt-campana__panel` y hoy escribe en `#vtAvisos .vt-avisos__lista`;
+`pintarEnCampana` pasó a llamarse `pintarEnLista`. Borrar la campanita sin
+mover eso habría dejado el push sin interfaz y sin dar ningún error.
+
+Con el chip se fue `pintarChip` de `auth-client.js`, que no tenía ya ningún
+`#vtSession` que pintar.
 
 ## El hueco al pie
 

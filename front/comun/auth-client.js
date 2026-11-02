@@ -27,33 +27,6 @@
     // un error: es "no hay sesion".
     .catch(function () { return null; });
 
-  function icono(glifo) {
-    return '<span class="ms ms--sm notranslate" translate="no" aria-hidden="true">' + glifo + '</span>';
-  }
-
-  // En index.html el nombre se esconde por debajo de 400 px; el icono no.
-  // Escapado: el nombre y el correo los escribe quien se registra.
-  function nombre(texto) {
-    var span = document.createElement('span');
-    span.className = 'vt-chip__nombre';
-    span.textContent = texto;
-    return span.outerHTML;
-  }
-
-  function pintarChip(user) {
-    var chip = document.getElementById('vtSession');
-    if (!chip) return;
-    if (!user) {
-      chip.innerHTML = icono('login') + nombre('Entrar');
-      return;
-    }
-    // Solo el nombre de pila: en la barra de index.html a 375 px no entra
-    // "Adrián C" entero y se cortaba a mitad de palabra.
-    var corto = (user.playerName || user.email).split(' ')[0];
-    chip.innerHTML = icono('person') + nombre(corto);
-    chip.classList.add('vt-chip--gold');
-  }
-
   // Pone tu nombre en un <select> de jugadores. Se llama DESPUES de rellenarlo:
   // loadNames() es asincrona y hace sel.innerHTML = '', asi que cualquier valor
   // puesto antes se pierde.
@@ -96,24 +69,22 @@
     location.replace('/cuenta?volver=' + encodeURIComponent(donde + location.search));
   }
 
-  // La campanita: solo en las paginas que tengan #vtCampana, y solo con sesion.
-  // Todo con textContent: los avisos llevan nombres que escribio quien se
-  // registro.
+  // Tus avisos: solo en las paginas que tengan #vtAvisos (hoy /tablon), y solo
+  // con sesion. Todo con textContent: los avisos llevan nombres que escribio
+  // quien se registro.
   function pintarAvisos(caja, items) {
-    var num = caja.querySelector('.vt-campana__num');
-    var panel = caja.querySelector('.vt-campana__panel');
-    num.textContent = items.length > 9 ? '9+' : String(items.length);
-    num.hidden = items.length === 0;
+    var panel = caja.querySelector('.vt-avisos__lista');
+    caja.hidden = false;
     panel.textContent = '';
     if (!items.length) {
       var vacio = document.createElement('div');
-      vacio.className = 'vt-campana__vacio';
+      vacio.className = 'vt-avisos__vacio';
       vacio.textContent = 'No tienes avisos.';
       panel.appendChild(vacio);
     }
     items.forEach(function (it) {
       var a = document.createElement('a');
-      a.className = 'vt-campana__item';
+      a.className = 'vt-avisos__item';
       a.href = it.enlace || '/cuenta';
       a.textContent = it.texto;
       // Los avisos guardados (los que traen id) se dan por vistos al pulsarlos.
@@ -126,21 +97,36 @@
       panel.appendChild(a);
     });
     if (items.length) panel.appendChild(botonLimpiar(caja));
-    // Arriba, el boton de activar los avisos push (avisos-push.js), si toca.
-    if (window.vtPush) window.vtPush.pintarEnCampana(panel);
+    // Arriba, los botones de activar y probar los avisos push
+    // (avisos-push.js), si toca.
+    if (window.vtPush) window.vtPush.pintarEnLista(panel);
+  }
+
+  // El numero de la pestana «Avisos» de la barra de abajo, en las veinte
+  // paginas. Cuenta lo mismo que la lista de /tablon, que es a donde lleva esa
+  // pestana: el numero y su destino son la misma cosa.
+  function pintarNumero(items) {
+    var num = document.querySelector('.vt-nav__num');
+    if (!num) return;
+    num.textContent = items.length > 9 ? '9+' : String(items.length);
+    num.hidden = items.length === 0;
+    // El «1» suelto no lo lee un lector de pantalla: la pestana lo dice.
+    var item = num.parentNode.parentNode;
+    if (items.length) item.setAttribute('aria-label', 'Avisos, ' + items.length + ' sin leer');
+    else item.removeAttribute('aria-label');
   }
 
   // Descarta lo que hay ahora; lo que llegue despues vuelve a salir
-  // (api/_campana.js). Si falla, la campanita se queda como estaba.
+  // (api/_campana.js). Si falla, la lista se queda como estaba.
   function botonLimpiar(caja) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'vt-campana__limpiar';
+    b.className = 'vt-avisos__limpiar';
     b.textContent = 'Limpiar todas';
     b.addEventListener('click', function () {
       b.disabled = true;
       fetch('/api/auth?action=clearNotifications', { method: 'POST', headers: { accept: 'application/json' } })
-        .then(function (r) { if (r.ok) pintarAvisos(caja, []); else b.disabled = false; })
+        .then(function (r) { if (r.ok) { pintarAvisos(caja, []); pintarNumero([]); } else b.disabled = false; })
         .catch(function () { b.disabled = false; });
     });
     return b;
@@ -156,32 +142,26 @@
     document.head.appendChild(s);
   }
 
-  function montarCampana(user) {
-    var caja = document.getElementById('vtCampana');
-    if (!caja || !user) return;
-    var boton = caja.querySelector('button');
-    var panel = caja.querySelector('.vt-campana__panel');
-    caja.hidden = false;
-    boton.addEventListener('click', function (ev) {
-      ev.stopPropagation();
-      panel.hidden = !panel.hidden;
-      boton.setAttribute('aria-expanded', String(!panel.hidden));
-    });
-    document.addEventListener('click', function (ev) {
-      if (panel.hidden || caja.contains(ev.target)) return;
-      panel.hidden = true;
-      boton.setAttribute('aria-expanded', 'false');
-    });
+  // Una sola peticion para las dos cosas: la lista, donde haya un #vtAvisos, y
+  // el numero de la pestana, que esta en las veinte paginas. Si falla, la
+  // pestana se queda sin numero —que es lo honrado— y la lista dice que no
+  // hay avisos.
+  function cargarAvisos(user) {
+    if (!user) return;
+    var caja = document.getElementById('vtAvisos');
     fetch('/api/auth?action=notifications', { headers: { accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { pintarAvisos(caja, (j && j.items) || []); })
-      .catch(function () { pintarAvisos(caja, []); });
+      .then(function (j) { return (j && j.items) || []; })
+      .catch(function () { return []; })
+      .then(function (items) {
+        if (caja) pintarAvisos(caja, items);
+        pintarNumero(items);
+      });
   }
 
   window.vtMe.then(function (user) {
-    pintarChip(user);
     exigirEntrar(user);
-    montarCampana(user);
+    cargarAvisos(user);
     cargarPush(user);
   });
 })();

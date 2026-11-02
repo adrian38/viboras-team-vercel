@@ -1,13 +1,13 @@
-// Avisos push en el movil: lo que sale en la campanita, con la app cerrada.
+// Avisos push en el movil: lo que sale en la pestana Avisos, con la app cerrada.
 //
 // Lo carga auth-client.js solo cuando hay sesion, asi que las 18 paginas lo
 // tienen sin tocar sus <head>. Hace tres cosas:
 //   - La primera vez que una cuenta entra en un dispositivo, pregunta si
 //     quiere avisos. Una sola vez por cuenta y dispositivo: si dice que no,
-//     queda el boton de la campanita.
+//     queda la pestana Avisos.
 //   - Si ya los acepto, vuelve a mandar la suscripcion al servidor en cada
 //     carga (puede haber cerrado sesion, o el navegador haberla renovado).
-//   - window.vtPush: lo usan la campanita (auth-client.js) y cerrar sesion
+//   - window.vtPush: lo usan la lista de avisos (auth-client.js) y cerrar sesion
 //     (cuenta.html).
 //
 // El permiso se pide SIEMPRE desde un clic: iOS lo exige, y Chrome bloquea a
@@ -131,7 +131,7 @@
   }
 
   // 'activo' tambien se dice: sin esa linea, avisos activos y un servidor sin
-  // claves dejaban la campanita igual y no se distinguian.
+  // claves dejaban la lista igual y no se distinguian.
   var TEXTOS = {
     activo: 'Avisos activados en este dispositivo.',
     comprobando: 'Comprobando avisos en este dispositivo…',
@@ -140,7 +140,7 @@
     falloEntrega: 'El servicio aceptó la prueba, pero este dispositivo no confirmó que la mostrara. Revisar y reintentar.',
     pendiente: 'Activar avisos en este dispositivo',
     instalar: 'Para recibir avisos en el iPhone, instala la app: Compartir → «Añadir a pantalla de inicio».',
-    noSoportado: 'Este navegador no admite avisos push. Los avisos siguen disponibles en la campanita.',
+    noSoportado: 'Este navegador no admite avisos push. Los avisos siguen disponibles en la pestaña Avisos.',
     bloqueado: 'Los avisos están bloqueados en este navegador. Actívalos en sus ajustes para esta web.',
     sinClaves: 'Avisos al móvil sin configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.'
   };
@@ -220,7 +220,7 @@
   function botonProbar() {
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'vt-campana__item vt-campana__push';
+    b.className = 'vt-avisos__item vt-avisos__push';
     b.textContent = 'Probar aviso';
     b.addEventListener('click', function () {
       b.disabled = true;
@@ -234,26 +234,26 @@
     return b;
   }
 
-  // El bloque de arriba de la campanita. Se repinta entero cada vez: la
-  // campanita borra su panel al rellenarlo. Sin claves en el servidor no
+  // El bloque de arriba de la lista de avisos. Se repinta entero cada vez: la
+  // lista se borra entera al rellenarse. Sin claves en el servidor no
   // salia nada, igual que con todo bien, y no habia forma de saberlo
   // (2026-10-18): ahora se lo dice a quien puede arreglarlo.
-  function pintarEnCampana(panel) {
+  function pintarEnLista(panel) {
     Promise.all([estado, window.vtMe]).then(function (r) {
       var e = r[0];
-      Array.prototype.forEach.call(panel.querySelectorAll('.vt-campana__push'), function (v) { v.remove(); });
+      Array.prototype.forEach.call(panel.querySelectorAll('.vt-avisos__push'), function (v) { v.remove(); });
       if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
       if (!TEXTOS[e]) return;
       var interactivo = e === 'pendiente' || e === 'fallo' || e === 'sinProbar' || e === 'falloEntrega';
       var el = document.createElement(interactivo ? 'button' : 'div');
-      el.className = 'vt-campana__item vt-campana__push';
+      el.className = 'vt-avisos__item vt-avisos__push';
       el.textContent = TEXTOS[e];
       if (interactivo) {
         el.type = 'button';
         el.addEventListener('click', function () {
           activar(e === 'fallo' || e === 'falloEntrega', function (texto) {
             el.textContent = texto;
-          }).then(function () { pintarEnCampana(panel); });
+          }).then(function () { pintarEnLista(panel); });
         });
       }
       panel.insertBefore(el, panel.firstChild);
@@ -261,10 +261,10 @@
     });
   }
 
-  window.vtPush = { activar: activar, baja: baja, pintarEnCampana: pintarEnCampana };
+  window.vtPush = { activar: activar, baja: baja, pintarEnLista: pintarEnLista };
 
-  var panel = document.querySelector('#vtCampana .vt-campana__panel');
-  if (panel && panel.firstChild) pintarEnCampana(panel);
+  var panel = document.querySelector('#vtAvisos .vt-avisos__lista');
+  if (panel && panel.firstChild) pintarEnLista(panel);
 
   window.vtMe.then(function (user) {
     if (!user) return;
@@ -273,7 +273,7 @@
         suscribir(false).then(function (j) {
           var siguiente = j && j.ok ? (j.verificado ? 'activo' : 'sinProbar') : 'fallo';
           estado = Promise.resolve(siguiente);
-          if (panel) pintarEnCampana(panel);
+          if (panel) pintarEnLista(panel);
           if (siguiente === 'sinProbar') preguntarUnaVez(user, siguiente);
         });
       }
@@ -332,7 +332,7 @@
       ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono y te lo volveremos a preguntar.'
       : e === 'sinProbar'
         ? 'El permiso ya está concedido. Enviaremos una prueba y sólo daremos los avisos por activados cuando este dispositivo confirme que la mostró.'
-        : 'Te llegará un aviso con lo mismo que la campanita: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
+        : 'Te llegará un aviso con lo mismo que la pestaña Avisos: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
     var botones = document.createElement('div');
     botones.className = 'vt-push-dialogo__botones';
     var cerrar = function () { marcarPreguntado(user); d.close(); d.remove(); };
@@ -347,11 +347,11 @@
         activar(false, function (mensaje) { texto.textContent = mensaje; }).then(function (ok) {
           texto.textContent = ok
             ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
-            : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la campanita.';
+            : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la pestaña Avisos.';
           while (botones.firstChild) botones.firstChild.remove();
           botones.appendChild(boton('Cerrar', 'vt-btn', cerrar));
-          var p = document.querySelector('#vtCampana .vt-campana__panel');
-          if (p) pintarEnCampana(p);
+          var p = document.querySelector('#vtAvisos .vt-avisos__lista');
+          if (p) pintarEnLista(p);
         });
       }));
     }
