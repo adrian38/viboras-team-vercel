@@ -88,7 +88,7 @@ administración (velo de 2000), del toast (2002) y del splash (3000), que es lo
 que tiene que pasar; y por encima del contenido de las tarjetas, que usan
 `--vt-z-contenido`.
 
-## El fundido entre pantallas no se la lleva
+## Ni el fundido ni el «cargando» se la llevan
 
 El velo de [[transicion_entre_pantallas]] es `--vt-z-transicion` (2003), o sea
 que tapa la barra. Tal cual, la barra **desaparecía en cada salto**: los 160 ms
@@ -120,6 +120,24 @@ de la tabla que tenga debajo. Medido con `/rating` desplazado 600 px.
 Comprobado el 2026-11-02 en local: con `vt-nav-puesta` el velo mide
 `bottom: 58px` y sin ella `0px`; con el velo forzado opaco, la captura enseña
 la pantalla entera tapada y la barra entera legible.
+
+### El velo de «cargando», igual
+
+El de [[pantalla_de_carga]] la escondía por dos sitios a la vez, y hacían falta
+los dos arreglos:
+
+- `html.vt-cargando-pagina body > *{visibility:hidden}` la escondía por ser
+  hija del `body`. Ahora la regla lleva `:not(.vt-nav)`: la barra es cromo de
+  la aplicación, no el contenido de la pantalla.
+- Y el velo `.vt-cargando` la tapaba por encima. Se recorta con la misma
+  condición que el del fundido: `html.vt-nav-puesta .vt-cargando`.
+
+La rueda queda centrada en lo que se ve, 29 px más arriba que antes.
+
+Medido el 2026-11-02 en `/players` con el velo puesto: el velo acaba en 754 y
+la barra empieza en 754, no se solapan, la barra calcula `visibility: visible`
+mientras el resto del `body` calcula `hidden`, y sobre el centro de la barra el
+elemento de arriba es la barra.
 
 `sw.js` subió a `viboras-v6` con este cambio: `theme.css` está en el
 `PRECACHE`, así que sin subir la caché un móvil podría montar la barra nueva
