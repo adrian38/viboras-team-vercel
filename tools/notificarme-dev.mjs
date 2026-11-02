@@ -13,7 +13,8 @@ const TIPOS = ['partido_terminado', 'opinion_partido', 'resultados_torneo'];
 
 function ejecutar(programa, argumentos) {
   const binario = process.platform === 'win32' && programa === 'npx' ? 'npx.cmd' : programa;
-  return execFileSync(binario, argumentos, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const shell = process.platform === 'win32' && programa === 'npx';
+  return execFileSync(binario, argumentos, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], shell }).trim();
 }
 
 function comprobarEntorno() {
