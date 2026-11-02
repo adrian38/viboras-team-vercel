@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Comunidad</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +24,11 @@
 <style>
 body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
 .barra{
-  position:fixed;inset:0 0 auto;z-index:var(--vt-z-flotante);height:64px;
+  /* El alto crece con la barra de estado: el padding de abajo ya reservaba su
+     hueco, pero con 64px fijos se lo comia a la fila en vez de anadirselo.
+     Hasta el `viewport-fit=cover` del 2026-11-02 el env() valia 0 y no se
+     notaba. */
+  position:fixed;inset:0 0 auto;z-index:var(--vt-z-flotante);height:calc(64px + env(safe-area-inset-top,0px));
   padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
   display:flex;align-items:center;gap:var(--vt-sm);
   background:rgba(18,19,22,.92);backdrop-filter:blur(14px);box-shadow:0 4px 20px rgba(0,0,0,.6);

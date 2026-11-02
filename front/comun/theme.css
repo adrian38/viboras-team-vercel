@@ -106,7 +106,7 @@
   /* Alto de la barra de pestanas inferior. Lo usan la barra, el hueco que le
    * deja el body y el toast, que si no queda detras de ella. Medido, no
    * elegido: es lo que ocupa `.vt-nav` con sus cinco pestanas. */
-  --vt-nav-alto:58px;
+  --vt-nav-alto:60px;
 
   /* Profundidad. */
   --vt-shadow-card:0 8px 30px rgba(0,0,0,0.45);
@@ -149,6 +149,15 @@ body::selection,::selection{background:var(--vt-gold);color:var(--vt-bg)}
  * Va aqui y no en vt-nav.js porque el script corre con la pagina ya pintada:
  * el hueco llegaria despues y daria un salto. */
 body::after{content:'';display:block;height:calc(var(--vt-nav-alto) + env(safe-area-inset-bottom,0px))}
+
+/* El hueco de la barra de estado arriba, por el `viewport-fit=cover` de las
+ * veinte cabeceras: con el recorte la pagina llega al borde de la pantalla y
+ * el reloj taparia lo primero que haya.
+ *
+ * Pseudoelemento por lo mismo que el de abajo: `padding-top` del body lo
+ * reescriben la consulta de 720px y tres paginas, y el hueco se perderia. En
+ * un navegador de escritorio el `env()` vale 0 y esto no ocupa nada. */
+body::before{content:'';display:block;height:env(safe-area-inset-top,0px)}
 
 a{color:var(--vt-gold-soft);text-decoration-color:var(--vt-border-gold);text-underline-offset:3px}
 a:hover{color:var(--vt-gold-light)}
@@ -771,7 +780,9 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 .vt-nav__item{
   flex:1 1 0;min-width:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  padding:6px 2px 4px;
+  /* 4 px arriba y no 6: el icono crecio de 20 a 26 y asi la barra se queda
+     donde estaba en vez de robarle cuatro pixeles mas a la pagina. */
+  padding:4px 2px 4px;
   border-radius:var(--vt-r);
   color:var(--vt-muted);
   text-decoration:none;
@@ -782,7 +793,11 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 .vt-nav__item:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:-2px}
 .vt-nav__item[aria-current="page"]{color:var(--vt-gold)}
 
-.vt-nav__icono{position:relative;display:flex;align-items:center;justify-content:center;height:22px}
+/* 26 px y no los 20 de `.ms`: a 20 las cinco pestanas se leian como texto con
+   un adorno encima, y el icono es lo que se toca. El alto de la caja va igual
+   que el glifo para que el punto de la activa no baile. */
+.vt-nav__icono{position:relative;display:flex;align-items:center;justify-content:center;height:26px}
+.vt-nav__icono .ms{font-size:26px}
 /* El punto bajo el icono de la pestana activa, como en la maqueta. */
 .vt-nav__item[aria-current="page"] .vt-nav__icono::after{
   content:'';position:absolute;bottom:-3px;

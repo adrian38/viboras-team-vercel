@@ -152,7 +152,43 @@ la barra empieza en 754, no se solapan, la barra calcula `visibility: visible`
 mientras el resto del `body` calcula `hidden`, y sobre el centro de la barra el
 elemento de arriba es la barra.
 
+## El `env(safe-area-*)` no valía nada sin `viewport-fit=cover`
+
+Los tres `env(safe-area-inset-bottom)` de `theme.css` —el relleno de la barra,
+el hueco del `body` y el tope del velo de carga— **devolvían 0 en todos los
+dispositivos**, porque ninguna de las veinte páginas lo pedía: un navegador
+sólo informa de los recortes si el `<meta name="viewport">` lleva
+`viewport-fit=cover`, y los veinte decían sólo
+`width=device-width, initial-scale=1.0`.
+
+El comentario de la barra decía que reservaba el hueco del indicador de inicio
+de iOS. No lo reservaba. Se vio el 2026-11-02 en una captura de Adrián en
+Android con navegación por gestos: la raya blanca del sistema cruzaba por
+encima de «Partidos», «Comunidad» y «Rendimiento».
+
+Desde entonces las veinte cabeceras llevan `viewport-fit=cover` y, como eso
+hace que la página llegue también al borde de arriba, `theme.css` añade
+`body::before` con `env(safe-area-inset-top)`. Es pseudoelemento por lo mismo
+que el de abajo: la consulta de 720 px y tres páginas reescriben el `padding`
+del `body` con la forma corta y se lo llevarían por delante.
+
+Hay una excepción que hay que mirar al tocar esto: `comunidad` tiene su propia
+barra **fija arriba**, que no se entera del `::before`. Su `height` pasó a
+`calc(64px + env(safe-area-inset-top,0px))`; con 64 px fijos el recorte se lo
+quitaba a la fila en vez de sumárselo.
+
+## El alto de la barra es un número medido
+
+`--vt-nav-alto` tiene que valer **lo que ocupa `.vt-nav` de verdad**: lo usan
+el hueco del `body`, el tope del velo y el toast. Al subir los iconos de 20 a
+26 px (2026-11-02) la barra pasó de 58 a 60 px y el token con ella. Si se toca
+el icono, el relleno o el texto, medir `getBoundingClientRect().height` de la
+barra y volver a cuadrar el token.
+
 ## Lo que no se pudo comprobar
 
-El `env(safe-area-inset-bottom)` del iPhone no se ve en local, y nada de esto
-se ha probado en un móvil de verdad ni con la app instalada.
+Los recortes no existen en el navegador de escritorio: en local `env()` sigue
+valiendo 0 y el `body::before` no ocupa nada. Se comprobó **simulando** los
+recortes (36 px arriba, 24 abajo) con una regla inyectada: la barra pasa de 60
+a 84 px y el pie del texto queda a 32 px del borde, por encima de la raya de
+gestos. En un móvil de verdad no está medido.
