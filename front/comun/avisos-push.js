@@ -343,6 +343,14 @@
     return b;
   }
 
+  // Un permiso denegado no se puede volver a pedir desde la web:
+  // requestPermission() resuelve 'denied' sin abrir ninguna pregunta. La unica
+  // salida son los ajustes, asi que el mismo texto sirve antes de intentarlo y
+  // despues de un intento que el sistema no dejo preguntar.
+  var AJUSTES_BLOQUEADO = 'Los avisos están bloqueados en este dispositivo. ' +
+    'Actívalos en los ajustes de notificaciones del navegador o del teléfono; ' +
+    'también verás el estado y las instrucciones en la pestaña Avisos.';
+
   function mostrarDialogo(user, e) {
     var d = document.createElement('dialog');
     d.className = 'vt-push-dialogo';
@@ -352,7 +360,7 @@
     texto.textContent = e === 'instalar'
       ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono para activar los avisos.'
       : e === 'bloqueado'
-        ? 'Los avisos están bloqueados en este dispositivo. Actívalos en los ajustes de notificaciones del navegador o del teléfono; también verás el estado y las instrucciones en la pestaña Avisos.'
+        ? AJUSTES_BLOQUEADO
       : e === 'sinProbar'
         ? 'El permiso ya está concedido. Enviaremos una prueba y sólo daremos los avisos por activados cuando este dispositivo confirme que la mostró.'
         : 'Te llegará un aviso con lo mismo que la pestaña Avisos: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
@@ -366,18 +374,21 @@
     opcion.appendChild(document.createTextNode('No volver a recordármelo en este dispositivo'));
     var recordarDecision = function () { if (noVolver.checked) guardarNoRecordar(user); };
     var cerrar = function () { recordarDecision(); d.close(); d.remove(); };
-    if (e === 'instalar' || e === 'bloqueado') {
+    if (e === 'instalar') {
       botones.appendChild(boton('Entendido', 'vt-btn', cerrar));
     } else {
       botones.appendChild(boton('Ahora no', 'vt-btn vt-btn--quiet', cerrar));
       botones.appendChild(boton(e === 'sinProbar' ? 'Comprobar avisos' : 'Activar avisos', 'vt-btn', function () {
         recordarDecision();
         Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = true; });
-        texto.textContent = 'Registrando este dispositivo…';
+        texto.textContent = e === 'bloqueado' ? 'Pidiendo permiso al navegador…' : 'Registrando este dispositivo…';
         activar(false, function (mensaje) { texto.textContent = mensaje; }).then(function (ok) {
+          var denegado = soporta && Notification.permission === 'denied';
           texto.textContent = ok
             ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
-            : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la pestaña Avisos.';
+            : denegado
+              ? AJUSTES_BLOQUEADO
+              : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la pestaña Avisos.';
           while (botones.firstChild) botones.firstChild.remove();
           botones.appendChild(boton('Cerrar', 'vt-btn', cerrar));
           var p = document.querySelector('#vtAvisos .vt-avisos__lista');

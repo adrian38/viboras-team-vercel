@@ -65,7 +65,13 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
   espera a que termine la pantalla de bienvenida. También se repite si el
   permiso está bloqueado: el diálogo explica que hay que recuperarlo en los
   ajustes del navegador o del teléfono, porque la web no puede volver a
-  solicitar automáticamente un permiso denegado.
+  solicitar automáticamente un permiso denegado. **Mantiene igual los dos
+  botones**, «Ahora no» y «Activar avisos»: quitarlos dejaba sólo «Entendido»
+  y ninguna salida desde la propia pregunta. Al pulsar «Activar avisos» se
+  vuelve a llamar a `requestPermission()`, que con el permiso denegado
+  resuelve `'denied'` sin abrir nada; entonces el diálogo repite las
+  instrucciones de los ajustes en lugar del mensaje de entrega fallida, que es
+  lo que salía antes y despistaba.
 - **El permiso del navegador se pide sólo desde un clic.** iOS lo exige y
   Chrome silencia a las webs que lo piden al cargar. Por eso la pregunta es un
   `<dialog>` propio con un botón, no `requestPermission()` directo.
