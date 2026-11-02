@@ -320,5 +320,11 @@ protección del sistema y nunca debe dejarse activo. La salida segura es
 reiniciar el teléfono y, si recurre con sensores fríos, actualizar o reportar
 Nothing OS.
 
+El reinicio devolvió `Thermal Status: 0` y `Restricted due to: none`. La primera
+prueba coincidió con la cola de arranque (139 trabajos y los 8 cupos ocupados)
+y caducó; al bajar la cola, una entrega nueva confirmó `recibido` y `mostrado`
+con la WebAPK cerrada. Después de un reinicio hay que distinguir esa saturación
+transitoria de que reaparezca una restricción térmica.
+
 Relacionado: [[valoraciones_y_avisos]], [[service_worker]],
 [[cuentas_y_sesiones]], [[entorno_local_docker_y_proxies_neon]].
