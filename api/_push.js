@@ -201,16 +201,17 @@ export async function confirmarPrueba(receiptToken, fase) {
 // Nunca lanza: un push que no sale no puede tumbar el guardado de un partido.
 // Se espera a que salgan todos: en Vercel la funcion se congela al responder.
 async function mandar(consulta, aviso) {
-  if (!configurar()) return;
+  if (!configurar()) return [];
   try {
     await ensurePushSchema();
     await sql`DELETE FROM push_delivery_tests WHERE created_at < now() - interval '7 days'`;
     const { rows } = await consulta();
     const batchId = randomUUID();
     const cuerpo = { title: 'Víboras Team', body: aviso.texto, url: aviso.enlace || '/' };
-    await Promise.all(rows.map((s) => enviarUno(s.user_id, batchId, s, cuerpo, { ttl: 60 * 60 * 24 })));
+    return await Promise.all(rows.map((s) => enviarUno(s.user_id, batchId, s, cuerpo, { ttl: 60 * 60 * 24 })));
   } catch (err) {
     console.error('push: error', err);
+    return [];
   }
 }
 
@@ -229,4 +230,11 @@ export function pushAAdmins(aviso) {
     SELECT s.id, s.user_id, s.endpoint, s.p256dh, s.auth
     FROM push_subscriptions s JOIN users u ON u.id = s.user_id
     WHERE u.status = 'active' AND u.role = 'admin'`, aviso);
+}
+
+export function pushAUsuario(userId, aviso) {
+  return mandar(() => sql`
+    SELECT s.id, s.user_id, s.endpoint, s.p256dh, s.auth
+    FROM push_subscriptions s JOIN users u ON u.id = s.user_id
+    WHERE u.status = 'active' AND s.user_id = ${userId}`, aviso);
 }

@@ -136,8 +136,9 @@ que hay.
   dispositivo y el permiso sólo desde un clic, el iPhone sin instalar, las
   variables VAPID de Vercel, la activación verificada con una entrega real, el
   acuse de todos los avisos y el diagnóstico de aceptado/recibido/mostrado/
-  pulsado; y el caso de Nothing OS que retenía el trabajo de Chrome por un
-  estado térmico severo atascado.
+  pulsado, la herramienta segura para mandarse plantillas en `dev`; y el caso
+  de Nothing OS que retenía el trabajo de Chrome por un estado térmico severo
+  atascado.
 
 ## Lo que escriben los miembros
 

@@ -270,6 +270,22 @@ se fuerza la renovación si la prueba devuelve 404, 410 o
 `VapidPkHashMismatch`. Al renovar se llama primero a `baja` con el endpoint
 anterior para que tampoco quede una fila huérfana.
 
+### Herramienta de avisos propios en `dev`
+
+`tools/notificarme-dev.mjs` manda plantillas marcadas `[Prueba]` solamente al
+administrador indicado. No usa `.env.local`: exige estar en la rama Git `dev`,
+confirma el ID de `viboras_dev` y los overrides de Vercel, obtiene de Neon una
+conexión a esa rama, crea una sesión de cinco minutos y la borra en `finally`.
+La acción `notificarme` de `api/push.js` también exige administrador y
+`VERCEL_ENV=preview` con `VERCEL_GIT_COMMIT_REF=dev`, así que no existe en
+producción aunque alguien conserve el script.
+
+Los comandos interactivos (piden el correo) son `npm run push:dev:partido`,
+`npm run push:dev:opinion`, `npm run push:dev:torneo` y
+`npm run push:dev:todas`. También aceptan `-- --email=correo`. La respuesta no
+se da por buena sólo porque la API contestó: exige al menos un 2xx del servicio
+push e imprime cuántos dispositivos lo aceptaron.
+
 ## El entorno local manda avisos a móviles de verdad
 
 Esto no es una advertencia teórica. El 2026-11-01, antes de probar la

@@ -9,7 +9,11 @@
     "check": "node tools/ai-context-index.mjs && node tools/rating-parity.mjs && node tools/code-size.mjs && node tools/palette.mjs && node tools/barra-navegacion.mjs",
     "check:index": "node tools/ai-context-index.mjs",
     "check:rating": "node tools/rating-parity.mjs",
-    "check:size": "node tools/code-size.mjs"
+    "check:size": "node tools/code-size.mjs",
+    "push:dev:partido": "node tools/notificarme-dev.mjs partido_terminado",
+    "push:dev:opinion": "node tools/notificarme-dev.mjs opinion_partido",
+    "push:dev:torneo": "node tools/notificarme-dev.mjs resultados_torneo",
+    "push:dev:todas": "node tools/notificarme-dev.mjs todas"
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",

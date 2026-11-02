@@ -6,8 +6,14 @@ import { readBody } from './_db.js';
 import { exigirSesion, sinCache } from './_auth.js';
 import {
   ensurePushSchema, clavePublica, endpointValido, pushDePrueba,
-  estadoPrueba, confirmarPrueba
+  estadoPrueba, confirmarPrueba, pushAUsuario
 } from './_push.js';
+
+const AVISOS_DEV = {
+  partido_terminado: { texto: '[Prueba] Partido terminado: ya puedes consultar el resultado.', enlace: '/history' },
+  opinion_partido: { texto: '[Prueba] ¿Qué tal el partido? Valora a tus compañeros.', enlace: '/valorar' },
+  resultados_torneo: { texto: '[Prueba] Ya están los resultados del torneo. Valora a tus compañeros.', enlace: '/valorar' }
+};
 
 // Null si el servidor no tiene claves: la pagina entonces no ofrece nada.
 async function clave(req, res) {
@@ -60,6 +66,24 @@ async function estado(req, res, user) {
   res.status(200).json(await estadoPrueba(user.id, testId));
 }
 
+async function notificarme(req, res, user) {
+  const esDev = process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_GIT_COMMIT_REF === 'dev';
+  if (!esDev || user.role !== 'admin') {
+    res.status(403).json({ ok: false, error: 'forbidden' });
+    return;
+  }
+  const data = await readBody(req);
+  const tipo = String(data?.tipo || '');
+  const aviso = Object.prototype.hasOwnProperty.call(AVISOS_DEV, tipo) ? AVISOS_DEV[tipo] : null;
+  if (!aviso) {
+    res.status(400).json({ ok: false, error: 'bad_type', tipos: Object.keys(AVISOS_DEV) });
+    return;
+  }
+  const dispositivos = await pushAUsuario(user.id, aviso);
+  const aceptados = dispositivos.filter((d) => d.estado >= 200 && d.estado < 300).length;
+  res.status(aceptados ? 200 : 502).json({ ok: aceptados > 0, tipo, aceptados, dispositivos });
+}
+
 // El token aleatorio identifica una sola entrega. No exige sesion porque el
 // service worker puede despertarse cuando la cookie ya haya caducado.
 async function confirmar(req, res) {
@@ -73,7 +97,8 @@ const ACCIONES = {
   suscribir: ['POST', suscribir],
   baja: ['POST', baja],
   probar: ['POST', probar],
-  estado: ['GET', estado]
+  estado: ['GET', estado],
+  notificarme: ['POST', notificarme]
 };
 
 export default async function handler(req, res) {
