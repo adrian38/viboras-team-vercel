@@ -272,8 +272,10 @@ anterior para que tampoco quede una fila huérfana.
 
 ### Herramienta de avisos propios en `dev`
 
-`tools/notificarme-dev.mjs` manda plantillas marcadas `[Prueba]` solamente al
-administrador indicado. No usa `.env.local`: exige estar en la rama Git `dev`,
+`tools/notificarme-dev.mjs` crea plantillas marcadas `[Prueba]` solamente para
+el jugador del administrador indicado, mediante la puerta canónica
+`crearAviso`: aparecen en la pestaña y el badge y a la vez salen por push. No
+usa `.env.local`: exige estar en la rama Git `dev`,
 confirma el ID de `viboras_dev` y los overrides de Vercel, obtiene de Neon una
 conexión a esa rama, crea una sesión de cinco minutos y la borra en `finally`.
 La acción `notificarme` de `api/push.js` también exige administrador y
@@ -285,6 +287,11 @@ Los comandos interactivos (piden el correo) son `npm run push:dev:partido`,
 `npm run push:dev:todas`. También aceptan `-- --email=correo`. La respuesta no
 se da por buena sólo porque la API contestó: exige al menos un 2xx del servicio
 push e imprime cuántos dispositivos lo aceptaron.
+
+El primer envío del 2026-11-02 llamó directamente a `pushAUsuario`: Android
+recibió las tres notificaciones, pero la pestaña y el badge quedaron a cero
+porque no había filas en `avisos`. Esa vía se eliminó; una plantilla que sólo
+empuja vuelve a crear dos verdades y no es una prueba válida del sistema.
 
 ## El entorno local manda avisos a móviles de verdad
 

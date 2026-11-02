@@ -6,8 +6,9 @@ import { readBody } from './_db.js';
 import { exigirSesion, sinCache } from './_auth.js';
 import {
   ensurePushSchema, clavePublica, endpointValido, pushDePrueba,
-  estadoPrueba, confirmarPrueba, pushAUsuario
+  estadoPrueba, confirmarPrueba
 } from './_push.js';
+import { crearAviso } from './_avisos.js';
 
 const AVISOS_DEV = {
   partido_terminado: { texto: '[Prueba] Partido terminado: ya puedes consultar el resultado.', enlace: '/history' },
@@ -79,7 +80,11 @@ async function notificarme(req, res, user) {
     res.status(400).json({ ok: false, error: 'bad_type', tipos: Object.keys(AVISOS_DEV) });
     return;
   }
-  const dispositivos = await pushAUsuario(user.id, aviso);
+  if (!user.player_id) {
+    res.status(409).json({ ok: false, error: 'admin_without_player' });
+    return;
+  }
+  const dispositivos = await crearAviso([user.player_id], aviso.texto, aviso.enlace);
   const aceptados = dispositivos.filter((d) => d.estado >= 200 && d.estado < 300).length;
   res.status(aceptados ? 200 : 502).json({ ok: aceptados > 0, tipo, aceptados, dispositivos });
 }

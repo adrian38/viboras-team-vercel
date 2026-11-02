@@ -231,10 +231,3 @@ export function pushAAdmins(aviso) {
     FROM push_subscriptions s JOIN users u ON u.id = s.user_id
     WHERE u.status = 'active' AND u.role = 'admin'`, aviso);
 }
-
-export function pushAUsuario(userId, aviso) {
-  return mandar(() => sql`
-    SELECT s.id, s.user_id, s.endpoint, s.p256dh, s.auth
-    FROM push_subscriptions s JOIN users u ON u.id = s.user_id
-    WHERE u.status = 'active' AND s.user_id = ${userId}`, aviso);
-}

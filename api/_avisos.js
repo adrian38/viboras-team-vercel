@@ -171,7 +171,7 @@ export async function crearAviso(playerIds, texto, enlace) {
   for (const id of destinos) {
     await sql`INSERT INTO avisos (player_id, texto, enlace) VALUES (${id}, ${texto}, ${enlace})`;
   }
-  await pushAJugadores(destinos, { texto, enlace });
+  return pushAJugadores(destinos, { texto, enlace });
 }
 
 // Aviso guardado (campanita) + push a los jugadores del partido, menos a
