@@ -65,16 +65,26 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
   espera a que termine la pantalla de bienvenida. También se repite si el
   permiso está bloqueado: el diálogo explica que hay que recuperarlo en los
   ajustes del navegador o del teléfono, porque la web no puede volver a
-  solicitar automáticamente un permiso denegado. **Mantiene igual los dos
-  botones**, «Ahora no» y «Activar avisos»: quitarlos dejaba sólo «Entendido»
-  y ninguna salida desde la propia pregunta. Al pulsar «Activar avisos» se
-  vuelve a llamar a `requestPermission()`, que con el permiso denegado
-  resuelve `'denied'` sin abrir nada; entonces el diálogo repite las
-  instrucciones de los ajustes en lugar del mensaje de entrega fallida, que es
-  lo que salía antes y despistaba.
+  solicitar automáticamente un permiso denegado.
 - **El permiso del navegador se pide sólo desde un clic.** iOS lo exige y
   Chrome silencia a las webs que lo piden al cargar. Por eso la pregunta es un
   `<dialog>` propio con un botón, no `requestPermission()` directo.
+- **Con el permiso denegado no hay nada que la web pueda hacer, y por eso no
+  se ofrece.** `requestPermission()` resuelve `'denied'` sin abrir ninguna
+  pregunta, y Chrome no lanza un `intent://` a los Ajustes de Android porque
+  esas pantallas no son `BROWSABLE`. Un botón de reintentar ahí sólo cambia
+  una frase por otra: se probó el 2026-11-02 y se quitó. La línea de la
+  tarjeta dice el estado y no se pulsa.
+- **El permiso se vuelve a leer al volver a la pantalla.** `estado` se calcula
+  una sola vez al abrir, y permitir los avisos ocurre fuera de la web: sin
+  esto la tarjeta se queda diciendo «bloqueados» con el permiso ya concedido.
+  Pasó el 2026-11-02 en el móvil de Adrián; por adb, la página decía
+  `Notification.permission: granted` mientras la tarjeta seguía en bloqueado.
+  Lo arregla `refrescarPermiso()`, colgado del `onchange` de
+  `navigator.permissions.query` y de `visibilitychange`. Sólo registra el
+  dispositivo si veníamos de `bloqueado` o `pendiente`: en los demás estados
+  ya hay suscripción, y repetirla en cada vuelta mandaría una prueba detrás de
+  otra.
 - **En iPhone sólo hay push con la app instalada** en la pantalla de inicio
   (iOS 16.4 o posterior). En Safari normal `PushManager` no existe: la pregunta
   explica cómo instalarla, y al abrirla instalada se pregunta otra vez (el
@@ -89,25 +99,6 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
   2026-10-18: Adrián no veía ni el botón ni la pregunta, y en local, simulando
   `clave: null` desde un Android emulado, la campanita quedaba idéntica a su
   captura.
-- **«Bloqueados» abre los pasos de los ajustes** (desde el 2026-11-02). Antes
-  era un `div` muerto. Reintentar `requestPermission()` tampoco servía: con el
-  permiso denegado contesta `'denied'` sin abrir nada, así que pulsar sólo
-  cambiaba una frase por otra parecida y parecía estropeado. Ahora el toque
-  abre un `<dialog>` con los pasos del sistema, que `pasosDesbloqueo()` elige
-  según iPhone, Android instalada o navegador. **En Android instalada son dos
-  interruptores distintos**: el de la app (Ajustes → Aplicaciones) y el del
-  sitio dentro de Chrome (Configuración de sitios → Notificaciones); permitir
-  el primero no levanta el segundo, y por eso el cuarto paso nombra el
-  `location.host`.
-- **El permiso se vuelve a mirar al volver a la pantalla.** Permitirlo ocurre
-  fuera de la web y al regresar no hay recarga, así que sin esto la tarjeta
-  seguiría diciendo «bloqueados» con el permiso ya concedido. Lo hace
-  `refrescarPermiso()`, enganchado a `navigator.permissions.query` —su
-  `onchange`— y a `visibilitychange` como red de seguridad. Sólo registra el
-  dispositivo si veníamos de `bloqueado` o `pendiente`: en los demás estados ya
-  hay una suscripción en marcha y repetirla en cada vuelta mandaría una prueba
-  detrás de otra. El botón «Ya los he permitido» del diálogo es ese mismo
-  camino a mano.
 - **Con el permiso concedido, cada carga reenvía la suscripción.** Cubre el
   cerrar sesión y volver a entrar, y que el navegador la renueve.
 - **Al cerrar sesión el dispositivo se da de baja** y la suscripción se
