@@ -52,12 +52,16 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
   ficha y las altas pendientes les llegan a ellos.
 - **`avisos-push.js` no está en ningún `<head>`.** Lo inyecta `auth-client.js`
   cuando hay sesión, así que llega a las 18 páginas sin tocarlas.
-- **La pregunta sale una vez por cuenta y dispositivo** (`localStorage`,
-  `vt-push-configurado-v2:<correo>`), no al pulsar nada. Petición de Adrián: al
-  entrar por primera vez tras ser aceptado. La versión `v2` fuerza una única
-  comprobación guiada también a quienes ya habían aceptado el permiso antes
-  del 2026-11-02. Si dice que no o la entrega falla, queda el botón de la
-  tarjeta «Tus avisos» de `/tablon`. No sale en `/cuenta`, `/inscripcion` ni `/group-normativa`, y
+- **La pregunta sale una vez en cada apertura mientras los avisos no estén
+  activos.** `sessionStorage` evita repetirla al navegar entre pantallas dentro
+  de esa misma apertura. «Ahora no» y cerrar con Escape sólo la aplazan hasta
+  la siguiente. La
+  casilla «No volver a recordármelo en este dispositivo» guarda la exclusión
+  por cuenta y dispositivo (`localStorage`,
+  `vt-push-no-recordar-v3:<correo>`); después sólo se pueden activar desde la
+  tarjeta «Tus avisos» de `/tablon`. La versión `v3` no reutiliza el antiguo
+  «ya preguntado» de `v2`, porque se guardó sin ofrecer una decisión explícita
+  permanente. No sale en `/cuenta`, `/inscripcion` ni `/group-normativa`, y
   espera a que termine la pantalla de bienvenida.
 - **El permiso del navegador se pide sólo desde un clic.** iOS lo exige y
   Chrome silencia a las webs que lo piden al cargar. Por eso la pregunta es un

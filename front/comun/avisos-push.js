@@ -2,9 +2,8 @@
 //
 // Lo carga auth-client.js solo cuando hay sesion, asi que las 18 paginas lo
 // tienen sin tocar sus <head>. Hace tres cosas:
-//   - La primera vez que una cuenta entra en un dispositivo, pregunta si
-//     quiere avisos. Una sola vez por cuenta y dispositivo: si dice que no,
-//     queda la pestana Avisos.
+//   - Mientras no esten activos, pregunta al abrir. Solo deja de recordarlo
+//     si la cuenta lo pide expresamente; queda siempre la pestana Avisos.
 //   - Si ya los acepto, vuelve a mandar la suscripcion al servidor en cada
 //     carga (puede haber cerrado sesion, o el navegador haberla renovado).
 //   - window.vtPush: lo usan la lista de avisos (auth-client.js) y cerrar sesion
@@ -287,21 +286,29 @@
           var siguiente = j && j.ok ? (j.verificado ? 'activo' : 'sinProbar') : 'fallo';
           estado = Promise.resolve(siguiente);
           if (panel) pintarEnLista(panel);
-          if (siguiente === 'sinProbar') preguntarUnaVez(user, siguiente);
+          if (siguiente === 'sinProbar' || siguiente === 'fallo') preguntarAlAbrir(user, siguiente);
         });
       }
-      else if (e === 'pendiente' || e === 'instalar' || e === 'sinProbar') preguntarUnaVez(user, e);
+      else if (e === 'pendiente' || e === 'instalar' || e === 'sinProbar') preguntarAlAbrir(user, e);
     });
   });
 
-  // --- La pregunta de la primera vez -------------------------------------
+  // --- La pregunta al abrir mientras no esten activos -------------------
 
-  function yaPreguntado(user) {
-    try { return localStorage.getItem('vt-push-configurado-v2:' + user.email) === '1'; } catch (e) { return true; }
+  function noRecordar(user) {
+    try { return localStorage.getItem('vt-push-no-recordar-v3:' + user.email) === '1'; } catch (e) { return false; }
   }
 
-  function marcarPreguntado(user) {
-    try { localStorage.setItem('vt-push-configurado-v2:' + user.email, '1'); } catch (e) { /* sin almacenamiento */ }
+  function guardarNoRecordar(user) {
+    try { localStorage.setItem('vt-push-no-recordar-v3:' + user.email, '1'); } catch (e) { /* sin almacenamiento */ }
+  }
+
+  function preguntadoEnEstaApertura(user) {
+    try { return sessionStorage.getItem('vt-push-preguntado:' + user.email) === '1'; } catch (e) { return false; }
+  }
+
+  function marcarEstaApertura(user) {
+    try { sessionStorage.setItem('vt-push-preguntado:' + user.email, '1'); } catch (e) { /* sin almacenamiento */ }
   }
 
   // En estas se esta entrando o dandose de alta: no es el momento.
@@ -321,8 +328,9 @@
     obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
   }
 
-  function preguntarUnaVez(user, e) {
-    if (yaPreguntado(user) || paginaDeEntrada()) return;
+  function preguntarAlAbrir(user, e) {
+    if (noRecordar(user) || preguntadoEnEstaApertura(user) || paginaDeEntrada()) return;
+    marcarEstaApertura(user);
     trasSplash(function () { mostrarDialogo(user, e); });
   }
 
@@ -342,19 +350,26 @@
     titulo.textContent = '¿Te avisamos en el móvil?';
     var texto = document.createElement('p');
     texto.textContent = e === 'instalar'
-      ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono y te lo volveremos a preguntar.'
+      ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono para activar los avisos.'
       : e === 'sinProbar'
         ? 'El permiso ya está concedido. Enviaremos una prueba y sólo daremos los avisos por activados cuando este dispositivo confirme que la mostró.'
         : 'Te llegará un aviso con lo mismo que la pestaña Avisos: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
     var botones = document.createElement('div');
     botones.className = 'vt-push-dialogo__botones';
-    var cerrar = function () { marcarPreguntado(user); d.close(); d.remove(); };
+    var opcion = document.createElement('label');
+    opcion.className = 'vt-push-dialogo__no-recordar';
+    var noVolver = document.createElement('input');
+    noVolver.type = 'checkbox';
+    opcion.appendChild(noVolver);
+    opcion.appendChild(document.createTextNode('No volver a recordármelo en este dispositivo'));
+    var recordarDecision = function () { if (noVolver.checked) guardarNoRecordar(user); };
+    var cerrar = function () { recordarDecision(); d.close(); d.remove(); };
     if (e === 'instalar') {
       botones.appendChild(boton('Entendido', 'vt-btn', cerrar));
     } else {
       botones.appendChild(boton('Ahora no', 'vt-btn vt-btn--quiet', cerrar));
       botones.appendChild(boton(e === 'sinProbar' ? 'Comprobar avisos' : 'Activar avisos', 'vt-btn', function () {
-        marcarPreguntado(user);
+        recordarDecision();
         Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = true; });
         texto.textContent = 'Registrando este dispositivo…';
         activar(false, function (mensaje) { texto.textContent = mensaje; }).then(function (ok) {
@@ -370,8 +385,9 @@
     }
     d.appendChild(titulo);
     d.appendChild(texto);
+    d.appendChild(opcion);
     d.appendChild(botones);
-    d.addEventListener('cancel', function () { marcarPreguntado(user); });
+    d.addEventListener('cancel', recordarDecision);
     document.body.appendChild(d);
     d.showModal();
   }
