@@ -144,6 +144,15 @@
     sinClaves: 'Avisos al móvil sin configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.'
   };
 
+  // Lo que se dice cuando el intento acaba sin permiso: una linea, porque no
+  // hay nada mas que la web pueda hacer. El boton se queda vivo, que el
+  // permiso puede cambiar en los ajustes sin salir de la pantalla.
+  var SIGUE_BLOQUEADO = 'Sigue bloqueado. Permítelo en los ajustes de notificaciones del móvil y vuelve a pulsar.';
+
+  function siguePermisoDenegado() {
+    return soporta && Notification.permission === 'denied';
+  }
+
   function nombreServicio(host) {
     return String(host || '?').split('.').slice(-3).join('.');
   }
@@ -253,7 +262,8 @@
       if (probar) probar.remove();
       if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
       if (!TEXTOS[e]) return;
-      var interactivo = e === 'pendiente' || e === 'fallo' || e === 'sinProbar' || e === 'falloEntrega';
+      var interactivo = e === 'pendiente' || e === 'fallo' || e === 'sinProbar' ||
+        e === 'falloEntrega' || e === 'bloqueado';
       var el = document.createElement(interactivo ? 'button' : 'div');
       el.className = 'vt-avisos__item vt-avisos__push';
       el.textContent = TEXTOS[e];
@@ -262,7 +272,12 @@
         el.addEventListener('click', function () {
           activar(e === 'fallo' || e === 'falloEntrega', function (texto) {
             el.textContent = texto;
-          }).then(function () { pintarEnLista(panel); });
+          }).then(function (ok) {
+            // Repintar borraria la respuesta y dejaria la fila como estaba,
+            // que es lo que hacia parecer que pulsarla no hacia nada.
+            if (!ok && siguePermisoDenegado()) el.textContent = SIGUE_BLOQUEADO;
+            else pintarEnLista(panel);
+          });
         });
       }
       panel.insertBefore(el, panel.firstChild);
@@ -392,6 +407,19 @@
     return b;
   }
 
+  // Si el permiso sigue denegado los botones vuelven a quedar vivos: puede
+  // concederse en los ajustes del movil sin cerrar esto, y entonces «Activar
+  // avisos» ya funciona. En los demas casos el intento termina y sólo queda
+  // cerrar.
+  function finDelIntento(botones, cerrar, denegado) {
+    if (denegado) {
+      Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = false; });
+      return;
+    }
+    while (botones.firstChild) botones.firstChild.remove();
+    botones.appendChild(boton('Cerrar', 'vt-btn', cerrar));
+  }
+
   function mostrarDialogo(user, e) {
     var d = document.createElement('dialog');
     d.className = 'vt-push-dialogo';
@@ -415,7 +443,7 @@
     opcion.appendChild(document.createTextNode('No volver a recordármelo en este dispositivo'));
     var recordarDecision = function () { if (noVolver.checked) guardarNoRecordar(user); };
     var cerrar = function () { recordarDecision(); d.close(); d.remove(); };
-    if (e === 'instalar' || e === 'bloqueado') {
+    if (e === 'instalar') {
       botones.appendChild(boton('Entendido', 'vt-btn', cerrar));
     } else {
       botones.appendChild(boton('Ahora no', 'vt-btn vt-btn--quiet', cerrar));
@@ -424,13 +452,14 @@
         Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = true; });
         texto.textContent = 'Registrando este dispositivo…';
         activar(false, function (mensaje) { texto.textContent = mensaje; }).then(function (ok) {
+          var denegado = siguePermisoDenegado();
           texto.textContent = ok
             ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
-            : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la pestaña Avisos.';
-          while (botones.firstChild) botones.firstChild.remove();
-          botones.appendChild(boton('Cerrar', 'vt-btn', cerrar));
-          var p = document.querySelector('#vtAvisos .vt-avisos__lista');
-          if (p) pintarEnLista(p);
+            : denegado
+              ? SIGUE_BLOQUEADO
+              : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la pestaña Avisos.';
+          finDelIntento(botones, cerrar, denegado);
+          repintarTarjeta();
         });
       }));
     }

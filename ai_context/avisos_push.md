@@ -69,12 +69,18 @@ En la campanita sale una entrada por partido, «Valora el partido del dd/mm»
 - **El permiso del navegador se pide sólo desde un clic.** iOS lo exige y
   Chrome silencia a las webs que lo piden al cargar. Por eso la pregunta es un
   `<dialog>` propio con un botón, no `requestPermission()` directo.
-- **Con el permiso denegado no hay nada que la web pueda hacer, y por eso no
-  se ofrece.** `requestPermission()` resuelve `'denied'` sin abrir ninguna
+- **Bloqueado también se pulsa, y acaba en una línea.** La fila de la tarjeta
+  y el diálogo mantienen «Activar avisos». Lo que no se puede es arreglarlo
+  desde la web: `requestPermission()` resuelve `'denied'` sin abrir ninguna
   pregunta, y Chrome no lanza un `intent://` a los Ajustes de Android porque
-  esas pantallas no son `BROWSABLE`. Un botón de reintentar ahí sólo cambia
-  una frase por otra: se probó el 2026-11-02 y se quitó. La línea de la
-  tarjeta dice el estado y no se pulsa.
+  esas pantallas no son `BROWSABLE`. Así que el intento acaba en una frase
+  —`SIGUE_BLOQUEADO`— y no en una lista de pasos: el 2026-11-02 se probó con
+  un diálogo de instrucciones y sobraba. Dos detalles que lo hacen útil en vez
+  de decorativo: la fila **no se repinta** tras el intento (repintar borraba la
+  respuesta y parecía que pulsar no hacía nada), y los botones del diálogo
+  **vuelven a quedar habilitados** (`finDelIntento`), porque el permiso puede
+  concederse en los ajustes sin cerrar la pantalla y entonces el mismo botón
+  ya funciona.
 - **El permiso se vuelve a leer al volver a la pantalla.** `estado` se calcula
   una sola vez al abrir, y permitir los avisos ocurre fuera de la web: sin
   esto la tarjeta se queda diciendo «bloqueados» con el permiso ya concedido.
