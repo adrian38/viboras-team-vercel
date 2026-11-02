@@ -393,7 +393,7 @@ transitoria de que reaparezca una restricción térmica.
 
 ## El badge del icono (2026-11-02)
 
-El icono de la app instalada lleva el número de avisos sin leer, el mismo que
+El icono de la app instalada solicita el número de avisos sin leer, el mismo que
 la pestaña Avisos de la barra de abajo. **Es el mismo dato, no uno paralelo**:
 sale de `/api/auth?action=notifications`, que es lo que pinta la lista de
 `/tablon` y el número de la pestaña.
@@ -403,8 +403,9 @@ con la app cerrada:
 
 | Cuándo | Dónde | Cómo |
 | --- | --- | --- |
-| Al cargar cualquier página con sesión, y al pulsar «Limpiar» | `auth-client.js`, `pintarBadgeDelIcono` dentro de `pintarNumero` | el mismo `items.length` que la pestaña |
+| Al cargar cualquier página con sesión, al volver al primer plano y al pulsar «Limpiar» | `auth-client.js`, `pintarBadgeDelIcono` dentro de `pintarNumero` | el mismo `items.length` que la pestaña |
 | Al llegar un push con la app cerrada | `_push.js`, `mandar`, y `sw.js`, `pintarBadge` | el servidor incluye `unread` cifrado en el push y el worker lo aplica directamente |
+| Al llegar un push con una página abierta | `sw.js`, `avisarClientes`, y `auth-client.js`, `escucharCambiosDeAvisos` | el worker manda `vt-avisos-actualizados`; la página relee y repinta lista y contador |
 
 **El service worker no puede sumar uno al badge que haya**: la Badging API
 escribe (`setAppBadge`, `clearAppBadge`) pero no deja leerlo. Sumar a ciegas
@@ -415,6 +416,13 @@ dejar sólo el punto del sistema. Ahora `_push.js` calcula `avisosDeCampana(user
 antes de cada envío y mete su longitud en el payload cifrado como `unread`; el
 worker llama a `setAppBadge(unread)` sin necesitar sesión. La consulta anterior
 queda como respaldo para pushes antiguos y para el aviso técnico de prueba.
+
+En Android hay un límite de plataforma que el código no puede superar: Chrome
+no implementa la Badging API numérica para PWAs. El WebAPK recibe el número,
+pero el lanzador sólo enseña el punto asociado a una notificación pendiente.
+Un número en el icono requiere una aplicación Android nativa o un envoltorio
+nativo que publique el badge; no se debe prometer desde la PWA. En iOS/iPadOS
+instalado y en escritorios compatibles sí se solicita el número exacto.
 
 Decisiones que parecen errores:
 
@@ -430,14 +438,15 @@ Decisiones que parecen errores:
 - **Si la petición falla, el badge se queda como estaba.** Un 500, un error de
   red o un JSON sin `items` no tocan nada: el aviso se ve igual y la siguiente
   apertura de la app corrige el número.
-- **El badge de este dispositivo sólo se corrige al abrir la app aquí.** Leer
-  los avisos en otro móvil no lo baja hasta que se abre en éste.
+- **El badge de este dispositivo sólo se corrige al abrir o volver a la app
+  aquí.** Leer los avisos en otro móvil no lo baja mientras este dispositivo
+  siga cerrado, porque no se envía un push al marcar como leído.
 
-**Dónde no se ve nada**: Firefox no implementa la Badging API; Safari sólo la
-aplica a la app instalada en la pantalla de inicio; y Chrome de escritorio la
-admite, pero el badge sólo se dibuja si la app está instalada. En todos esos
-casos no se hace nada y queda el número de la pestaña, que está en las veinte
-páginas ([[barra_de_navegacion]]).
+**Cómo se representa**: Android/Chrome sólo muestra un punto por notificación
+pendiente; Safari sólo aplica el número a la app instalada en la pantalla de
+inicio; Chrome de escritorio lo admite si la PWA está instalada; Firefox no
+implementa la Badging API. Siempre queda el número propio de la pestaña, que
+está en las veinte páginas ([[barra_de_navegacion]]).
 
 **Lo que no se pudo comprobar en local**: el camino del service worker. El
 navegador integrado no registra service workers sobre `localhost`

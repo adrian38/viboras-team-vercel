@@ -182,11 +182,29 @@
       });
   }
 
+  // Si llega un push mientras una pagina esta abierta, el service worker
+  // despierta fuera de esta ventana. Su mensaje obliga a releer la lista
+  // completa: asi se actualizan a la vez /tablon, el numero de la pestana y
+  // el badge en los sistemas que lo admiten. Al volver a primer plano se hace
+  // lo mismo por si Android congelo la pagina antes de entregar el mensaje.
+  function escucharCambiosDeAvisos(user) {
+    if (!user) return;
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        if (event.data && event.data.type === 'vt-avisos-actualizados') cargarAvisos(user);
+      });
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') cargarAvisos(user);
+    });
+  }
+
   window.vtMe.then(function (user) {
     exigirEntrar(user);
     // Sin sesion no hay avisos de nadie: al cerrar sesion el icono se limpia.
     if (!user) pintarBadgeDelIcono(0);
     cargarAvisos(user);
+    escucharCambiosDeAvisos(user);
     cargarPush(user);
   });
 })();

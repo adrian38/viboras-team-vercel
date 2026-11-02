@@ -123,6 +123,18 @@ function pintarBadge(cantidad) {
     .catch(() => null);
 }
 
+// Una ventana abierta no recibe por si sola el cambio que desperto al worker.
+// Se le avisa para que vuelva a leer la lista canonica; `unread` sirve para el
+// badge del sistema, pero la pagina necesita tambien el texto y los enlaces.
+function avisarClientes(cantidad) {
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    .then((ventanas) => {
+      ventanas.forEach((ventana) => ventana.postMessage({
+        type: 'vt-avisos-actualizados', unread: cantidad
+      }));
+    });
+}
+
 self.addEventListener('push', (event) => {
   let d = {};
   try {
@@ -139,7 +151,9 @@ self.addEventListener('push', (event) => {
   const recibido = confirmarPrueba(d.receiptToken, 'recibido');
   const mostrado = self.registration.showNotification(d.title || 'Víboras Team', opciones)
     .then(() => confirmarPrueba(d.receiptToken, 'mostrado'));
-  event.waitUntil(Promise.all([recibido, mostrado, pintarBadge(d.unread)]));
+  event.waitUntil(Promise.all([
+    recibido, mostrado, pintarBadge(d.unread), avisarClientes(d.unread)
+  ]));
 });
 
 // Solo enlaces de la propia app: lo que venga de fuera abre la portada.
