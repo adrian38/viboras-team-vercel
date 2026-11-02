@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historial de resultados</title>
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+<style>
+/* renderTable() reparte las clases .tag/.win/.lose/.tie, .desktop-only y
+   .mobile-only, y los th alternan .th-full / .th-day segun el ancho. Todas
+   se conservan: aqui solo cambian sus reglas. */
+
+.controls{display:flex;gap:var(--vt-md);flex-wrap:wrap}
+.controls label{
+  font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;
+  color:var(--vt-muted);
+  gap:var(--vt-xs);
+}
+.filter-box{
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  padding:var(--vt-md);
+  margin-bottom:var(--vt-md);
+}
+
+.select{
+  padding:9px 30px 9px 12px;
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:14px;
+}
+select.select{
+  appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--vt-muted) 50%),linear-gradient(135deg,var(--vt-muted) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+}
+.select:focus{outline:none;border-color:var(--vt-gold)}
+.select::placeholder{color:var(--vt-faint)}
+.select option{background:var(--vt-surface-2)}
+
+/* En modo administracion la tabla gana una cuarta columna, "Acciones", con
+   Guardar y Cancelar, y deja de caber: a 390 px se salia 63 px de la tarjeta,
+   que al llevar overflow:hidden la recortaba. Que scrollee dentro, como ya
+   hacen torneos y ranking con sus tablas. */
+#tableContainer{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:var(--vt-sm)}
+th{
+  padding:10px 12px;
+  background:var(--vt-surface-3);
+  color:var(--vt-muted);
+  font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  text-align:left;
+  border-bottom:1px solid var(--vt-border-strong);
+}
+th:last-child{text-align:right}
+td{padding:10px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--vt-surface-2)}
+/* El marcador es el dato que se busca de un vistazo: oro y condensada. */
+td:nth-child(3){
+  text-align:right;
+  font-family:var(--vt-font-head);
+  font-size:19px;font-weight:700;letter-spacing:0.02em;
+  color:var(--vt-gold);
+  white-space:nowrap;
+}
+
+.muted{color:var(--vt-muted)}
+
+.btn{
+  padding:9px 16px;
+  background:var(--vt-gold);
+  border:1px solid transparent;
+  border-radius:var(--vt-r);
+  color:var(--vt-bg);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;letter-spacing:0.02em;
+  cursor:pointer;
+  transition:background .15s ease,box-shadow .15s ease;
+}
+.btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
+.back-btn{
+  padding:9px 16px;
+  background:transparent;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;
+  cursor:pointer;
+}
+.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+/* Administracion escribe en la base sin pedir nada: se queda en rojo. */
+.admin-bottom{
+  padding:9px 16px;
+  background:var(--vt-error-bg);
+  border:1px solid rgba(255,180,171,0.35);
+  border-radius:var(--vt-r);
+  color:var(--vt-error);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;
+  cursor:pointer;
+}
+.admin-bottom:hover{background:rgba(147,0,10,0.3)}
+.admin-btn,.small-btn{
+  padding:6px 10px;
+  background:transparent;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-sm);
+  color:var(--vt-text);
+  font-size:13px;
+  cursor:pointer;
+}
+.small-btn:hover,.admin-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+
+#adminPanel{background:var(--vt-surface-2) !important;border:1px dashed var(--vt-border-strong) !important}
+.admin-match-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--vt-sm)}
+.admin-match-grid > input{width:100%;min-width:0;box-sizing:border-box}
+.admin-format-option{
+  display:flex;align-items:center;gap:var(--vt-sm);
+  margin-top:var(--vt-sm);padding:6px 10px;
+  border-radius:var(--vt-r);
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border);
+  font-size:13px;color:var(--vt-text);
+}
+.admin-format-option input{margin:0}
+
+/* Ganada, perdida, empatada: el color del nombre es el resultado. */
+.tag{
+  display:inline-block;
+  padding:3px 10px;
+  margin-right:6px;
+  border-radius:var(--vt-r-full);
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  color:var(--vt-text);
+  font-size:13px;
+  font-weight:600;
+}
+.tag.win{background:rgba(74,222,128,0.12);color:var(--vt-win);border-color:rgba(74,222,128,0.35)}
+.tag.lose{background:rgba(248,113,113,0.10);color:var(--vt-loss);border-color:rgba(248,113,113,0.30)}
+.tag.tie{background:var(--vt-surface-3);color:var(--vt-muted);border-color:var(--vt-border-strong)}
+
+@media(max-width:720px){.admin-match-grid{grid-template-columns:1fr}.admin-format-option{font-size:12px}}
+.set-list{display:flex;gap:6px;flex-wrap:wrap}
+.set-item{display:inline-block}
+.set-item:not(:last-child)::after{content:", "}
+.date-day{display:none}
+.date-full{display:inline}
+.th-day{display:none}
+.th-full{display:inline}
+@media(max-width:720px){
+  .set-list{display:block}
+  .set-item{display:block;margin-bottom:6px}
+  .set-item:not(:last-child)::after{content:""}
+  .date-day{display:inline}
+  .date-full{display:none}
+  .th-day{display:inline}
+  .th-full{display:none}
+  /* Make player tags slightly smaller and not bold on mobile */
+  .tag{font-weight:400;font-size:0.75rem}
+  .team-break{display:none}
+  /* Show short header for Marcador */
+  .th-res{display:inline}
+  .th-full-res{display:none}
+}
+  /* Desktop vs mobile visibility helpers */
+  .desktop-only{display:inline}
+  .mobile-only{display:none}
+  @media(max-width:720px){
+    .desktop-only{display:none}
+    .mobile-only{display:inline-block;margin-right:8px}
+  }
+
+/* Con tres columnas en 375 px el marcador y el relleno se encogen. */
+@media(max-width:720px){
+  td:nth-child(3){font-size:16px}
+  th,td{padding:8px 6px}
+  .controls{gap:var(--vt-sm)}
+  .controls label{flex:1;min-width:120px}
+  .select{width:100%}
+}
+
+/* Mobile: score styling and inline sets */
+@media(max-width:720px){
+  .set-list{display:inline;font-size:calc(1rem - 3pt)}
+  .set-item{display:inline;margin-right:8px}
+  .team-break{display:block}
+  .th-res{display:none}
+  .th-full-res{display:inline}
+}
+@media(max-width:720px){
+  .team-break{display:block}
+}
+</style>
+</head>
+<body>
+
+<div class="vt-page">
+
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Historial de partidos</h1>
+    <span class="vt-label">Registro oficial · Víboras Pádel</span>
+  </div>
+
+  <div class="vt-card vt-card--accent">
+    <div class="filter-box">
+      <div class="controls" role="toolbar" aria-label="Filtros">
+      <label style="display:flex;flex-direction:column">
+        Año
+        <select id="year" class="select"></select>
+      </label>
+
+      <label style="display:flex;flex-direction:column">
+        Mes
+        <select id="month" class="select"></select>
+      </label>
+
+      <label style="display:flex;flex-direction:column;flex:1">
+        Jugador
+        <select id="player" class="select"></select>
+      </label>
+      </div>
+    </div>
+
+    <div id="summary" class="muted"></div>
+
+    <div id="adminPanel" style="display:none;margin-top:12px;padding:10px;border-radius:8px;border:1px dashed var(--vt-border);background:var(--vt-surface-2)">
+      <div style="font-weight:700;margin-bottom:8px">Administración</div>
+      <div class="admin-match-grid">
+        <input id="a_date" class="select" placeholder="DD/MM/YYYY" />
+        <input id="a_p1a" class="select" placeholder="P1A" />
+        <input id="a_p1b" class="select" placeholder="P1B" />
+        <input id="a_p2a" class="select" placeholder="P2A" />
+        <input id="a_p2b" class="select" placeholder="P2B" />
+        <input id="a_s11" class="select" placeholder="s11" />
+        <input id="a_s21" class="select" placeholder="s21" />
+        <input id="a_s12" class="select" placeholder="s12" />
+        <input id="a_s22" class="select" placeholder="s22" />
+        <input id="a_s13" class="select" placeholder="s13" />
+        <input id="a_s23" class="select" placeholder="s23" />
+      </div>
+      <label class="admin-format-option" for="a_stb">
+        <input id="a_stb" type="checkbox" />
+        <span>stb en 3er set</span>
+      </label>
+      <div style="margin-top:8px">
+        <button class="btn" id="adminAddBtn">Agregar partido</button>
+      </div>
+    </div>
+
+    <div id="tableContainer"></div>
+
+    <div class="vt-acciones">
+      <button class="admin-bottom" id="adminBtn"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">admin_panel_settings</span>Administración</button>
+      <button class="btn" id="downloadBtn"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">download</span>Descargar resultados</button>
+      <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="/front/pantallas/history/history.js"></script>
+<script src="/front/comun/excel-export.js" defer></script>
+
+</body>
+</html>

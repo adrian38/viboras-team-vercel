@@ -82,3 +82,32 @@ Partir es **pasos con nombre**, no trocear por líneas:
 - **Partir un fichero en más funciones lo hace crecer**, así que los dos techos
   tiran en direcciones opuestas: lo que de verdad baja el coste de leer es sacar
   el JavaScript a su propio fichero.
+
+## Sacar el JavaScript de un `.html` choca con el trinquete
+
+La clave del baseline es `ruta:función`, así que **mover una función perdonada
+la convierte en código nuevo** a ojos de la guarda, aunque no se toque una coma.
+
+Pasó el 2026-11-01 al sacar las 506 líneas de `statistics.html` a
+`front/statistics.js`:
+
+```
+Codigo nuevo por encima del techo (2):
+  - funcion front/statistics.js:computeStats: 218 lineas, techo 60
+  - funcion front/statistics.js:renderTable: 115 lineas, techo 60
+Se parte. No se anade al baseline.
+El baseline tiene 2 entradas caducadas:
+  - funcion pantallas/statistics.html:computeStats: ya no existe
+```
+
+Las dos caras del mismo movimiento, y `--write` no resuelve ninguna: no añade
+entradas y habría borrado las viejas dejando las nuevas sin perdón.
+
+**Lo que toca es reapuntar la clave a mano**, cambiando sólo la ruta y dejando
+el número intacto. No es relajar el trinquete: la función ya estaba perdonada y
+sigue igual de larga; lo que cambió es dónde vive. Partirla de paso sería meter
+un refactor de comportamiento en el commit de un movimiento, que es justo lo que
+la sección de arriba prohíbe.
+
+Cada una de las diecinueve páginas que quedan por extraer repetirá esto tantas
+veces como funciones perdonadas tenga dentro.

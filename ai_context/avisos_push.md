@@ -164,5 +164,74 @@ Entre el 201 del servicio y el `push` del service worker no hay código
 nuestro, así que eso es del teléfono (entrega diferida de FCM o el canal de
 avisos de la app instalada) y queda sin resolver.
 
+## El entorno local manda avisos a móviles de verdad
+
+Esto no es una advertencia teórica. El 2026-11-01, antes de probar la
+publicación del tablón en local, se comprobó qué pasaría:
+
+- `.env` le da al contenedor **las claves VAPID de producción**, no unas de
+  juguete. `docker-compose.yml` las deja vacías por defecto, pero en cuanto
+  están en `.env` el contenedor las coge.
+- El Postgres local tiene **13 filas en `push_subscriptions`**, restauradas
+  del volcado. No son de mentira: apuntan a Apple (5), Google (4), Microsoft
+  (3) y Mozilla (1). Son los móviles del grupo.
+- Publicar en `/tablon` llama a `crearAviso` (`api/_tablon.js`), y ésa es
+  **la única puerta**: siempre empuja.
+
+O sea que un «aviso de prueba» escrito en `http://localhost:3000` sale a
+Internet y suena en trece teléfonos ajenos. Lo mismo vale para `/valorar`,
+`/buzon` y todo lo que acabe en `crearAviso`.
+
+Correo no: `SMTP_HOST` apunta a Mailpit y se queda en
+`http://localhost:8025`. El peligro es sólo el push.
+
+**Cómo probar sin despertar a nadie.** Dos vías, y conviene no improvisar
+una tercera:
+
+- Sembrar las filas **por SQL directo**, que no pasa por `crearAviso`. Es lo
+  que se hizo para verificar la extracción del tablón.
+- O vaciar `push_subscriptions` en la base local antes de tocar nada.
+
+**Se vació el 2026-11-01**, y por eso hoy el entorno local es seguro: las dos
+vías de envío (`pushAJugadores` y `pushAAdmins`, `api/_push.js:103` y `:110`)
+leen sólo de esa tabla, así que sin filas no sale nada a Internet. El precio
+es que el push no se puede probar en local —pero tampoco se podía antes sin
+molestar a trece personas.
+
+**Vuelve a aparecer cada vez que se restaura un volcado de producción.** Las
+filas siguen en `backups/prod-clon-20261031-1818.sql` (14 de ellas). Después
+de restaurar, vaciarla otra vez antes de tocar nada que escriba.
+
+## `dev` tiene su propio par VAPID, y por eso no alcanza al grupo
+
+El 2026-11-01, al montar el clon `viboras_dev`, las claves VAPID se copiaron a
+`Preview (dev)` **con el mismo valor que producción**. Parecía aislado y no lo
+estaba: una prueba desde el Preview creó avisos para tres jugadores a las
+14:11 UTC, y sus suscripciones —copiadas del clon— seguían siendo alcanzables.
+La prueba pareció inofensiva porque **la app nunca avisa a quien mete el
+resultado**, así que a quien la hizo no le llegó nada.
+
+Ese mismo día se generó un par nuevo, exclusivo de `Preview (dev)`. Ahora:
+
+```
+produccion  BFjWfHHdkRAk1gMs…
+dev         BJiRe4QI_C39T6KB…
+```
+
+Una suscripción queda atada a la clave con la que se creó, así que las de los
+móviles del grupo **no pueden recibir nada firmado desde `dev`**: el servicio
+responde 403, y `mandarUno` sólo lo apunta en el log —borra la fila con 404 y
+410, no con 403—, así que no se pierde ningún dato.
+
+**La separación es estructural, no de datos.** Resetear el clon desde `main`
+devuelve las dieciséis suscripciones, y siguen sin poder recibir nada.
+
+**Para probar push en `dev` hay que suscribirse desde el propio Preview**: eso
+crea una suscripción firmada con la clave de `dev`, a la que sólo `dev` puede
+empujar. La privada de `dev` vive únicamente en Vercel y no se puede volver a
+leer; si hiciera falta otra, se genera un par nuevo con
+`npx web-push generate-vapid-keys` y se sustituyen las dos variables, a
+sabiendas de que eso invalida las suscripciones hechas desde el Preview.
+
 Relacionado: [[valoraciones_y_avisos]], [[service_worker]],
-[[cuentas_y_sesiones]].
+[[cuentas_y_sesiones]], [[entorno_local_docker_y_proxies_neon]].

@@ -1,0 +1,623 @@
+    const MIN_DATE = '2026-09-01';
+    const DAILY_SNAPSHOT_LIMIT = 3650;
+
+    let allNames = [];
+    let allMatches = [];
+    let dailySeries = [];
+    let selectedDay = null;
+    let currentMonthDate = new Date();
+
+    // El motor vive en /front/vt-glicko.js, uno solo para las tres paginas que lo
+    // usan. Se traen sus nombres a este ambito para que el resto del fichero
+    // siga leyendose igual que cuando el motor estaba pegado aqui.
+    //
+    // let y no const: players-aportes.js envuelve updatePeriod reasignandolo,
+    // y con const eso revienta («Assignment to constant variable»). Cuando el
+    // motor estaba pegado aqui eran declaraciones de funcion y se dejaban.
+    let {
+      Q,
+      C_DAILY,
+      INITIAL_RATING,
+      INITIAL_RD,
+      MIN_RD,
+      MAX_RD,
+      GlickoPlayer,
+      g,
+      expected,
+      decayAllPlayersOneDay,
+      getPlayerOrCreate,
+      getTeamState,
+      getEffectiveObservationR,
+      getEffectiveObservationRd,
+      clamp,
+      getReliabilityWeight,
+      updatePeriod
+    } = window.vtGlicko;
+
+    function toIsoDate(value) {
+      if (!value) return null;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+      const parts = String(value).split('/');
+      if (parts.length === 3) {
+        const d = String(parts[0]).padStart(2, '0');
+        const m = String(parts[1]).padStart(2, '0');
+        const y = String(parts[2]);
+        return `${y}-${m}-${d}`;
+      }
+      const dt = new Date(value);
+      if (Number.isNaN(dt.getTime())) return null;
+      return dt.toISOString().split('T')[0];
+    }
+
+    function formatDisplayDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(`${iso}T00:00:00Z`);
+      return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function formatShortDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(`${iso}T00:00:00Z`);
+      return String(d.getUTCDate()).padStart(2, '0');
+    }
+
+    function formatRating(value) {
+      if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+      return Number(value).toFixed(2).replace('.', ',');
+    }
+
+    function getMatchEventTag(match) {
+      const rawType = String(match && (match.event_type || match.type || '')).trim().toLowerCase();
+      if (rawType === 'grupo_liga') return { label: 'Liga', className: 'league' };
+      if (rawType === 'pozo' || rawType === 'doble_ko' || rawType === 'compas') return { label: 'Torneo', className: 'tournament' };
+      return { label: 'Partido', className: 'match' };
+    }
+
+    function getSelectedPlayerMatchOutcome(match, playerName) {
+      const team1 = [String(match.p1a || '').trim(), String(match.p1b || '').trim()].filter(Boolean);
+      const team2 = [String(match.p2a || '').trim(), String(match.p2b || '').trim()].filter(Boolean);
+      const playerOnTeam1 = team1.includes(playerName);
+      const playerOnTeam2 = team2.includes(playerName);
+      if (!playerOnTeam1 && !playerOnTeam2) return null;
+
+      const setScores = [
+        [Number.parseInt(String(match.s11 || '').trim(), 10), Number.parseInt(String(match.s21 || '').trim(), 10)],
+        [Number.parseInt(String(match.s12 || '').trim(), 10), Number.parseInt(String(match.s22 || '').trim(), 10)],
+        [Number.parseInt(String(match.s13 || '').trim(), 10), Number.parseInt(String(match.s23 || '').trim(), 10)]
+      ];
+
+      let team1Sets = 0;
+      let team2Sets = 0;
+      setScores.forEach(([a, b]) => {
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+        if (a === 0 && b === 0) return;
+        if (a > b) team1Sets++;
+        else if (b > a) team2Sets++;
+      });
+
+      if (team1Sets === team2Sets) return null;
+
+      const playerWon = playerOnTeam1 ? team1Sets > team2Sets : team2Sets > team1Sets;
+      return playerWon ? 'win' : 'loss';
+    }
+    const escaparHtml = (t) => String(t).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
+    function buildMatchLineHtml(match, playerName) {
+      const team1 = [match.p1a, match.p1b].filter(Boolean).map(escaparHtml).join(' / ');
+      const team2 = [match.p2a, match.p2b].filter(Boolean).map(escaparHtml).join(' / ');
+      const tag = getMatchEventTag(match);
+      const resultClass = getSelectedPlayerMatchOutcome(match, playerName);
+
+      const setScores = [
+        [match.s11, match.s21],
+        [match.s12, match.s22],
+        [match.s13, match.s23]
+      ].filter(([a, b]) => {
+        if (a === null || a === undefined || b === null || b === undefined) return false;
+        const ai = Number.parseInt(String(a).trim(), 10);
+        const bi = Number.parseInt(String(b).trim(), 10);
+        if (!Number.isFinite(ai) || !Number.isFinite(bi)) return false;
+        if (ai === 0 && bi === 0) return false;
+        return true;
+      });
+
+      if (!setScores.length) return null;
+
+      const scoreText = setScores.map(([a, b]) => `${String(a ?? 0)}-${String(b ?? 0)}`).join(', ');
+      const scoreHtml = `<span class="match-result ${resultClass || ''}">${scoreText}</span>`;
+      return '<div class="match-item"><span class="event-tag ' + tag.className + '">' + tag.label + '</span><strong>' + team1 + '</strong> vs <strong>' + team2 + '</strong><span class="match-score-separator"> — </span><span class="match-score-block">' + scoreHtml + '</span></div>';
+    }
+
+    function buildDailyHistoricalSeries() {
+      const playerMap = new Map();
+      allNames.forEach((name) => {
+        const clean = String(name || '').trim();
+        if (!clean) return;
+        playerMap.set(clean, window.vtInicial.crear(clean));
+      });
+
+      const byDate = new Map();
+      allMatches.forEach((m) => {
+        const day = toIsoDate(m.date) || toIsoDate(m.start_date);
+        if (!day || day < MIN_DATE) return;
+        const rec = {
+          team1: [String(m.p1a || '').trim(), String(m.p1b || '').trim()].filter(Boolean),
+          team2: [String(m.p2a || '').trim(), String(m.p2b || '').trim()].filter(Boolean),
+          score: 0,
+          weight: 1
+        };
+
+        if (rec.team1.length !== 2 || rec.team2.length !== 2) return;
+
+        const s1 = [m.s11, m.s12, m.s13].map(v => Number.parseInt(String(v || '').trim(), 10)).filter(v => Number.isFinite(v));
+        const s2 = [m.s21, m.s22, m.s23].map(v => Number.parseInt(String(v || '').trim(), 10)).filter(v => Number.isFinite(v));
+
+        if (!s1.length || !s2.length) return;
+
+        let sets1 = 0;
+        let sets2 = 0;
+        let totalGames1 = 0;
+        let totalGames2 = 0;
+        const fmtLow = String(m.format || '').toLowerCase();
+
+        for (let i = 0; i < 3; i++) {
+          const a = s1[i];
+          const b = s2[i];
+          if (Number.isFinite(a) && Number.isFinite(b)) {
+            if (i === 2 && fmtLow.includes('bo3_stb')) {
+              if (a > b) {
+                sets1++;
+                totalGames1 += 1;
+              } else if (b > a) {
+                sets2++;
+                totalGames2 += 1;
+              }
+              continue;
+            }
+
+            totalGames1 += a;
+            totalGames2 += b;
+            if (a > b) sets1++;
+            else if (b > a) sets2++;
+          }
+        }
+
+        if (sets1 === sets2) return;
+        const winnerIsTeam1 = sets1 > sets2;
+        const score = winnerIsTeam1 ? 1.0 : 0.0;
+        const totalGames = totalGames1 + totalGames2;
+        if (totalGames === 0) return;
+
+        const x = winnerIsTeam1 ? totalGames1 / totalGames : totalGames2 / totalGames;
+        let w1 = 1.0;
+        if (fmtLow.includes('timed_games_long')) {
+          w1 = 0.6;
+        } else if (fmtLow.includes('timed') || fmtLow.includes('timed_games')) {
+          w1 = 0.3;
+        }
+
+        const k = 10;
+        const xx = Number(x);
+        let w2 = 0.0001;
+        if (Number.isFinite(xx)) {
+          w2 = 0.5 + 1.0 / (1.0 + Math.exp(-k * (xx - 0.60)));
+        }
+        if (!Number.isFinite(w2) || w2 <= 0) w2 = 0.0001;
+
+        const finalWeight = w1 * w2;
+        rec.score = score;
+        rec.weight = finalWeight;
+
+        if (!byDate.has(day)) byDate.set(day, []);
+        byDate.get(day).push(rec);
+      });
+
+      const allDates = [];
+      const lastKnown = allMatches.length ? allMatches.map(m => toIsoDate(m.date) || toIsoDate(m.start_date)).filter(Boolean).sort().slice(-1)[0] || new Date().toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+      let cursor = MIN_DATE;
+      const end = lastKnown > new Date().toISOString().slice(0, 10) ? new Date().toISOString().slice(0, 10) : lastKnown;
+      const limitDate = new Date(`${end}T00:00:00Z`);
+      const startDate = new Date(`${cursor}T00:00:00Z`);
+      const msPerDay = 24 * 60 * 60 * 1000;
+      let counter = 0;
+
+      while (startDate.getTime() <= limitDate.getTime() && counter < DAILY_SNAPSHOT_LIMIT) {
+        const dateStr = startDate.toISOString().slice(0, 10);
+        allDates.push(dateStr);
+        startDate.setTime(startDate.getTime() + msPerDay);
+        counter++;
+      }
+
+      const historical = [];
+      const selectedPlayerMap = new Map(playerMap);
+
+      allDates.forEach((dateStr) => {
+        const dayMatches = byDate.get(dateStr) || [];
+        const activeToday = new Set();
+
+        dayMatches.forEach(m => {
+          (m.team1 || []).concat(m.team2 || []).forEach(p => {
+            if (p && p.trim()) activeToday.add(p.trim());
+          });
+        });
+
+        decayAllPlayersOneDay(selectedPlayerMap, activeToday);
+
+        if (dayMatches.length > 0) {
+          updatePeriod(selectedPlayerMap, dayMatches); window.vtNivel.ajustar(selectedPlayerMap, dateStr, dayMatches);
+        }
+
+        historical.push({
+          date: dateStr,
+          values: new Map(selectedPlayerMap)
+        });
+      });
+
+      return historical;
+    }
+
+    function getPlayerSeries(playerName) {
+      if (!playerName) return [];
+      const cleaned = String(playerName).trim();
+      if (!cleaned) return [];
+      return dailySeries.map((entry) => {
+        const value = entry.values.get(cleaned) || window.vtInicial.crear(cleaned);
+        return {
+          date: entry.date,
+          rating: value.rating,
+          rd: value.rd
+        };
+      });
+    }
+
+    function monthNames() {
+      return ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    }
+
+    function formatMonthLabel(date) {
+      const safeDate = date instanceof Date ? new Date(date) : new Date();
+      const month = monthNames()[safeDate.getUTCMonth() || safeDate.getMonth()];
+      const year = safeDate.getUTCFullYear ? safeDate.getUTCFullYear() : safeDate.getFullYear();
+      return `${month} ${year}`;
+    }
+
+    function getVisibleMonthStart(date) {
+      return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+    }
+
+    function getVisibleMonthEnd(date) {
+      return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
+    }
+
+    function clampMonthDate(date) {
+      const minMonth = new Date('2026-09-01T00:00:00Z');
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const currentMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      if (date < minMonth) return new Date(minMonth);
+      if (date > currentMonth) return new Date(currentMonth);
+      return new Date(date);
+    }
+
+    function getVisibleMonthSeries() {
+      const monthStart = getVisibleMonthStart(currentMonthDate);
+      const monthEnd = getVisibleMonthEnd(currentMonthDate);
+      const startIso = monthStart.toISOString().slice(0, 10);
+      const endDate = new Date(monthEnd);
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      if (endDate > today) endDate.setTime(today.getTime());
+      const endIso = endDate.toISOString().slice(0, 10);
+      return dailySeries.filter((point) => point.date >= startIso && point.date <= endIso);
+    }
+
+    function updateRangeLabel() {
+      const visible = getVisibleMonthSeries();
+      if (!visible.length) {
+        document.getElementById('rangeLabel').textContent = formatMonthLabel(currentMonthDate);
+        return;
+      }
+      document.getElementById('rangeLabel').textContent = formatMonthLabel(currentMonthDate);
+    }
+
+    function renderChart() {
+      const playerName = document.getElementById('playerSelect').value;
+      if (!playerName) {
+        document.getElementById('ratingChart').innerHTML = '';
+        document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+
+      const series = getPlayerSeries(playerName);
+      if (!series.length) {
+        document.getElementById('ratingChart').innerHTML = '';
+        document.getElementById('summary').textContent = 'No hay datos para este jugador en el rango seleccionado.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+
+      const monthStart = getVisibleMonthStart(currentMonthDate);
+      const monthEnd = getVisibleMonthEnd(currentMonthDate);
+      const startIso = monthStart.toISOString().slice(0, 10);
+      const endIso = monthEnd.toISOString().slice(0, 10);
+      const visibleSeries = series.filter((point) => point.date >= startIso && point.date <= endIso);
+      if (!visibleSeries.length) {
+        document.getElementById('summary').textContent = 'Sin datos disponibles en este intervalo.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+
+      const svg = document.getElementById('ratingChart');
+      const daysInMonth = getVisibleMonthEnd(currentMonthDate).getUTCDate();
+      const width = Math.max(820, daysInMonth * 30);
+      const height = 310;
+      const padding = { top: 18, right: 16, bottom: 34, left: 42 };
+      const plotW = width - padding.left - padding.right;
+      const plotH = height - padding.top - padding.bottom;
+
+      const values = visibleSeries.map(d => d.rating);
+      const minVal = Math.min(...values) - 30;
+      const maxVal = Math.max(...values) + 30;
+      const yRange = maxVal - minVal || 1;
+
+      const xForIndex = (index) => padding.left + (visibleSeries.length === 1 ? plotW / 2 : (index / (visibleSeries.length - 1)) * plotW);
+      const yForValue = (value) => padding.top + ((maxVal - value) / yRange) * plotH;
+
+      const gridLines = Array.from({ length: 5 }, (_, i) => {
+        const value = minVal + (i / 4) * yRange;
+        const y = yForValue(value);
+        return `
+          <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke-dasharray="4 4" />
+          <text x="8" y="${y + 4}" font-size="11">${Math.round(value)}</text>
+        `;
+      }).join('');
+
+      const xLabels = visibleSeries.map((point, idx) => {
+        const x = xForIndex(idx);
+        return `<text x="${x}" y="${height - 10}" text-anchor="middle" font-size="11">${formatShortDate(point.date)}</text>`;
+      }).join('');
+
+      const points = visibleSeries.map((point, idx) => ({
+        ...point,
+        x: xForIndex(idx),
+        y: yForValue(point.rating)
+      }));
+
+      const polyline = points.map((point) => `${point.x},${point.y}`).join(' ');
+
+      const dayValueMarkup = points.map((point) => `
+        <g data-day="${point.date}" class="chart-point" style="cursor:pointer">
+          <circle cx="${point.x}" cy="${point.y}" r="5.5" stroke-width="2" />
+          <circle cx="${point.x}" cy="${point.y}" r="12" fill="transparent" data-day="${point.date}" />
+        </g>
+      `).join('');
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.setAttribute('width', String(width));
+      svg.innerHTML = `
+        <g>
+          ${gridLines}
+          <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" />
+          <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" />
+          <polyline fill="none" stroke-width="2.5" points="${polyline}" opacity="0.95" />
+          ${dayValueMarkup}
+          ${xLabels}
+        </g>
+      `;
+
+      const selected = visibleSeries.find((point) => point.date === selectedDay) || visibleSeries[visibleSeries.length - 1];
+      if (selected) {
+        selectedDay = selected.date;
+        updateSelectedDayDetails(playerName, selectedDay);
+      } else {
+        document.getElementById('summary').textContent = 'Selecciona un punto para ver el detalle del día';
+        document.getElementById('matchList').innerHTML = '';
+      }
+
+      svg.querySelectorAll('[data-day]').forEach((node) => {
+        node.addEventListener('click', () => {
+          const day = node.getAttribute('data-day');
+          if (!day) return;
+          openDayDetail(playerName, day);
+        });
+      });
+
+      updateRangeLabel();
+      syncNavigationButtons();
+    }
+
+    function getPreviousDayRatingDelta(playerName, day) {
+      const series = getPlayerSeries(playerName);
+      if (!series.length) return null;
+
+      const currentIndex = series.findIndex((point) => point.date === day);
+      if (currentIndex <= 0) return null;
+
+      const current = series[currentIndex];
+      const previous = series[currentIndex - 1];
+      if (!current || !previous || current.rating === undefined || previous.rating === undefined) return null;
+
+      const diff = current.rating - previous.rating;
+      if (!Number.isFinite(diff) || diff === 0) return null;
+
+      return {
+        diff,
+        icon: diff > 0 ? '︽' : '︾',
+        color: diff > 0 ? 'var(--vt-win)' : 'var(--vt-loss)'
+      };
+    }
+
+    function updateSelectedDayDetails(playerName, day) {
+      if (!playerName) {
+        document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+
+      const selectedData = getPlayerSeries(playerName).find((point) => point.date === day) || { rating: null, rd: null };
+      const rating = selectedData.rating ?? 0;
+      const rd = selectedData.rd ?? 0;
+      const dayMatches = allMatches.filter((m) => {
+        const matchDay = toIsoDate(m.date) || toIsoDate(m.start_date);
+        if (matchDay !== day) return false;
+        const namesInMatch = [String(m.p1a || '').trim(), String(m.p1b || '').trim(), String(m.p2a || '').trim(), String(m.p2b || '').trim()];
+        return namesInMatch.includes(playerName);
+      });
+
+      const summaryEl = document.getElementById('summary');
+      const baseText = 'Día ' + formatDisplayDate(day) + ' · Rating: ' + formatRating(rating) + ' ± ' + formatRating(rd);
+      const delta = getPreviousDayRatingDelta(playerName, day);
+
+      if (!delta) {
+        summaryEl.textContent = baseText;
+      } else {
+        const deltaText = delta.icon + ' ' + formatRating(Math.abs(delta.diff));
+        summaryEl.innerHTML = `${baseText} <span class="summary-delta" style="color:${delta.color};">${deltaText}</span>`;
+      }
+
+      const listEl = document.getElementById('matchList');
+      const validMatches = dayMatches
+        .map((m) => buildMatchLineHtml(m, playerName))
+        .filter(Boolean);
+
+      listEl.innerHTML = validMatches.length
+        ? validMatches.join('')
+        : '<div class="match-item muted">No hubo partidos para este jugador en este día.</div>';
+    }
+
+    function openDayDetail(playerName, day) {
+      selectedDay = day;
+      updateSelectedDayDetails(playerName, day);
+    }
+
+    function syncNavigationButtons() {
+      const prevButton = document.getElementById('prevWindowBtn');
+      const nextButton = document.getElementById('nextWindowBtn');
+      const minMonth = new Date('2026-09-01T00:00:00Z');
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const currentMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      prevButton.disabled = currentMonthDate.getTime() <= minMonth.getTime();
+      nextButton.disabled = currentMonthDate.getTime() >= currentMonth.getTime();
+    }
+
+    function moveWindow(direction) {
+      if (!dailySeries.length) return;
+      const nextDate = new Date(Date.UTC(currentMonthDate.getUTCFullYear(), currentMonthDate.getUTCMonth() + direction, 1));
+      const minMonth = new Date('2026-09-01T00:00:00Z');
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const maxMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      if (nextDate < minMonth) return;
+      if (nextDate > maxMonth) return;
+      currentMonthDate = nextDate;
+      renderChart();
+    }
+
+    function populatePlayers() {
+      const select = document.getElementById('playerSelect');
+      const sortedNames = [...new Set(allNames.map((name) => String(name).trim()).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base', numeric: true })
+      );
+
+      select.innerHTML = '<option value="">-- Selecciona un jugador --</option>';
+      sortedNames.forEach((name) => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+      select.value = '';
+    }
+
+    function setDefaultPlayerSelection() {
+      const select = document.getElementById('playerSelect');
+      const params = new URLSearchParams(window.location.search);
+      const requestedPlayer = params.get('player') || '';
+      const exists = Array.from(select.options).some((option) => option.value === requestedPlayer);
+
+      select.value = exists ? requestedPlayer : '';
+    }
+
+    function promptMonthSelection() {
+      const suggested = `${String(currentMonthDate.getUTCMonth() + 1).padStart(2, '0')}/${currentMonthDate.getUTCFullYear()}`;
+      const input = prompt('Introduce un mes (MM/YYYY):', suggested);
+      if (input === null) return;
+      const match = String(input).trim().match(/^(\d{1,2})\/(\d{4})$/);
+      if (!match) {
+        alert('Formato inválido. Usa MM/YYYY, por ejemplo 03/2026');
+        return;
+      }
+      const month = Number(match[1]);
+      const year = Number(match[2]);
+      if (month < 1 || month > 12) {
+        alert('El mes debe estar entre 01 y 12');
+        return;
+      }
+      const minMonth = new Date('2026-09-01T00:00:00Z');
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const maxMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      const candidate = new Date(Date.UTC(year, month - 1, 1));
+      if (candidate < minMonth || candidate > maxMonth) {
+        alert('Solo se puede consultar desde Septiembre 2026 hasta el mes actual');
+        return;
+      }
+      currentMonthDate = candidate;
+      renderChart();
+    }
+
+    function handlePlayerChange() {
+      const selected = document.getElementById('playerSelect').value;
+      if (!selected || !Array.isArray(dailySeries) || !dailySeries.length) {
+        document.getElementById('ratingChart').innerHTML = '';
+        document.getElementById('summary').textContent = 'Selecciona un jugador para ver su evolución.';
+        document.getElementById('matchList').innerHTML = '';
+        return;
+      }
+      currentMonthDate = clampMonthDate(new Date());
+      renderChart();
+    }
+
+    async function loadData() {
+      const namesRes = await fetch('/api/read?action=getNames&ts=' + Date.now());
+      const namesData = await namesRes.json();
+      allNames = (namesData.names || []).map((n) => String(n).trim()).filter(Boolean);
+
+      const matchesRes = await fetch('/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,compas,doble_ko,legacy&ts=' + Date.now());
+      const [matchesData] = await Promise.all([matchesRes.json(), window.vtNivel.listo, window.vtInicial.listo]);
+      allMatches = (matchesData.matches || []).filter((m) => {
+        const date = toIsoDate(m.date) || toIsoDate(m.start_date);
+        if (!date) return false;
+        return date >= MIN_DATE;
+      });
+
+      populatePlayers();
+      setDefaultPlayerSelection();
+      dailySeries = buildDailyHistoricalSeries();
+      if (!dailySeries.length) {
+        document.getElementById('rangeLabel').textContent = 'Sin datos';
+        document.getElementById('summary').textContent = 'No hay datos disponibles para mostrar.';
+        return;
+      }
+
+      const requestedPlayer = document.getElementById('playerSelect').value;
+      currentMonthDate = clampMonthDate(new Date());
+      document.getElementById('rangeLabel').textContent = requestedPlayer ? formatMonthLabel(currentMonthDate) : 'Selecciona un jugador';
+      document.getElementById('summary').textContent = requestedPlayer ? 'Cargando evolución...' : 'Selecciona un punto para ver el detalle del día';
+      document.getElementById('matchList').innerHTML = '';
+      document.getElementById('ratingChart').innerHTML = '';
+
+      if (requestedPlayer) {
+        handlePlayerChange();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('playerSelect').addEventListener('change', handlePlayerChange);
+      document.getElementById('prevWindowBtn').addEventListener('click', () => moveWindow(-1));
+      document.getElementById('nextWindowBtn').addEventListener('click', () => moveWindow(1));
+      document.getElementById('rangeLabel').addEventListener('click', promptMonthSelection);
+      await vtCargando.arranque(loadData, 'Cargando los jugadores');
+    });
+  

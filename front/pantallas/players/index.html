@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jugadores</title>
+  <link rel="icon" href="/image.png" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+  <script src="/front/comun/splash.js"></script>
+  <script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<script src="/front/comun/vt-glicko.js"></script>
+  <meta name="apple-mobile-web-app-title" content="Viboras">
+  <meta name="theme-color" content="#121316">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/front/comun/theme.css">
+  <style>
+    /* La grafica la monta renderChart() como una cadena de SVG. Ya no lleva
+       ningun color: los atributos de presentacion no admiten var(), y los que
+       habia los tapaba el CSS de mas abajo sin que se vieran nunca. Quitarlos
+       encoge la funcion, que esta perdonada en tools/code-size.mjs y solo
+       puede encoger. */
+
+    .card {
+      background: var(--vt-surface);
+      border: 1px solid var(--vt-border);
+      border-radius: var(--vt-r-xl);
+      box-shadow: var(--vt-shadow-card);
+      padding: var(--vt-lg);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: end;
+      gap: var(--vt-md);
+      flex-wrap: wrap;
+      margin-bottom: var(--vt-md);
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: var(--vt-xs);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--vt-muted);
+    }
+
+    select, .btn, .nav-btn { font: inherit; }
+
+    select {
+      min-width: 220px;
+      padding: 10px 34px 10px 12px;
+      border-radius: var(--vt-r);
+      border: 1px solid var(--vt-border-strong);
+      background: var(--vt-surface-deep);
+      color: var(--vt-text);
+      font-size: 15px;
+      font-weight: 600;
+      appearance: none;
+      cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 50%, var(--vt-muted) 50%), linear-gradient(135deg, var(--vt-muted) 50%, transparent 50%);
+      background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+    select:focus { outline: none; border-color: var(--vt-gold); }
+    select option { background: var(--vt-surface-2); }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: var(--vt-r);
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--vt-bg);
+      background: var(--vt-gold);
+    }
+    .btn:hover { background: var(--vt-yellow); }
+
+    .back-btn {
+      padding: 9px 16px;
+      background: transparent;
+      color: var(--vt-text);
+      border: 1px solid var(--vt-border-strong);
+      border-radius: var(--vt-r);
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .back-btn:hover { border-color: var(--vt-gold); color: var(--vt-gold-light); }
+
+    .chart-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 10px 0 8px;
+    }
+
+    .nav-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--vt-r);
+      border: 1px solid var(--vt-border-strong);
+      background: var(--vt-surface-3);
+      color: var(--vt-text);
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: 700;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--vt-surface-4);
+      border-color: var(--vt-gold);
+      color: var(--vt-gold-light);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .range-label {
+      flex: 1;
+      text-align: center;
+      font-family: var(--vt-font-head);
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--vt-text);
+      border: 1px solid var(--vt-border-strong);
+      background: var(--vt-surface-3);
+      border-radius: var(--vt-r);
+      padding: 9px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .range-label:hover { border-color: var(--vt-gold); color: var(--vt-gold-light); }
+
+    .chart-shell {
+      background: var(--vt-surface-deep);
+      border: 1px solid var(--vt-border);
+      border-radius: var(--vt-r-lg);
+      padding: var(--vt-md);
+      overflow: auto;
+      min-height: 300px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      /* 580 y no 700: a 768 px (tablet) la caja deja 644 de contenido y el
+         grafico se salia 56 px; a 721, la mas estrecha antes del movil, deja
+         597. Por debajo de 720 manda la media query (620) y se desplaza. */
+      min-width: 580px;
+      height: 310px;
+      border-radius: var(--vt-r);
+    }
+
+    /* Colores de la grafica. renderChart() ya no escribe ninguno: los
+       atributos de presentacion no admiten var(), asi que manda esto. */
+    /* --vt-muted y no --vt-faint: son las cifras de los ejes a 11 px, y con
+       --vt-faint se quedan en 3,7 de contraste sobre la tarjeta. */
+    .chart-shell svg text { fill: var(--vt-muted); }
+    .chart-shell svg line { stroke: var(--vt-border-strong); }
+    .chart-shell svg polyline { stroke: var(--vt-gold); }
+    .chart-shell svg circle { fill: var(--vt-gold); stroke: var(--vt-bg); }
+    /* El circulo grande de cada punto es solo zona de click: sigue invisible. */
+    .chart-shell svg circle[fill="transparent"] { fill: transparent; stroke: none; }
+
+    .muted { color: var(--vt-muted); }
+
+    .summary {
+      margin-top: var(--vt-md);
+      background: var(--vt-surface-3);
+      border: 1px solid var(--vt-border);
+      border-radius: var(--vt-r);
+      padding: var(--vt-md);
+      font-weight: 600;
+      color: var(--vt-text);
+    }
+
+    .summary-delta {
+      display: inline-block;
+      margin-left: 8px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .page-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+      padding-top: 4px;
+    }
+
+    .match-list {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .match-item {
+      padding: 10px 12px;
+      border: 1px solid var(--vt-border);
+      border-left: 3px solid var(--vt-border-strong);
+      border-radius: var(--vt-r);
+      background: var(--vt-surface-2);
+      line-height: 1.5;
+      color: var(--vt-text);
+    }
+
+    .match-item strong {
+      color: var(--vt-text-strong);
+    }
+
+    .event-tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+      letter-spacing: 0.02em;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    /* Partido suelto, liga o torneo: plata, bronce y oro, el mismo trio
+       que las posiciones del podio. Antes eran un lila y un celeste que no
+       estaban en la paleta. */
+    .event-tag.match { background: rgba(148, 163, 184, 0.10); color: var(--vt-silver); border-color: rgba(148, 163, 184, 0.30); }
+    .event-tag.league { background: rgba(217, 119, 6, 0.12); color: var(--vt-bronze); border-color: rgba(217, 119, 6, 0.30); }
+    .event-tag.tournament { background: rgba(245, 158, 11, 0.12); color: var(--vt-gold-light); border-color: var(--vt-border-gold); }
+
+    .match-result {
+      font-weight: 700;
+    }
+
+    .match-result.win { color: var(--vt-win); }
+    .match-result.loss { color: var(--vt-loss); }
+
+    .match-score-block {
+      display: inline-block;
+    }
+
+    /* Lo que aporto cada partido al cambio del dia (players-aportes.js). */
+    .match-delta {
+      display: inline-block;
+      margin-left: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .match-delta.sube { color: var(--vt-win); }
+    .match-delta.baja { color: var(--vt-loss); }
+
+    .match-score-separator {
+      display: inline-block;
+      margin: 0 6px;
+    }
+
+    @media (max-width: 720px) {
+      .card { padding: var(--vt-md); }
+      .page-header { align-items: flex-start; }
+      .toolbar { align-items: stretch; }
+      select { width: 100%; min-width: 0; }
+      .chart-shell { padding: 8px; }
+      svg { min-width: 620px; }
+
+      .summary,
+      .summary-delta,
+      .match-item,
+      .match-item strong,
+      .event-tag,
+      .match-result {
+        font-size: 0.7rem;
+      }
+
+      .summary,
+      .match-item {
+        line-height: 1.45;
+      }
+
+      .match-item {
+        display: block;
+      }
+
+      .match-score-separator {
+        display: none;
+      }
+
+      .match-score-block {
+        display: block;
+        margin: 6px 0 0 0;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="vt-page">
+
+    <div style="text-align:center">
+      <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+      <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Jugadores</h1>
+      <span class="vt-label">Evolución del rating · Víboras Pádel</span>
+    </div>
+
+    <div class="card">
+
+      <div class="toolbar">
+        <label>
+          <select id="playerSelect"></select>
+        </label>
+      </div>
+
+      <div class="chart-toolbar">
+        <button id="prevWindowBtn" class="nav-btn" type="button" aria-label="Anterior"><span class="ms notranslate" translate="no" aria-hidden="true">arrow_back</span></button>
+        <button id="rangeLabel" class="range-label" type="button">Cargando…</button>
+        <button id="nextWindowBtn" class="nav-btn" type="button" aria-label="Siguiente"><span class="ms notranslate" translate="no" aria-hidden="true">arrow_forward</span></button>
+      </div>
+
+      <div class="chart-shell">
+        <svg id="ratingChart" viewBox="0 0 820 310" preserveAspectRatio="none" aria-label="Evolución del rating"></svg>
+      </div>
+
+      <div id="summary" class="summary muted">Selecciona un punto para ver el detalle del día.</div>
+      <div id="matchList" class="match-list"></div>
+
+      <div class="page-footer">
+        <button class="back-btn" type="button" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/front/comun/nivel-votos.js"></script>
+  <script src="/front/comun/rating-inicial.js"></script>
+  <script src="/front/pantallas/players/players.js"></script>
+  <!-- Despues del script de la pagina y antes de DOMContentLoaded: envuelve
+       updatePeriod y buildMatchLineHtml para poner al lado de cada partido
+       lo que aporto al cambio del dia. -->
+  <script src="/front/pantallas/players/players-aportes.js"></script>
+</body>
+</html>

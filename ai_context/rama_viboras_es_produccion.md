@@ -18,6 +18,8 @@ Confirmado por el usuario el 2026-10-08.
   `git push` cualquiera.
 - Los despliegues de previsualización salen de otras ramas; producción sale de
   ésta.
+- La rama Git `dev` tiene un Preview persistente que apunta al clon Neon
+  `viboras_dev`, nunca a `main`: [[entorno_dev_y_clon_neon]].
 - Nada de `--force` sobre `viboras`.
 
 ## Variables de entorno y despliegue
@@ -58,4 +60,4 @@ curl -s -o /dev/null -w '%{http_code}\n' https://viboras-team-vercel.vercel.app/
 
 y `/theme.css`, `/auth-client.js` y `/api/auth?action=config`, 200.
 
-Relacionado: [[neon_en_produccion]].
+Relacionado: [[neon_en_produccion]], [[entorno_dev_y_clon_neon]].

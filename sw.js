@@ -9,7 +9,7 @@
 //
 // Para forzar que todos los navegadores descarten lo cacheado, cambia CACHE.
 
-const CACHE = 'viboras-v3';
+const CACHE = 'viboras-v5';
 
 // Lo minimo para que la app abra aunque no haya cobertura.
 //
@@ -18,7 +18,7 @@ const CACHE = 'viboras-v3';
 const PRECACHE = [
   '/',
   '/index.html',
-  '/theme.css',
+  '/front/comun/theme.css',
   '/image.png',
   '/icon-192.png',
   '/apple-touch-icon.png'

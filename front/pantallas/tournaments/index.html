@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados de torneos</title>
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+<style>
+/* Mismas clases que el historial: renderTable() reparte .tag/.win/.lose/.tie
+   y alterna .desktop-only con .mobile-only. Se conservan todas. */
+
+.controls{display:flex;gap:var(--vt-md);flex-wrap:wrap}
+.controls label{font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--vt-muted);gap:var(--vt-xs)}
+.filter-box{
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  padding:var(--vt-md);
+  margin-bottom:var(--vt-md);
+}
+
+.view-toggle{display:flex;gap:var(--vt-sm);flex-wrap:wrap;margin:var(--vt-md) 0 var(--vt-sm)}
+.view-btn{
+  padding:8px 16px;
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-full);
+  color:var(--vt-muted);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:600;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}
+.view-btn.active{background:var(--vt-gold);color:var(--vt-bg);border-color:var(--vt-gold);font-weight:700}
+
+.select{
+  padding:9px 30px 9px 12px;
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:14px;
+  appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--vt-muted) 50%),linear-gradient(135deg,var(--vt-muted) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+}
+.select:focus{outline:none;border-color:var(--vt-gold)}
+.select option{background:var(--vt-surface-2)}
+
+.small-btn{padding:6px 10px;background:transparent;border:1px solid var(--vt-border-strong);border-radius:var(--vt-r-sm);color:var(--vt-text);font-size:13px;cursor:pointer}
+.small-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+.btn{
+  padding:9px 16px;
+  background:var(--vt-gold);
+  border:none;border-radius:var(--vt-r);
+  color:var(--vt-bg);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;letter-spacing:0.02em;
+  cursor:pointer;
+  transition:background .15s ease,box-shadow .15s ease;
+}
+.btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
+.back-btn{
+  padding:9px 16px;
+  background:transparent;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);
+  font-size:14px;font-weight:700;
+  cursor:pointer;
+}
+.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:var(--vt-sm)}
+th{
+  padding:10px 12px;
+  background:var(--vt-surface-3);
+  color:var(--vt-muted);
+  font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  text-align:left;white-space:nowrap;
+  border-bottom:1px solid var(--vt-border-strong);
+}
+td{padding:10px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--vt-surface-2)}
+.muted{color:var(--vt-muted)}
+
+/* La tabla de resultados vive en #tableContainer y tiene dos columnas: la
+   segunda es el marcador. La clasificacion va aparte, en #ratingContainer,
+   y tiene otras columnas, de ahi que la regla este acotada. */
+#tableContainer td:nth-child(2){
+  font-family:var(--vt-font-head);
+  font-size:19px;font-weight:700;letter-spacing:0.02em;
+  color:var(--vt-gold);
+  white-space:nowrap;
+}
+
+.tag{
+  display:inline-block;
+  padding:3px 10px;margin-right:6px;
+  border-radius:var(--vt-r-full);
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  color:var(--vt-text);
+  font-size:13px;font-weight:600;
+}
+.tag.win{background:rgba(74,222,128,0.12);color:var(--vt-win);border-color:rgba(74,222,128,0.35)}
+.tag.lose{background:rgba(248,113,113,0.10);color:var(--vt-loss);border-color:rgba(248,113,113,0.30)}
+.tag.tie{background:var(--vt-surface-3);color:var(--vt-muted);border-color:var(--vt-border-strong)}
+.set-list{display:flex;gap:6px;flex-wrap:wrap}
+.set-item{display:inline-block}
+.set-item:not(:last-child)::after{content:", "}
+.date-day{display:none}
+.date-full{display:inline}
+.th-day{display:none}
+.th-full{display:inline}
+@media(max-width:720px){body{padding:16px}.table-wrap{overflow-x:auto}.set-list{display:block}.set-item{display:block;margin-bottom:6px}.set-item:not(:last-child)::after{content:""}.date-day{display:inline}.date-full{display:none}.th-day{display:inline}.th-full{display:none}.tag{font-weight:400;font-size:0.75rem}.team-break{display:none}.th-res{display:inline}.th-full-res{display:none}}
+.desktop-only{display:inline}
+.mobile-only{display:none}
+@media(max-width:720px){.desktop-only{display:none}.mobile-only{display:inline-block;margin-right:8px}}
+@media(max-width:720px){.set-list{display:inline;font-size:calc(1rem - 3pt)}.set-item{display:inline;margin-right:8px}.team-break{display:block}.th-res{display:none}.th-full-res{display:inline}}
+@media(max-width:720px){.team-break{display:block}}
+/* Medallas del podio: oro, plata y bronce, los tres de DESIGN.md. El resto
+   de posiciones va en superficie neutra. */
+.pos-badge{
+  display:inline-flex;
+  width:34px;height:34px;
+  border-radius:var(--vt-r-full);
+  align-items:center;justify-content:center;
+  margin-right:10px;
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  color:var(--vt-muted);
+  font-family:var(--vt-font-head);
+  font-size:17px;font-weight:700;
+}
+.rating-name{display:flex;align-items:center}
+.pos-badge.pos-1{background:var(--vt-gold);border-color:var(--vt-gold-light);color:var(--vt-bg);box-shadow:0 0 14px -2px rgba(245,158,11,0.5)}
+.pos-badge.pos-2{background:var(--vt-silver);border-color:var(--vt-text);color:var(--vt-bg)}
+.pos-badge.pos-3{background:var(--vt-bronze);border-color:var(--vt-gold-soft);color:var(--vt-bg)}
+
+@media(max-width:720px){
+  th,td{padding:8px 6px}
+  .controls label{flex:1;min-width:0 !important}
+  .select{width:100%}
+  .pos-badge{width:28px;height:28px;font-size:15px;margin-right:6px}
+}
+</style>
+</head>
+<body>
+
+<div class="vt-page">
+
+  <div style="text-align:center">
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Torneos</h1>
+    <span class="vt-label">Registro oficial · Víboras Pádel</span>
+  </div>
+
+  <div class="vt-card vt-card--accent">
+    <div class="filter-box">
+      <div class="controls" role="toolbar" aria-label="Filtros">
+        <label style="display:flex;flex-direction:column;min-width:220px;flex:1">
+          Torneo
+          <select id="eventSelect" class="select"></select>
+        </label>
+
+        <label style="display:flex;flex-direction:column;flex:1;min-width:220px">
+          Jugador
+          <select id="player" class="select"></select>
+        </label>
+      </div>
+    </div>
+
+    <div id="summary" class="muted" style="margin-top:8px"></div>
+
+    <div id="tournamentViewToggle" class="view-toggle" role="tablist" aria-label="Vista del torneo" style="display:none">
+      <button type="button" class="view-btn active" data-view="rating">Clasificación</button>
+      <button type="button" class="view-btn" data-view="results">Resultados</button>
+    </div>
+
+    <div id="ratingContainer" class="table-wrap" style="margin-top:6px"></div>
+    <div id="tableContainer" class="table-wrap" style="margin-top:12px"></div>
+
+    <div class="vt-acciones">
+      <button class="btn" id="downloadBtn"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">download</span>Descargar resultados</button>
+      <button class="back-btn" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
+    </div>
+  </div>
+</div>
+
+<script src="/front/pantallas/tournaments/tournaments.js"></script>
+</body>
+</html>

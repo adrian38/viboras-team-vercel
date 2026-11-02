@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Normativa del Grupo</title>
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+
+<style>
+/* Sin maqueta propia: se deriva del documento largo, igual que la normativa
+   de la liga. Medida corta y la barra dorada en cada titulo. */
+.doc{line-height:1.65}
+.doc > ul,.doc > ol,.doc > p{max-width:72ch}
+.doc h2{display:flex;align-items:center;gap:var(--vt-sm);margin:var(--vt-xl) 0 var(--vt-md)}
+.doc h2::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
+.doc ul ul{margin-top:var(--vt-sm)}
+.doc strong{color:var(--vt-text-strong);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="vt-page vt-page--narrow">
+  <div class="vt-card vt-card--accent vt-card--glow doc">
+
+    <header class="vt-header">
+      <div class="vt-header__logo"><img src="/image.png" alt="Víboras Team"></div>
+      <div class="vt-header__text">
+        <span class="vt-badge"><span class="vt-badge__dot"></span>Reglamento oficial</span>
+        <h1 style="margin-top:var(--vt-sm)">Normativa del <span class="vt-gold">grupo</span></h1>
+      </div>
+    </header>
+
+    <ul style="margin-top:var(--vt-xl)">
+      <li><strong>A dónde queremos llegar:</strong> Aspiramos a ser un grupo activo, dinámico y con buen rollo, donde todos los miembros podamos conocernos y disfrutemos jugando juntos.</li>
+      <li><strong>Respeto y puntualidad:</strong> No hay espacio para insultos, gestos de menosprecio o actitudes antideportivas, ni con los compañeros ni con los rivales. Respetar a los demás también es respetar su tiempo, así que pedimos cierta puntualidad. Tanto las faltas de respeto como los retrasos frecuentes (5-10 minutos) podrán llevar a que la organización tome medidas.</li>
+      <li><strong>Compromiso:</strong> Apuntarse a una liga, un torneo o un evento es comprometerse a jugarlo. Si alguien falla varias veces, le avisaremos, y si sigue ocurriendo, la organización tomará las medidas que considere oportunas. ¿Te surge un imprevisto y no puedes ir o terminar un evento? Ningún problema, pero avísanos cuanto antes, por favor.</li>
+      <li><strong>Inactividad:</strong> Queremos un grupo activo y participativo, por lo que los periodos prolongados de inactividad sin aviso previo darán lugar a un recordatorio por parte de la administración. ¿Te surge un imprevisto y no puedes ir o terminar un evento? Ningún problema, pero avísanos cuanto antes, por favor.</li>
+      <li><strong>Organización:</strong> Todos los miembros del grupo estarán dentro del grupo de WhatsApp y compartirán los resultados de los partidos.</li>
+    </ul>
+
+    <h2>Nuevas incorporaciones</h2>
+
+    <p><strong>¿Quieres traer a algún miembro nuevo?</strong></p>
+    <p>¡Encantados de que el grupo crezca! Eso sí, queremos que siga habiendo partidos igualados, con buen nivel y buen ambiente. Por eso, las nuevas incorporaciones deberán seguir estos pasos:</p>
+
+    <ol>
+      <li><strong>Primero, el registro.</strong> La persona interesada solo tiene que <a href="/cuenta?alta">crearse una cuenta en la app</a> y rellenar el formulario de inscripción. Es rápido y nos ayuda a tenerlo todo en orden.</li>
+      <li><strong>Avisa por privado.</strong> Escribe por privado a cualquier administrador y cuéntale un poco sobre esa persona: nivel estimado e interés en participar en partidos y eventos.</li>
+    </ol>
+
+    <div style="margin-top:var(--vt-xl);padding-top:var(--vt-lg);border-top:1px solid var(--vt-border)">
+      <button class="vt-btn vt-btn--ghost" type="button" onclick="volverAtras()"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Volver</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="/front/pantallas/group-normativa/group-normativa.js"></script>
+
+</body>
+</html>

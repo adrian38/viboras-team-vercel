@@ -104,43 +104,14 @@ services:
       - ./api:/app/api
       - ./docker:/app/docker
       - ./data:/app/data
-      - ./index.html:/app/index.html
-      - ./day.html:/app/day.html
-      - ./history.html:/app/history.html
-      - ./players.html:/app/players.html
-      - ./ranking.html:/app/ranking.html
-      - ./rating.html:/app/rating.html
-      - ./results.html:/app/results.html
-      - ./statistics.html:/app/statistics.html
-      - ./tournaments.html:/app/tournaments.html
-      - ./submit-result.html:/app/submit-result.html
-      - ./cuenta.html:/app/cuenta.html
-      - ./cuenta-perfil.js:/app/cuenta-perfil.js
-      - ./vt-cargando.js:/app/vt-cargando.js
-      - ./vt-glicko.js:/app/vt-glicko.js
-      - ./vt-categorias.js:/app/vt-categorias.js
-      - ./cuenta-rating.js:/app/cuenta-rating.js
-      - ./auth-client.js:/app/auth-client.js
-      - ./cuenta-correo.js:/app/cuenta-correo.js
-      - ./inscripcion.html:/app/inscripcion.html
-      - ./splash.js:/app/splash.js
-      - ./players-aportes.js:/app/players-aportes.js
-      - ./rating-export.js:/app/rating-export.js
-      - ./excel-export.js:/app/excel-export.js
-      - ./admin-jugadores.js:/app/admin-jugadores.js
-      - ./valorar.html:/app/valorar.html
-      - ./buzon.html:/app/buzon.html
-      - ./tablon.html:/app/tablon.html
-      - ./comunidad.html:/app/comunidad.html
-      - ./nivel-votos.js:/app/nivel-votos.js
-      - ./rating-inicial.js:/app/rating-inicial.js
-      - ./avisos-push.js:/app/avisos-push.js
+      # front/ entera: dentro viven comun/ y pantallas/<nombre>/, asi que
+      # con una linea se monta todo el codigo de la aplicacion y un fichero
+      # nuevo recarga sin reconstruir la imagen. Antes esto eran 37 lineas y
+      # lo que no estuviera en la lista se servia viejo sin avisar.
+      - ./front:/app/front
+      # sw.js se queda en la raiz: el alcance de un service worker es su
+      # propia ruta, y desde /front solo controlaria /front.
       - ./sw.js:/app/sw.js
-      # Los dos ficheros que comparten las veinte paginas. Sin su linea aqui
-      # habia que reconstruir la imagen para ver un cambio de estilo o del
-      # toast, y mientras tanto el contenedor servia la copia vieja sin avisar.
-      - ./theme.css:/app/theme.css
-      - ./pwa.js:/app/pwa.js
     depends_on:
       wsproxy:
         condition: service_started

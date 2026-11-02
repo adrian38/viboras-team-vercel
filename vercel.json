@@ -1,6 +1,89 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/index.html" }
+    {
+      "source": "/",
+      "destination": "/front/pantallas/portada"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/front/pantallas/portada"
+    },
+    {
+      "source": "/buzon",
+      "destination": "/front/pantallas/buzon"
+    },
+    {
+      "source": "/comunidad",
+      "destination": "/front/pantallas/comunidad"
+    },
+    {
+      "source": "/cuenta",
+      "destination": "/front/pantallas/cuenta"
+    },
+    {
+      "source": "/day",
+      "destination": "/front/pantallas/day"
+    },
+    {
+      "source": "/group-normativa",
+      "destination": "/front/pantallas/group-normativa"
+    },
+    {
+      "source": "/history",
+      "destination": "/front/pantallas/history"
+    },
+    {
+      "source": "/inscripcion",
+      "destination": "/front/pantallas/inscripcion"
+    },
+    {
+      "source": "/players",
+      "destination": "/front/pantallas/players"
+    },
+    {
+      "source": "/ranking",
+      "destination": "/front/pantallas/ranking"
+    },
+    {
+      "source": "/ranking-info",
+      "destination": "/front/pantallas/ranking-info"
+    },
+    {
+      "source": "/rating",
+      "destination": "/front/pantallas/rating"
+    },
+    {
+      "source": "/rating-info",
+      "destination": "/front/pantallas/rating-info"
+    },
+    {
+      "source": "/rating-test",
+      "destination": "/front/pantallas/rating-test"
+    },
+    {
+      "source": "/results",
+      "destination": "/front/pantallas/results"
+    },
+    {
+      "source": "/statistics",
+      "destination": "/front/pantallas/statistics"
+    },
+    {
+      "source": "/submit-result",
+      "destination": "/front/pantallas/submit-result"
+    },
+    {
+      "source": "/tablon",
+      "destination": "/front/pantallas/tablon"
+    },
+    {
+      "source": "/tournaments",
+      "destination": "/front/pantallas/tournaments"
+    },
+    {
+      "source": "/valorar",
+      "destination": "/front/pantallas/valorar"
+    }
   ]
 }

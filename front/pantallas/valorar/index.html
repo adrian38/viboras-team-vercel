@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valorar partido</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<style>
+.valorar-page{max-width:430px;padding-top:6px;gap:22px}
+.valorar-cabecera{text-align:center;margin-bottom:0}
+.valorar-cabecera img{width:96px;height:96px;border:2px solid rgba(245,158,11,.55);box-shadow:0 0 24px rgba(245,158,11,.2)}
+.valorar-cabecera h3{margin:12px 0 1px;font-size:29px;line-height:34px;font-weight:800;letter-spacing:.055em}
+.valorar-cabecera .vt-label{font-size:15px;letter-spacing:.12em;color:var(--vt-muted)}
+.detalle{display:flex;flex-direction:column;gap:16px}
+.resumen,.pregunta{background:var(--vt-surface);border:1px solid var(--vt-border);border-radius:20px;padding:20px;box-shadow:0 8px 24px -4px rgba(0,0,0,.55)}
+.resumen{position:relative;overflow:hidden}
+.resumen::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,var(--vt-gold),var(--vt-gold-light))}
+.partido{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.partido+.partido{border-top:1px solid var(--vt-border);margin-top:14px;padding-top:18px}
+.partido__meta{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.partido__fecha{display:flex;align-items:center;gap:8px;color:var(--vt-gold);font-family:var(--vt-font-head);font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.partido__fecha::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--vt-win);flex:0 0 auto}
+.partido__evento{max-width:52%;padding:3px 10px;border:1px solid var(--vt-border-strong);border-radius:999px;color:var(--vt-muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.equipo{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;font-size:17px;font-weight:700;line-height:24px;color:var(--vt-text-strong)}
+.equipo--ganador{color:var(--vt-gold-light)}
+.equipo__sets{font-family:var(--vt-font-head);font-size:20px;font-weight:800;letter-spacing:.08em;color:var(--vt-muted)}
+.equipo--ganador .equipo__sets{color:var(--vt-gold-light)}
+.privacidad{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 0;padding-top:12px;border-top:1px solid var(--vt-border);font-size:13px;color:var(--vt-muted)}
+.privacidad__texto{display:flex;align-items:center;gap:8px;min-width:0}
+.privacidad__candado{width:14px;height:14px;flex:none;color:var(--vt-gold-light);fill:currentColor}
+.privacidad__total{color:var(--vt-gold-light);white-space:nowrap}
+.pregunta{padding:20px}
+.pregunta__titulo{display:flex;align-items:center;gap:10px}
+.pregunta__marca{width:12px;height:12px;border-radius:2px;background:var(--vt-gold);flex:0 0 auto}
+.pregunta h4{margin:0;color:var(--vt-gold);font-size:23px;line-height:27px;font-weight:800;letter-spacing:.025em}
+.pregunta>p{margin:1px 0 16px;color:var(--vt-muted);font-size:14px}
+.voto{display:flex;flex-direction:column;gap:9px;padding:17px 0;border-top:1px solid var(--vt-border)}
+.voto:first-of-type{border-top:0;padding-top:0}
+.voto:last-child{padding-bottom:0}
+.voto__cabecera{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.voto__nombre{font-weight:700;font-size:16px;color:var(--vt-text-strong)}
+.voto__nivel{padding:3px 9px;border:1px solid rgba(245,158,11,.55);border-radius:7px;background:rgba(245,158,11,.08);color:var(--vt-gold);font-family:var(--vt-font-head);font-size:11px;font-weight:800;letter-spacing:.035em;text-transform:uppercase}
+.opciones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.opcion{
+  min-width:0;height:48px;padding:4px 3px;background:var(--vt-surface-2);color:var(--vt-text-strong);
+  border:1px solid var(--vt-border);border-radius:13px;font-family:var(--vt-font-body);
+  font-size:11px;font-weight:600;line-height:1.1;cursor:pointer;white-space:normal;
+}
+.pregunta--nivel .opcion{height:44px;font-size:12px}
+.opcion__icono{display:block;margin-bottom:2px;font-size:14px}
+.opcion[aria-pressed="true"]{background:linear-gradient(135deg,var(--vt-gold),var(--vt-gold-dark));border-color:var(--vt-gold);color:var(--vt-surface-deep);font-weight:700;box-shadow:0 7px 17px rgba(245,158,11,.36)}
+.enviar-valoracion{width:100%;min-height:48px;margin-top:8px;border-radius:12px;font-family:var(--vt-font-head);font-size:16px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 7px 20px rgba(245,158,11,.38)}
+.boton__flecha{width:16px;height:16px;flex:none;fill:none;stroke:currentColor}
+.acciones-volver{margin-top:-12px}
+.volver-valoracion{width:100%;min-height:44px;border-radius:12px;font-family:var(--vt-font-head);font-size:14px;font-weight:800;letter-spacing:.045em;text-transform:uppercase;text-decoration:none}
+.volver-valoracion .boton__flecha{color:var(--vt-muted)}
+.estado{margin-top:var(--vt-sm);font-size:14px;color:var(--vt-muted)}
+.estado:empty{display:none}
+.lista a{display:block;padding:12px 0;border-bottom:1px solid var(--vt-border);color:var(--vt-text);overflow-wrap:anywhere}
+.lista a span{color:var(--vt-muted);font-size:13px}
+@media(max-width:359px){.resumen,.pregunta{padding:16px}.opciones{gap:5px}.opcion{padding-inline:2px;font-size:11px}.equipo{font-size:15px}}
+</style>
+</head>
+
+<body>
+
+<div class="vt-page valorar-page">
+
+  <div class="valorar-cabecera">
+    <img src="/image.png" alt="Víboras Team" width="80" height="80" style="border-radius:var(--vt-r-lg)">
+    <h3 class="vt-gold">Víboras Team</h3>
+    <span class="vt-label">Valorar partido</span>
+  </div>
+
+  <div class="vt-card vt-card--accent" id="contenido">
+    <p class="estado">Cargando…</p>
+  </div>
+
+  <div class="acciones-volver">
+    <a class="vt-btn vt-btn--ghost volver-valoracion" href="/" id="volverInicio">Volver al inicio</a>
+  </div>
+</div>
+
+<script src="/front/comun/vt-glicko.js"></script>
+<script src="/front/comun/vt-categorias.js"></script>
+<script src="/front/comun/nivel-votos.js"></script>
+<script src="/front/comun/rating-inicial.js"></script>
+<script src="/front/pantallas/valorar/valorar.js"></script>
+
+</body>
+</html>

@@ -8,7 +8,7 @@
 // cuatro oros y cinco grises propios, y cambiar --vt-muted no movia nada de
 // eso. Un color suelto no se nota de uno en uno; se nota cuando ya son cien.
 //
-// Lo que comprueba, en los .html, .js y .css de la raiz:
+// Lo que comprueba, en los .html, .js y .css de front/ y de la raiz:
 //
 //   1. Ningun color literal fuera de la lista de excepciones.
 //   2. Ningun valor de la paleta escrito a mano en vez de su var(--vt-*).
@@ -22,18 +22,37 @@
 //   de su token, esto no lo nota.
 // - Lo que hay dentro de un comentario, que se borra antes de mirar: en los
 //   comentarios se explican los colores y nombrarlos no es usarlos.
+// - Una carpeta de presentacion que se cree fuera de front/. Dentro de front/
+//   se recorre todo, pero un arbol nuevo al lado habria que anadirlo a
+//   ARBOLES.
 //
 // Detalle: ai_context/sistema_visual_viper_strike.md
 import { readFileSync, readdirSync } from 'node:fs';
 
-const HOJA = 'theme.css';
+const HOJA = 'front/comun/theme.css';
+
+// Donde vive la presentacion: front/ entera —comun/ y las veinte carpetas de
+// pantallas/— y lo que queda suelto en la raiz, que hoy es sw.js.
+//
+// Esto fue un readdirSync('.') mientras todo estaba en la raiz, y luego una
+// lista de tres carpetas. Ahora que la presentacion es un arbol con un solo
+// tronco, front/ se recorre entero y una carpeta nueva ya no hay que
+// acordarse de anadirla.
+//
+// api/ se queda fuera a proposito, y por eso se recorre front/ y no el
+// repositorio: sus quince colores literales son el HTML de los correos
+// (api/_correo.js), donde una var() no vale porque el cliente de correo no
+// carga theme.css. Meterlos aqui serian quince excepciones que no defienden
+// nada.
+const ARBOLES = ['front'];
+const RAIZ_SUELTA = '.';
 
 // Lo que puede llevar un color literal, y por que.
 const EXCEPCIONES = [
-  { fichero: 'theme.css', color: '#000', motivo: 'iguala el negro de splash.mp4' },
-  { fichero: 'results.html', color: '#25d366', motivo: 'verde de WhatsApp' },
-  { fichero: 'results.html', color: '#1ebe5d', motivo: 'verde de WhatsApp, al pasar por encima' },
-  { fichero: 'results.html', color: '#07301a', motivo: 'texto sobre el verde de WhatsApp' }
+  { fichero: 'front/comun/theme.css', color: '#000', motivo: 'iguala el negro de splash.mp4' },
+  { fichero: 'front/pantallas/results/index.html', color: '#25d366', motivo: 'verde de WhatsApp' },
+  { fichero: 'front/pantallas/results/index.html', color: '#1ebe5d', motivo: 'verde de WhatsApp, al pasar por encima' },
+  { fichero: 'front/pantallas/results/index.html', color: '#07301a', motivo: 'texto sobre el verde de WhatsApp' }
 ];
 
 const normalizar = (c) => {
@@ -70,7 +89,22 @@ const permitido = (fichero, color) => EXCEPCIONES.some(
 );
 
 const problemas = [];
-const ficheros = readdirSync('.').filter((f) => /\.(html|css|js)$/.test(f)).sort();
+const esDePresentacion = (nombre) => /\.(html|css|js)$/.test(nombre);
+
+function recorrer(dir, out = []) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const rel = `${dir}/${e.name}`;
+    if (e.isDirectory()) recorrer(rel, out);
+    else if (esDePresentacion(e.name)) out.push(rel);
+  }
+  return out;
+}
+
+const ficheros = [
+  ...ARBOLES.flatMap((d) => recorrer(d)),
+  ...readdirSync(RAIZ_SUELTA, { withFileTypes: true })
+    .filter((e) => e.isFile() && esDePresentacion(e.name)).map((e) => e.name)
+].sort();
 
 for (const fichero of ficheros) {
   const lineas = sinComentarios(readFileSync(fichero, 'utf8')).split('\n');

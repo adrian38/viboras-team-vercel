@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunidad</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<script src="/front/comun/vt-glicko.js"></script>
+<script src="/front/comun/vt-categorias.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<style>
+body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
+.barra{
+  position:fixed;inset:0 0 auto;z-index:var(--vt-z-flotante);height:64px;
+  padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
+  display:flex;align-items:center;gap:var(--vt-sm);
+  background:rgba(18,19,22,.92);backdrop-filter:blur(14px);box-shadow:0 4px 20px rgba(0,0,0,.6);
+}
+.barra__volver{width:40px;height:40px;display:grid;place-items:center;color:var(--vt-text);text-decoration:none}
+.barra__logo{width:32px;height:32px;border-radius:var(--vt-r-full);box-shadow:var(--vt-glow)}
+.barra__texto{display:flex;flex-direction:column;min-width:0}
+.barra__marca{font-family:var(--vt-font-head);font-size:12px;line-height:14px;font-weight:700;letter-spacing:.1em;color:var(--vt-gold-soft)}
+.barra__titulo{font-family:var(--vt-font-head);font-size:18px;line-height:20px;font-weight:700;text-transform:uppercase;color:var(--vt-text)}
+.comunidad{max-width:760px;gap:0;padding:var(--vt-sm) 16px 0}
+.presentacion{position:relative;margin-bottom:var(--vt-sm)}
+.presentacion::before{content:'';position:absolute;inset:-30px 20% auto;height:80px;background:rgba(245,158,11,.08);filter:blur(32px);pointer-events:none}
+.cabeza{position:relative;display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm)}
+.cabeza__texto{display:flex;flex-direction:column}
+.cabeza h1{margin:0;font-size:22px;line-height:26px;color:var(--vt-text);text-transform:uppercase}
+.cabeza .vt-label{color:var(--vt-gold-soft)}
+.contador{border:0;border-radius:var(--vt-r-full);background:var(--vt-surface-3);color:var(--vt-gold-soft);white-space:nowrap;font-family:var(--vt-font-head)}
+.contador::before{content:'';display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:var(--vt-gold)}
+.buscador{position:relative;margin-top:var(--vt-md)}
+.buscador .vt-input{padding:12px 40px;background:var(--vt-surface);border:0;border-radius:var(--vt-r-md)}
+.buscador .ms{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--vt-muted);pointer-events:none}
+.buscador .vt-input{color:var(--vt-text)}
+.buscador .vt-input::placeholder{color:var(--vt-faint)}
+
+.filtros{display:flex;gap:var(--vt-sm);margin:0 -16px;padding:var(--vt-md) 16px;overflow-x:auto;scrollbar-width:none}
+.filtros::-webkit-scrollbar{display:none}
+.filtro{
+  flex:0 0 auto;padding:7px 14px;
+  background:var(--vt-surface-3);color:var(--vt-muted);
+  border:0;border-radius:var(--vt-r-full);
+  font-family:var(--vt-font-head);font-size:14px;line-height:18px;font-weight:700;cursor:pointer;
+  text-transform:uppercase;letter-spacing:0.05em;
+}
+.filtro[aria-pressed="true"]{background:var(--vt-gold);color:var(--vt-bg);font-weight:700}
+
+.lista{display:flex;flex-direction:column;gap:12px;margin-top:0}
+.jugador{
+  background:var(--vt-surface);
+  border:0;
+  border-radius:var(--vt-r-md);
+  padding:16px;
+  display:flex;flex-direction:column;gap:14px;box-shadow:var(--vt-shadow-card);
+}
+.jugador[hidden]{display:none}
+.jugador__cabeza{display:flex;align-items:center;gap:var(--vt-sm);min-width:0}
+/* La columna del medio: nombre arriba y, debajo, la categoria actual,
+   igual que la maqueta. `min-width:0` para que el nombre largo se parta en
+   vez de empujar al numero de la derecha fuera de la tarjeta. */
+.jugador__id{display:flex;flex:1 1 auto;flex-direction:column;gap:2px;min-width:0}
+.jugador__linea{display:flex;align-items:center;gap:8px;min-width:0}
+.jugador__nivel{font-size:12px;line-height:16px;color:var(--vt-muted);overflow-wrap:anywhere}
+/* No hay fotos de jugador en el proyecto: el circulo lleva las iniciales del
+   nombre, que es lo que hay. */
+.jugador__iniciales{
+  flex:0 0 auto;width:48px;height:48px;border-radius:var(--vt-r-full);
+  background:var(--vt-surface-3);color:var(--vt-gold-soft);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--vt-font-head);font-size:18px;font-weight:700;letter-spacing:0.02em;
+}
+.jugador__nombre{
+  margin:0;min-width:0;
+  font-family:var(--vt-font-head);
+  font-size:18px;line-height:22px;font-weight:700;letter-spacing:0.02em;
+  text-transform:uppercase;color:var(--vt-text);
+  overflow-wrap:anywhere;
+}
+.jugador__cuentas{margin-left:auto;flex:0 0 auto;text-align:right}
+.jugador__numero{font-family:var(--vt-font-head);font-size:18px;line-height:22px;font-weight:700;color:var(--vt-gold-soft);display:block}
+.jugador__nota{font-family:var(--vt-font-head);font-size:12px;line-height:14px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-muted)}
+
+/* La tira de tres casillas de la maqueta: lado, ganados y horarios. Tres en
+   fila incluso a 375 px, como alli; `minmax(0,1fr)` y no `auto-fit` para que
+   no se baje ninguna. Solo se pinta la que tiene dato: un hueco maquetado
+   seria un dato inventado, asi que quien no rellenó horarios enseña dos. */
+.datos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--vt-sm);padding:10px;background:rgba(13,14,17,.7);border-radius:var(--vt-r)}
+.datos--1{grid-template-columns:minmax(0,1fr)}
+.datos--2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dato{
+  background:rgba(41,42,45,.6);
+  border:0;
+  border-radius:var(--vt-r-sm);
+  padding:4px;text-align:center;
+  display:flex;flex-direction:column;justify-content:center;gap:2px;
+}
+/* --vt-muted, como `.jugador__nota` de arriba y como las etiquetas de
+   /tournaments: con --vt-faint estas 12 px se quedan en 3,4 de contraste. */
+.dato__clave{display:block;font-family:var(--vt-font-head);font-size:12px;line-height:14px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-muted)}
+.dato__valor{display:flex;align-items:center;justify-content:center;gap:2px;font-family:var(--vt-font-head);font-size:14px;line-height:18px;font-weight:700;color:var(--vt-text);overflow-wrap:anywhere}
+.dato--gold .dato__valor{color:var(--vt-gold-soft);text-transform:uppercase}
+.dato--calificacion .dato__valor{color:var(--vt-gold-light)}
+.dato:last-child .dato__valor{font-family:var(--vt-font-body);font-size:12px;line-height:16px;font-weight:500}
+.estrella{display:block;width:14px;height:14px;fill:var(--vt-gold-light)}
+.jugador__pie{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);min-height:36px}
+.jugador__resumen{font-size:12px;line-height:16px;color:var(--vt-gold-light)}
+.jugador__resumen::before{content:'';display:inline-block;width:8px;height:8px;margin-right:7px;border-radius:50%;background:var(--vt-gold);vertical-align:1px}
+.jugador__accion{min-height:36px;padding:7px 16px;border-radius:var(--vt-r-full);background:var(--vt-gold);color:var(--vt-bg);font-family:var(--vt-font-head);font-size:14px;line-height:18px;letter-spacing:.05em;text-transform:uppercase}
+.jugador__accion:hover,.jugador__accion:focus-visible{color:var(--vt-bg)}
+.estado{font-size:14px;color:var(--vt-muted);min-height:20px}
+.aviso{font-size:14px;color:var(--vt-muted);margin:0}
+.acciones{margin-top:var(--vt-xl);display:flex;flex-wrap:wrap;gap:var(--vt-sm);justify-content:center}
+</style>
+</head>
+
+<body>
+<header class="barra">
+  <a class="barra__volver" id="volver" href="/" aria-label="Volver"><span class="ms notranslate" translate="no" aria-hidden="true">arrow_back</span></a>
+  <img class="barra__logo" src="/image.png" alt="">
+  <div class="barra__texto">
+    <span class="barra__marca">VÍBORAS TEAM</span>
+    <span class="barra__titulo">Comunidad</span>
+  </div>
+</header>
+
+<main class="vt-page comunidad">
+  <section class="presentacion" aria-labelledby="titulo-comunidad">
+    <div class="cabeza">
+      <div class="cabeza__texto">
+        <span class="vt-label">Directorio oficial</span>
+        <h1 id="titulo-comunidad">Comunidad Víboras</h1>
+      </div>
+      <span class="vt-chip vt-chip--gold contador" id="cuantos">—</span>
+    </div>
+    <div class="buscador">
+      <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">search</span>
+      <label class="vt-label" for="buscar" style="position:absolute;left:-9999px">Buscar jugador</label>
+      <input class="vt-input" id="buscar" type="search" placeholder="Buscar compañero por nombre o nivel…">
+    </div>
+
+    <div class="filtros" id="filtros" role="group" aria-label="Filtrar jugadores"></div>
+  </section>
+
+  <div class="lista" id="lista"><p class="estado">Cargando…</p></div>
+
+  <footer class="acciones"><span class="vt-label">Víboras Team · Comunidad de jugadores</span></footer>
+</main>
+
+<script src="/front/comun/nivel-votos.js"></script>
+<script src="/front/comun/rating-inicial.js"></script>
+<script src="/front/pantallas/comunidad/comunidad.js"></script>
+
+</body>
+</html>

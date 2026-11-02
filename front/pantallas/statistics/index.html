@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estadísticas</title>
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+<style>
+/* --card lo lee renderTable(), que monta el panel de la tabla con estilos en
+   linea (panel.style.background = 'var(--card)'). Se redefine aqui en vez de
+   tocar el script. */
+:root{--card:var(--vt-surface-2);--muted:var(--vt-muted)}
+
+.controls{display:flex;gap:var(--vt-md);flex-wrap:wrap;align-items:center;margin-bottom:var(--vt-sm)}
+
+table{width:100%;border-collapse:collapse;margin-top:var(--vt-sm)}
+th{
+  padding:10px 12px;
+  background:var(--vt-surface-3);
+  color:var(--vt-muted);
+  font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  text-align:left;
+  white-space:nowrap;
+  border-bottom:1px solid var(--vt-border-strong);
+  cursor:pointer;user-select:none;
+}
+th:hover{color:var(--vt-gold-light)}
+td{padding:8px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text);font-size:14px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--vt-surface-3)}
+.muted{color:var(--vt-muted)}
+.sortable-ind{margin-left:6px;color:var(--vt-muted);opacity:.65;font-size:15px;vertical-align:middle}
+
+/* El panel que envuelve la tabla tambien se monta con estilos en linea: sus
+   valores claros se sobreescriben desde aqui. */
+#tableContainer > div{
+  background:var(--vt-surface-2) !important;
+  border:1px solid var(--vt-border) !important;
+  border-radius:var(--vt-r-lg) !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+
+.view-toggle{display:flex;gap:var(--vt-sm);flex-wrap:wrap}
+.view-btn{
+  padding:8px 16px;
+  background:var(--vt-surface-3);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-full);
+  color:var(--vt-muted);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:600;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}
+.view-btn.active{background:var(--vt-gold);color:var(--vt-bg);border-color:var(--vt-gold);font-weight:700}
+
+.event-type-filter{display:flex;gap:var(--vt-sm);flex-wrap:wrap;align-items:center;padding:var(--vt-sm) 0 var(--vt-md)}
+.event-checkbox{
+  display:inline-flex;align-items:center;gap:var(--vt-sm);
+  padding:7px 12px;
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-full);
+  color:var(--vt-text);
+  font-size:13px;
+  cursor:pointer;
+}
+.event-checkbox:hover{border-color:var(--vt-gold-dark)}
+.event-checkbox input{margin:0}
+
+.update-btn{
+  padding:8px 18px;
+  background:var(--vt-gold);
+  border:none;
+  border-radius:var(--vt-r);
+  color:var(--vt-bg);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
+  cursor:pointer;
+  min-width:120px;
+}
+.update-btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
+
+/* Celda de metrica: la barra la colorea createMetricCell() mezclando
+   --vt-loss y --vt-win segun el porcentaje. La rampa es el dato, asi que se
+   conserva; lo que cambia es que sus dos extremos ya son los mismos rojo y
+   verde que el resto de la app, y no un hsl() aparte. La opacidad va subida
+   porque sobre carbono se quedaba corta. */
+.metric-col{min-width:120px;padding-right:12px}
+.name-col{max-width:280px}
+.td-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+/* En el movil la tabla se desplaza de lado (unos 600 px en una caja de 300):
+   el nombre se queda fijo a la izquierda para saber de quien es cada fila.
+   Necesita fondo opaco, el mismo del panel, o las cifras pasan por debajo. */
+th.name-col,td.td-name{position:sticky;left:0;z-index:2}
+td.td-name{background:var(--card)}
+@media(max-width:720px){th.name-col,td.td-name{max-width:110px}}
+.center{text-align:center}
+.metric-cell{position:relative;padding:6px 12px}
+.metric-cell .bar{position:absolute;left:0;top:3px;bottom:3px;right:8px;z-index:0;border-radius:var(--vt-r);opacity:0.34}
+/* La cifra va en blanco sobre la barra: es lo que se lee, no la barra. */
+.metric-cell .label{position:relative;z-index:1;font-weight:700;font-variant-numeric:tabular-nums;color:var(--vt-text-strong)}
+.metric-cell.empty{color:var(--vt-muted);font-weight:600}
+
+@media(max-width:720px){
+  th,td{padding:8px 8px;font-size:13px}
+  .metric-col{min-width:104px}
+  .event-type-filter{gap:var(--vt-xs)}
+  .event-checkbox{font-size:12px;padding:6px 10px}
+  .update-btn{flex:1}
+}
+</style>
+</head>
+<body>
+
+<div class="vt-page">
+
+  <div class="vt-cabecera">
+    <button class="vt-volver" type="button" onclick="window.location='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
+    <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
+    <h1 class="vt-gold" style="margin-top:var(--vt-sm)">Estadísticas de temporada</h1>
+    <span class="vt-label">Registro oficial · Víboras Pádel</span>
+  </div>
+
+  <div class="vt-card vt-card--accent">
+
+    <div class="controls">
+      <div class="view-toggle" role="tablist" aria-label="Vista de estadísticas">
+        <button type="button" class="view-btn active" data-view="players">Individual</button>
+        <button type="button" class="view-btn" data-view="teams">Por parejas</button>
+      </div>
+      <div style="flex:1"></div>
+    </div>
+
+    <div class="event-type-filter" aria-label="Tipos de partidos incluidos">
+      <label class="event-checkbox"><input type="checkbox" value="ranked" checked> Partidos</label>
+      <label class="event-checkbox"><input type="checkbox" value="grupo_liga" checked> Ligas</label>
+      <label class="event-checkbox"><input type="checkbox" value="pozo,compas,doble_ko" checked> Torneos</label>
+      <label class="event-checkbox"><input type="checkbox" id="includePreToggle" value="legacy"> Incluir pre-09/2026</label>
+      <label class="event-checkbox"><input type="checkbox" id="includeInactiveCheckbox"> Incluir no activos</label>
+      <button type="button" class="update-btn" id="refreshStatsBtn"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">tune</span>Aplicar</button>
+    </div>
+
+    <div id="tableContainer"></div>
+
+  </div>
+</div>
+
+<script src="/front/pantallas/statistics/statistics.js"></script>
+
+</body>
+</html>

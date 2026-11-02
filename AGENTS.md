@@ -12,6 +12,66 @@
 - No commitear nunca `.env.local` ni `backups/`: cadenas de conexión y nombres
   de personas. Ya están en `.gitignore`, no relajarlo.
 
+## Invariante crítica: `dev` jamás escribe en producción
+
+Desde el 2026-11-01 hay dos entornos persistentes e independientes. **No basta
+con que Vercel diga Preview**: Preview heredaba originalmente las variables de
+la integración de producción y, sin los overrides de `dev`, escribía en la
+base real.
+
+| Uso | Git | Vercel | Rama Neon | URL estable |
+| --- | --- | --- | --- | --- |
+| Grupo real | `viboras` | Production | `main` | `https://viboras-team-vercel.vercel.app` |
+| Pruebas | `dev` | Preview (`dev`) | `viboras_dev`, clon de `main` | `https://viboras-team-vercel-git-dev-adrian38s-projects.vercel.app` |
+
+El proyecto Neon es `neon-rose-bridge` (`empty-poetry-42127048`). `main` es la
+rama primaria de producción (`br-soft-grass-b2vx7ut7`) y `viboras_dev` es su
+clon independiente (`br-soft-dawn-b213926z`). Las dos cadenas terminan en
+`/neondb`; **eso no significa que sean la misma base**. La separación la dan la
+rama y el host/endpoint, que tienen que ser distintos.
+
+### Puerta de seguridad antes de cualquier escritura
+
+Antes de ejecutar una migración, un script que escriba, una prueba de API que
+modifique datos o un despliegue de `dev`:
+
+1. Confirmar `git branch --show-current`. `dev` sólo se prueba contra
+   `viboras_dev`; `viboras` sólo contra `main`.
+2. Confirmar la relación y los identificadores con
+   `npx neon@latest branches list --project-id empty-poetry-42127048`.
+3. Confirmar que existen los overrides exclusivos con
+   `npx vercel@latest env ls --environment preview --git-branch dev`.
+4. **No considerar el paso 3 prueba del valor.** Las conexiones están marcadas
+   `Secret` y Vercel no deja volver a leerlas. Si hay cualquier duda, regenerar
+   las URLs pooled y directas desde `viboras_dev`, sobrescribir todos los
+   overrides de Preview `dev` y redesplegar antes de escribir.
+5. Nunca cargar `.env.local` para una prueba de `dev`: hoy contiene las URLs de
+   producción. No ejecutar con él `npm run migrate`, `npm run schema`, `psql` ni
+   un script de mantenimiento creyendo que se está usando el clon.
+
+Las variables de base exclusivas de `Preview (dev)` son:
+`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_URL_NO_SSL`,
+`POSTGRES_PRISMA_URL`, `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `PGHOST`,
+`PGHOST_UNPOOLED`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `POSTGRES_HOST`,
+`POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DATABASE`. Todas tienen que
+salir de `viboras_dev`; no se arregla sólo `POSTGRES_URL` y se dejan las demás
+apuntando a producción.
+
+### Qué significa «clon»
+
+`viboras_dev` nació desde el estado actual de `main`, con esquema y datos
+reales idénticos en ese instante, y a partir de ahí usa copy-on-write: crear,
+editar o borrar en `dev` no cambia `main`. **No se sincroniza solo** con los
+cambios posteriores de producción. Para refrescarlo se recrea o resetea desde
+`main` y se vuelven a fijar sus variables; nunca se apunta Preview temporalmente
+a `main`. Esa operación destruye el estado de pruebas y exige petición expresa.
+
+Google, SMTP, administradores y VAPID sí están copiados de Production para que
+la aplicación funcione igual, y `APP_URL` usa el alias estable de Preview. Por
+tanto, el aislamiento garantizado es el de Postgres: una prueba en `dev` todavía
+puede mandar correos o push reales. Detalle y auditoría reproducible en
+`ai_context/entorno_dev_y_clon_neon.md`.
+
 ## Leer `ai_context/` antes de escribir código
 
 Es la primera consulta, no un buzón. Recoge lo que leer el código no enseña:
@@ -44,7 +104,7 @@ descubrirlo a mitad de una tarea:
   `rating-test.html`.
 
   Es decir: el grafo cubre `api/`, `scripts/`, `docker/`, `tools/`, `sw.js` y
-  `pwa.js`, y nada más. Para el código de las páginas —rating, tablas,
+  `front/comun/pwa.js`, y nada más. Para el código de las páginas —rating, tablas,
   formularios, toda la interfaz— la vía fiable es `rg` sobre el nombre de la
   función. Un `search_graph` vacío **no significa que el símbolo no exista**.
 
@@ -105,9 +165,9 @@ frío. `scripts/schema.sql` es una copia manual **desfasada** que hoy rechaza
 datos existentes en producción. Para cambiar el esquema se edita `_db.js`.
 Detalle: `ai_context/esquema_duplicado_y_desfasado.md`.
 
-## Invariante: el color sale de `theme.css`
+## Invariante: el color sale de `front/comun/theme.css`
 
-Ningún color literal fuera del `:root` de `theme.css`. Se declara ahí y se usa
+Ningún color literal fuera del `:root` de `front/comun/theme.css`. Se declara ahí y se usa
 con `var(--vt-*)`; si de verdad tiene que ser literal —el negro que iguala
 `splash.mp4`, el verde de WhatsApp— va a `EXCEPCIONES` en la guarda, con su
 motivo.
@@ -121,15 +181,16 @@ motivo.
 
 No hay plantilla ni layout compartido: cada `.html` repite su `<head>`. Los
 cinco elementos de la PWA —favicon, `apple-touch-icon`, `manifest`,
-`apple-mobile-web-app-title`, `theme-color`— y el `<script src="/pwa.js">` están
-copiados en las 20 páginas (y `/auth-client.js` y `/splash.js` también; este
-último **sin** `defer`, a propósito: ver `ai_context/sistema_visual_viper_strike.md`).
+`apple-mobile-web-app-title`, `theme-color`— y el `<script src="/front/comun/pwa.js">`
+están copiados en las 20 páginas (y `/front/comun/auth-client.js` y
+`/front/comun/splash.js` también; este último **sin** `defer`, a propósito: ver
+`ai_context/sistema_visual_viper_strike.md`).
 
 Añadir uno a una sola página no da error: simplemente no funciona en las otras
 diecisiete. Al tocar el `<head>`, recorrer todas y comprobar el resultado:
 
 ```bash
-grep -c '<etiqueta que sea>' *.html
+grep -c '<etiqueta que sea>' front/pantallas/*/index.html
 ```
 
 ## Tamaño del código: 60 líneas por función, 600 de JavaScript por fichero
@@ -206,10 +267,11 @@ manual y está descrita aquí.
    # -> http://localhost:3000   /health dice si la base responde
    ```
 
-   No es ceremonia. `docker-compose.yml` monta unos cuantos ficheros uno a
-   uno y el resto —`theme.css`, `sw.js`, `pwa.js`, los iconos y las páginas
-   que no estén en esa lista— vive dentro de la imagen. Editas uno de esos y
-   el contenedor sigue sirviendo la copia vieja **sin dar ningún error**.
+   No es ceremonia. `docker-compose.yml` monta `./front` entera, con
+   `comun/` y `pantallas/` dentro, así que el código recarga en caliente; lo que no
+   está en `volumes:` —los iconos, `splash.mp4`, `site.webmanifest`— vive
+   dentro de la imagen. Editas uno de esos y el contenedor sigue sirviendo la
+   copia vieja **sin dar ningún error**.
 
    Eso no es una molestia, es una comprobación que miente. Pasó el
    2026-10-16: `/group-normativa` no redirigía al cerrar la app y el fichero
