@@ -65,6 +65,10 @@ en la app**. Nada de esto se portó:
 Si alguien compara una captura con la página y echa algo de esto en falta, **es
 deliberado**.
 
+Lo descartado es esa navegación, no toda. El 2026-11-02 Adrián trajo una
+maqueta nueva con una **barra de pestañas inferior**, cuyos cinco destinos sí
+son páginas que existen, y esa sí se portó: [[barra_de_navegacion]].
+
 ## Los iconos: Material Symbols recortada a 33 glifos
 
 Las maquetas usan Material Symbols. La fuente entera son unos 300 KB, que en

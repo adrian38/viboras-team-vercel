@@ -26,6 +26,11 @@ que hay.
   sin maqueta; y la pantalla de bienvenida: el vídeo del grupo recortado, por
   qué se cierra si no arranca en 1,5 s y por qué `sw.js` deja pasar los
   `Range`.
+- `barra_de_navegacion.md`: la barra de pestañas inferior de las veinte
+  páginas; por qué el marcado vive en `vt-nav.js` y el hueco en el `body` de
+  `theme.css`, a dónde lleva cada pestaña y en qué páginas se enciende, por qué
+  cuatro páginas no encienden ninguna y por qué no se portó el punto de avisos
+  del buzón.
 - `pantalla_de_carga.md`: el velo no se quita hasta que está pintado todo,
   cálculos incluidos; por qué lo que la tarea de arranque no espera aparece
   después y se ve como un flashazo, y cómo se mide en milisegundos.
