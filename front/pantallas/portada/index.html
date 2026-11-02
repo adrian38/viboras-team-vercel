@@ -108,6 +108,42 @@
 }
 .block-row{position:relative;z-index:var(--vt-z-contenido);display:flex;gap:var(--vt-md);align-items:center}
 
+/* La normativa, al pie de las tarjetas. Bajo aqui de la barra de arriba el
+   2026-11-02, con la maqueta de Stitch: arriba competia con la campana y el
+   chip de cuenta en 375 px —por eso el chip se quedaba en el icono por debajo
+   de 420—, y no es un modulo del grupo como los de arriba. Fila fina a
+   proposito: es el documento que se lee una vez, no algo de cada semana.
+   El fondo del icono va en rgba porque CSS no deja una var() dentro; es el
+   mismo valor que .block-icon. */
+.normativa{
+  display:flex;align-items:center;gap:var(--vt-sm);
+  background:var(--vt-surface);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  padding:var(--vt-sm) var(--vt-md);
+  color:var(--vt-text);
+  text-decoration:none;
+  transition:border-color .2s ease,background .2s ease;
+}
+.normativa:hover{border-color:var(--vt-border-gold);background:var(--vt-surface-2)}
+.normativa:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
+.normativa__icono{
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;flex:0 0 auto;
+  border-radius:var(--vt-r);
+  background:rgba(245,158,11,0.14);
+  color:var(--vt-gold);
+}
+.normativa__texto{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.normativa__titulo{
+  font-family:var(--vt-font-head);
+  font-size:16px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--vt-text-strong);line-height:1;
+}
+.normativa__sub{font-size:12px;color:var(--vt-muted);line-height:1.3}
+.normativa__flecha{color:var(--vt-muted);transition:color .2s ease,transform .2s ease}
+.normativa:hover .normativa__flecha{color:var(--vt-gold);transform:translateX(2px)}
+
 label.small{
   display:block;
   margin:0 0 var(--vt-md);
@@ -141,47 +177,33 @@ label.small{
 }
 .btn:hover{background:var(--vt-gold);border-color:var(--vt-gold);color:var(--vt-bg)}
 
-/* La normativa del grupo es la unica en rojo, como estaba: es el aviso. */
-.btn.black-top{
-  flex:0 0 auto;min-width:0;
-  background:var(--vt-error-bg);
-  border:1px solid rgba(255,180,171,0.35);
-  border-radius:var(--vt-r-full);
-  color:var(--vt-error);
-  padding:9px 20px;
-  /* Sin z-index: lo heredaba de cuando .topbar era fija. Como .topbar es
-     flex, el boton es un elemento flexible y ahi el z-index si cuenta, de
-     modo que ese 1101 le hacia tapar el panel de administracion. */
-}
-.btn.black-top:hover{background:rgba(147,0,10,0.34);border-color:var(--vt-error);color:var(--vt-error)}
-
 /* Barra superior en el flujo del documento (no fija). Así el botón se desplaza al hacer scroll y desaparece. */
-/* space-between desde que hay cuentas: normativa a la izquierda, el chip de
-   sesion a la derecha. */
+/* flex-end desde que la normativa bajo al pie de las tarjetas (2026-11-02):
+   lo unico que queda arriba es la campana con el chip de cuenta, y con
+   space-between se quedaban pegados al borde izquierdo. */
 /* relative por la campanita: su panel se ancla al borde derecho de la barra
    y no al de la campana, que tiene el chip de cuenta a su derecha. Anclado a
    la campana, por debajo de unos 350 px el panel empezaba fuera de la
    pantalla y se comia el principio de cada aviso. */
-.topbar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);height:var(--topbar-height);padding:0 var(--vt-sm);pointer-events:auto}
+.topbar{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:var(--vt-sm);height:var(--topbar-height);padding:0 var(--vt-md);pointer-events:auto}
 .topbar .vt-chip{flex:0 0 auto;white-space:nowrap;text-decoration:none}
+.topbar__acciones{display:flex;align-items:center;gap:calc(var(--vt-sm) + var(--vt-xs));flex:0 0 auto}
+.topbar__acciones .vt-chip{min-height:40px;padding:0 12px;justify-content:center}
+.topbar__acciones .ms{font-size:20px}
 /* El numero de avisos se sigue colocando sobre la campana: sin esto, al
    quitarle el relative a .vt-campana se iria a la esquina de la barra. */
 .topbar .vt-campana{position:static}
-.topbar .vt-campana > .vt-chip{position:relative}
+.topbar .vt-campana > .vt-chip{position:relative;width:40px;padding:0}
 /* Pegado a la campana y no al pie de la barra, que queda mas abajo: la
-   campana (27 px) va centrada en la barra, asi que su pie esta a 50% + 14;
+   campana (40 px) va centrada en la barra, asi que su pie esta a 50% + 20;
    y 6 px de aire, como en theme.css. */
-.topbar .vt-campana__panel{right:var(--vt-sm);top:calc(50% + 20px)}
+.topbar .vt-campana__panel{right:var(--vt-md);top:calc(50% + 26px)}
 /* A 375 px los dos textos caben con 16 px de sobra; a 320 el chip desbordaba
    29 px. Por debajo de 370 se queda en el icono, que sigue llevando a /cuenta
    y conserva su aria-label. */
-@media (max-width:370px){ .topbar .vt-chip__nombre{display:none} }
-/* Con la campanita no caben los tres a 375 px: por debajo de 420 el boton
-   dice solo NORMATIVA y el chip se queda en el icono. */
-@media (max-width:420px){ .topbar-largo,.topbar .vt-chip__nombre{display:none} }
-/* NORMATIVA y DEL GRUPO van en un mismo <span>: sueltos eran dos elementos
-   del flex y el gap de .btn se sumaba al espacio (lo vio Rodrigo, 2026-10-18). */
-.topbar .btn.black-top{pointer-events:auto}
+/* Entre 370 y 420 el nombre volvio a caber al irse la normativa: antes eran
+   tres cosas en la barra y el chip se quedaba en el icono desde 420. */
+@media (max-width:370px){ .topbar .vt-chip__nombre{display:none} .topbar #vtSession{width:40px;padding:0} }
 .topbar-spacer{display:none}
 
 .admin-bottom,.admin-desktop{
@@ -259,13 +281,14 @@ label.small{
   .block-row{align-items:center}
 
   /* Desktop-only 2-column layout for main blocks */
-  .site{ display:grid; grid-template-columns: 1fr 1fr; grid-template-areas: "upload consult" "avisos comunidad" "performance performance" "buzon buzon"; gap:18px }
+  .site{ display:grid; grid-template-columns: 1fr 1fr; grid-template-areas: "upload consult" "avisos comunidad" "performance performance" "buzon buzon" "normativa normativa"; gap:18px }
   .block--upload{ grid-area: upload }
   .block--consult{ grid-area: consult }
   .block--avisos{ grid-area: avisos }
   .block--comunidad{ grid-area: comunidad }
   .block--performance{ grid-area: performance }
   .block--buzon{ grid-area: buzon }
+  .normativa{ grid-area: normativa }
 }
 @media(max-width:720px){.block{padding:var(--vt-md)}.block-title{font-size:25px}.btn{min-width:120px;padding:12px 14px}#days{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}.register-input{min-width:0;width:100%}#adminOverlay > div{flex-direction:column}#adminOverlay > div > #adminMenuColumn{flex-basis:auto;width:100%}#adminOverlay > div > #adminMain{width:100%;max-width:100%}.pozo-form-grid{grid-template-columns:1fr !important}}
 </style>
@@ -276,16 +299,15 @@ label.small{
 <div class="vt-nav__lista">
 <a class="vt-nav__item" href="/" aria-current="page"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
 <a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/tablon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span></span><span class="vt-nav__texto">Avisos</span></a>
 <a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
-<a class="vt-nav__item" href="/rating"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">query_stats</span></span><span class="vt-nav__texto">Rendimiento</span></a>
-<a class="vt-nav__item" href="/buzon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">feedback</span></span><span class="vt-nav__texto">Buzón</span></a>
+<a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
 </div>
 </nav>
 
 <div class="hero">
   <div class="topbar">
-    <button class="btn black-top" onclick="window.location='group-normativa.html'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">gavel</span><span>NORMATIVA<span class="topbar-largo">&nbsp;DEL GRUPO</span></span></button>
-    <div class="vt-row" style="gap:var(--vt-sm);flex:0 0 auto;flex-wrap:nowrap">
+    <div class="topbar__acciones">
     <div class="vt-campana" id="vtCampana" hidden>
       <button class="vt-chip" type="button" aria-label="Avisos" aria-expanded="false" aria-haspopup="true"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-campana__num" hidden></span></button>
       <div class="vt-campana__panel" hidden></div>
@@ -423,6 +445,15 @@ label.small{
       </div>
     </div>
   </div>
+
+  <a class="normativa" href="/group-normativa">
+    <span class="normativa__icono"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">gavel</span></span>
+    <span class="normativa__texto">
+      <span class="normativa__titulo">Normativa del grupo</span>
+      <span class="normativa__sub">Convivencia, compromiso y nuevas incorporaciones</span>
+    </span>
+    <span class="ms notranslate normativa__flecha" translate="no" aria-hidden="true">chevron_right</span>
+  </a>
 
 </div>
 

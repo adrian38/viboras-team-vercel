@@ -31,16 +31,18 @@ const BASE = 'front/pantallas';
 const SECCIONES = {
   '/': ['portada'],
   '/history': ['history', 'results', 'submit-result', 'tournaments', 'day'],
+  '/tablon': ['tablon'],
   '/comunidad': ['comunidad', 'valorar'],
-  '/rating': ['rating', 'rating-info', 'rating-test', 'ranking', 'ranking-info', 'players', 'statistics'],
-  '/buzon': ['buzon']
+  '/cuenta': ['cuenta']
 };
 
 const pestanaDe = (pagina) => {
   for (const [ruta, paginas] of Object.entries(SECCIONES)) {
     if (paginas.includes(pagina)) return ruta;
   }
-  return null;   // cuenta, tablon, group-normativa, inscripcion
+  // rating y sus seis hermanas, buzon, group-normativa e inscripcion: se
+  // llega a ellas desde las tarjetas de la portada, no desde la barra.
+  return null;
 };
 
 const paginas = readdirSync(BASE).sort();

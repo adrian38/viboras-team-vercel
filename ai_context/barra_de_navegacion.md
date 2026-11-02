@@ -1,10 +1,17 @@
 # La barra de pestañas inferior
 
 Desde el 2026-11-02 las veinte páginas llevan una barra fija abajo con cinco
-pestañas: Inicio, Partidos, Comunidad, Rendimiento y Buzón. Sale de una maqueta
+pestañas: Inicio, Partidos, Avisos, Comunidad y Perfil. Sale de una maqueta
 de Stitch que trajo Adrián (`code.html` del paquete
 `stitch_navigation_bar_component`, fuera del repositorio, como las demás
 exportaciones).
+
+Nació ese mismo día con otras cinco —Inicio, Partidos, Comunidad, Rendimiento y
+Buzón— y Adrián la cambió a las de la maqueta unas horas después. El cambio no
+es sólo de nombres: **Avisos y Perfil son las dos cosas que antes sólo existían
+en la barra de arriba de la portada**, la campanita y el chip de cuenta, y que
+desde ninguna otra página se alcanzaban. Al subir a la barra, la normativa se
+quedó sola arriba y bajó al pie de las tarjetas de la portada (`.normativa`).
 
 Esto **no contradice** lo que dice [[sistema_visual_viper_strike]] sobre
 descartar la navegación de los mockups: allí lo descartado es la barra lateral
@@ -52,31 +59,46 @@ por nada.
 
 ## A dónde lleva cada pestaña, y cuál se enciende
 
-Dos de las cinco no tienen una página única detrás: en la portada, «Partidos» y
-«Rendimiento» son tarjetas con varios botones. La pestaña lleva a la más
-representativa y se enciende en toda su sección:
+«Partidos» no tiene una página única detrás: en la portada es una tarjeta con
+varios botones. La pestaña lleva a la más representativa y se enciende en toda
+su sección:
 
 | Pestaña | Lleva a | Se enciende en |
 | --- | --- | --- |
 | Inicio | `/` | `/` |
 | Partidos | `/history` | `/history`, `/results`, `/submit-result`, `/tournaments`, `/day` |
+| Avisos | `/tablon` | `/tablon` |
 | Comunidad | `/comunidad` | `/comunidad`, `/valorar` |
-| Rendimiento | `/rating` | `/rating`, `/rating-info`, `/rating-test`, `/ranking`, `/ranking-info`, `/players`, `/statistics` |
-| Buzón | `/buzon` | `/buzon` |
+| Perfil | `/cuenta` | `/cuenta` |
 
 Esa tabla está dos veces: en el `aria-current` de cada página y en
 `SECCIONES`, dentro de la guarda, que es quien comprueba que coinciden. Al
 cambiar una hay que cambiar la otra, y la guarda lo dice.
 
-`/cuenta`, `/tablon`, `/group-normativa` y `/inscripcion` **no encienden
-ninguna**, y eso es la respuesta correcta, no un hueco: ninguna de ellas es una
-de estas cinco secciones. Encender «Inicio» por descarte diría que estás en la
-portada cuando no lo estás.
+`/rating` y sus seis hermanas (`/rating-info`, `/rating-test`, `/ranking`,
+`/ranking-info`, `/players`, `/statistics`), `/buzon`, `/group-normativa` e
+`/inscripcion` **no encienden ninguna**, y eso es la respuesta correcta, no un
+hueco: ninguna de ellas es una de estas cinco secciones. Encender «Inicio» por
+descarte diría que estás en la portada cuando no lo estás. Se llega a todas
+desde las tarjetas de la portada, que es de donde se llegaba antes de que la
+barra existiera; lo que perdieron el 2026-11-02 es el atajo desde cualquier
+página, no el acceso.
 
-La maqueta pone además un punto naranja sobre el icono del buzón, como aviso de
-mensajes sin leer. **No se portó**: no hay ningún dato que lo sostenga, y
-pintarlo siempre sería un aviso inventado. Lo que sí cuenta mensajes es la
-campanita de la portada, que tiene su número de verdad.
+## El número de la maqueta no se portó
+
+La maqueta pinta un «1» dorado sobre el icono de «Avisos». **No está**, y es
+deliberado: el único número de verdad que hay es el de la campanita
+(`api/_campana.js`), y cuenta los avisos **personales** —partidos por valorar,
+resultados editados, y para administradores las altas pendientes y el buzón—,
+que no son lo que enseña `/tablon`. Un número de una cosa sobre una pestaña que
+lleva a otra es exactamente la etiqueta que miente de la que avisa `CLAUDE.md`.
+La maqueta anterior ponía el mismo punto sobre el buzón y tampoco se portó, por
+la razón de siempre: no había dato detrás.
+
+La campanita **sigue en la barra de arriba de la portada**, y tiene que seguir:
+además de la lista de avisos, su panel es el único sitio donde se activan y se
+prueban los avisos push (`front/comun/avisos-push.js` escribe en
+`#vtCampana .vt-campana__panel`). Quitarla de ahí deja el push sin interfaz.
 
 ## El hueco al pie
 
@@ -95,9 +117,11 @@ lo pisa nadie.
 ## El icono nuevo
 
 `home` hubo que añadirlo a la lista `icon_names=` del `@import` de
-`theme.css`. Los otros cuatro —`emoji_events`, `group`, `query_stats`,
-`feedback`— ya estaban. Un icono que no esté en la lista no falla: se ve el
-nombre escrito en texto ([[sistema_visual_viper_strike]]).
+`theme.css`. Los otros cuatro de hoy —`emoji_events`, `notifications`, `group`,
+`person`— ya estaban, igual que los dos que dejaron de usarse al cambiar las
+pestañas (`query_stats` y `feedback`), que siguen en la lista porque los usan
+otras pantallas. Un icono que no esté en la lista no falla: se ve el nombre
+escrito en texto ([[sistema_visual_viper_strike]]).
 
 ## Capas
 
