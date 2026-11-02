@@ -1,121 +1,89 @@
 # La transición entre pantallas
 
-Cambiar de pantalla ya no es un corte: la que se va se funde al color del
-fondo y la que llega entra desde ese mismo color. Lo hace
-`front/comun/vt-transicion.js` con las reglas `.vt-transicion` de
-`front/comun/theme.css`, y está en las veinte páginas.
-
-Son 160 ms de salida. Es un coste real: cada clic en un enlace tarda esos
-160 ms más en empezar a cargar la página siguiente. El número está en dos
-sitios —`DURACION` en el script y la `transition` del CSS— y tienen que
-seguir siendo el mismo: si el script esperara menos, la página se iría a
-medio fundido.
-
-## Por qué no es `@view-transition`
-
-Una transición entre documentos se declara hoy en una línea de CSS:
+Cambiar de pantalla no es un corte: el navegador se queda enseñando la que se
+va hasta que la siguiente está pintada, y entonces funde una con otra. Son
+tres reglas en `front/comun/theme.css` y **ningún JavaScript**:
 
 ```css
-@view-transition { navigation: auto; }
+@view-transition{navigation:auto}
+.vt-nav{view-transition-name:vt-barra}
+@media(prefers-reduced-motion:reduce){ @view-transition{navigation:none} }
 ```
 
-Eso en `theme.css` habría servido para las veinte páginas de golpe, sin
-JavaScript, sin interceptar nada y sin los 160 ms de retardo, porque el
-navegador hace el fundido con la página siguiente ya pintada. Pero **Firefox
-la ignora entera** y ahí la navegación se quedaría como estaba. Se pidió
-expresamente que funcionara en todos, así que el fundido se hace a mano con
-opacidad y una clase, que es lo que entiende cualquier navegador que abra el
-resto de la aplicación.
+La barra de pestañas tiene nombre propio para que no entre en el fundido:
+[[barra_de_navegacion]].
 
-Si algún día Firefox la soporta, esto se tira y se queda la línea de CSS.
+## Hubo un fundido a mano, y duró un día
 
-## El velo es un `::before` del `<html>`
+Hasta el 2026-11-02 esto lo hacía `front/comun/vt-transicion.js`, 120 líneas
+con un velo, un interceptor de clics, tres redes de seguridad y un `pageshow`.
+Se escribió así porque **Firefox no entiende `@view-transition`**, y se había
+pedido que funcionara en todos los navegadores.
 
-No es un `<div>`, y las dos razones importan:
+Lo tiró Adrián el mismo día, al verlo: el velo iba **al color del fondo**, así
+que entre las dos pantallas quedaba un rato de fondo liso tan largo como
+tardara en cargar la siguiente —con `/rating` o `/players`, varios cientos de
+milisegundos—, y eso no lo arregla ninguna curva de animación. Además cobraba
+160 ms de retardo a cada clic antes siquiera de empezar a cargar.
 
-- El script va en el `<head>` y **sin `defer`**, igual que `splash.js` y
-  `vt-cargando.js`: la clase que tapa tiene que estar puesta antes del primer
-  pintado o la página asomaría un instante antes del velo. Cuando corre
-  todavía no hay `body` donde colgar un elemento.
-- Un elemento más dentro del `body` con opacidad crea contexto de
-  apilamiento, y eso descoloca las barras fijas: la de pestañas de abajo y
-  las cabeceras de las páginas. Un pseudoelemento del `<html>` no toca el
-  apilamiento del contenido.
+El precio de la decisión, que conviene no olvidar: **en Firefox no hay
+fundido**. No se rompe nada, la navegación se queda como estaba. Chrome y Edge
+lo tienen desde la 126 y Safari desde la 18.2; Firefox lo lleva en Interop
+2026, sin fecha. El día que lo soporte, aquí no hay que tocar nada.
 
-Su `z-index` es `--vt-z-transicion` (2003): por encima del velo de carga y de
-los modales —la página se está yendo, da igual lo que tenga delante— y por
-debajo del splash, que es el único que manda sobre todo.
+## Lo que se gana, además de la suavidad
 
-## Lo que no hace
+**Funde toda la navegación, no sólo los enlaces.** El script sólo podía
+interceptar clics en `<a>`, y la mayoría de los botones de estas páginas
+saltan con `onclick="window.location=..."`, que se le escapaban. El navegador
+no distingue: funde igual un enlace, un `location.href` y el botón atrás.
 
-- **Sólo intercepta el clic en un enlace de esta web.** Un salto hecho por
-  código (`location.href = ...`, un formulario que se envía, el botón atrás)
-  no se funde al salir: la página se va de golpe. La que llega sí entra con su
-  fundido, porque la entrada no depende de cómo se llegó.
-- **No mueve nada de una pantalla a la otra.** Son dos documentos distintos y
-  no hay elemento compartido: el fundido es al color del fondo, no de una
-  pantalla a la siguiente. Para eso haría falta `@view-transition`, o una sola
-  página con enrutado propio, que esta web no tiene.
-- **No se activa con «reducir movimiento»**, ni cuando sale el splash del
-  arranque, que ya tapa la pantalla con su propio negro.
+Comprobado el 2026-11-02 en local, guardando `!!e.viewTransition` del evento
+`pageswap` en `sessionStorage` y leyéndolo ya en la pantalla siguiente:
 
-Todo lo que el script no reconoce como un cambio de página nuestro se queda
-exactamente como estaba antes de que el fichero existiera: otra pestaña,
-descargas, `rel="external"`, `mailto:`, otro dominio, un ancla de la misma
-página, la misma URL otra vez, y cualquier clic con Ctrl, Cmd, Shift o Alt.
+| Cómo se navega | ¿Hubo transición? |
+| --- | --- |
+| Enlace de la barra de pestañas (`/comunidad` → `/rating`) | sí |
+| Botón de la portada con `window.location` (Estadísticas) | sí |
 
-## El fundido de entrada no puede depender sólo de `requestAnimationFrame`
+## El panel oculto no pinta, y entonces no hay transición
 
-Para que quitar el velo sea una transición y no un corte, el navegador tiene
-que haber pintado el velo opaco una vez. De ahí los dos `requestAnimationFrame`
-encadenados, el mismo recurso que usa `vt-cargando.js`.
+La primera medición dio `hubo: false` en todo. No era el CSS: **con el panel
+del navegador oculto el navegador no pinta**, `document.timeline.currentTime`
+se queda clavado en 0 y una transición que nadie va a ver se salta entera.
+`document.visibilityState` decía `visible` igualmente, así que ese dato no
+sirve para descartarlo.
 
-El problema es que **`requestAnimationFrame` no corre si el navegador no está
-pintando**, y eso pasa más de lo que parece: una pestaña que no se ve. Medido
-el 2026-11-02 con el panel del navegador oculto, `document.hidden` decía
-`false` y `document.visibilityState` decía `visible` —la pestaña era la activa
-de su panel— y aun así no hubo ni un cuadro en 600 ms, así que el velo se
-quedó puesto hasta que lo quitó el reloj de rescate.
+Con el panel a la vista, el reloj avanza y las transiciones ocurren. Es la
+misma trampa que ya está apuntada en [[sistema_visual_viper_strike]] para
+medir el splash: antes de medir nada que se mueva, enseñar el panel.
 
-Por eso el rescate son **350 ms y no un segundo largo**: si en 350 ms no ha
-habido dos cuadros, no hay fundido que perder, y lo que se evita es que la
-pantalla se quede del color del fondo mientras tanto. La página aparece
-entonces como aparecía antes de todo esto.
+## Cómo se ve, y cómo se mira
 
-## Tres redes de seguridad
+Para poder verla se alarga a propósito y se quita después:
 
-Un velo opaco que no se quita deja la pantalla del color del fondo, así que
-hay tres, las tres con la misma idea que el `RESCATE` de `vt-cargando.js`:
+```css
+/* TEMPORAL */
+::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation-duration:2.5s !important}
+```
 
-- `document.hidden` al llegar: en una pestaña de fondo no se espera a ningún
-  cuadro, se destapa y listo.
-- `RESCATE` (350 ms): lo de arriba.
-- `VUELTA` (2500 ms): si el salto no llega a ocurrir —un `beforeunload` que
-  lo cancela, un enlace que no carga—, la página se destapa y se puede seguir
-  usando.
+Tiene que ir en `theme.css`, no inyectada desde la consola: los
+pseudoelementos de la transición viven en el documento que **entra**, y ahí no
+se puede inyectar nada antes de que cargue.
 
-Y el `pageshow` con `persisted`: volver con el botón atrás devuelve la página
-tal como se dejó, velo incluido, y hay que quitarlo a mano.
+Con eso medido el 2026-11-02: a mitad de camino la URL ya es la nueva mientras
+la pantalla todavía enseña la vieja —que es justo lo que se quería, el
+navegador aguanta la de salida—, el contenido es una mezcla de las dos, y la
+barra de pestañas se ve entera y nítida con la pestaña nueva ya encendida.
 
-## Qué se comprobó
+## Lo que no se comprobó
 
-En el entorno local, el 2026-11-02, con `getComputedStyle(document.documentElement, '::before')`:
-
-- Las veinte páginas cargan el fichero: `grep -c` da 1 en las veinte.
-- El velo es el que se quería: `position: fixed`, `z-index: 2003`,
-  `background: rgb(18, 19, 22)` —que es `--vt-bg`—, `pointer-events: none` y
-  `transition-duration: 0.16s`.
-- Al terminar de entrar, `opacity: 0` y la página se ve entera.
-- Un clic en un enlace de la barra de pestañas pone el velo y lleva a su
-  página.
-- Un ancla de la misma página (`#algo`) y un `mailto:` no lo activan: el hash
-  cambia, el `click` no se cancela y el velo no aparece.
-- La consola no da ningún error de este fichero. Los que salen son de antes:
-  el service worker no se registra en este navegador y la sesión caducada da
-  401.
-
-Lo que **no** se comprobó: el fundido en movimiento. El panel del navegador
-estaba oculto —no pintaba— así que se midió el estado final, no la animación.
-Tampoco se probó en un móvil de verdad, ni con la app instalada, ni sobre la
-latencia de Vercel: el navegador congela la pantalla vieja hasta que la nueva
-puede pintar, y eso con red real no es lo mismo que en `localhost`.
+- **Nada en Firefox**: aquí no hay. Lo que se espera es que no pase nada.
+- **Nada en un móvil de verdad**, ni con la app instalada, ni sobre la
+  latencia de Vercel. En `localhost` la pantalla siguiente está lista casi al
+  instante; con red real, el rato que el navegador aguanta la pantalla vieja
+  es más largo, y ése es precisamente el caso que esto viene a mejorar.
+- **Que `@view-transition{navigation:none}` dentro de `@media` apague de
+  verdad el fundido con «reducir movimiento»**. Lo medido es que la regla se
+  analiza: aparece como `CSSViewTransitionRule` dentro de la `CSSMediaRule`.
+  No se pudo simular la preferencia en este navegador.

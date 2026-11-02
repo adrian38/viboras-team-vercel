@@ -90,47 +90,52 @@ que tiene que pasar; y por encima del contenido de las tarjetas, que usan
 
 ## Ni el fundido ni el «cargando» se la llevan
 
-El velo de [[transicion_entre_pantallas]] es `--vt-z-transicion` (2003), o sea
-que tapa la barra. Tal cual, la barra **desaparecía en cada salto**: los 160 ms
-de la salida más lo que tardara en cargar la siguiente pantalla, unos 400 ms
-sin barra. Lo vio Adrián el 2026-11-02 y es lo primero que se nota, porque la
-barra es la misma en las veinte pantallas y lo único que no debería moverse.
+La barra es el cromo de la aplicación: lo único que no debería moverse al
+cambiar de pantalla. Las dos capas que tapan la pantalla se la llevaban por
+delante, y cada una necesitó su arreglo.
 
-Tres piezas, y las tres hacen falta:
+### El fundido entre pantallas
 
-- `vt-nav.js` pone la clase `vt-nav-puesta` en el `<html>` **en la misma tarea
-  que el `appendChild`** de la barra.
-- `theme.css` recorta el velo sólo con esa clase:
-  `html.vt-transicion.vt-nav-puesta::before{bottom:calc(var(--vt-nav-alto) +
-  env(safe-area-inset-bottom,0px))}`.
-- Y mientras el velo tapa, la barra va opaca
-  (`html.vt-transicion--tapa .vt-nav{background:var(--vt-bg)}`).
+Con el fundido a mano que hubo el 2026-11-02 la barra **desaparecía unos
+400 ms en cada salto** —los 160 ms de la salida más lo que tardara en cargar
+la siguiente—, y se sostenía recortando el velo a mano. Lo vio Adrián y es lo
+primero que se nota.
+
+Hoy el fundido lo hace el navegador ([[transicion_entre_pantallas]]) y la
+barra se queda fuera de él con una línea:
+
+```css
+.vt-nav{view-transition-name:vt-barra}
+```
+
+Con nombre propio, el navegador no la mete en la instantánea de la raíz, que
+es la que se funde: la trata como la misma barra en las dos pantallas. El
+nombre tiene que ser **único en el documento**, y lo es porque sólo hay una
+barra. Si algún día hubiera dos elementos con ese nombre a la vez, el
+navegador descarta la transición entera sin avisar.
+
+Medido a mitad de camino con el fundido alargado a 2,5 s: el contenido es una
+mezcla de las dos pantallas y la barra se ve entera y nítida, con la pestaña
+nueva ya encendida.
+
+### El velo de «cargando»
+
+El de [[pantalla_de_carga]] la escondía por dos sitios a la vez, y hacían
+falta los dos arreglos:
+
+- `html.vt-cargando-pagina body > *{visibility:hidden}` la escondía por ser
+  hija del `body`. Ahora la regla lleva `:not(.vt-nav)`.
+- Y el velo `.vt-cargando` la tapaba por encima. Se recorta con
+  `html.vt-nav-puesta .vt-cargando`, donde `vt-nav-puesta` es una clase que
+  `vt-nav.js` pone en el `<html>` **en la misma tarea que el `appendChild`**
+  de la barra.
 
 **Por qué la clase y no recortar el velo siempre.** En la pantalla que entra,
 el velo está puesto desde el primer pintado y la barra todavía no existe: la
 monta un script con `defer`, que corre después. Con el velo recortado desde el
 principio, ahí abajo se vería la franja de fondo vacía donde debería estar la
-barra. Tapada hasta que la barra está y destapada en cuanto lo está, la barra
-aparece ya hecha y se queda.
-
-**Por qué opaca mientras tapa.** La barra es `--vt-bg` al 94 %. Con el velo
-puesto es lo único sin tapar, así que por ese 6 % asomaría en fantasma la fila
-de la tabla que tenga debajo. Medido con `/rating` desplazado 600 px.
-
-Comprobado el 2026-11-02 en local: con `vt-nav-puesta` el velo mide
-`bottom: 58px` y sin ella `0px`; con el velo forzado opaco, la captura enseña
-la pantalla entera tapada y la barra entera legible.
-
-### El velo de «cargando», igual
-
-El de [[pantalla_de_carga]] la escondía por dos sitios a la vez, y hacían falta
-los dos arreglos:
-
-- `html.vt-cargando-pagina body > *{visibility:hidden}` la escondía por ser
-  hija del `body`. Ahora la regla lleva `:not(.vt-nav)`: la barra es cromo de
-  la aplicación, no el contenido de la pantalla.
-- Y el velo `.vt-cargando` la tapaba por encima. Se recorta con la misma
-  condición que el del fundido: `html.vt-nav-puesta .vt-cargando`.
+barra. Y en la misma tarea para que el recorte y la barra se pinten en el
+mismo cuadro.
 
 La rueda queda centrada en lo que se ve, 29 px más arriba que antes.
 
@@ -138,7 +143,3 @@ Medido el 2026-11-02 en `/players` con el velo puesto: el velo acaba en 754 y
 la barra empieza en 754, no se solapan, la barra calcula `visibility: visible`
 mientras el resto del `body` calcula `hidden`, y sobre el centro de la barra el
 elemento de arriba es la barra.
-
-`sw.js` subió a `viboras-v6` con este cambio: `theme.css` está en el
-`PRECACHE`, así que sin subir la caché un móvil podría montar la barra nueva
-con los estilos viejos y verla sin ningún aspecto.

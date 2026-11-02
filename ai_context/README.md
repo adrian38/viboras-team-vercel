@@ -31,10 +31,11 @@ que hay.
   `theme.css`, a dónde lleva cada pestaña y en qué páginas se enciende, por qué
   cuatro páginas no encienden ninguna y por qué no se portó el punto de avisos
   del buzón.
-- `transicion_entre_pantallas.md`: el fundido al cambiar de pantalla; por qué
-  está hecho a mano y no con la línea de `@view-transition`, que Firefox
-  ignora, qué cuesta eso (160 ms antes de cada clic), por qué el velo es un
-  `::before` del `<html>` y no un `<div>`, y qué saltos no funde al salir.
+- `transicion_entre_pantallas.md`: el fundido al cambiar de pantalla, hoy tres
+  reglas de CSS y ningún JavaScript; por qué duró un día el fundido a mano que
+  iba al color del fondo, qué se gana (funde también los saltos con
+  `window.location`), qué se paga (en Firefox no hay fundido) y por qué con el
+  panel del navegador oculto no ocurre ninguna transición.
 - `pantalla_de_carga.md`: el velo no se quita hasta que está pintado todo,
   cálculos incluidos; por qué lo que la tarea de arranque no espera aparece
   después y se ve como un flashazo, y cómo se mide en milisegundos.

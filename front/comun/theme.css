@@ -101,9 +101,6 @@
   /* El toast confirma guardados que se hacen dentro del panel de
      administracion, que es un velo: con 100 quedaba debajo y no se veia. */
   --vt-z-toast:2002;
-  /* El velo del cambio de pantalla, encima de todo lo de la pagina que se
-     esta yendo —velos y modales incluidos— y debajo del splash. */
-  --vt-z-transicion:2003;
   --vt-z-splash:3000;
 
   /* Alto de la barra de pestanas inferior. Lo usan la barra, el hueco que le
@@ -502,42 +499,38 @@ html.vt-nav-puesta .vt-cargando{
 
 /* ------------------------------------------------- cambio de pantalla -- */
 
-/* El velo del fundido entre pantallas. Lo pone y lo quita vt-transicion.js;
- * esto es solo su pinta.
+/* El fundido al cambiar de pantalla: una linea, sin JavaScript y sin
+ * interceptar ningun clic.
  *
- * Es un ::before del <html> y no un <div>, por dos razones. El script va en
- * el <head> y sin defer, asi que cuando corre todavia no hay body donde
- * colgar nada; y un elemento mas dentro del body crearia contexto de
- * apilamiento, que es justo lo que descoloca las barras fijas de las
- * paginas.
+ * El navegador se queda ensenando la pantalla que se va hasta que la
+ * siguiente esta pintada, y entonces funde una con otra. Eso es lo que no
+ * podia hacer el fundido a mano que hubo aqui hasta el 2026-11-02: aquel iba
+ * al color del fondo, asi que entre las dos pantallas quedaba un rato de
+ * fondo liso tan largo como tardara en cargar la siguiente, y ademas cobraba
+ * 160 ms de retardo a cada clic antes de empezar a cargarla.
  *
- * pointer-events:none: los 160 ms de salida no se comen el siguiente toque.
+ * Y vale para TODA la navegacion de la aplicacion, no solo para los enlaces:
+ * la mayoria de los botones de estas paginas saltan con
+ * `onclick="window.location=..."`, que aquel script no podia interceptar.
  *
- * Los .16s son los mismos 160 ms que el DURACION del script. Si cambia uno,
- * el otro tambien. Con «reducir movimiento» no hay regla que apagar: el
- * script no se activa y la clase no llega a ponerse. */
-html.vt-transicion::before{
-  content:"";
-  position:fixed;inset:0;z-index:var(--vt-z-transicion);
-  background:var(--vt-bg);
-  opacity:0;pointer-events:none;
-  transition:opacity .16s ease;
-}
-html.vt-transicion--tapa::before{opacity:1}
+ * Firefox todavia no la entiende: alli la navegacion se queda como estaba,
+ * sin fundido y sin romperse. Lo decidio Adrian el 2026-11-02.
+ *
+ * Detalle: ai_context/transicion_entre_pantallas.md */
+@view-transition{navigation:auto}
 
-/* El velo no tapa la barra de pestanas. La barra es la misma en las veinte
- * pantallas, asi que verla irse y volver en cada salto es justo lo que se
- * nota: desaparecia unos 400 ms, los 160 de la salida mas lo que tarde en
- * cargar la siguiente.
+/* La barra de pestanas no entra en el fundido de la pantalla. Con nombre
+ * propio el navegador la trata como la misma barra en las dos pantallas y no
+ * la mete en la instantanea de la raiz, que es la que se funde; asi no
+ * parpadea y lo unico que cambia es la pestana encendida.
  *
- * La condicion es `vt-nav-puesta`, que pone vt-nav.js al colgar la barra, y
- * no basta con recortar el velo siempre: en la pagina que entra, el velo esta
- * puesto desde el primer pintado y la barra todavia no existe, asi que ahi
- * abajo se veria la franja de fondo vacia donde deberia estar. Tapada hasta
- * que la barra esta, y destapada en cuanto lo esta, la barra aparece ya hecha
- * y se queda. */
-html.vt-transicion.vt-nav-puesta::before{
-  bottom:calc(var(--vt-nav-alto) + env(safe-area-inset-bottom,0px));
+ * El nombre tiene que ser unico en el documento, y lo es: solo hay una. */
+.vt-nav{view-transition-name:vt-barra}
+
+/* Con «reducir movimiento» no hay fundido: la navegacion vuelve a ser un
+ * corte, que es lo que se pide cuando se pide eso. */
+@media(prefers-reduced-motion:reduce){
+  @view-transition{navigation:none}
 }
 
 /* -------------------------------------------------------------- botones -- */
@@ -803,11 +796,6 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 }
 
 .vt-nav__texto{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-/* Mientras el velo del fundido tapa, la barra va opaca. Es lo unico que queda
-   sin tapar, y por su 6 % de transparencia asomaria en fantasma la fila de la
-   tabla que tenga debajo, que es justo lo que el fundido viene a evitar. */
-html.vt-transicion--tapa .vt-nav{background:var(--vt-bg)}
 
 /* "Rendimiento" es la palabra larga y a 320 px no entra: medido, pide 60 px y
    le quedaban 57, asi que salia con puntos suspensivos. A 9 px pide 54 y
