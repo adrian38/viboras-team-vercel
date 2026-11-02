@@ -108,7 +108,12 @@ function pintarJugador(j) {
 function pintarFiltros() {
   const caja = document.getElementById('filtros');
   caja.textContent = '';
-  const categorias = [...new Set(jugadores.map((j) => j.categoria).filter(Boolean))].sort();
+  // De más fuerte a más flojo, como en la tabla de /rating; alfabético dejaba
+  // «Avanzado» delante de «Entreno».
+  const orden = (window.TIER_DEFINITIONS || []).map((t) => t.title);
+  const puesto = (c) => (orden.indexOf(c) === -1 ? orden.length : orden.indexOf(c));
+  const categorias = [...new Set(jugadores.map((j) => j.categoria).filter(Boolean))]
+    .sort((a, b) => puesto(a) - puesto(b));
   const grupos = [['todos', `Todos (${jugadores.length})`]]
     .concat([['drive', 'Drive'], ['reves', 'Revés']].filter(([l]) => jugadores.some((j) => j.lado === l || j.lado === 'ambos')))
     .concat(categorias.map((c) => [`categoria:${c}`, c]));
