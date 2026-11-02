@@ -107,6 +107,28 @@ push de `dev` o `vercel redeploy` y esperar a `READY`. El alias estable es:
 https://viboras-team-vercel-git-dev-adrian38s-projects.vercel.app
 ```
 
+## Incidente comprobado del 2026-11-02
+
+`vercel env ls` mostraba los 15 overrides `Preview (dev)`, pero el deployment
+seguía usando otra base. Dos pruebas lo demostraron sin depender del panel:
+
+- una sesión efímera insertada directamente en `viboras_dev` recibía 401 al
+  llamar al Preview;
+- `push_delivery_tests` no existía en `viboras_dev`, aunque el mismo Preview ya
+  había creado y usado esa tabla al probar un aviso.
+
+Se regeneraron las 15 variables desde `br-soft-dawn-b213926z`, se comprobó que
+el host `ep-snowy-bird…` era distinto del `ep-divine-river…` de `main` y se
+redesplegó. La prueba positiva no fue un 200 genérico: se llamó a
+`/api/push?action=confirmar` con un UUID inexistente. Ese handler ejecuta
+`ensurePushSchema()` antes de devolver 400; después de la llamada,
+`to_regclass('public.push_delivery_tests')` pasó de NULL a no NULL exactamente
+en `viboras_dev`. Sólo entonces se reanudaron las escrituras de prueba.
+
+La reparación cambió de base al Preview y, por tanto, invalidó las sesiones
+creadas mientras apuntaba al destino equivocado. El móvil tuvo que iniciar
+sesión otra vez para registrar en el clon sus claves FCM vigentes.
+
 ## Variables no relacionadas con Postgres
 
 El usuario pidió que `dev` funcione igual que producción. Se copiaron a

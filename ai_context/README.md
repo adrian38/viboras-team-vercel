@@ -107,8 +107,9 @@ que hay.
 - `entorno_dev_y_clon_neon.md`: la separación obligatoria entre `viboras` +
   Production + Neon `main` y `dev` + Preview + el clon `viboras_dev`; por qué
   `/neondb` no identifica la rama, la trampa de las variables Preview
-  heredadas de producción, la auditoría reproducible y qué servicios externos
-  siguen compartidos.
+  heredadas de producción, el incidente donde los overrides listados no se
+  aplicaban y la sonda de esquema que demostró el destino real, la auditoría
+  reproducible y qué servicios externos siguen compartidos.
 - `organizacion_de_carpetas.md`: una carpeta por pantalla dentro de `front/`,
   con `comun/` al lado; por qué la URL no cambió nunca y los 21 rewrites de
   `vercel.json` que lo sostienen; por qué `/index.html` tiene regla propia y
