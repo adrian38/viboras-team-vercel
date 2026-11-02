@@ -177,6 +177,18 @@ motivo.
   la única vía y nadie vigila que su color base siga pegado a su token.
 - Detalle: `ai_context/sistema_visual_viper_strike.md`.
 
+## Invariante: la barra de pestañas está escrita en las 20 páginas
+
+El `<nav class="vt-nav">` del pie está copiado en las veinte, justo detrás de
+`<body>`, con su `aria-current="page"` ya puesto. **No lo monta ningún
+script**: montada con `defer` no existe en el primer pintado y parpadea, y el
+fundido del navegador la desvanece porque toma la instantánea antes.
+
+- Guarda: `node tools/barra-navegacion.mjs`.
+- Detalle y qué hacer: `ai_context/barra_de_navegacion.md`.
+- Cambiar una pestaña son veinte ediciones, y además la tabla `SECCIONES` de
+  la guarda. Hacerlo en diecinueve no da error; la guarda sí.
+
 ## Invariante: el `<head>` se cambia en las 20 páginas
 
 No hay plantilla ni layout compartido: cada `.html` repite su `<head>`. Los
@@ -257,7 +269,7 @@ manual y está descrita aquí.
    ```
 
    Ejecuta `tools/ai-context-index.mjs`, `tools/rating-parity.mjs`,
-   `tools/code-size.mjs` y `tools/palette.mjs`.
+   `tools/code-size.mjs`, `tools/palette.mjs` y `tools/barra-navegacion.mjs`.
 
 2. **Entorno local**, que replica Vercel con Postgres propio. **Se actualiza
    al terminar cada corrección, antes de comprobar nada**:

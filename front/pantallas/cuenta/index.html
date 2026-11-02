@@ -14,7 +14,6 @@
 <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/front/comun/splash.js"></script>
 <script src="/front/comun/pwa.js" defer></script>
-<script src="/front/comun/vt-nav.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 <style>
@@ -305,6 +304,15 @@ body{padding-inline:0}
 </head>
 
 <body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/rating"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">query_stats</span></span><span class="vt-nav__texto">Rendimiento</span></a>
+<a class="vt-nav__item" href="/buzon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">feedback</span></span><span class="vt-nav__texto">Buzón</span></a>
+</div>
+</nav>
 
 <!-- Las estrellas de la valoracion no salen de la fuente de iconos: el
      @import de theme.css pide FILL 0, asi que no hay estrella llena ni media.

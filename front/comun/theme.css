@@ -458,11 +458,16 @@ button.vt-campana__push:hover{color:var(--vt-gold-light)}
  *
  * La barra de pestanas queda fuera: es el cromo de la aplicacion, no el
  * contenido de la pantalla, y esconderla mientras cargan los datos la hacia
- * parpadear en cada entrada igual que hacia el fundido. */
+ * parpadear en cada entrada. */
 html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidden}
 
 .vt-cargando{
-  position:fixed;inset:0;z-index:var(--vt-z-velo);
+  /* Se queda por encima de la barra de pestanas, no la tapa: la barra esta
+     en el marcado de las veinte paginas, asi que existe desde el primer
+     pintado y no hay ningun momento en que recortar aqui deje un hueco.
+     La rueda queda centrada en lo que se ve, 29 px mas arriba. */
+  position:fixed;inset:0 0 calc(var(--vt-nav-alto) + env(safe-area-inset-bottom,0px));
+  z-index:var(--vt-z-velo);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:var(--vt-md);
   background:rgba(13,14,17,0.82);
@@ -470,16 +475,6 @@ html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidde
   opacity:0;transition:opacity .18s ease;
 }
 .vt-cargando--visible{opacity:1}
-
-/* Y el velo tampoco la tapa, por lo mismo que el del fundido: se recorta por
- * encima de la barra en cuanto la barra esta puesta. Mientras no lo esta
- * —el primer pintado, antes de que corra vt-nav.js— tapa entero, que es lo
- * que tiene que hacer: ahi abajo todavia no hay nada que ensenar.
- *
- * La rueda se queda centrada en lo que se ve, que son 29 px mas arriba. */
-html.vt-nav-puesta .vt-cargando{
-  bottom:calc(var(--vt-nav-alto) + env(safe-area-inset-bottom,0px));
-}
 .vt-cargando__rueda{
   width:44px;height:44px;border-radius:var(--vt-r-full);
   border:3px solid var(--vt-surface-4);

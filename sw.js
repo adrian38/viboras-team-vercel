@@ -9,7 +9,7 @@
 //
 // Para forzar que todos los navegadores descarten lo cacheado, cambia CACHE.
 
-const CACHE = 'viboras-v7';
+const CACHE = 'viboras-v8';
 
 // Lo minimo para que la app abra aunque no haya cobertura.
 //
