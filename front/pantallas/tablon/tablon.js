@@ -19,6 +19,13 @@ let fotoNueva = null;
 // sin reescalar una foto de movil no cabria.
 const LADO_MAXIMO = 1280;
 const CALIDAD = 0.75;
+// Lo que dura el fundido del visor en la hoja de estilos de la pagina (.18s).
+// Si cambia alli, cambia aqui: retirar el <dialog> antes corta la salida.
+const FUNDIDO_VISOR = 180;
+// Cuanto deja agrandar el pellizco, y cuanto puede moverse un dedo sin dejar
+// de ser un toque de cerrar.
+const ZOOM_MAXIMO = 4;
+const TOQUE_QUIETO = 10;
 
 function el(tag, clase, texto) {
   const n = document.createElement(tag);
@@ -120,14 +127,93 @@ function abrirVisor(img) {
   grande.src = img.src;
   grande.alt = img.alt;
   visor.appendChild(grande);
-  // Cerrar y retirar a la vez, como el dialogo de avisos-push: el evento
-  // `close` no es fiable para limpiar (en el navegador de pruebas no llego
-  // nunca), y un <dialog> cerrado que se queda en el DOM se acumula.
-  const cerrar = () => { visor.close(); visor.remove(); };
-  visor.addEventListener('click', cerrar);
+  // Retirarlo hay que retirarlo —un <dialog> cerrado que se queda en el DOM se
+  // acumula—, pero no en el mismo toque: quitarlo corta el fundido de salida.
+  // Por reloj y no por el evento `close`, que en el navegador de pruebas no
+  // llego nunca.
+  const cerrar = () => {
+    if (!visor.open) return;
+    visor.close();
+    setTimeout(() => visor.remove(), FUNDIDO_VISOR);
+  };
+  activarPellizco(visor, grande, cerrar);
   visor.addEventListener('cancel', cerrar);
   document.body.appendChild(visor);
   visor.showModal();
+}
+
+// Escala alrededor del punto medio de los dos dedos: el trozo de foto que hay
+// debajo de ellos se queda donde esta y el resto crece a su alrededor. Es lo
+// que hace que agrandar una esquina del cartel no la mande fuera de pantalla.
+function pellizcarFoto(gesto, visor, ahora) {
+  const r = visor.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  const nueva = Math.min(ZOOM_MAXIMO, Math.max(1, gesto.escala * ahora.d / gesto.previo.d));
+  const k = nueva / gesto.escala;
+  gesto.x = (ahora.mx - cx) - k * ((gesto.previo.mx - cx) - gesto.x);
+  gesto.y = (ahora.my - cy) - k * ((gesto.previo.my - cy) - gesto.y);
+  gesto.escala = nueva;
+  gesto.previo = ahora;
+}
+
+// Dos dedos agrandan, uno arrastra la foto ya agrandada y un toque que no se
+// mueve cierra. El gesto va a mano con pointer events porque el navegador no
+// hace zoom dentro de un <dialog> de la top layer; por eso la foto lleva
+// `touch-action:none` en la hoja de estilos.
+function activarPellizco(visor, img, cerrar) {
+  const dedos = new Map();
+  const gesto = { escala: 1, x: 0, y: 0, previo: null };
+  let origen = null;
+  let arrastrado = false;
+  let pellizcado = false;
+
+  const pintar = () => {
+    const mx = img.clientWidth * (gesto.escala - 1) / 2;
+    const my = img.clientHeight * (gesto.escala - 1) / 2;
+    gesto.x = Math.min(mx, Math.max(-mx, gesto.x));
+    gesto.y = Math.min(my, Math.max(-my, gesto.y));
+    img.style.transform = `translate(${gesto.x}px, ${gesto.y}px) scale(${gesto.escala})`;
+  };
+
+  const medir = () => {
+    const [a, b] = [...dedos.values()];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+  };
+
+  visor.addEventListener('pointerdown', (ev) => {
+    dedos.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (dedos.size === 1) {
+      origen = { x: ev.clientX, y: ev.clientY };
+      arrastrado = false;
+      pellizcado = false;
+    }
+    if (dedos.size === 2) {
+      pellizcado = true;
+      gesto.previo = medir();
+    }
+  });
+
+  visor.addEventListener('pointermove', (ev) => {
+    const antes = dedos.get(ev.pointerId);
+    if (!antes) return;
+    dedos.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (origen && Math.hypot(ev.clientX - origen.x, ev.clientY - origen.y) > TOQUE_QUIETO) arrastrado = true;
+    if (dedos.size >= 2) pellizcarFoto(gesto, visor, medir());
+    else if (gesto.escala > 1) {
+      gesto.x += ev.clientX - antes.x;
+      gesto.y += ev.clientY - antes.y;
+    } else return;
+    pintar();
+  });
+
+  const soltar = (ev) => {
+    dedos.delete(ev.pointerId);
+    if (dedos.size) return;
+    if (!arrastrado && !pellizcado) cerrar();
+  };
+  visor.addEventListener('pointerup', soltar);
+  visor.addEventListener('pointercancel', soltar);
 }
 
 const observador = new IntersectionObserver((entradas) => {
