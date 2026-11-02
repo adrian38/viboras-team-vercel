@@ -209,6 +209,25 @@ Para medir la app cerrada, la prueba se lanza desde otro dispositivo con la
 misma cuenta y se deja el móvil bloqueado. Lanzarla desde el propio móvil lo
 despierta y falsea justo el caso que se quiere comprobar.
 
+### La prueba es del dispositivo actual y repara un endpoint muerto
+
+El 2026-11-02 se instaló el WebAPK de `dev` en un Android que ya había usado el
+Preview desde Chrome. El permiso seguía concedido y `getSubscription()` devolvía
+una suscripción FCM, así que la campana decía «Avisos activados» y la volvía a
+guardar. Pero FCM respondía 410: el endpoint local estaba muerto. El servidor lo
+borraba y la siguiente apertura lo reinsertaba, formando un bucle.
+
+Además, «Probar aviso» enviaba a **todos** los dispositivos de la cuenta. En el
+clon aparecían el WNS y los FCM copiados de producción, y la pantalla mezclaba
+sus 401/410 con el teléfono que se quería comprobar. Eso no probaba «este
+dispositivo», pese a que la interfaz lo daba a entender.
+
+Ahora el botón manda el endpoint actual y el servidor limita la prueba a esa
+fila de esa cuenta. Si responde 404 o 410, el cliente hace una sola reparación:
+desuscribe el endpoint muerto, crea otro con la VAPID vigente, lo guarda y
+repite la prueba. La campana tampoco llama «activo» al mero permiso: primero
+espera a que el alta del endpoint responda bien y, si no, ofrece reintentar.
+
 ## El entorno local manda avisos a móviles de verdad
 
 Esto no es una advertencia teórica. El 2026-11-01, antes de probar la

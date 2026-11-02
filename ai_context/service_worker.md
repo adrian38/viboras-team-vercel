@@ -30,6 +30,19 @@ Por eso las 18 páginas llevan
 así la petición manda la cookie, no la redirigen, y no queda nada que bloquear.
 En producción no cambia nada, porque ahí no hay protección.
 
+Para poder instalar y probar el WebAPK real de `dev`, el 2026-11-02 se añadió
+el alias estable
+`viboras-team-vercel-git-dev-adrian38s-projects.vercel.app` a **Deployment
+Protection Exceptions**. Sólo ese dominio Preview es público; la protección
+general del proyecto sigue en `all_except_custom_domains`. Se verificó sin
+bypass que `/`, `/site.webmanifest` y `/sw.js` respondían 200. Si se retira la
+excepción, vuelven los 302 al SSO descritos arriba.
+
+En el Nothing A142 de Adrián, Chrome generó el WebAPK y Google Play dejó la
+instalación en `SCHEDULED`; abrir Play Store liberó la cola y el paquete
+`org.chromium.webapk.a26fd35e48d58fb7a_v2` se instaló a las 15:49:23. Esperar
+varios minutos en «Instalando» no era normal ni un trabajo de Vercel.
+
 **`site.webmanifest` no está en `PRECACHE` a propósito.** `cache.addAll()` es
 todo o nada: si una sola entrada falla, el `install` entero falla y el service
 worker no llega a activarse. Meter ahí precisamente el recurso que puede fallar

@@ -46,7 +46,7 @@
     if (!k) return 'sinClaves';
     if (!soporta) return esIOS && !instalada ? 'instalar' : null;
     if (Notification.permission === 'denied') return 'bloqueado';
-    return Notification.permission === 'granted' ? 'activo' : 'pendiente';
+    return Notification.permission === 'granted' ? 'comprobando' : 'pendiente';
   });
 
   // La suscripcion que ya tiene el navegador puede estar firmada con otra
@@ -64,19 +64,19 @@
   }
 
   // Darse de baja antes de rehacerla: el navegador no deja tener dos.
-  function renovar(reg, s, clavePublica) {
-    if (s && mismaClave(s, clavePublica)) return Promise.resolve(s);
+  function renovar(reg, s, clavePublica, forzar) {
+    if (!forzar && s && mismaClave(s, clavePublica)) return Promise.resolve(s);
     return (s ? s.unsubscribe().catch(function () { return null; }) : Promise.resolve(null))
       .then(function () {
         return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(clavePublica) });
       });
   }
 
-  function suscribir() {
+  function suscribir(forzar) {
     return Promise.all([navigator.serviceWorker.ready, clave]).then(function (r) {
       var reg = r[0];
       return reg.pushManager.getSubscription().then(function (s) {
-        return renovar(reg, s, r[1]);
+        return renovar(reg, s, r[1], Boolean(forzar));
       });
     }).then(function (s) {
       return api('suscribir', s.toJSON()).then(function (j) { return Boolean(j && j.ok); });
@@ -86,10 +86,17 @@
     });
   }
 
-  function activar() {
+  function activar(forzar) {
     return Notification.requestPermission().then(function (p) {
-      estado = Promise.resolve(p === 'granted' ? 'activo' : (p === 'denied' ? 'bloqueado' : 'pendiente'));
-      return p === 'granted' ? suscribir() : false;
+      if (p !== 'granted') {
+        estado = Promise.resolve(p === 'denied' ? 'bloqueado' : 'pendiente');
+        return false;
+      }
+      estado = Promise.resolve('comprobando');
+      return suscribir(forzar).then(function (ok) {
+        estado = Promise.resolve(ok ? 'activo' : 'fallo');
+        return ok;
+      });
     });
   }
 
@@ -109,6 +116,8 @@
   // claves dejaban la campanita igual y no se distinguian.
   var TEXTOS = {
     activo: 'Avisos activados en este dispositivo.',
+    comprobando: 'Comprobando avisos en este dispositivo…',
+    fallo: 'El permiso está activo, pero no se pudo registrar este dispositivo. Reintentar.',
     pendiente: 'Activar avisos en este dispositivo',
     instalar: 'Para recibir avisos en el iPhone, instala la app: Compartir → «Añadir a pantalla de inicio».',
     bloqueado: 'Los avisos están bloqueados en este navegador. Actívalos en sus ajustes para esta web.',
@@ -149,6 +158,36 @@
     });
   }
 
+  function pruebaCaducada(j) {
+    var d = j && j.dispositivos && j.dispositivos[0];
+    return d && (d.estado === 404 || d.estado === 410);
+  }
+
+  function prepararPrueba(forzar) {
+    return suscribir(forzar).then(function (ok) {
+      if (!ok) return null;
+      return navigator.serviceWorker.ready.then(function (reg) {
+        return reg.pushManager.getSubscription();
+      });
+    });
+  }
+
+  function mandarPrueba(b, reparado) {
+    return prepararPrueba(reparado).then(function (s) {
+      if (!s) return null;
+      return api('probar', { endpoint: s.endpoint });
+    }).then(function (j) {
+      if (!reparado && pruebaCaducada(j)) {
+        b.textContent = 'Renovando la suscripción caducada…';
+        return mandarPrueba(b, true);
+      }
+      b.textContent = resumenPrueba(j);
+      if (j && j.ok && j.testId) return seguirPrueba(j.testId, b, 0);
+      b.disabled = false;
+      return j;
+    });
+  }
+
   function botonProbar() {
     var b = document.createElement('button');
     b.type = 'button';
@@ -157,12 +196,7 @@
     b.addEventListener('click', function () {
       b.disabled = true;
       b.textContent = 'Mandando aviso de prueba…';
-      api('probar', {}).then(function (j) {
-        b.textContent = resumenPrueba(j);
-        if (j && j.ok && j.testId) return seguirPrueba(j.testId, b, 0);
-        b.disabled = false;
-        return null;
-      });
+      mandarPrueba(b, false);
     });
     return b;
   }
@@ -177,13 +211,14 @@
       Array.prototype.forEach.call(panel.querySelectorAll('.vt-campana__push'), function (v) { v.remove(); });
       if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
       if (!TEXTOS[e]) return;
-      var el = document.createElement(e === 'pendiente' ? 'button' : 'div');
+      var interactivo = e === 'pendiente' || e === 'fallo';
+      var el = document.createElement(interactivo ? 'button' : 'div');
       el.className = 'vt-campana__item vt-campana__push';
       el.textContent = TEXTOS[e];
-      if (e === 'pendiente') {
+      if (interactivo) {
         el.type = 'button';
         el.addEventListener('click', function () {
-          activar().then(function () { pintarEnCampana(panel); });
+          activar(e === 'fallo').then(function () { pintarEnCampana(panel); });
         });
       }
       panel.insertBefore(el, panel.firstChild);
@@ -199,7 +234,12 @@
   window.vtMe.then(function (user) {
     if (!user) return;
     estado.then(function (e) {
-      if (e === 'activo') suscribir();
+      if (e === 'comprobando') {
+        suscribir(false).then(function (ok) {
+          estado = Promise.resolve(ok ? 'activo' : 'fallo');
+          if (panel) pintarEnCampana(panel);
+        });
+      }
       else if (e === 'pendiente' || e === 'instalar') preguntarUnaVez(user, e);
     });
   });

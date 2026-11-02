@@ -139,13 +139,14 @@ async function probarUno(userId, batchId, s) {
   }
 }
 
-export async function pushDePrueba(userId) {
+export async function pushDePrueba(userId, endpoint) {
   if (!configurar()) return { ok: false, error: 'sin_claves' };
   await ensurePushSchema();
   await sql`DELETE FROM push_delivery_tests WHERE created_at < now() - interval '7 days'`;
   const { rows } = await sql`
     SELECT id, endpoint, p256dh, auth
-    FROM push_subscriptions WHERE user_id = ${userId}`;
+    FROM push_subscriptions
+    WHERE user_id = ${userId} AND endpoint = ${endpoint}`;
   const testId = randomUUID();
   const dispositivos = await Promise.all(rows.map((s) => probarUno(userId, testId, s)));
   return { ok: true, testId, dispositivos };

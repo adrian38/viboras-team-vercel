@@ -41,7 +41,13 @@ async function baja(req, res, user) {
 }
 
 async function probar(req, res, user) {
-  res.status(200).json(await pushDePrueba(user.id));
+  const data = await readBody(req);
+  const endpoint = String(data?.endpoint || '');
+  if (!endpointValido(endpoint)) {
+    res.status(400).json({ ok: false, error: 'bad_subscription' });
+    return;
+  }
+  res.status(200).json(await pushDePrueba(user.id, endpoint));
 }
 
 async function estado(req, res, user) {
