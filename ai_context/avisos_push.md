@@ -368,5 +368,55 @@ y caducó; al bajar la cola, una entrega nueva confirmó `recibido` y `mostrado`
 con la WebAPK cerrada. Después de un reinicio hay que distinguir esa saturación
 transitoria de que reaparezca una restricción térmica.
 
+## El badge del icono (2026-11-02)
+
+El icono de la app instalada lleva el número de avisos sin leer, el mismo que
+la pestaña Avisos de la barra de abajo. **Es el mismo dato, no uno paralelo**:
+sale de `/api/auth?action=notifications`, que es lo que pinta la lista de
+`/tablon` y el número de la pestaña.
+
+Se pone en dos sitios, porque el badge hay que mantenerlo con la app abierta y
+con la app cerrada:
+
+| Cuándo | Dónde | Cómo |
+| --- | --- | --- |
+| Al cargar cualquier página con sesión, y al pulsar «Limpiar» | `auth-client.js`, `pintarBadgeDelIcono` dentro de `pintarNumero` | el mismo `items.length` que la pestaña |
+| Al llegar un push con la app cerrada | `sw.js`, `pintarBadge`, dentro del `waitUntil` del evento `push` | pregunta al API |
+
+**El service worker no puede sumar uno al badge que haya**: la Badging API
+escribe (`setAppBadge`, `clearAppBadge`) pero no deja leerlo. Sumar a ciegas
+inventaría un número que no es el de la pestaña, así que pregunta al API. La
+petición va con `credentials: 'same-origin'`; la cookie de sesión es del mismo
+origen y `SameSite=Lax`, así que viaja.
+
+Decisiones que parecen errores:
+
+- **Sin sesión el badge se borra, no se deja.** `notifications` responde 200 con
+  lista vacía tanto sin sesión como sin avisos ([[cuentas_y_sesiones]]), y las
+  dos cosas se tratan igual a propósito: sin sesión la app redirige a `/cuenta`,
+  que tampoco enseña ningún aviso. Al cerrar sesión el icono queda limpio.
+- **Un aviso de prueba no pone badge.** La prueba de entrega no crea nada en la
+  campanita, así que el API sigue contando lo que había: si no había nada, el
+  push de prueba *borra* el badge. Es lo correcto —el icono no puede contar algo
+  que la pestaña no enseña— y es la razón de que probar los avisos no deje un
+  «1» pegado al icono.
+- **Si la petición falla, el badge se queda como estaba.** Un 500, un error de
+  red o un JSON sin `items` no tocan nada: el aviso se ve igual y la siguiente
+  apertura de la app corrige el número.
+- **El badge de este dispositivo sólo se corrige al abrir la app aquí.** Leer
+  los avisos en otro móvil no lo baja hasta que se abre en éste.
+
+**Dónde no se ve nada**: Firefox no implementa la Badging API; Safari sólo la
+aplica a la app instalada en la pantalla de inicio; y Chrome de escritorio la
+admite, pero el badge sólo se dibuja si la app está instalada. En todos esos
+casos no se hace nada y queda el número de la pestaña, que está en las veinte
+páginas ([[barra_de_navegacion]]).
+
+**Lo que no se pudo comprobar en local**: el camino del service worker. El
+navegador integrado no registra service workers sobre `localhost`
+([[service_worker]]), así que con la app cerrada el badge sólo se puede medir
+en un móvil con la app instalada.
+
 Relacionado: [[valoraciones_y_avisos]], [[service_worker]],
-[[cuentas_y_sesiones]], [[entorno_local_docker_y_proxies_neon]].
+[[cuentas_y_sesiones]], [[entorno_local_docker_y_proxies_neon]],
+[[iconos_pwa]], [[barra_de_navegacion]].

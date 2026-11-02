@@ -87,6 +87,36 @@ function confirmarPrueba(token, fase) {
   }).catch(() => null);
 }
 
+// El badge del icono con la app cerrada. Es el mismo numero que la pestana
+// Avisos (auth-client.js, pintarNumero), y por eso sale del mismo sitio: la
+// Badging API no deja leer el badge puesto, asi que aqui no se puede sumar uno
+// a ciegas —eso inventaria un numero— y se pregunta al API.
+//
+// La peticion lleva la cookie de sesion: mismo origen y SameSite=Lax. Sin red
+// o sin soporte se deja el badge como estaba; el aviso se ve igual y al abrir
+// la app el numero se corrige.
+//
+// `notifications` responde 200 con lista vacia tanto sin sesion como sin
+// avisos, asi que las dos borran el badge. Es lo que corresponde en los dos
+// casos: sin sesion la app redirige a /cuenta, que tampoco ensena ninguno, y
+// un aviso de prueba no es un aviso de la campanita y no debe contar.
+function pintarBadge() {
+  if (!self.navigator.setAppBadge) return Promise.resolve();
+  return fetch('/api/auth?action=notifications', {
+    credentials: 'same-origin',
+    headers: { accept: 'application/json' },
+    cache: 'no-store'
+  })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => {
+      if (!j || !Array.isArray(j.items)) return null;
+      return j.items.length
+        ? self.navigator.setAppBadge(j.items.length)
+        : self.navigator.clearAppBadge();
+    })
+    .catch(() => null);
+}
+
 self.addEventListener('push', (event) => {
   let d = {};
   try {
@@ -103,7 +133,7 @@ self.addEventListener('push', (event) => {
   const recibido = confirmarPrueba(d.receiptToken, 'recibido');
   const mostrado = self.registration.showNotification(d.title || 'Víboras Team', opciones)
     .then(() => confirmarPrueba(d.receiptToken, 'mostrado'));
-  event.waitUntil(Promise.all([recibido, mostrado]));
+  event.waitUntil(Promise.all([recibido, mostrado, pintarBadge()]));
 });
 
 // Solo enlaces de la propia app: lo que venga de fuera abre la portada.

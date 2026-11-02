@@ -102,10 +102,25 @@
     if (window.vtPush) window.vtPush.pintarEnLista(panel);
   }
 
+  // El badge del icono de la app instalada (Badging API). Dice exactamente lo
+  // mismo que la pestana Avisos: el icono de la pantalla de inicio no puede
+  // contar una cosa y la barra de abajo otra.
+  //
+  // Donde no existe —Firefox, y Safari fuera de la app instalada— no se hace
+  // nada y queda el numero de la pestana. El navegador tambien puede negarse
+  // si la app no esta instalada: eso no es un error.
+  function pintarBadgeDelIcono(cuantos) {
+    if (!navigator.setAppBadge) return;
+    var hecho = cuantos > 0 ? navigator.setAppBadge(cuantos) : navigator.clearAppBadge();
+    if (hecho && hecho.catch) hecho.catch(function () { /* el sistema no lo admite */ });
+  }
+
   // El numero de la pestana «Avisos» de la barra de abajo, en las veinte
-  // paginas. Cuenta lo mismo que la lista de /tablon, que es a donde lleva esa
-  // pestana: el numero y su destino son la misma cosa.
+  // paginas, y el badge del icono de la app. Cuentan lo mismo que la lista de
+  // /tablon, que es a donde lleva esa pestana: el numero y su destino son la
+  // misma cosa.
   function pintarNumero(items) {
+    pintarBadgeDelIcono(items.length);
     var num = document.querySelector('.vt-nav__num');
     if (!num) return;
     num.textContent = items.length > 9 ? '9+' : String(items.length);
@@ -161,6 +176,8 @@
 
   window.vtMe.then(function (user) {
     exigirEntrar(user);
+    // Sin sesion no hay avisos de nadie: al cerrar sesion el icono se limpia.
+    if (!user) pintarBadgeDelIcono(0);
     cargarAvisos(user);
     cargarPush(user);
   });
