@@ -242,7 +242,9 @@ td:nth-child(4) button + button{margin-left:6px}
   .tag{font-weight:400;font-size:0.75rem}
   .mobile-only{
     display:block;
-    margin:0 0 4px;
+    /* Las dos pildoras de un partido se tocaban casi: 4 px entre dos bordes de
+       1 px leen como una sola pieza partida. Con 8 px se ve que son dos. */
+    margin:0 0 var(--vt-sm);
     padding:3px 8px;
     border-radius:var(--vt-r);
     text-align:center;
