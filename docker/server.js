@@ -78,8 +78,21 @@ app.get('/health', async (_req, res) => {
   }
 });
 
-// Estaticos: front/, sw.js, los iconos y el manifiesto.
+// Estaticos: front/, sw.js y los iconos que siguen en la raiz.
 app.use(express.static(ROOT, { extensions: ['html'] }));
+
+// El manifiesto y el apple-touch-icon ya no estan en la raiz: hay dos juegos,
+// front/iconos (produccion) y front/iconos-dev (fondo violeta, para las ramas
+// de pruebas). En Vercel elige uno u otro un rewrite por host; aqui, ICONOS.
+//
+// Van DESPUES de los estaticos, como las pantallas: si el fichero existiera en
+// la raiz, Vercel lo serviria y el rewrite no llegaria a dispararse. Que aqui
+// tampoco se dispare es justo lo que hay que notar.
+const ICONOS = process.env.ICONOS === 'dev' ? 'iconos-dev' : 'iconos';
+for (const fichero of ['site.webmanifest', 'apple-touch-icon.png']) {
+  app.get(`/${fichero}`, (_req, res) =>
+    res.sendFile(path.join(ROOT, 'front', ICONOS, fichero)));
+}
 
 // Y las paginas. Cada una es front/pantallas/<nombre>/index.html y se sirve
 // en /<nombre>: es el equivalente local de los rewrites de vercel.json.
