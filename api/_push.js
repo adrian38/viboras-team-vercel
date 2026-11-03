@@ -7,6 +7,7 @@
 // navegador no ofrece activarlos. Detalle: ai_context/avisos_push.md
 import { sql } from '@vercel/postgres';
 import webpush from 'web-push';
+import { randomUUID } from 'node:crypto';
 import { ensureAuthSchema } from './_auth.js';
 
 let listo = null;
@@ -25,6 +26,30 @@ async function crearTabla() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS push_delivery_tests (
+      id SERIAL PRIMARY KEY,
+      batch_id TEXT NOT NULL,
+      receipt_token TEXT NOT NULL UNIQUE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      service TEXT NOT NULL,
+      send_status INTEGER,
+      send_error TEXT,
+      received_at TIMESTAMPTZ,
+      shown_at TIMESTAMPTZ,
+      clicked_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_received_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_shown_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_clicked_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_send_status INTEGER`;
+  await sql`ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS last_send_error TEXT`;
+  await sql`ALTER TABLE push_delivery_tests ADD COLUMN IF NOT EXISTS subscription_id INTEGER REFERENCES push_subscriptions(id) ON DELETE SET NULL`;
+  await sql`CREATE INDEX IF NOT EXISTS push_delivery_tests_batch ON push_delivery_tests (user_id, batch_id)`;
 }
 
 export function ensurePushSchema() {
@@ -63,35 +88,157 @@ export function endpointValido(texto) {
   return SERVICIOS.some((s) => url.hostname.endsWith(s));
 }
 
-// 404 y 410 son el servicio diciendo que esa suscripcion ya no existe (app
-// desinstalada, permiso retirado): se borra para no insistir.
-async function mandarUno(s, cuerpo) {
+async function guardarResultadoEntrega(subscriptionId, receiptToken, estado, error = null) {
+  await sql`
+    UPDATE push_delivery_tests
+    SET send_status = ${estado}, send_error = ${error}
+    WHERE receipt_token = ${receiptToken}`;
+  await sql`
+    UPDATE push_subscriptions
+    SET last_send_status = ${estado}, last_send_error = ${error}, updated_at = now()
+    WHERE id = ${subscriptionId}`;
+}
+
+async function registrarEntrega(userId, batchId, s) {
+  const receiptToken = randomUUID();
+  await sql`
+    INSERT INTO push_delivery_tests (batch_id, receipt_token, user_id, service, subscription_id)
+    VALUES (${batchId}, ${receiptToken}, ${userId}, ${servicioDe(s.endpoint)}, ${s.id})`;
+  return receiptToken;
+}
+
+async function enviarUno(userId, batchId, s, aviso, opciones) {
+  const receiptToken = await registrarEntrega(userId, batchId, s);
+  const envio = { TTL: opciones.ttl, timeout: 5000, urgency: 'high' };
+  const datos = {
+    title: aviso.title || 'Víboras Team', body: aviso.body || '',
+    url: aviso.url || '/', tag: aviso.tag, receiptToken
+  };
+  if (Number.isInteger(aviso.unread)) datos.unread = aviso.unread;
+  const cuerpo = JSON.stringify(datos);
   try {
-    await webpush.sendNotification(
+    const r = await webpush.sendNotification(
       { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
       cuerpo,
-      { TTL: 60 * 60 * 24, timeout: 5000 }
+      envio
     );
+    await guardarResultadoEntrega(s.id, receiptToken, r.statusCode);
+    return { servicio: servicioDe(s.endpoint), estado: r.statusCode };
   } catch (err) {
+    const estado = err.statusCode || 0;
+    // 404 y 410: la app se desinstalo o el permiso se retiro.
     if (err.statusCode === 404 || err.statusCode === 410) {
       await sql`DELETE FROM push_subscriptions WHERE id = ${s.id}`;
     } else {
       console.error('push: envio fallido', err.statusCode || '', err.body || err.message);
     }
+    const error = String(err.body || err.message).slice(0, 120);
+    await guardarResultadoEntrega(s.id, receiptToken, estado, error);
+    return { servicio: servicioDe(s.endpoint), estado, error };
   }
+}
+
+function servicioDe(endpoint) {
+  try { return new URL(endpoint).hostname; } catch { return '?'; }
+}
+
+async function probarUno(userId, batchId, s) {
+  return enviarUno(userId, batchId, s, {
+    title: 'Víboras Team', body: 'Aviso de prueba: la entrega funciona.',
+    url: '/cuenta', tag: 'prueba'
+  }, { ttl: 60 });
+}
+
+export async function pushDePrueba(userId, endpoint) {
+  if (!configurar()) return { ok: false, error: 'sin_claves' };
+  await ensurePushSchema();
+  await sql`DELETE FROM push_delivery_tests WHERE created_at < now() - interval '7 days'`;
+  const { rows } = await sql`
+    SELECT id, endpoint, p256dh, auth
+    FROM push_subscriptions
+    WHERE user_id = ${userId} AND endpoint = ${endpoint}`;
+  const testId = randomUUID();
+  const dispositivos = await Promise.all(rows.map((s) => probarUno(userId, testId, s)));
+  return { ok: true, testId, dispositivos };
+}
+
+export async function estadoPrueba(userId, testId) {
+  const { rows } = await sql`
+    SELECT service AS servicio, send_status AS estado, send_error AS error,
+      received_at IS NOT NULL AS recibido,
+      shown_at IS NOT NULL AS mostrado,
+      clicked_at IS NOT NULL AS pulsado
+    FROM push_delivery_tests
+    WHERE user_id = ${userId} AND batch_id = ${testId}
+    ORDER BY id`;
+  return { ok: true, dispositivos: rows };
+}
+
+export async function confirmarPrueba(receiptToken, fase) {
+  if (!/^[0-9a-f-]{36}$/.test(receiptToken)) return false;
+  let resultado;
+  if (fase === 'recibido') {
+    resultado = await sql`UPDATE push_delivery_tests SET received_at = COALESCE(received_at, now())
+      WHERE receipt_token = ${receiptToken} RETURNING id, subscription_id`;
+  } else if (fase === 'mostrado') {
+    resultado = await sql`UPDATE push_delivery_tests SET shown_at = COALESCE(shown_at, now())
+      WHERE receipt_token = ${receiptToken} RETURNING id, subscription_id`;
+  } else if (fase === 'pulsado') {
+    resultado = await sql`UPDATE push_delivery_tests SET clicked_at = COALESCE(clicked_at, now())
+      WHERE receipt_token = ${receiptToken} RETURNING id, subscription_id`;
+  } else {
+    return false;
+  }
+  const { rows } = resultado;
+  const subscriptionId = rows[0]?.subscription_id;
+  if (subscriptionId && fase === 'recibido') await sql`
+    UPDATE push_subscriptions SET last_received_at = now() WHERE id = ${subscriptionId}`;
+  if (subscriptionId && fase === 'mostrado') await sql`
+    UPDATE push_subscriptions SET last_shown_at = now(), verified_at = COALESCE(verified_at, now()) WHERE id = ${subscriptionId}`;
+  if (subscriptionId && fase === 'pulsado') await sql`
+    UPDATE push_subscriptions SET last_clicked_at = now() WHERE id = ${subscriptionId}`;
+  return rows.length > 0;
+}
+
+// El numero viaja cifrado dentro del push. Calcularlo aqui evita depender de
+// que el service worker conserve una cookie de sesion cuando despierta con la
+// app cerrada. La fuente sigue siendo exactamente la misma que la campanita.
+async function contarAvisos(rows) {
+  const ids = [...new Set(rows.map((s) => s.user_id).filter(Boolean))];
+  if (!ids.length) return new Map();
+  const { avisosDeCampana } = await import('./_campana.js');
+  const { rows: users } = await sql`
+    SELECT id, player_id, role FROM users
+    WHERE status = 'active' AND id = ANY(${ids}::int[])`;
+  const pares = await Promise.all(users.map(async (user) => {
+    try {
+      return [user.id, (await avisosDeCampana(user)).length];
+    } catch (err) {
+      console.error('push: no se pudo contar la campana', user.id, err);
+      return [user.id, null];
+    }
+  }));
+  return new Map(pares);
 }
 
 // Nunca lanza: un push que no sale no puede tumbar el guardado de un partido.
 // Se espera a que salgan todos: en Vercel la funcion se congela al responder.
 async function mandar(consulta, aviso) {
-  if (!configurar()) return;
+  if (!configurar()) return [];
   try {
     await ensurePushSchema();
+    await sql`DELETE FROM push_delivery_tests WHERE created_at < now() - interval '7 days'`;
     const { rows } = await consulta();
-    const cuerpo = JSON.stringify({ title: 'Víboras Team', body: aviso.texto, url: aviso.enlace || '/' });
-    await Promise.all(rows.map((s) => mandarUno(s, cuerpo)));
+    const batchId = randomUUID();
+    const cuerpo = { title: 'Víboras Team', body: aviso.texto, url: aviso.enlace || '/' };
+    const cantidades = await contarAvisos(rows);
+    return await Promise.all(rows.map((s) => enviarUno(
+      s.user_id, batchId, s, { ...cuerpo, unread: cantidades.get(s.user_id) },
+      { ttl: 60 * 60 * 24 }
+    )));
   } catch (err) {
     console.error('push: error', err);
+    return [];
   }
 }
 
@@ -100,14 +247,14 @@ export function pushAJugadores(playerIds, aviso) {
   const ids = [...new Set(playerIds.filter(Boolean))];
   if (!ids.length) return Promise.resolve();
   return mandar(() => sql`
-    SELECT s.id, s.endpoint, s.p256dh, s.auth
+    SELECT s.id, s.user_id, s.endpoint, s.p256dh, s.auth
     FROM push_subscriptions s JOIN users u ON u.id = s.user_id
     WHERE u.status = 'active' AND u.player_id = ANY(${ids}::int[])`, aviso);
 }
 
 export function pushAAdmins(aviso) {
   return mandar(() => sql`
-    SELECT s.id, s.endpoint, s.p256dh, s.auth
+    SELECT s.id, s.user_id, s.endpoint, s.p256dh, s.auth
     FROM push_subscriptions s JOIN users u ON u.id = s.user_id
     WHERE u.status = 'active' AND u.role = 'admin'`, aviso);
 }

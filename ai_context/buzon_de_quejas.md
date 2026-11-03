@@ -86,7 +86,8 @@ el agradecimiento; un mensaje de cuenta borrada se marca sin crear aviso; a
   admin y otra de miembro, sale una sola, la del admin, con «Queja nueva de
   … en el buzón» y enlace `/buzon`.
 - Navegador: un texto con `<b>` sale como texto; al abrir `/buzon` como admin
-  la campanita de la portada pasa de 2 a 0; sin desbordes a 375 px ni en
+  la lista de avisos pasa de 2 a 0 (entonces la campanita de la portada; hoy
+  la tarjeta de `/tablon` y el número de la pestaña, [[barra_de_navegacion]]); sin desbordes a 375 px ni en
   escritorio. La fila vacía `organization` de la rejilla de la portada (un
   resto sin bloque) se quitó porque sumaba un hueco de más encima del buzón.
 

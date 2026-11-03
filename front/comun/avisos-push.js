@@ -1,13 +1,12 @@
-// Avisos push en el movil: lo que sale en la campanita, con la app cerrada.
+// Avisos push en el movil: lo que sale en la pestana Avisos, con la app cerrada.
 //
 // Lo carga auth-client.js solo cuando hay sesion, asi que las 18 paginas lo
 // tienen sin tocar sus <head>. Hace tres cosas:
-//   - La primera vez que una cuenta entra en un dispositivo, pregunta si
-//     quiere avisos. Una sola vez por cuenta y dispositivo: si dice que no,
-//     queda el boton de la campanita.
+//   - Mientras no esten activos, pregunta al abrir. Solo deja de recordarlo
+//     si la cuenta lo pide expresamente; queda siempre la pestana Avisos.
 //   - Si ya los acepto, vuelve a mandar la suscripcion al servidor en cada
 //     carga (puede haber cerrado sesion, o el navegador haberla renovado).
-//   - window.vtPush: lo usan la campanita (auth-client.js) y cerrar sesion
+//   - window.vtPush: lo usan la lista de avisos (auth-client.js) y cerrar sesion
 //     (cuenta.html).
 //
 // El permiso se pide SIEMPRE desde un clic: iOS lo exige, y Chrome bloquea a
@@ -44,9 +43,9 @@
   // tiene VAPID: solo se lo dice a los administradores) o null.
   var estado = clave.then(function (k) {
     if (!k) return 'sinClaves';
-    if (!soporta) return esIOS && !instalada ? 'instalar' : null;
+    if (!soporta) return esIOS && !instalada ? 'instalar' : 'noSoportado';
     if (Notification.permission === 'denied') return 'bloqueado';
-    return Notification.permission === 'granted' ? 'activo' : 'pendiente';
+    return Notification.permission === 'granted' ? 'comprobando' : 'pendiente';
   });
 
   // La suscripcion que ya tiene el navegador puede estar firmada con otra
@@ -55,7 +54,9 @@
   // Reusarla sin mirar dejaria el movil mudo para siempre.
   function mismaClave(s, clavePublica) {
     var actual = (s.options || {}).applicationServerKey;
-    if (!actual) return false;
+    // Safari instalado puede ocultarla. Ausencia no demuestra que sea otra:
+    // la prueba del servidor renovara si Apple responde VapidPkHashMismatch.
+    if (!actual) return true;
     var mia = bytes(clavePublica);
     var suya = new Uint8Array(actual);
     if (mia.length !== suya.length) return false;
@@ -64,32 +65,55 @@
   }
 
   // Darse de baja antes de rehacerla: el navegador no deja tener dos.
-  function renovar(reg, s, clavePublica) {
-    if (s && mismaClave(s, clavePublica)) return Promise.resolve(s);
+  function renovar(reg, s, clavePublica, forzar) {
+    if (!forzar && s && mismaClave(s, clavePublica)) return Promise.resolve(s);
+    var endpointAnterior = s && s.endpoint;
     return (s ? s.unsubscribe().catch(function () { return null; }) : Promise.resolve(null))
+      .then(function () {
+        return endpointAnterior ? api('baja', { endpoint: endpointAnterior }) : null;
+      })
       .then(function () {
         return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(clavePublica) });
       });
   }
 
-  function suscribir() {
+  function suscribir(forzar) {
     return Promise.all([navigator.serviceWorker.ready, clave]).then(function (r) {
       var reg = r[0];
       return reg.pushManager.getSubscription().then(function (s) {
-        return renovar(reg, s, r[1]);
+        return renovar(reg, s, r[1], Boolean(forzar));
       });
     }).then(function (s) {
-      return api('suscribir', s.toJSON()).then(function (j) { return Boolean(j && j.ok); });
+      return api('suscribir', s.toJSON());
     }).catch(function (err) {
       console.warn('No se pudieron activar los avisos:', err);
-      return false;
+      return null;
     });
   }
 
-  function activar() {
+  function activar(forzar, actualizar) {
     return Notification.requestPermission().then(function (p) {
-      estado = Promise.resolve(p === 'granted' ? 'activo' : (p === 'denied' ? 'bloqueado' : 'pendiente'));
-      return p === 'granted' ? suscribir() : false;
+      if (p !== 'granted') {
+        estado = Promise.resolve(p === 'denied' ? 'bloqueado' : 'pendiente');
+        return false;
+      }
+      estado = Promise.resolve('comprobando');
+      return suscribir(forzar).then(function (j) {
+        if (!j || !j.ok) {
+          estado = Promise.resolve('fallo');
+          return false;
+        }
+        if (j.verificado) {
+          estado = Promise.resolve('activo');
+          return true;
+        }
+        estado = Promise.resolve('sinProbar');
+        return mandarPrueba(actualizar || function () {}, false).then(function (prueba) {
+          var ok = pruebaMostrada(prueba);
+          estado = Promise.resolve(ok ? 'activo' : 'falloEntrega');
+          return ok;
+        });
+      });
     });
   }
 
@@ -106,60 +130,249 @@
   }
 
   // 'activo' tambien se dice: sin esa linea, avisos activos y un servidor sin
-  // claves dejaban la campanita igual y no se distinguian.
+  // claves dejaban la lista igual y no se distinguian.
   var TEXTOS = {
     activo: 'Avisos activados en este dispositivo.',
+    comprobando: 'Comprobando avisos en este dispositivo…',
+    fallo: 'El permiso está activo, pero no se pudo registrar este dispositivo. Reintentar.',
+    sinProbar: 'El dispositivo está registrado, pero falta comprobar que recibe avisos. Probar ahora.',
+    falloEntrega: 'El servicio aceptó la prueba, pero este dispositivo no confirmó que la mostrara. Revisar y reintentar.',
     pendiente: 'Activar avisos en este dispositivo',
     instalar: 'Para recibir avisos en el iPhone, instala la app: Compartir → «Añadir a pantalla de inicio».',
+    noSoportado: 'Este navegador no admite avisos push. Los avisos siguen disponibles en la pestaña Avisos.',
     bloqueado: 'Los avisos están bloqueados en este navegador. Actívalos en sus ajustes para esta web.',
     sinClaves: 'Avisos al móvil sin configurar: faltan VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en Vercel.'
   };
 
-  // El bloque de arriba de la campanita. Se repinta entero cada vez: la
-  // campanita borra su panel al rellenarlo. Sin claves en el servidor no
-  // salia nada, igual que con todo bien, y no habia forma de saberlo
-  // (2026-10-18): ahora se lo dice a quien puede arreglarlo.
-  function pintarEnCampana(panel) {
-    Promise.all([estado, window.vtMe]).then(function (r) {
-      var e = r[0];
-      var viejo = panel.querySelector('.vt-campana__push');
-      if (viejo) viejo.remove();
-      if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
-      if (!TEXTOS[e]) return;
-      var el = document.createElement(e === 'pendiente' ? 'button' : 'div');
-      el.className = 'vt-campana__item vt-campana__push';
-      el.textContent = TEXTOS[e];
-      if (e === 'pendiente') {
-        el.type = 'button';
-        el.addEventListener('click', function () {
-          activar().then(function () { pintarEnCampana(panel); });
-        });
+  // Lo que se dice cuando el intento acaba sin permiso: una linea, porque no
+  // hay nada mas que la web pueda hacer. El boton se queda vivo, que el
+  // permiso puede cambiar en los ajustes sin salir de la pantalla.
+  var SIGUE_BLOQUEADO = 'Sigue bloqueado. Permítelo en los ajustes de notificaciones del móvil y vuelve a pulsar.';
+
+  function siguePermisoDenegado() {
+    return soporta && Notification.permission === 'denied';
+  }
+
+  function nombreServicio(host) {
+    return String(host || '?').split('.').slice(-3).join('.');
+  }
+
+  function estadoDispositivo(d) {
+    var nombre = nombreServicio(d.servicio);
+    if (d.pulsado) return nombre + ': pulsado';
+    if (d.mostrado) return nombre + ': mostrado por el navegador';
+    if (d.recibido) return nombre + ': recibido por el navegador';
+    if (d.estado >= 200 && d.estado < 300) return nombre + ': aceptado por el servicio (' + d.estado + ')';
+    return nombre + ': rechazado (' + (d.estado || 'sin respuesta') + ')';
+  }
+
+  function resumenPrueba(j) {
+    if (!j || !j.ok) return j && j.error === 'sin_claves' ? 'El servidor no tiene claves.' : 'No se pudo probar.';
+    var dispositivos = j.dispositivos || [];
+    if (!dispositivos.length) return 'Ningún dispositivo suscrito.';
+    return dispositivos.map(estadoDispositivo).join(' · ');
+  }
+
+  function pruebaMostrada(j) {
+    return Boolean(j && j.dispositivos && j.dispositivos.some(function (d) { return d.mostrado; }));
+  }
+
+  function pruebaPendiente(j) {
+    return Boolean(j && j.dispositivos && j.dispositivos.some(function (d) {
+      return d.estado >= 200 && d.estado < 300 && !d.mostrado;
+    }));
+  }
+
+  function seguirPrueba(testId, actualizar, intentos) {
+    return api('estado&id=' + encodeURIComponent(testId)).then(function (j) {
+      actualizar(resumenPrueba(j));
+      if (pruebaPendiente(j) && intentos < 25) {
+        return new Promise(function (resolve) { setTimeout(resolve, 2000); })
+          .then(function () { return seguirPrueba(testId, actualizar, intentos + 1); });
       }
-      panel.insertBefore(el, panel.firstChild);
+      return j;
     });
   }
 
-  window.vtPush = { activar: activar, baja: baja, pintarEnCampana: pintarEnCampana };
+  function pruebaCaducada(j) {
+    var d = j && j.dispositivos && j.dispositivos[0];
+    var error = String(d && d.error || '');
+    return d && (d.estado === 404 || d.estado === 410 ||
+      /VapidPkHashMismatch|VAPID credentials/i.test(error));
+  }
 
-  var panel = document.querySelector('#vtCampana .vt-campana__panel');
-  if (panel && panel.firstChild) pintarEnCampana(panel);
+  function prepararPrueba(forzar) {
+    return suscribir(forzar).then(function (j) {
+      if (!j || !j.ok) return null;
+      return navigator.serviceWorker.ready.then(function (reg) {
+        return reg.pushManager.getSubscription();
+      });
+    });
+  }
+
+  function mandarPrueba(actualizar, reparado) {
+    return prepararPrueba(reparado).then(function (s) {
+      if (!s) return null;
+      return api('probar', { endpoint: s.endpoint });
+    }).then(function (j) {
+      if (!reparado && pruebaCaducada(j)) {
+        actualizar('Renovando la suscripción caducada…');
+        return mandarPrueba(actualizar, true);
+      }
+      actualizar(resumenPrueba(j));
+      if (j && j.ok && j.testId) return seguirPrueba(j.testId, actualizar, 0);
+      return j;
+    });
+  }
+
+  // «Probar», arriba a la derecha de la tarjeta, al lado de «Limpiar». Lo que
+  // cuenta la prueba va a `actualizar`, que escribe en la linea de estado de
+  // la lista: antes lo escribia en su propia etiqueta y el boton se quedaba
+  // con el resumen puesto, sin forma de volver a pulsarlo a sabiendas.
+  function botonProbar(actualizar) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'vt-btn vt-btn--sm vt-btn--quiet vt-avisos__accion vt-avisos__accion--probar';
+    b.textContent = 'Probar';
+    b.title = 'Manda un aviso de prueba a este dispositivo';
+    b.addEventListener('click', function () {
+      b.disabled = true;
+      actualizar('Mandando aviso de prueba…');
+      mandarPrueba(actualizar, false).then(function (j) {
+        estado = Promise.resolve(pruebaMostrada(j) ? 'activo' : 'falloEntrega');
+        b.disabled = false;
+        b.title = 'Pulsa para repetir la prueba';
+      });
+    });
+    return b;
+  }
+
+  // El bloque de arriba de la lista de avisos. Se repinta entero cada vez: la
+  // lista se borra entera al rellenarse. Sin claves en el servidor no
+  // salia nada, igual que con todo bien, y no habia forma de saberlo
+  // (2026-10-18): ahora se lo dice a quien puede arreglarlo.
+  function pintarEnLista(panel) {
+    Promise.all([estado, window.vtMe]).then(function (r) {
+      var e = r[0];
+      Array.prototype.forEach.call(panel.querySelectorAll('.vt-avisos__push'), function (v) { v.remove(); });
+      // «Probar» no vive en la lista: esta en la cabecera de la tarjeta, que
+      // es hermana de la lista, no suya.
+      var acciones = panel.parentNode && panel.parentNode.querySelector('.vt-avisos__acciones');
+      var probar = acciones && acciones.querySelector('.vt-avisos__accion--probar');
+      if (probar) probar.remove();
+      if (e === 'sinClaves' && !(r[1] && r[1].role === 'admin')) return;
+      if (!TEXTOS[e]) return;
+      var interactivo = e === 'pendiente' || e === 'fallo' || e === 'sinProbar' ||
+        e === 'falloEntrega' || e === 'bloqueado';
+      var el = document.createElement(interactivo ? 'button' : 'div');
+      el.className = 'vt-avisos__item vt-avisos__push';
+      el.textContent = TEXTOS[e];
+      if (interactivo) {
+        el.type = 'button';
+        el.addEventListener('click', function () {
+          activar(e === 'fallo' || e === 'falloEntrega', function (texto) {
+            el.textContent = texto;
+          }).then(function (ok) {
+            // Repintar borraria la respuesta y dejaria la fila como estaba,
+            // que es lo que hacia parecer que pulsarla no hacia nada.
+            if (!ok && siguePermisoDenegado()) el.textContent = SIGUE_BLOQUEADO;
+            else pintarEnLista(panel);
+          });
+        });
+      }
+      panel.insertBefore(el, panel.firstChild);
+      // A la izquierda de «Limpiar», que auth-client.js ya habra anadido.
+      if (e === 'activo' && acciones) {
+        acciones.insertBefore(botonProbar(function (texto) { el.textContent = texto; }), acciones.firstChild);
+      }
+    });
+  }
+
+  // El permiso se concede fuera de la web, en los ajustes del sistema, y al
+  // volver a la app no hay recarga: `estado` se calcula una sola vez al abrir,
+  // asi que la tarjeta seguia diciendo «bloqueados» con el permiso ya
+  // concedido. Le paso el 2026-11-02 al movil de Adrian: el permiso estaba
+  // dado y la pantalla decia que no.
+  function refrescarPermiso() {
+    if (!soporta) return Promise.resolve();
+    return estado.then(function (e) {
+      if (e === 'sinClaves' || e === 'noSoportado' || e === 'instalar') return;
+      var p = Notification.permission;
+      if (p === 'denied') {
+        if (e !== 'bloqueado') { estado = Promise.resolve('bloqueado'); repintarTarjeta(); }
+        return;
+      }
+      if (p === 'default') {
+        if (e !== 'pendiente') { estado = Promise.resolve('pendiente'); repintarTarjeta(); }
+        return;
+      }
+      // Concedido. Solo se actua viniendo de no tenerlo: en los demas estados
+      // ya hay una suscripcion hecha y repetirla en cada vuelta a la pantalla
+      // mandaria una prueba detras de otra.
+      if (e !== 'bloqueado' && e !== 'pendiente') return;
+      estado = Promise.resolve('comprobando');
+      repintarTarjeta();
+      return suscribir(false).then(function (j) {
+        estado = Promise.resolve(j && j.ok ? (j.verificado ? 'activo' : 'sinProbar') : 'fallo');
+        repintarTarjeta();
+      });
+    });
+  }
+
+  function repintarTarjeta() {
+    var p = document.querySelector('#vtAvisos .vt-avisos__lista');
+    if (p) pintarEnLista(p);
+  }
+
+  if (soporta) {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'notifications' })
+        .then(function (st) { st.onchange = function () { refrescarPermiso(); }; })
+        .catch(function () { /* Safari viejo no lo consulta */ });
+    }
+    // La red de seguridad: volver de los ajustes del sistema a la app pasa
+    // siempre por aqui, aunque el navegador no avise del cambio de permiso.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) refrescarPermiso();
+    });
+  }
+
+  window.vtPush = { activar: activar, baja: baja, pintarEnLista: pintarEnLista };
+
+  var panel = document.querySelector('#vtAvisos .vt-avisos__lista');
+  if (panel && panel.firstChild) pintarEnLista(panel);
 
   window.vtMe.then(function (user) {
     if (!user) return;
     estado.then(function (e) {
-      if (e === 'activo') suscribir();
-      else if (e === 'pendiente' || e === 'instalar') preguntarUnaVez(user, e);
+      if (e === 'comprobando') {
+        suscribir(false).then(function (j) {
+          var siguiente = j && j.ok ? (j.verificado ? 'activo' : 'sinProbar') : 'fallo';
+          estado = Promise.resolve(siguiente);
+          if (panel) pintarEnLista(panel);
+          if (siguiente === 'sinProbar' || siguiente === 'fallo') preguntarAlAbrir(user, siguiente);
+        });
+      }
+      else if (e === 'pendiente' || e === 'instalar' || e === 'sinProbar' || e === 'bloqueado') preguntarAlAbrir(user, e);
     });
   });
 
-  // --- La pregunta de la primera vez -------------------------------------
+  // --- La pregunta al abrir mientras no esten activos -------------------
 
-  function yaPreguntado(user) {
-    try { return localStorage.getItem('vt-push-preguntado:' + user.email) === '1'; } catch (e) { return true; }
+  function noRecordar(user) {
+    try { return localStorage.getItem('vt-push-no-recordar-v3:' + user.email) === '1'; } catch (e) { return false; }
   }
 
-  function marcarPreguntado(user) {
-    try { localStorage.setItem('vt-push-preguntado:' + user.email, '1'); } catch (e) { /* sin almacenamiento */ }
+  function guardarNoRecordar(user) {
+    try { localStorage.setItem('vt-push-no-recordar-v3:' + user.email, '1'); } catch (e) { /* sin almacenamiento */ }
+  }
+
+  function preguntadoEnEstaApertura(user) {
+    try { return sessionStorage.getItem('vt-push-preguntado:' + user.email) === '1'; } catch (e) { return false; }
+  }
+
+  function marcarEstaApertura(user) {
+    try { sessionStorage.setItem('vt-push-preguntado:' + user.email, '1'); } catch (e) { /* sin almacenamiento */ }
   }
 
   // En estas se esta entrando o dandose de alta: no es el momento.
@@ -179,8 +392,9 @@
     obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
   }
 
-  function preguntarUnaVez(user, e) {
-    if (yaPreguntado(user) || paginaDeEntrada()) return;
+  function preguntarAlAbrir(user, e) {
+    if (noRecordar(user) || preguntadoEnEstaApertura(user) || paginaDeEntrada()) return;
+    marcarEstaApertura(user);
     trasSplash(function () { mostrarDialogo(user, e); });
   }
 
@@ -193,6 +407,19 @@
     return b;
   }
 
+  // Si el permiso sigue denegado los botones vuelven a quedar vivos: puede
+  // concederse en los ajustes del movil sin cerrar esto, y entonces «Activar
+  // avisos» ya funciona. En los demas casos el intento termina y sólo queda
+  // cerrar.
+  function finDelIntento(botones, cerrar, denegado) {
+    if (denegado) {
+      Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = false; });
+      return;
+    }
+    while (botones.firstChild) botones.firstChild.remove();
+    botones.appendChild(boton('Cerrar', 'vt-btn', cerrar));
+  }
+
   function mostrarDialogo(user, e) {
     var d = document.createElement('dialog');
     d.className = 'vt-push-dialogo';
@@ -200,27 +427,47 @@
     titulo.textContent = '¿Te avisamos en el móvil?';
     var texto = document.createElement('p');
     texto.textContent = e === 'instalar'
-      ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono y te lo volveremos a preguntar.'
-      : 'Te llegará un aviso con lo mismo que la campanita: partidos para valorar, resultados que alguien ha editado… Si ahora no, puedes activarlos luego desde la campanita.';
+      ? 'Para recibir avisos en el iPhone, primero instala la app: pulsa Compartir y luego «Añadir a pantalla de inicio». Ábrela desde el icono para activar los avisos.'
+      : e === 'bloqueado'
+        ? 'Los avisos están bloqueados en este dispositivo. Actívalos en los ajustes de notificaciones del navegador o del teléfono; también verás el estado y las instrucciones en la pestaña Avisos.'
+      : e === 'sinProbar'
+        ? 'El permiso ya está concedido. Enviaremos una prueba y sólo daremos los avisos por activados cuando este dispositivo confirme que la mostró.'
+        : 'Te llegará un aviso con lo mismo que la pestaña Avisos: partidos para valorar, resultados que alguien ha editado… Después enviaremos una prueba para confirmar que funciona.';
     var botones = document.createElement('div');
     botones.className = 'vt-push-dialogo__botones';
-    var cerrar = function () { marcarPreguntado(user); d.close(); d.remove(); };
+    var opcion = document.createElement('label');
+    opcion.className = 'vt-push-dialogo__no-recordar';
+    var noVolver = document.createElement('input');
+    noVolver.type = 'checkbox';
+    opcion.appendChild(noVolver);
+    opcion.appendChild(document.createTextNode('No volver a recordármelo en este dispositivo'));
+    var recordarDecision = function () { if (noVolver.checked) guardarNoRecordar(user); };
+    var cerrar = function () { recordarDecision(); d.close(); d.remove(); };
     if (e === 'instalar') {
       botones.appendChild(boton('Entendido', 'vt-btn', cerrar));
     } else {
       botones.appendChild(boton('Ahora no', 'vt-btn vt-btn--quiet', cerrar));
-      botones.appendChild(boton('Activar avisos', 'vt-btn', function () {
-        activar().then(function () {
-          var p = document.querySelector('#vtCampana .vt-campana__panel');
-          if (p) pintarEnCampana(p);
+      botones.appendChild(boton(e === 'sinProbar' ? 'Comprobar avisos' : 'Activar avisos', 'vt-btn', function () {
+        recordarDecision();
+        Array.prototype.forEach.call(botones.querySelectorAll('button'), function (b) { b.disabled = true; });
+        texto.textContent = 'Registrando este dispositivo…';
+        activar(false, function (mensaje) { texto.textContent = mensaje; }).then(function (ok) {
+          var denegado = siguePermisoDenegado();
+          texto.textContent = ok
+            ? 'Listo. Este dispositivo recibió y mostró el aviso de prueba.'
+            : denegado
+              ? SIGUE_BLOQUEADO
+              : 'No pudimos confirmar la entrega. Revisa los permisos de notificación y que el sistema permita al navegador trabajar en segundo plano; después vuelve a intentarlo desde la pestaña Avisos.';
+          finDelIntento(botones, cerrar, denegado);
+          repintarTarjeta();
         });
-        cerrar();
       }));
     }
     d.appendChild(titulo);
     d.appendChild(texto);
+    d.appendChild(opcion);
     d.appendChild(botones);
-    d.addEventListener('cancel', function () { marcarPreguntado(user); });
+    d.addEventListener('cancel', recordarDecision);
     document.body.appendChild(d);
     d.showModal();
   }

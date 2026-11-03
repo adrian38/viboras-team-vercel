@@ -26,6 +26,16 @@ que hay.
   sin maqueta; y la pantalla de bienvenida: el vídeo del grupo recortado, por
   qué se cierra si no arranca en 1,5 s y por qué `sw.js` deja pasar los
   `Range`.
+- `barra_de_navegacion.md`: la barra de pestañas inferior de las veinte
+  páginas; por qué el marcado vive en `vt-nav.js` y el hueco en el `body` de
+  `theme.css`, a dónde lleva cada pestaña y en qué páginas se enciende, por qué
+  cuatro páginas no encienden ninguna y por qué no se portó el punto de avisos
+  del buzón.
+- `transicion_entre_pantallas.md`: el fundido al cambiar de pantalla, hoy tres
+  reglas de CSS y ningún JavaScript; por qué duró un día el fundido a mano que
+  iba al color del fondo, qué se gana (funde también los saltos con
+  `window.location`), qué se paga (en Firefox no hay fundido) y por qué con el
+  panel del navegador oculto no ocurre ninguna transición.
 - `pantalla_de_carga.md`: el velo no se quita hasta que está pintado todo,
   cálculos incluidos; por qué lo que la tarea de arranque no espera aparece
   después y se ve como un flashazo, y cómo se mide en milisegundos.
@@ -97,8 +107,9 @@ que hay.
 - `entorno_dev_y_clon_neon.md`: la separación obligatoria entre `viboras` +
   Production + Neon `main` y `dev` + Preview + el clon `viboras_dev`; por qué
   `/neondb` no identifica la rama, la trampa de las variables Preview
-  heredadas de producción, la auditoría reproducible y qué servicios externos
-  siguen compartidos.
+  heredadas de producción, el incidente donde los overrides listados no se
+  aplicaban y la sonda de esquema que demostró el destino real, la auditoría
+  reproducible y qué servicios externos siguen compartidos.
 - `organizacion_de_carpetas.md`: una carpeta por pantalla dentro de `front/`,
   con `comun/` al lado; por qué la URL no cambió nunca y los 21 rewrites de
   `vercel.json` que lo sostienen; por qué `/index.html` tiene regla propia y
@@ -120,11 +131,20 @@ que hay.
 - `iconos_pwa.md`: qué iconos hay y por qué, por qué el maskable va al 72 %, la
   limitación de reescalar desde 256 px y qué mirar cuando Chrome dice
   «Instalando…» y no aparece nada.
+- `instalar_la_app.md`: por qué no existe ni puede existir un botón «abrir en
+  la app» desde el navegador, qué pide a cambio `handle_links` en el
+  manifiesto, la fila que ofrece instalar en la portada, por qué la ausencia
+  de `beforeinstallprompt` ya dice que está instalada y por qué en iPhone no
+  se ofrece nada —Safari no deja saberlo—, y por qué el manifiesto no recarga
+  en caliente en Docker.
 - `avisos_push.md`: los avisos de la campanita como notificación del móvil;
   qué manda push y desde dónde, por qué la pregunta sale una vez por cuenta y
   dispositivo y el permiso sólo desde un clic, el iPhone sin instalar, las
-  variables VAPID de Vercel y cómo se probó sin poder registrar el service
-  worker en local.
+  variables VAPID de Vercel, la activación verificada con una entrega real, el
+  acuse de todos los avisos y el diagnóstico de aceptado/recibido/mostrado/
+  pulsado, la herramienta segura para mandarse plantillas en `dev`; y el caso
+  de Nothing OS que retenía el trabajo de Chrome por un estado térmico severo
+  atascado.
 
 ## Lo que escriben los miembros
 

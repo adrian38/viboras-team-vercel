@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Tu cuenta · Viboras Team</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -151,14 +151,15 @@ body{padding-inline:0}
   gap:var(--vt-sm);margin:var(--vt-md) 0 0;padding-top:var(--vt-sm);
   border-top:1px solid var(--vt-border);font-size:12px;color:var(--vt-muted);
 }
-/* El icono del pie mide 17px al lado de un texto de 12 y, pegado a la linea
-   base, le saca la cabeza a la primera linea en vez de empezarla. Se baja a
-   14 y se centra sobre la linea. Se queda en linea a proposito: con un flex
-   en el <span> cada enlace y cada hueco de dato de dentro se convierte en
-   item suelto y le entra el gap, que es como salia «Cuenta creada el» con
-   dos espacios antes de la fecha. El color es el oro apagado y no el gris
-   del texto: el icono abre la frase y el diseno lo distingue de ella. */
-.pie-tarjeta .ms{font-size:14px;vertical-align:-3px;color:var(--vt-gold-dark)}
+/* El icono del pie mide 17px al lado de un texto de 12 y, aun centrado, le
+   saca la cabeza a la linea. Se baja a 14; de centrarlo ya se encarga el
+   `vertical-align:middle` de `.ms` en theme.css, asi que aqui no se repite.
+   Se queda en linea a proposito: con un flex en el <span> cada enlace y cada
+   hueco de dato de dentro se convierte en item suelto y le entra el gap, que
+   es como salia «Cuenta creada el» con dos espacios antes de la fecha. El
+   color es el oro apagado y no el gris del texto: el icono abre la frase y
+   el diseno lo distingue de ella. */
+.pie-tarjeta .ms{font-size:14px;color:var(--vt-gold-dark)}
 
 /* Las tres opciones del lado de pista, como un interruptor de tres. */
 .lado{
@@ -304,6 +305,15 @@ body{padding-inline:0}
 </head>
 
 <body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/tablon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/cuenta" aria-current="page"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
+</div>
+</nav>
 
 <!-- Las estrellas de la valoracion no salen de la fuente de iconos: el
      @import de theme.css pide FILL 0, asi que no hay estrella llena ni media.

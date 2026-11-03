@@ -50,6 +50,33 @@ nada equivalente, así que la imagen se guarda como data URL en
 Si algún día hay Blob, lo que cambia es `imagenValida` y el `INSERT`; la
 página seguiría igual salvo la subida.
 
+## Cómo se ve la foto: entera, y a pantalla completa si la tocas
+
+Hasta el 2026-11-02 la tarjeta la recortaba: `object-fit:cover` con
+`max-height:260px` cortaba por arriba y por abajo todo lo que no fuera
+apaisado, y un cartel vertical de torneo perdía el título. Ahora la caja
+respeta la proporción (`height:auto`, `object-fit:contain`, tope 70vh).
+
+Tocarla la abre en `abrirVisor()`, un `<dialog>` modal que se crea y se
+destruye en cada apertura. Tres cosas que costaron:
+
+- **No hace falta `z-index`.** Un `<dialog>` abierto con `showModal()` está en
+  la *top layer*, por encima de todo, incluidos el velo de carga y la barra de
+  pestañas. Es el mismo patrón que el diálogo de `front/comun/avisos-push.js`.
+- **El fundido de salida obliga a retirarlo por reloj.** `display` y `overlay`
+  sólo se animan con `allow-discrete`, y `@starting-style` da el primer
+  fotograma de la entrada; quitar el `<dialog>` del DOM en el mismo toque
+  cortaría la salida, así que se retira a los `FUNDIDO_VISOR` = 180 ms, que es
+  lo que dura la transición en la hoja de estilos de la página. Si cambia una,
+  cambia la otra. **No se usa el evento `close`**: en el navegador de pruebas
+  no llegó nunca.
+- **El pellizco va a mano.** El navegador no hace zoom dentro de un `<dialog>`
+  de la top layer, así que `activarPellizco()` lo lleva con pointer events:
+  dos dedos escalan alrededor de su punto medio (hasta 4×), uno arrastra la
+  foto ya agrandada y un toque que se mueve menos de 10 px cierra. Por eso la
+  foto lleva `touch-action:none`: sin ello el navegador se queda a medias
+  entre su gesto y el nuestro.
+
 ## Tres estados de la foto al editar, no dos
 
 El cuerpo de `editar` distingue:

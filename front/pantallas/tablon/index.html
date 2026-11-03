@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Tablón de avisos</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,7 +68,36 @@
   font-size:22px;line-height:26px;font-weight:700;letter-spacing:0.02em;
   text-transform:uppercase;color:var(--vt-text-strong);
 }
-.aviso__foto{width:100%;max-height:260px;object-fit:cover;border-radius:var(--vt-r);border:1px solid var(--vt-border);display:block}
+.aviso__foto{width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:var(--vt-r);border:1px solid var(--vt-border);display:block;cursor:zoom-in}
+/* El visor entra y sale con un fundido corto: un <dialog> modal aparece de
+   golpe, y a pantalla completa el salto se nota. `display` y `overlay` solo
+   se animan con `allow-discrete`, y `@starting-style` da el primer fotograma;
+   donde no existan (Safari < 17.4) el visor abre igual, sin fundido. El
+   cierre lo retira `abrirVisor()` cuando el fundido ha terminado. */
+.visor{
+  width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;
+  margin:0;padding:0;border:0;background:transparent;overflow:hidden;
+  opacity:0;transform:scale(.97);
+  transition:opacity .18s ease,transform .18s ease,overlay .18s ease allow-discrete,display .18s ease allow-discrete;
+}
+.visor[open]{opacity:1;transform:scale(1)}
+@starting-style{.visor[open]{opacity:0;transform:scale(.97)}}
+.visor::backdrop{
+  background:rgba(0,0,0,0);
+  transition:background .18s ease,overlay .18s ease allow-discrete,display .18s ease allow-discrete;
+}
+.visor[open]::backdrop{background:rgba(0,0,0,0.92)}
+@starting-style{.visor[open]::backdrop{background:rgba(0,0,0,0)}}
+/* `touch-action:none` porque el pellizco lo lleva `activarPellizco()`: el
+   navegador no hace zoom dentro de un <dialog> de la top layer, y sin esto
+   se queda a medias entre su gesto y el nuestro. */
+.visor__foto{
+  width:100%;height:100%;object-fit:contain;display:block;cursor:zoom-out;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+@media(prefers-reduced-motion:reduce){
+  .visor,.visor::backdrop{transition:none}
+}
 .aviso__texto{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--vt-text)}
 .aviso__autor{
   margin:0;padding-top:var(--vt-sm);border-top:1px solid var(--vt-border);
@@ -81,6 +110,15 @@
 </head>
 
 <body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/tablon" aria-current="page"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
+</div>
+</nav>
 
 <div class="vt-page vt-page--narrow">
 
@@ -88,6 +126,22 @@
     <img src="/image.png" alt="Víboras Team" width="88" height="88" style="border-radius:var(--vt-r-lg);filter:drop-shadow(0 4px 16px rgba(245,158,11,0.25))">
     <h3 class="vt-gold" style="margin-top:var(--vt-sm)">Tablón de avisos</h3>
     <span class="vt-label">Comunicados oficiales de Víboras Team</span>
+  </div>
+
+  <!-- Tus avisos. Lo rellena auth-client.js, que tambien pone aqui los
+       botones de activar y probar los avisos push (avisos-push.js). Hasta el
+       2026-11-02 todo esto era la campanita de la portada, a la que no se
+       llegaba desde ninguna otra pantalla. Nace oculto: sin sesion no hay
+       nada que ensenar, y un hueco vacio seria peor que no estar. -->
+  <div class="vt-card vt-avisos" id="vtAvisos" hidden>
+    <div class="vt-avisos__cabeza">
+      <h4><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">notifications</span> Tus avisos</h4>
+      <!-- Aqui ponen sus botones avisos-push.js («Probar») y auth-client.js
+           («Limpiar»), en ese orden. Nace vacio: ninguno de los dos aplica
+           siempre. -->
+      <div class="vt-avisos__acciones"></div>
+    </div>
+    <div class="vt-avisos__lista" style="margin-top:var(--vt-md)"></div>
   </div>
 
   <div class="vt-card vt-card--accent" id="panel" hidden>

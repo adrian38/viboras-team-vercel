@@ -4,7 +4,17 @@
 import { sql } from '@vercel/postgres';
 import { readBody } from './_db.js';
 import { exigirSesion, sinCache } from './_auth.js';
-import { ensurePushSchema, clavePublica, endpointValido } from './_push.js';
+import {
+  ensurePushSchema, clavePublica, endpointValido, pushDePrueba,
+  estadoPrueba, confirmarPrueba
+} from './_push.js';
+import { crearAviso } from './_avisos.js';
+
+const AVISOS_DEV = {
+  partido_terminado: { texto: '[Prueba] Partido terminado: ya puedes consultar el resultado.', enlace: '/history' },
+  opinion_partido: { texto: '[Prueba] ¿Qué tal el partido? Valora a tus compañeros.', enlace: '/valorar' },
+  resultados_torneo: { texto: '[Prueba] Ya están los resultados del torneo. Valora a tus compañeros.', enlace: '/valorar' }
+};
 
 // Null si el servidor no tiene claves: la pagina entonces no ofrece nada.
 async function clave(req, res) {
@@ -22,12 +32,17 @@ async function suscribir(req, res, user) {
     res.status(400).json({ ok: false, error: 'bad_subscription' });
     return;
   }
-  await sql`
+  const { rows } = await sql`
     INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
     VALUES (${user.id}, ${endpoint}, ${p256dh}, ${auth})
     ON CONFLICT (endpoint) DO UPDATE SET
-      user_id = EXCLUDED.user_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth`;
-  res.status(200).json({ ok: true });
+      user_id = EXCLUDED.user_id,
+      verified_at = CASE
+        WHEN push_subscriptions.p256dh = EXCLUDED.p256dh AND push_subscriptions.auth = EXCLUDED.auth
+        THEN push_subscriptions.verified_at ELSE NULL END,
+      p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, updated_at = now()
+    RETURNING verified_at IS NOT NULL AS verificado`;
+  res.status(200).json({ ok: true, verificado: Boolean(rows[0]?.verificado) });
 }
 
 // Al cerrar sesion (cuenta.html): ese movil deja de recibir los avisos.
@@ -37,16 +52,76 @@ async function baja(req, res, user) {
   res.status(200).json({ ok: true });
 }
 
+async function probar(req, res, user) {
+  const data = await readBody(req);
+  const endpoint = String(data?.endpoint || '');
+  if (!endpointValido(endpoint)) {
+    res.status(400).json({ ok: false, error: 'bad_subscription' });
+    return;
+  }
+  res.status(200).json(await pushDePrueba(user.id, endpoint));
+}
+
+async function estado(req, res, user) {
+  const testId = String(req.query?.id || '');
+  res.status(200).json(await estadoPrueba(user.id, testId));
+}
+
+async function notificarme(req, res, user) {
+  const esDev = process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_GIT_COMMIT_REF === 'dev';
+  if (!esDev || user.role !== 'admin') {
+    res.status(403).json({ ok: false, error: 'forbidden' });
+    return;
+  }
+  const data = await readBody(req);
+  const tipo = String(data?.tipo || '');
+  const aviso = Object.prototype.hasOwnProperty.call(AVISOS_DEV, tipo) ? AVISOS_DEV[tipo] : null;
+  if (!aviso) {
+    res.status(400).json({ ok: false, error: 'bad_type', tipos: Object.keys(AVISOS_DEV) });
+    return;
+  }
+  if (!user.player_id) {
+    res.status(409).json({ ok: false, error: 'admin_without_player' });
+    return;
+  }
+  const dispositivos = await crearAviso([user.player_id], aviso.texto, aviso.enlace);
+  const aceptados = dispositivos.filter((d) => d.estado >= 200 && d.estado < 300).length;
+  res.status(aceptados ? 200 : 502).json({ ok: aceptados > 0, tipo, aceptados, dispositivos });
+}
+
+// El token aleatorio identifica una sola entrega. No exige sesion porque el
+// service worker puede despertarse cuando la cookie ya haya caducado.
+async function confirmar(req, res) {
+  const data = await readBody(req);
+  const ok = await confirmarPrueba(String(data?.token || ''), String(data?.fase || ''));
+  res.status(ok ? 200 : 400).json({ ok });
+}
+
 const ACCIONES = {
   clave: ['GET', clave],
   suscribir: ['POST', suscribir],
-  baja: ['POST', baja]
+  baja: ['POST', baja],
+  probar: ['POST', probar],
+  estado: ['GET', estado],
+  notificarme: ['POST', notificarme]
 };
 
 export default async function handler(req, res) {
+  const action = String(req.query?.action || '').trim();
+  sinCache(res);
+  if (action === 'confirmar') {
+    if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
+    try {
+      await ensurePushSchema();
+      await confirmar(req, res);
+    } catch (err) {
+      console.error('push:confirmar error', err);
+      if (!res.headersSent) res.status(500).json({ ok: false, error: 'server_error' });
+    }
+    return;
+  }
   const user = await exigirSesion(req, res);
   if (!user) return;
-  const action = String(req.query?.action || '').trim();
   const entrada = Object.prototype.hasOwnProperty.call(ACCIONES, action) ? ACCIONES[action] : null;
   if (!entrada) {
     res.status(404).json({ ok: false, error: 'unknown_action' });
@@ -57,7 +132,6 @@ export default async function handler(req, res) {
     res.status(405).json({ ok: false, error: 'method_not_allowed' });
     return;
   }
-  sinCache(res);
   try {
     await ensurePushSchema();
     await entrada[1](req, res, user);

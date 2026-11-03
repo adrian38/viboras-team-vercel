@@ -24,7 +24,7 @@
  * de 400 caracteres dieciseis veces: cambiar la lista es una linea. Cuesta un
  * viaje extra, que con font-display:block solo retrasa los iconos.
  */
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=admin_panel_settings,arrow_back,arrow_forward,calendar_month,campaign,chevron_right,cloud_upload,download,edit_note,emoji_events,emoji_symbols,error,fact_check,feedback,filter_alt,format_list_bulleted,gavel,group,history,info,leaderboard,lightbulb,lock,login,logout,menu_book,military_tech,monitoring,notifications,person,publish,query_stats,schedule,scoreboard,search,shield_person,speed,sports_tennis,swap_vert,sync_alt,trending_up,trophy,tune,verified,verified_user,visibility,visibility_off,workspace_premium&display=block');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=admin_panel_settings,arrow_back,arrow_forward,calendar_month,campaign,chevron_right,close,cloud_upload,download,edit_note,emoji_events,emoji_symbols,error,fact_check,feedback,filter_alt,format_list_bulleted,gavel,group,history,home,info,install_mobile,leaderboard,lightbulb,lock,login,logout,menu_book,military_tech,monitoring,notifications,person,publish,query_stats,schedule,scoreboard,search,shield_person,speed,sports_tennis,swap_vert,sync_alt,trending_up,trophy,tune,verified,verified_user,visibility,visibility_off,workspace_premium&display=block');
 
 :root{
   /* Superficies: negro carbono y sus elevaciones. */
@@ -103,6 +103,11 @@
   --vt-z-toast:2002;
   --vt-z-splash:3000;
 
+  /* Alto de la barra de pestanas inferior. Lo usan la barra, el hueco que le
+   * deja el body y el toast, que si no queda detras de ella. Medido, no
+   * elegido: es lo que ocupa `.vt-nav` con sus cinco pestanas. */
+  --vt-nav-alto:60px;
+
   /* Profundidad. */
   --vt-shadow-card:0 8px 30px rgba(0,0,0,0.45);
   --vt-shadow-float:0 8px 24px -4px rgba(0,0,0,0.6);
@@ -133,6 +138,27 @@ body{
 
 body::selection,::selection{background:var(--vt-gold);color:var(--vt-bg)}
 
+/* El hueco que necesita la barra de pestanas al pie.
+ *
+ * Es un pseudoelemento y no `padding-bottom` del body a proposito: el padding
+ * del body lo reescriben con la forma corta la consulta de 720px de esta misma
+ * hoja y tres paginas (`comunidad`, `tournaments`, `cuenta`), asi que el hueco
+ * desaparecia en movil justo donde mas se nota. Un bloque al final del flujo
+ * no lo pisa nadie y no mueve lo que haya encima.
+ *
+ * Va aqui y no en vt-nav.js porque el script corre con la pagina ya pintada:
+ * el hueco llegaria despues y daria un salto. */
+body::after{content:'';display:block;height:calc(var(--vt-nav-alto) + env(safe-area-inset-bottom,0px))}
+
+/* El hueco de la barra de estado arriba, por el `viewport-fit=cover` de las
+ * veinte cabeceras: con el recorte la pagina llega al borde de la pantalla y
+ * el reloj taparia lo primero que haya.
+ *
+ * Pseudoelemento por lo mismo que el de abajo: `padding-top` del body lo
+ * reescriben la consulta de 720px y tres paginas, y el hueco se perderia. En
+ * un navegador de escritorio el `env()` vale 0 y esto no ocupa nada. */
+body::before{content:'';display:block;height:env(safe-area-inset-top,0px)}
+
 a{color:var(--vt-gold-soft);text-decoration-color:var(--vt-border-gold);text-underline-offset:3px}
 a:hover{color:var(--vt-gold-light)}
 
@@ -156,6 +182,15 @@ hr,.vt-divider{border:0;border-top:1px solid var(--vt-border);margin:var(--vt-lg
   white-space:nowrap;
   direction:ltr;
   flex:0 0 auto;
+  /* El dibujo del glifo esta centrado en su caja, y la caja mide lo que el
+     icono: 17 o 20 px al lado de un texto de 12 o 13. Pegada a la linea base
+     —lo que hace el navegador si nadie dice otra cosa— esa caja le saca la
+     cabeza al texto: medido en /tablon, el reloj de la fecha quedaba 5 px
+     por encima del centro del texto. `middle` pone el centro del icono a la
+     altura de la mitad de la x, que es donde esta el centro optico de una
+     linea de texto. No hace nada dentro de un flex o un grid (ahi manda
+     align-items), asi que solo toca los iconos que van en linea. */
+  vertical-align:middle;
   user-select:none;
   -webkit-font-feature-settings:'liga';
   font-feature-settings:'liga';
@@ -364,48 +399,39 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 }
 .vt-splash__capa--animando .vt-splash__escena{opacity:1}
 
-/* Campanita de avisos. La rellena auth-client.js en cualquier pagina que
-   tenga un #vtCampana; hoy solo index.html. */
-.vt-campana{position:relative;flex:0 0 auto}
-.vt-campana[hidden]{display:none}
-.vt-campana > .vt-chip{cursor:pointer;font:inherit;font-size:12px;line-height:16px}
-/* El numero va sobre la esquina y no al lado: en la barra de index.html a
-   320 px no queda sitio para que la campana crezca. */
-.vt-campana__num{
-  position:absolute;top:-6px;right:-6px;
-  min-width:16px;height:16px;padding:0 4px;border-radius:var(--vt-r-full);
-  background:var(--vt-gold);color:var(--vt-surface-deep);
-  font-size:11px;line-height:16px;font-weight:800;text-align:center;
-}
-.vt-campana__num[hidden]{display:none}
-.vt-campana__panel{
-  position:absolute;right:0;top:calc(100% + 6px);z-index:var(--vt-z-flotante);
-  width:min(280px, calc(100vw - 32px));max-height:60vh;overflow:auto;
+/* Tus avisos. Hasta el 2026-11-02 era una campanita desplegable en la barra
+   de arriba de la portada, y por tanto fuera del alcance de las otras
+   diecinueve paginas; ahora es una tarjeta de /tablon, que es a donde lleva
+   la pestana «Avisos» (ai_context/barra_de_navegacion.md). Ya no se despliega
+   ni flota: la rellena auth-client.js en cualquier pagina con un #vtAvisos. */
+.vt-avisos{flex:0 0 auto}
+.vt-avisos[hidden]{display:none}
+/* El titulo y, a su derecha, «Probar» (avisos-push.js) y «Limpiar»
+   (auth-client.js). Hasta el 2026-11-02 los dos eran filas de la lista, donde
+   se confundian con los avisos; «Probar» ademas contaba la prueba en su propia
+   etiqueta y se quedaba luego con el resumen puesto, asi que el boton
+   desaparecia de la lista. Ahora la cuenta en la linea de estado. */
+.vt-avisos__cabeza{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--vt-sm)}
+.vt-avisos__cabeza h4{margin:0}
+.vt-avisos__acciones{display:flex;align-items:center;gap:var(--vt-xs)}
+.vt-avisos__accion[disabled]{opacity:.5;cursor:default}
+.vt-avisos__lista{
+  overflow:hidden;
   background:var(--vt-surface-2);border:1px solid var(--vt-border);border-radius:var(--vt-r);
-  box-shadow:0 12px 32px rgba(0,0,0,0.5);
-  text-align:left; /* en index.html hereda el center del .hero */
+  text-align:left;
 }
-.vt-campana__panel[hidden]{display:none}
-.vt-campana__item{
+.vt-avisos__item{
   display:block;padding:10px 12px;border-bottom:1px solid var(--vt-border);
   color:var(--vt-text);text-decoration:none;font-size:13px;line-height:18px;
 }
-.vt-campana__item:last-child{border-bottom:0}
-.vt-campana__item:hover{background:var(--vt-surface-3)}
-.vt-campana__vacio{padding:12px;color:var(--vt-muted);font-size:13px}
-/* Activar los avisos push (avisos-push.js). Es un <button> cuando se puede
-   pulsar y un <div> cuando solo explica; los dos con la pinta de un aviso. */
-.vt-campana__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
-button.vt-campana__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
-button.vt-campana__push:hover{color:var(--vt-gold-light)}
-/* «Limpiar todas», al pie de la lista (auth-client.js). */
-.vt-campana__limpiar{
-  display:block;width:100%;padding:10px 12px;border:0;background:transparent;
-  color:var(--vt-muted);font:inherit;font-size:13px;text-align:center;cursor:pointer;
-}
-.vt-campana__limpiar:hover{color:var(--vt-gold-light);background:var(--vt-surface-3)}
-.vt-campana__limpiar[disabled]{opacity:.5;cursor:default}
-
+.vt-avisos__item:last-child{border-bottom:0}
+.vt-avisos__item:hover{background:var(--vt-surface-3)}
+.vt-avisos__vacio{padding:12px;color:var(--vt-muted);font-size:13px}
+/* Activar y probar los avisos push (avisos-push.js). Es un <button> cuando se
+   puede pulsar y un <div> cuando solo explica; los dos con pinta de aviso. */
+.vt-avisos__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
+button.vt-avisos__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
+button.vt-avisos__push:hover{color:var(--vt-gold-light)}
 /* La pregunta de la primera vez (avisos-push.js). <dialog> nativo: trae el
    fondo, el foco y el Esc hechos. */
 .vt-push-dialogo{
@@ -417,7 +443,65 @@ button.vt-campana__push:hover{color:var(--vt-gold-light)}
 .vt-push-dialogo::backdrop{background:rgba(0,0,0,0.7)}
 .vt-push-dialogo h2{margin:0 0 var(--vt-sm);font-size:20px;line-height:26px}
 .vt-push-dialogo p{margin:0;color:var(--vt-muted);font-size:14px;line-height:21px}
+.vt-push-dialogo__no-recordar{display:flex;align-items:center;gap:var(--vt-sm);margin-top:var(--vt-lg);color:var(--vt-muted);font-size:13px;line-height:18px;cursor:pointer}
+.vt-push-dialogo__no-recordar input{width:18px;height:18px;margin:0;accent-color:var(--vt-gold)}
 .vt-push-dialogo__botones{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--vt-sm);margin-top:var(--vt-lg)}
+
+/* ----------------------------------------------------- instalar la app -- */
+
+/* La oferta de instalar la app (instalar.js), en el hueco #vtInstalar. Fila
+ * fina y no tarjeta, como la normativa de la portada: es algo que se hace una
+ * vez y no un modulo del grupo. El borde dorado la distingue de la normativa,
+ * que es la otra fila fina de la pantalla.
+ *
+ * El fondo del icono va en rgba porque CSS no deja una var() dentro; es el
+ * mismo valor que .block-icon y .normativa__icono de la portada. */
+.vt-instalar{
+  display:flex;align-items:center;gap:var(--vt-sm);
+  max-width:1100px;margin:0 auto var(--vt-md);
+  background:var(--vt-surface);
+  border:1px solid var(--vt-border-gold);
+  border-radius:var(--vt-r-lg);
+  padding:var(--vt-sm) var(--vt-md);
+  color:var(--vt-text);
+}
+.vt-instalar__icono{
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;flex:0 0 auto;
+  border-radius:var(--vt-r);
+  background:rgba(245,158,11,0.14);
+  color:var(--vt-gold);
+}
+.vt-instalar__texto{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.vt-instalar__titulo{
+  font-family:var(--vt-font-head);
+  font-size:16px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--vt-text-strong);line-height:1;
+}
+.vt-instalar__sub{font-size:12px;color:var(--vt-muted);line-height:1.3}
+.vt-instalar__accion{flex:0 0 auto}
+.vt-instalar__cerrar{
+  display:flex;align-items:center;justify-content:center;
+  width:28px;height:28px;flex:0 0 auto;padding:0;
+  background:transparent;border:0;border-radius:var(--vt-r-full);
+  color:var(--vt-muted);cursor:pointer;
+}
+.vt-instalar__cerrar:hover{background:var(--vt-surface-3);color:var(--vt-text)}
+.vt-instalar__cerrar:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
+/* En 375 px el boton no cabe al lado del texto: baja a su propia linea,
+ * alineado con el texto, y el aspa se queda arriba a la derecha.
+ *
+ * Con solo flex-wrap no bajaba nada: el texto lleva min-width:0 y se encogia
+ * hasta 113 px —seis lineas de 12 px, medido— para dejar sitio al boton. El
+ * flex-basis le reserva la linea entera menos el icono, el aspa y los tres
+ * huecos (32 + 28 + 8*3 = 84 px), y entonces el boton ya no cabe. El `order`
+ * es lo que lo manda a la segunda linea en vez de arrastrar al aspa con el:
+ * el reparto en lineas sigue el orden visual, no el del DOM. */
+@media(max-width:480px){
+  .vt-instalar{flex-wrap:wrap}
+  .vt-instalar__texto{flex-basis:calc(100% - 84px)}
+  .vt-instalar__accion{order:1;margin-left:40px}
+}
 
 /* ------------------------------------------------------ carga en curso -- */
 
@@ -437,11 +521,20 @@ button.vt-campana__push:hover{color:var(--vt-gold-light)}
  *
  * visibility y no display: el contenido sigue ocupando su sitio, asi que la
  * pagina no da un salto al aparecer ni se recalcula el layout dos veces. Es
- * el mismo recurso que usa splash.js con el video. */
-html.vt-cargando-pagina body > *:not(.vt-cargando){visibility:hidden}
+ * el mismo recurso que usa splash.js con el video.
+ *
+ * La barra de pestanas queda fuera: es el cromo de la aplicacion, no el
+ * contenido de la pantalla, y esconderla mientras cargan los datos la hacia
+ * parpadear en cada entrada. */
+html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidden}
 
 .vt-cargando{
-  position:fixed;inset:0;z-index:var(--vt-z-velo);
+  /* Se queda por encima de la barra de pestanas, no la tapa: la barra esta
+     en el marcado de las veinte paginas, asi que existe desde el primer
+     pintado y no hay ningun momento en que recortar aqui deje un hueco.
+     La rueda queda centrada en lo que se ve, 29 px mas arriba. */
+  position:fixed;inset:0 0 calc(var(--vt-nav-alto) + env(safe-area-inset-bottom,0px));
+  z-index:var(--vt-z-velo);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:var(--vt-md);
   background:rgba(13,14,17,0.82);
@@ -464,6 +557,42 @@ html.vt-cargando-pagina body > *:not(.vt-cargando){visibility:hidden}
 @media(prefers-reduced-motion:reduce){
   .vt-cargando__rueda{animation:none;border-top-color:var(--vt-gold)}
   .vt-cargando{transition:none}
+}
+
+/* ------------------------------------------------- cambio de pantalla -- */
+
+/* El fundido al cambiar de pantalla: una linea, sin JavaScript y sin
+ * interceptar ningun clic.
+ *
+ * El navegador se queda ensenando la pantalla que se va hasta que la
+ * siguiente esta pintada, y entonces funde una con otra. Eso es lo que no
+ * podia hacer el fundido a mano que hubo aqui hasta el 2026-11-02: aquel iba
+ * al color del fondo, asi que entre las dos pantallas quedaba un rato de
+ * fondo liso tan largo como tardara en cargar la siguiente, y ademas cobraba
+ * 160 ms de retardo a cada clic antes de empezar a cargarla.
+ *
+ * Y vale para TODA la navegacion de la aplicacion, no solo para los enlaces:
+ * la mayoria de los botones de estas paginas saltan con
+ * `onclick="window.location=..."`, que aquel script no podia interceptar.
+ *
+ * Firefox todavia no la entiende: alli la navegacion se queda como estaba,
+ * sin fundido y sin romperse. Lo decidio Adrian el 2026-11-02.
+ *
+ * Detalle: ai_context/transicion_entre_pantallas.md */
+@view-transition{navigation:auto}
+
+/* La barra de pestanas no entra en el fundido de la pantalla. Con nombre
+ * propio el navegador la trata como la misma barra en las dos pantallas y no
+ * la mete en la instantanea de la raiz, que es la que se funde; asi no
+ * parpadea y lo unico que cambia es la pestana encendida.
+ *
+ * El nombre tiene que ser unico en el documento, y lo es: solo hay una. */
+.vt-nav{view-transition-name:vt-barra}
+
+/* Con «reducir movimiento» no hay fundido: la navegacion vuelve a ser un
+ * corte, que es lo que se pide cuando se pide eso. */
+@media(prefers-reduced-motion:reduce){
+  @view-transition{navigation:none}
 }
 
 /* -------------------------------------------------------------- botones -- */
@@ -667,7 +796,10 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 .vt-toast{
   /* `width:max-content` es obligatorio: con `left:50%` el hueco disponible es
      media pantalla, y sin el el texto se parte en una columna de 188 px. */
-  position:fixed;z-index:var(--vt-z-toast);left:50%;bottom:24px;
+  /* Por encima de la barra de pestanas: con los 24px de antes, el toast
+     quedaba justo detras de ella. */
+  position:fixed;z-index:var(--vt-z-toast);left:50%;
+  bottom:calc(var(--vt-nav-alto) + var(--vt-md) + env(safe-area-inset-bottom,0px));
   width:max-content;max-width:calc(100% - 32px);padding:10px 16px;
   border:1px solid var(--vt-border-strong);border-radius:var(--vt-r);
   background:var(--vt-surface-4);color:var(--vt-text);
@@ -677,6 +809,81 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   transition:opacity .18s ease,transform .18s ease;
 }
 .vt-toast--visible{opacity:1;transform:translate(-50%,0)}
+
+/* ----------------------------------------------- barra de pestanas --- */
+
+/* La barra inferior de la maqueta del 2026-11-02. El marcado lo monta
+   `front/comun/vt-nav.js`; aqui solo esta el aspecto.
+   Detalle: ai_context/barra_de_navegacion.md */
+.vt-nav{
+  position:fixed;left:0;right:0;bottom:0;
+  z-index:var(--vt-z-flotante);
+  display:flex;justify-content:center;
+  padding:var(--vt-xs) var(--vt-sm);
+  /* El hueco de la barra del sistema en iOS: sin esto, la fila de pestanas
+     queda debajo del indicador de inicio. */
+  padding-bottom:calc(var(--vt-xs) + env(safe-area-inset-bottom,0px));
+  /* color-mix y no un rgba() a mano: asi el fondo sigue siendo --vt-bg y la
+     guarda de paleta no se queda ciega (no mira dentro de los rgba). */
+  background:color-mix(in srgb, var(--vt-bg) 94%, transparent);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--vt-border);
+}
+
+/* La fila no crece con la pantalla: en un monitor, cinco pestanas repartidas
+   a lo ancho de 1400 px no se leen como una barra de pestanas. */
+.vt-nav__lista{display:flex;width:100%;max-width:520px}
+
+.vt-nav__item{
+  flex:1 1 0;min-width:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  /* 4 px arriba y no 6: el icono crecio de 20 a 26 y asi la barra se queda
+     donde estaba en vez de robarle cuatro pixeles mas a la pagina. */
+  padding:4px 2px 4px;
+  border-radius:var(--vt-r);
+  color:var(--vt-muted);
+  text-decoration:none;
+  font-size:10px;font-weight:600;line-height:12px;text-align:center;
+  transition:color .15s ease;
+}
+.vt-nav__item:hover{color:var(--vt-text)}
+.vt-nav__item:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:-2px}
+.vt-nav__item[aria-current="page"]{color:var(--vt-gold)}
+
+/* 26 px y no los 20 de `.ms`: a 20 las cinco pestanas se leian como texto con
+   un adorno encima, y el icono es lo que se toca. El alto de la caja va igual
+   que el glifo para que el punto de la activa no baile. */
+.vt-nav__icono{position:relative;display:flex;align-items:center;justify-content:center;height:26px}
+.vt-nav__icono .ms{font-size:26px}
+/* El numero de «Avisos», sobre la esquina del icono (auth-client.js). Cuenta
+   lo mismo que ensena la tarjeta de /tablon, que es a donde lleva la pestana:
+   el dato y el destino son el mismo. El borde del color de la barra lo
+   despega del icono cuando se solapan. */
+.vt-nav__num{
+  position:absolute;top:-2px;right:-8px;
+  min-width:16px;height:16px;padding:0 4px;border-radius:var(--vt-r-full);
+  background:var(--vt-gold);color:var(--vt-surface-deep);
+  border:2px solid var(--vt-bg);
+  font-size:10px;line-height:12px;font-weight:800;text-align:center;
+}
+.vt-nav__num[hidden]{display:none}
+/* El punto bajo el icono de la pestana activa, como en la maqueta. */
+.vt-nav__item[aria-current="page"] .vt-nav__icono::after{
+  content:'';position:absolute;bottom:-3px;
+  width:5px;height:5px;border-radius:var(--vt-r-full);
+  background:var(--vt-gold);
+}
+
+.vt-nav__texto{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* "Rendimiento" es la palabra larga y a 320 px no entra: medido, pide 60 px y
+   le quedaban 57, asi que salia con puntos suspensivos. A 9 px pide 54 y
+   entra; los puntos suspensivos se quedan de red. */
+@media(max-width:360px){
+  .vt-nav{padding-inline:0}
+  .vt-nav__texto{font-size:9px}
+}
 
 /* ----------------------------------------------------------- utilidades -- */
 

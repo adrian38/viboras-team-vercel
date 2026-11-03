@@ -364,11 +364,14 @@ administradores, además, las altas pendientes y lo que no han leído del
 buzón ([[buzon_de_quejas]]). Sin nada de eso, la campana
 sale sin número y «No tienes avisos». Sin sesión responde vacío, no 401.
 
-La pinta `auth-client.js` en cualquier página con un `#vtCampana`, que hoy
-sólo tiene `index.html`. Con ella la barra de la portada no cabía: por debajo
-de 420 px el botón dice sólo «Normativa» y el chip se queda en el icono
-(medido a 320, 375, 421 y 1024 px). El icono `notifications` está en la lista
-recortada de `theme.css` ([[sistema_visual_viper_strike]]).
+La pinta `auth-client.js` en cualquier página con un `#vtAvisos`, que hoy
+sólo tiene `tablon.html`: la tarjeta «Tus avisos». **Hasta el 2026-11-02 era
+una campanita desplegable en la barra de arriba de `index.html`**, y por tanto
+no existía en las otras diecinueve pantallas; esa barra ya no está. El mismo
+`auth-client.js` pone el número en la pestaña «Avisos» de la barra de abajo
+(`.vt-nav__num`), que sí está en las veinte: una sola petición rellena las dos
+cosas. Detalle: [[barra_de_navegacion]]. El icono `notifications` está en la
+lista recortada de `theme.css` ([[sistema_visual_viper_strike]]).
 
 **«Limpiar todas»** (desde el 2026-10-19, lo pidió Adrián) va al pie de la
 lista cuando hay algo. `POST /api/auth?action=clearNotifications` guarda en

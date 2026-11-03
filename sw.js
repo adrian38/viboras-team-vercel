@@ -9,7 +9,7 @@
 //
 // Para forzar que todos los navegadores descarten lo cacheado, cambia CACHE.
 
-const CACHE = 'viboras-v5';
+const CACHE = 'viboras-v8';
 
 // Lo minimo para que la app abra aunque no haya cobertura.
 //
@@ -75,6 +75,66 @@ self.addEventListener('fetch', (event) => {
 
 // Avisos push (api/_push.js). Llegan con la app cerrada; el texto es el mismo
 // que el de la campanita. Detalle: ai_context/avisos_push.md
+function confirmarPrueba(token, fase) {
+  if (!token) return Promise.resolve();
+  return fetch('/api/push?action=confirmar', {
+    method: 'POST',
+    // La API no exige la sesion de la app, pero Preview sí necesita la cookie
+    // de Deployment Protection para dejar que la peticion llegue a la API.
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token, fase })
+  }).catch(() => null);
+}
+
+// El badge del icono con la app cerrada. Es el mismo numero que la pestana
+// Avisos (auth-client.js, pintarNumero). En los avisos reales llega ya
+// calculado dentro del push; asi no depende de una cookie de sesion cuando el
+// navegador despierta el worker. Los push antiguos y el aviso de prueba usan
+// la consulta como respaldo.
+//
+// La peticion lleva la cookie de sesion: mismo origen y SameSite=Lax. Sin red
+// o sin soporte se deja el badge como estaba; el aviso se ve igual y al abrir
+// la app el numero se corrige.
+//
+// `notifications` responde 200 con lista vacia tanto sin sesion como sin
+// avisos, asi que las dos borran el badge. Es lo que corresponde en los dos
+// casos: sin sesion la app redirige a /cuenta, que tampoco ensena ninguno, y
+// un aviso de prueba no es un aviso de la campanita y no debe contar.
+function pintarBadge(cantidad) {
+  if (!self.navigator.setAppBadge) return Promise.resolve();
+  if (Number.isInteger(cantidad) && cantidad >= 0) {
+    return cantidad
+      ? self.navigator.setAppBadge(cantidad)
+      : self.navigator.clearAppBadge();
+  }
+  return fetch('/api/auth?action=notifications', {
+    credentials: 'same-origin',
+    headers: { accept: 'application/json' },
+    cache: 'no-store'
+  })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => {
+      if (!j || !Array.isArray(j.items)) return null;
+      return j.items.length
+        ? self.navigator.setAppBadge(j.items.length)
+        : self.navigator.clearAppBadge();
+    })
+    .catch(() => null);
+}
+
+// Una ventana abierta no recibe por si sola el cambio que desperto al worker.
+// Se le avisa para que vuelva a leer la lista canonica; `unread` sirve para el
+// badge del sistema, pero la pagina necesita tambien el texto y los enlaces.
+function avisarClientes(cantidad) {
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    .then((ventanas) => {
+      ventanas.forEach((ventana) => ventana.postMessage({
+        type: 'vt-avisos-actualizados', unread: cantidad
+      }));
+    });
+}
+
 self.addEventListener('push', (event) => {
   let d = {};
   try {
@@ -82,11 +142,18 @@ self.addEventListener('push', (event) => {
   } catch (e) {
     d = { body: event.data ? event.data.text() : '' };
   }
-  event.waitUntil(self.registration.showNotification(d.title || 'Víboras Team', {
+  const opciones = {
     body: d.body || '',
     icon: '/icon-192.png',
-    data: { url: d.url || '/' }
-  }));
+    tag: d.tag || undefined,
+    data: { url: d.url || '/', receiptToken: d.receiptToken || null }
+  };
+  const recibido = confirmarPrueba(d.receiptToken, 'recibido');
+  const mostrado = self.registration.showNotification(d.title || 'Víboras Team', opciones)
+    .then(() => confirmarPrueba(d.receiptToken, 'mostrado'));
+  event.waitUntil(Promise.all([
+    recibido, mostrado, pintarBadge(d.unread), avisarClientes(d.unread)
+  ]));
 });
 
 // Solo enlaces de la propia app: lo que venga de fuera abre la portada.
@@ -99,15 +166,15 @@ function destino(url) {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = destino(event.notification.data && event.notification.data.url);
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+  const receiptToken = event.notification.data && event.notification.data.receiptToken;
+  const abrir = self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
       const abierta = ventanas.find((v) => new URL(v.url).origin === self.location.origin);
       if (!abierta) return self.clients.openWindow(url);
       return abierta.focus()
         .then((v) => (v || abierta).navigate(url))
         .catch(() => self.clients.openWindow(url));
-    })
-  );
+    });
+  event.waitUntil(Promise.all([confirmarPrueba(receiptToken, 'pulsado'), abrir]));
 });
 
 // --- Reponer la suscripcion cuando el navegador la rota ------------------

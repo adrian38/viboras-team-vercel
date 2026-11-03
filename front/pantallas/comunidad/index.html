@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Comunidad</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +24,11 @@
 <style>
 body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
 .barra{
-  position:fixed;inset:0 0 auto;z-index:var(--vt-z-flotante);height:64px;
+  /* El alto crece con la barra de estado: el padding de abajo ya reservaba su
+     hueco, pero con 64px fijos se lo comia a la fila en vez de anadirselo.
+     Hasta el `viewport-fit=cover` del 2026-11-02 el env() valia 0 y no se
+     notaba. */
+  position:fixed;inset:0 0 auto;z-index:var(--vt-z-flotante);height:calc(64px + env(safe-area-inset-top,0px));
   padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
   display:flex;align-items:center;gap:var(--vt-sm);
   background:rgba(18,19,22,.92);backdrop-filter:blur(14px);box-shadow:0 4px 20px rgba(0,0,0,.6);
@@ -129,6 +133,15 @@ body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
 </head>
 
 <body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/tablon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item" href="/comunidad" aria-current="page"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
+</div>
+</nav>
 <header class="barra">
   <a class="barra__volver" id="volver" href="/" aria-label="Volver"><span class="ms notranslate" translate="no" aria-hidden="true">arrow_back</span></a>
   <img class="barra__logo" src="/image.png" alt="">

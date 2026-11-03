@@ -147,7 +147,9 @@ todo obliga a calcular el rating en el servidor.
 - **Un voto deja de contar si el jugador sale del partido.** Al editar y
   cambiar a alguien, `getNivelVotos` y los pendientes sólo cuentan votos entre
   los cuatro jugadores actuales.
-- **La campanita sólo está en `index.html`.** Los avisos de valorar se calculan
+- **La lista de avisos sólo está en `/tablon`** (`#vtAvisos`); hasta el
+  2026-11-02 era la campanita de `index.html` ([[barra_de_navegacion]]). Los
+  avisos de valorar se calculan
   al vuelo; los de edición se guardan en `avisos` y se marcan vistos al
   pulsarlos (`sendBeacon` a `/api/avisos?action=visto`). Caducan a 30 días.
 - **El permiso de editar mira los jugadores de antes de la edición**, no los
