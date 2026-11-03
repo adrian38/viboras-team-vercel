@@ -83,6 +83,10 @@ td:nth-child(3){
   white-space:nowrap;
 }
 
+/* La separacion entre Editar, Valorar y Eliminar: estaba en un style inline de
+   cada boton, que en el movil se sumaba al gap y los escalonaba. */
+td:nth-child(4) button + button{margin-left:6px}
+
 .muted{color:var(--vt-muted)}
 
 .btn{
@@ -168,48 +172,85 @@ td:nth-child(3){
 .date-full{display:inline}
 .th-day{display:none}
 .th-full{display:inline}
+/* En escritorio cada jugador lleva su propia etiqueta; en el movil las dos de
+   cada pareja se juntan en una sola, que es lo que pinta renderTable(). */
+.desktop-only{display:inline}
+.mobile-only{display:none}
+
+/* En el movil la fila deja de ser una fila y pasa a ser una ficha.
+ *
+ * Con cuatro columnas en 375 px —fecha, jugadores, marcador y acciones— la de
+ * jugadores se quedaba en 97 px: cada pareja ocupaba dos o tres lineas dentro
+ * de una pildora que, con el radio completo, se deformaba en un ovalo. Medido
+ * el 2026-11-03 con los 13 partidos de octubre: 136 px de alto por partido y
+ * 1809 px de tabla, contra 80 y 1083 sin la columna de acciones.
+ *
+ * Asi que aqui las tres columnas se quedan —fecha, parejas y marcador— y lo
+ * que baja a su propia linea es la de acciones, que es la que estrangulaba a
+ * las demas. Cada celda va colocada a mano: por orden del DOM la de acciones
+ * es la cuarta, pero la de jugadores es la segunda, y el reparto automatico
+ * empujaba al marcador a una linea suya.
+ *
+ * Vale tambien para la fila en edicion: startEditRow() monta las mismas cuatro
+ * celdas en el mismo orden, asi que se reparte igual. */
 @media(max-width:720px){
-  .set-list{display:block}
-  .set-item{display:block;margin-bottom:6px}
-  .set-item:not(:last-child)::after{content:""}
+  table,tbody,tr,td{display:block}
+  thead{display:none}
+  tbody tr{
+    display:grid;
+    /* El dia a ancho fijo: con `auto` medía 13 px en los partidos del 1 al 9 y
+       16 en los demas, y las pildoras de cada fila empezaban en una x distinta.
+       El marcador se queda en `auto` —de 54 a 103 px segun los sets— porque
+       fijarlo le quitaria a los nombres los 186 px que necesita el par mas
+       largo, «Guillermo P / Diego Gonzalez», para no partirse. */
+    grid-template-columns:18px 1fr auto;
+    align-items:center;
+    /* Aire entre los nombres y el marcador, y entre los nombres y los botones.
+       Lo que la columna de nombres pierde con el hueco de 16 px lo devuelven
+       las pildoras, con 8 px de padding lateral en vez de 10, y el marcador,
+       con 6 px entre sets en vez de 8. */
+    gap:var(--vt-sm) var(--vt-md);
+    padding:var(--vt-sm) 0;
+    border-bottom:1px solid var(--vt-border);
+  }
+  tbody tr:last-child{border-bottom:none}
+  td{padding:0;border-bottom:none}
+  /* Sigue siendo el dia a secas, no la fecha entera: los filtros de arriba ya
+     dicen el mes y el ano, y los 45 px que ahorra son los que le faltaban a
+     «Guillermo P / Diego Gonzalez» para no partirse (medido en 375 px). */
+  td:nth-child(1){grid-area:1 / 1;font-size:13px;color:var(--vt-muted)}
   .date-day{display:inline}
   .date-full{display:none}
-  .th-day{display:inline}
-  .th-full{display:none}
-  /* Make player tags slightly smaller and not bold on mobile */
-  .tag{font-weight:400;font-size:0.75rem}
-  .team-break{display:none}
-  /* Show short header for Marcador */
-  .th-res{display:inline}
-  .th-full-res{display:none}
-}
-  /* Desktop vs mobile visibility helpers */
-  .desktop-only{display:inline}
-  .mobile-only{display:none}
-  @media(max-width:720px){
-    .desktop-only{display:none}
-    .mobile-only{display:inline-block;margin-right:8px}
+  td:nth-child(2){grid-area:1 / 2}
+  td:nth-child(3){grid-area:1 / 3;font-size:17px}
+  /* Acciones: la linea de abajo, entera, y la separacion por gap, que el
+     margen lateral de Eliminar, en columna, escalonaba los botones. */
+  td:nth-child(4){
+    grid-area:2 / 1 / 2 / -1;
+    display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;
   }
-
-/* Con tres columnas en 375 px el marcador y el relleno se encogen. */
-@media(max-width:720px){
-  td:nth-child(3){font-size:16px}
-  th,td{padding:8px 6px}
+  td:nth-child(4) button + button{margin-left:0}
+  .set-list{display:flex;justify-content:flex-end;gap:6px}
+  .set-item{display:inline}
+  .set-item:not(:last-child)::after{content:""}
+  /* La fila en edicion no es una ficha, son once campos: en la rejilla de tres
+     columnas los cuatro de jugadores se quedaban en 44 px de ancho, porque el
+     marcador, que son seis casillas, se llevaba 239. Se apila entera. */
+  tbody tr:has(input){display:block}
+  tbody tr:has(input) td{margin-bottom:6px}
+  .desktop-only{display:none}
+  .tag{font-weight:400;font-size:0.75rem}
+  .mobile-only{
+    display:block;
+    margin:0 0 4px;
+    padding:3px 8px;
+    border-radius:var(--vt-r);
+    text-align:center;
+  }
+  .mobile-only:last-child{margin-bottom:0}
   .controls{gap:var(--vt-sm)}
   .controls label{flex:1;min-width:120px}
   .select{width:100%}
-}
-
-/* Mobile: score styling and inline sets */
-@media(max-width:720px){
-  .set-list{display:inline;font-size:calc(1rem - 3pt)}
-  .set-item{display:inline;margin-right:8px}
-  .team-break{display:block}
-  .th-res{display:none}
-  .th-full-res{display:inline}
-}
-@media(max-width:720px){
-  .team-break{display:block}
 }
 </style>
 </head>

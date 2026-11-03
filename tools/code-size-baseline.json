@@ -4,7 +4,7 @@
     "api/_db.js:ensureSchema": 122,
     "api/league-admin.js:createLeague": 83,
     "api/read.js:getResults": 80,
-    "front/pantallas/history/history.js:renderTable": 136,
+    "front/pantallas/history/history.js:renderTable": 135,
     "front/pantallas/players/players.js:buildDailyHistoricalSeries": 127,
     "front/pantallas/players/players.js:renderChart": 106,
     "front/pantallas/ranking/ranking.js:computeTournamentStandings": 64,

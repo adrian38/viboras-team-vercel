@@ -24,7 +24,6 @@ function anadirValorar(td, m){
   if(!valorables.has(id)) return
   const b = document.createElement('button')
   b.className = 'small-btn'
-  b.style.marginLeft = '6px'
   b.innerText = 'Valorar'
   // Con ?volver=: el «Atrás» de /valorar vuelve aqui, no a la portada.
   b.addEventListener('click', ()=>{ location.href = '/valorar?partido=' + id + '&volver=%2Fhistory' })
@@ -242,7 +241,6 @@ function renderTable(matches){
 
       const delBtn = document.createElement('button')
       delBtn.className = 'small-btn'
-      delBtn.style.marginLeft='6px'
       delBtn.innerText = 'Eliminar'
       delBtn.addEventListener('click',()=> deleteMatch(m))
 

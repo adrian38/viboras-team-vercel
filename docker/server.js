@@ -78,6 +78,31 @@ app.get('/health', async (_req, res) => {
   }
 });
 
+// El equivalente local de "cleanUrls": true de vercel.json, que hasta hoy no
+// tenia ninguno. Vercel redirige con un 308 cualquier URL acabada en .html a
+// la version sin extension, exista el fichero o no, y ANTES de mirar el
+// sistema de ficheros o las reescrituras. Medido el 2026-11-03 contra el
+// despliegue de dev:
+//
+//   /submit-result.html                  308 -> /submit-result
+//   /noexiste.html                       308 -> /noexiste   (y luego 404)
+//   /front/pantallas/history/index.html  308 -> /front/pantallas/history
+//   /index.html                          308 -> /
+//
+// Sin esto, los siete botones de la portada que navegan a 'history.html' y
+// companía funcionan en Vercel —dando un salto de mas— y daban 404 aqui. Una
+// diferencia asi entre local y produccion es justo lo que este servidor
+// existe para no tener.
+//
+// /index.html se queda fuera a proposito: aqui lo sirve la ruta de mas abajo
+// porque sw.js lo precachea por ese nombre. Que en Vercel sea un 308 es otra
+// historia y esta sin comprobar; ver ai_context/entorno_local_docker_y_proxies_neon.md.
+app.use((req, res, next) => {
+  if (!req.path.endsWith('.html') || req.path === '/index.html') return next();
+  const limpia = req.path.slice(0, -'.html'.length).replace(/\/index$/, '') || '/';
+  res.redirect(308, limpia + req.originalUrl.slice(req.path.length));
+});
+
 // Estaticos: front/, sw.js y los iconos que siguen en la raiz.
 app.use(express.static(ROOT, { extensions: ['html'] }));
 
