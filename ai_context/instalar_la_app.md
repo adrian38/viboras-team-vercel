@@ -56,9 +56,12 @@ declarar `related_applications` en el manifiesto, en iOS devuelve siempre vacío
 y no se puede comprobar en local. La ausencia del evento dice lo mismo y no
 cuesta nada.
 
-El aspa es para quien no la quiere instalar, no para quien ya la tiene: guarda
-la decisión en `localStorage` (`vt-instalar-no-ofrecer-v1`). Aceptar la calla
-sola, porque `appinstalled` quita la fila y el evento ya no vuelve.
+El aspa es «ahora no», no «nunca más»: guarda el cierre en **`sessionStorage`**
+(`vt-instalar-cerrado`), así que la fila vuelve en la siguiente apertura.
+Empezó en `localStorage` y duraba para siempre; se cambió el 2026-11-03 porque
+mientras no esté instalada sigue habiendo algo que ofrecer, y un «no» de hace
+tres semanas no es la respuesta de hoy. Lo que de verdad la calla es
+instalarla: `appinstalled` quita la fila y el evento ya no vuelve a llegar.
 
 ## En iPhone no se ofrece, porque allí no se puede saber
 

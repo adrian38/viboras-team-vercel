@@ -32,15 +32,18 @@
     navigator.standalone === true;
   if (instalada) return;
 
-  var CLAVE = 'vt-instalar-no-ofrecer-v1';
+  // sessionStorage y no localStorage: el aspa calla la fila mientras dure esta
+  // apertura y vuelve a la siguiente. Mientras no este instalada hay algo que
+  // ofrecer, y un «no» de hace tres semanas no es la respuesta de hoy.
+  var CLAVE = 'vt-instalar-cerrado';
   var evento = null;
 
-  function rechazada() {
-    try { return localStorage.getItem(CLAVE) === '1'; } catch (e) { return false; }
+  function cerradaAhora() {
+    try { return sessionStorage.getItem(CLAVE) === '1'; } catch (e) { return false; }
   }
 
-  function noOfrecerMas() {
-    try { localStorage.setItem(CLAVE, '1'); } catch (e) { /* sin almacenamiento */ }
+  function recordarCierre() {
+    try { sessionStorage.setItem(CLAVE, '1'); } catch (e) { /* sin almacenamiento */ }
   }
 
   function quitar() {
@@ -63,15 +66,15 @@
     return el;
   }
 
-  // El aspa es para quien no la quiere instalar: aceptar ya la calla sola, que
-  // instalada no vuelve a haber evento.
+  // El aspa es «ahora no», no «nunca mas»: instalarla ya la calla sola, porque
+  // entonces no vuelve a haber evento.
   function botonCerrar() {
     var b = document.createElement('button');
     b.type = 'button';
     b.className = 'vt-instalar__cerrar';
-    b.setAttribute('aria-label', 'No volver a ofrecer la instalación');
+    b.setAttribute('aria-label', 'Ahora no');
     b.appendChild(simbolo('close'));
-    b.addEventListener('click', function () { noOfrecerMas(); quitar(); });
+    b.addEventListener('click', function () { recordarCierre(); quitar(); });
     return b;
   }
 
@@ -118,7 +121,7 @@
     // El aviso lo damos en la tarjeta, no la barra que pone Chrome.
     e.preventDefault();
     evento = e;
-    if (rechazada() || hueco.firstChild) return;
+    if (cerradaAhora() || hueco.firstChild) return;
     tarjeta();
   });
 
