@@ -2,6 +2,24 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/site.webmanifest",
+      "has": [{ "type": "host", "value": ".*-git-dev-.*\\.vercel\\.app" }],
+      "destination": "/front/iconos-dev/site.webmanifest"
+    },
+    {
+      "source": "/site.webmanifest",
+      "destination": "/front/iconos/site.webmanifest"
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "has": [{ "type": "host", "value": ".*-git-dev-.*\\.vercel\\.app" }],
+      "destination": "/front/iconos-dev/apple-touch-icon.png"
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "destination": "/front/iconos/apple-touch-icon.png"
+    },
+    {
       "source": "/",
       "destination": "/front/pantallas/portada"
     },

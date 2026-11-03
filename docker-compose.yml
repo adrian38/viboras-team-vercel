@@ -93,6 +93,9 @@ services:
       VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-}"
       VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-}"
       VAPID_SUBJECT: "${VAPID_SUBJECT:-}"
+      # ICONOS=dev sirve en local los iconos de pruebas (fondo violeta), que
+      # es lo que se ve en el despliegue de la rama dev.
+      ICONOS: "${ICONOS:-}"
       USE_LOCAL_PG: "1"
       WS_PROXY: "wsproxy:80"
       HTTP_PROXY_NEON: "neon-http:4444"

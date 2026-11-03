@@ -108,9 +108,17 @@ El alcance de un service worker es la ruta desde la que se sirve. Desde
 No es orden; es la única ubicación posible.
 
 Los binarios —iconos, `favicon.ico`, `splash.mp4`, `splash-final.jpg`,
-`image.png`— y `site.webmanifest` también siguen en la raíz. Moverlos tocaría
-los cinco elementos PWA de las veinte páginas por un orden que no se puede
-comprobar en local, que es donde se ven los iconos de iOS.
+`image.png`— también siguen en la raíz. Moverlos tocaría los cinco elementos
+PWA de las veinte páginas por un orden que no se puede comprobar en local, que
+es donde se ven los iconos de iOS.
+
+`site.webmanifest` y `apple-touch-icon.png` sí se movieron, el 2026-11-03, a
+`front/iconos/`, y **sin tocar las veinte páginas**: las URLs siguen siendo
+`/site.webmanifest` y `/apple-touch-icon.png`, resueltas por un rewrite. La
+mudanza no era el objetivo sino el precio: Vercel mira primero el sistema de
+ficheros, así que mientras el fichero estuviera en la raíz no había rewrite
+que pudiera servir otro en su lugar, y la rama `dev` no podía tener su propio
+icono (`iconos_pwa.md`).
 
 ## Lo que hubo que tocar en las guardas
 

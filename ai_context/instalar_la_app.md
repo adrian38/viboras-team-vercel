@@ -34,10 +34,18 @@ son dos ediciones: su `<script>` en el `<head>` y el `<div>` donde toque. Va en
 el `<head>` con `defer` y no al pie porque tiene que estar escuchando antes de
 que Chrome emita `beforeinstallprompt`.
 
-Una sola rama: el evento `beforeinstallprompt` de Android/Chrome, guardado y
-disparado desde el botón «Instalar», que instala en un toque. Nada se pinta si
-la app está abierta desde su icono (`display-mode: standalone`, o
-`navigator.standalone` en Safari).
+Dos ramas, porque los dos navegadores dan cosas distintas:
+
+- **Android/Chrome**: el evento `beforeinstallprompt`, guardado y disparado
+  desde el botón «Instalar», que instala en un toque. La fila no se pinta hasta
+  recibirlo.
+- **iPhone/Safari**: no hay evento ni API que instale, así que la fila son
+  instrucciones —Compartir → «Añadir a pantalla de inicio»—, sin botón, y se
+  pinta al cargar.
+
+Nada se pinta si la app está abierta desde su icono (`display-mode: standalone`,
+o `navigator.standalone` en Safari). La detección de iOS es la misma que la de
+`avisos-push.js`, con su `MacIntel` + `maxTouchPoints` para el iPad.
 
 Sus dos iconos, `install_mobile` y `close`, hubo que añadirlos a `icon_names`
 del `@import` de `theme.css`. El síntoma de olvidarlo no es un hueco: la fila
@@ -63,10 +71,10 @@ mientras no esté instalada sigue habiendo algo que ofrecer, y un «no» de hace
 tres semanas no es la respuesta de hoy. Lo que de verdad la calla es
 instalarla: `appinstalled` quita la fila y el evento ya no vuelve a llegar.
 
-## En iPhone no se ofrece, porque allí no se puede saber
+## En iPhone se pregunta, porque allí no se puede saber
 
-La regla es que el botón sólo sale si **no** la tienes instalada, y en Safari
-eso no se puede saber:
+En Android la regla es que la fila sólo sale si **no** la tienes instalada. En
+Safari eso no se puede saber:
 
 - La app instalada en la pantalla de inicio tiene su **propio almacenamiento**.
   Ni `localStorage` ni una cookie escritos desde dentro de la app se leen desde
@@ -79,14 +87,21 @@ eso no se puede saber:
 La única vía que quedaría es marcarlo en el servidor cuando la cuenta abre la
 app en modo standalone, y eso diría «esta **cuenta** la abrió instalada alguna
 vez», no «este **teléfono** la tiene». A quien entra desde el iPad le mentiría.
-Mientras no haya un dato de verdad, en iPhone no se pinta nada.
 
-Quien entra por Safari **sin** instalarla sigue viendo cómo se hace en el
-diálogo de `avisos-push.js`, que es donde de verdad importa: en iPhone sin
-instalar no hay push. Ese diálogo tiene el mismo punto ciego —se lo enseña
-también a quien ya la tiene y entra por Safari—, con dos atenuantes: sólo sale
-con la sesión abierta y una vez por sesión, y lleva su «no volver a
-recordármelo».
+**Se asume el punto ciego, y por eso el texto pregunta.** Del 2026-11-03 al
+mismo día, en iPhone no se pintaba nada; se añadió la rama porque el grupo
+reparte los enlaces por WhatsApp y en iOS ésos abren Safari, así que quien no
+tiene la app no se entera nunca de que existe. Lo que **no** se puede hacer es
+decirle «instala la app» a quien ya la tiene abriendo ese mismo enlace: el
+título es `¿Tienes la app en el móvil?` y el detalle empieza por «Si aún no».
+Pregunta, no afirma, que es la diferencia entre una fila inútil y una etiqueta
+falsa (`AGENTS.md`, «ningún dato de la pantalla es inventado»). El aspa la
+calla hasta la siguiente apertura.
+
+Mismo punto ciego, y la misma explicación, en el diálogo de `avisos-push.js`
+(estado `instalar`), que es donde de verdad importa —en iPhone sin instalar no
+hay push— y que además sólo sale con la sesión abierta, una vez por sesión, y
+lleva su «no volver a recordármelo».
 
 ## El manifiesto no recarga en caliente
 

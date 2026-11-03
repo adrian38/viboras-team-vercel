@@ -129,8 +129,10 @@ que hay.
   queda fuera del service worker, cómo se invalida la caché y cómo se prueba sin
   poder registrarlo en local.
 - `iconos_pwa.md`: qué iconos hay y por qué, por qué el maskable va al 72 %, la
-  limitación de reescalar desde 256 px y qué mirar cuando Chrome dice
-  «Instalando…» y no aparece nada.
+  limitación de reescalar desde 256 px, cómo la rama `dev` instala un icono
+  violeta sin tocar las veinte páginas —y por qué el manifiesto tuvo que salir
+  de la raíz para conseguirlo— y qué mirar cuando Chrome dice «Instalando…» y
+  no aparece nada.
 - `instalar_la_app.md`: por qué no existe ni puede existir un botón «abrir en
   la app» desde el navegador, qué pide a cambio `handle_links` en el
   manifiesto, la fila que ofrece instalar en la portada, por qué la ausencia
