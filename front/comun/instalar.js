@@ -7,19 +7,19 @@
 // puede es que el enlace no llegue al navegador, y eso lo pide
 // "handle_links": "preferred" en site.webmanifest.
 //
-// Solo se ofrece donde el navegador deja saber que NO esta instalada, y eso
-// hoy es Android/Chrome: el evento beforeinstallprompt, que Chrome no emite
-// cuando la app ya esta puesta. Guardado y disparado desde un clic, instala en
-// un toque.
+// Dos ramas, porque los dos navegadores dan cosas distintas:
 //
-// En iPhone no se ofrece nada. No es que no haya forma de instalar —Compartir
-// y «Anadir a pantalla de inicio»—, es que Safari no dice si ya esta hecho:
-// la app instalada tiene su propio almacenamiento, asi que ni localStorage ni
-// una cookie cruzan de una a otra, y getInstalledRelatedApps() no existe alli.
-// Ofrecerlo a ciegas seria ensenarle «instala la app» a quien ya la tiene.
-// Quien entra por Safari sin instalarla sigue viendo como se hace en el
-// dialogo de avisos (avisos-push.js, estado 'instalar'), que es donde importa:
-// en iPhone sin instalar no hay push.
+//   - Android/Chrome: el evento beforeinstallprompt, que Chrome no emite
+//     cuando la app ya esta puesta. Guardado y disparado desde un clic,
+//     instala en un toque, y la fila no se pinta hasta recibirlo.
+//   - iPhone/Safari: no hay evento ni API que instale, solo Compartir y
+//     «Anadir a pantalla de inicio», asi que la fila son instrucciones y se
+//     pinta al cargar. Lo que NO se puede saber alli es si ya esta instalada:
+//     la app tiene su propio almacenamiento, asi que ni localStorage ni una
+//     cookie cruzan de una a otra, y getInstalledRelatedApps() no existe. Por
+//     eso el titulo pregunta en vez de afirmar: a quien la tiene y entra por
+//     Safari —el enlace de WhatsApp— la fila le sigue saliendo, y el aspa la
+//     calla hasta la siguiente apertura.
 //
 // Detalle: ai_context/instalar_la_app.md
 (function () {
@@ -31,6 +31,11 @@
   var instalada = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ||
     navigator.standalone === true;
   if (instalada) return;
+
+  // La misma deteccion que avisos-push.js: el iPad se declara MacIntel desde
+  // iPadOS 13 y solo lo delata que tenga tactil.
+  var esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   // sessionStorage y no localStorage: el aspa calla la fila mientras dure esta
   // apertura y vuelve a la siguiente. Mientras no este instalada hay algo que
@@ -66,8 +71,9 @@
     return el;
   }
 
-  // El aspa es «ahora no», no «nunca mas»: instalarla ya la calla sola, porque
-  // entonces no vuelve a haber evento.
+  // El aspa es «ahora no», no «nunca mas». En Android instalarla ya la calla
+  // sola, porque entonces no vuelve a haber evento; en iPhone solo la calla
+  // abrir la app desde su icono, que es cuando standalone es true.
   function botonCerrar() {
     var b = document.createElement('button');
     b.type = 'button';
@@ -78,29 +84,42 @@
     return b;
   }
 
-  function tarjeta() {
+  // El armazon que comparten las dos ramas: icono, titulo y subtitulo. El
+  // aspa la pone cada una al final, que va detras del boton cuando lo hay.
+  function tarjeta(titulo, sub) {
     var caja = document.createElement('div');
     caja.className = 'vt-instalar';
     caja.appendChild(fila('vt-instalar__icono', simbolo('install_mobile')));
 
     var texto = fila('vt-instalar__texto');
-    var titulo = fila('vt-instalar__titulo');
-    titulo.textContent = 'Instala la app';
+    var cabeza = fila('vt-instalar__titulo');
+    cabeza.textContent = titulo;
     var detalle = fila('vt-instalar__sub');
-    detalle.textContent = 'Queda con su icono en el móvil y se abre sin las barras del navegador.';
-    texto.appendChild(titulo);
+    detalle.textContent = sub;
+    texto.appendChild(cabeza);
     texto.appendChild(detalle);
     caja.appendChild(texto);
+    hueco.appendChild(caja);
+    return { caja: caja, detalle: detalle };
+  }
 
+  function tarjetaAndroid() {
+    var t = tarjeta('Instala la app', 'Queda con su icono en el móvil y se abre sin las barras del navegador.');
     var boton = document.createElement('button');
     boton.type = 'button';
     boton.className = 'vt-btn vt-btn--sm vt-instalar__accion';
     boton.textContent = 'Instalar';
-    boton.addEventListener('click', function () { instalar(boton, detalle); });
-    caja.appendChild(boton);
+    boton.addEventListener('click', function () { instalar(boton, t.detalle); });
+    t.caja.appendChild(boton);
+    t.caja.appendChild(botonCerrar());
+  }
 
-    caja.appendChild(botonCerrar());
-    hueco.appendChild(caja);
+  // Sin boton: en iOS ninguna API instala, el camino es el menu del sistema.
+  // El titulo pregunta porque desde Safari no se sabe si ya esta instalada.
+  function tarjetaIOS() {
+    var t = tarjeta('¿Tienes la app en el móvil?',
+      'Si aún no, pulsa Compartir y luego «Añadir a pantalla de inicio».');
+    t.caja.appendChild(botonCerrar());
   }
 
   // El navegador solo da un beforeinstallprompt por carga: si dice que no, el
@@ -117,12 +136,19 @@
     });
   }
 
+  // iOS no emite beforeinstallprompt ni appinstalled: no hay nada que
+  // esperar, se pinta al cargar y aqui se acaba el script.
+  if (esIOS) {
+    if (!cerradaAhora()) tarjetaIOS();
+    return;
+  }
+
   window.addEventListener('beforeinstallprompt', function (e) {
     // El aviso lo damos en la tarjeta, no la barra que pone Chrome.
     e.preventDefault();
     evento = e;
     if (cerradaAhora() || hueco.firstChild) return;
-    tarjeta();
+    tarjetaAndroid();
   });
 
   window.addEventListener('appinstalled', quitar);
