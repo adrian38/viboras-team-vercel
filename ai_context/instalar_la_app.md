@@ -34,15 +34,10 @@ son dos ediciones: su `<script>` en el `<head>` y el `<div>` donde toque. Va en
 el `<head>` con `defer` y no al pie porque tiene que estar escuchando antes de
 que Chrome emita `beforeinstallprompt`.
 
-Dos ramas, porque los dos móviles del grupo no se parecen en esto:
-
-| Dónde | Qué ofrece |
-| --- | --- |
-| Android, Chrome | El evento `beforeinstallprompt`, guardado y disparado desde el botón «Instalar»: instala en un toque. |
-| iPhone | No hay API. Sólo dice dónde está: Compartir → «Añadir a pantalla de inicio». |
-
-Nada de esto se pinta si la app está abierta desde su icono
-(`display-mode: standalone`, o `navigator.standalone` en Safari).
+Una sola rama: el evento `beforeinstallprompt` de Android/Chrome, guardado y
+disparado desde el botón «Instalar», que instala en un toque. Nada se pinta si
+la app está abierta desde su icono (`display-mode: standalone`, o
+`navigator.standalone` en Safari).
 
 Sus dos iconos, `install_mobile` y `close`, hubo que añadirlos a `icon_names`
 del `@import` de `theme.css`. El síntoma de olvidarlo no es un hueco: la fila
@@ -61,19 +56,34 @@ declarar `related_applications` en el manifiesto, en iOS devuelve siempre vacío
 y no se puede comprobar en local. La ausencia del evento dice lo mismo y no
 cuesta nada.
 
-En iPhone no hay ninguna señal: alguien que la tenga instalada y además entre
-por Safari verá la fila. Para eso está el aspa, que guarda la decisión en
-`localStorage` (`vt-instalar-no-ofrecer-v1`). En Android el aspa también está,
-pero ahí sobra en cuanto acepta: `appinstalled` quita la fila.
+El aspa es para quien no la quiere instalar, no para quien ya la tiene: guarda
+la decisión en `localStorage` (`vt-instalar-no-ofrecer-v1`). Aceptar la calla
+sola, porque `appinstalled` quita la fila y el evento ya no vuelve.
 
-## Se dice dos veces en el iPhone
+## En iPhone no se ofrece, porque allí no se puede saber
 
-`avisos-push.js` ya tiene un estado `instalar` que pide lo mismo —instalar la
-app— en el diálogo que sale al abrir, porque en iPhone **sin instalar no hay
-push** ([[avisos_push]]). Son dos sitios con el mismo mensaje, cada uno por su
-motivo: el diálogo habla de los avisos y sale una vez por sesión y sólo con la
-sesión abierta; la fila habla de la app y se queda. Si alguna vez molesta, lo
-que se quita es el estado `instalar` del diálogo, no la fila.
+La regla es que el botón sólo sale si **no** la tienes instalada, y en Safari
+eso no se puede saber:
+
+- La app instalada en la pantalla de inicio tiene su **propio almacenamiento**.
+  Ni `localStorage` ni una cookie escritos desde dentro de la app se leen desde
+  Safari, así que no sirve que la app se marque a sí misma.
+- `navigator.standalone` sólo es `true` dentro de la app; desde Safari no dice
+  nada de si existe.
+- `navigator.getInstalledRelatedApps()` no está en iOS.
+- No hay `appinstalled`: iOS no avisa de que se añadió a la pantalla de inicio.
+
+La única vía que quedaría es marcarlo en el servidor cuando la cuenta abre la
+app en modo standalone, y eso diría «esta **cuenta** la abrió instalada alguna
+vez», no «este **teléfono** la tiene». A quien entra desde el iPad le mentiría.
+Mientras no haya un dato de verdad, en iPhone no se pinta nada.
+
+Quien entra por Safari **sin** instalarla sigue viendo cómo se hace en el
+diálogo de `avisos-push.js`, que es donde de verdad importa: en iPhone sin
+instalar no hay push. Ese diálogo tiene el mismo punto ciego —se lo enseña
+también a quien ya la tiene y entra por Safari—, con dos atenuantes: sólo sale
+con la sesión abierta y una vez por sesión, y lleva su «no volver a
+recordármelo».
 
 ## El manifiesto no recarga en caliente
 

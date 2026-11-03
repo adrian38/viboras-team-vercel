@@ -7,15 +7,19 @@
 // puede es que el enlace no llegue al navegador, y eso lo pide
 // "handle_links": "preferred" en site.webmanifest.
 //
-// Dos ramas, porque los dos moviles del grupo no se parecen en esto:
-//   - Android/Chrome: el evento beforeinstallprompt. Guardado y disparado desde
-//     un clic, instala en un toque.
-//   - iPhone: no hay API ninguna. Solo se puede decir donde esta la opcion,
-//     igual que ya hace avisos-push.js en su estado 'instalar'.
+// Solo se ofrece donde el navegador deja saber que NO esta instalada, y eso
+// hoy es Android/Chrome: el evento beforeinstallprompt, que Chrome no emite
+// cuando la app ya esta puesta. Guardado y disparado desde un clic, instala en
+// un toque.
 //
-// Que beforeinstallprompt NO llegue es la senal de que ya esta instalada:
-// Chrome no lo emite cuando la app ya esta puesta. Por eso en Android no se
-// pinta nada hasta recibirlo y nadie recibe la oferta dos veces.
+// En iPhone no se ofrece nada. No es que no haya forma de instalar —Compartir
+// y «Anadir a pantalla de inicio»—, es que Safari no dice si ya esta hecho:
+// la app instalada tiene su propio almacenamiento, asi que ni localStorage ni
+// una cookie cruzan de una a otra, y getInstalledRelatedApps() no existe alli.
+// Ofrecerlo a ciegas seria ensenarle «instala la app» a quien ya la tiene.
+// Quien entra por Safari sin instalarla sigue viendo como se hace en el
+// dialogo de avisos (avisos-push.js, estado 'instalar'), que es donde importa:
+// en iPhone sin instalar no hay push.
 //
 // Detalle: ai_context/instalar_la_app.md
 (function () {
@@ -27,9 +31,6 @@
   var instalada = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ||
     navigator.standalone === true;
   if (instalada) return;
-
-  var esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   var CLAVE = 'vt-instalar-no-ofrecer-v1';
   var evento = null;
@@ -62,8 +63,8 @@
     return el;
   }
 
-  // El aspa guarda la decision: en el iPhone es la unica forma de silenciarlo,
-  // porque alli no hay evento que deje de llegar.
+  // El aspa es para quien no la quiere instalar: aceptar ya la calla sola, que
+  // instalada no vuelve a haber evento.
   function botonCerrar() {
     var b = document.createElement('button');
     b.type = 'button';
@@ -74,7 +75,7 @@
     return b;
   }
 
-  function tarjeta(sub, alPulsar) {
+  function tarjeta() {
     var caja = document.createElement('div');
     caja.className = 'vt-instalar';
     caja.appendChild(fila('vt-instalar__icono', simbolo('install_mobile')));
@@ -83,19 +84,17 @@
     var titulo = fila('vt-instalar__titulo');
     titulo.textContent = 'Instala la app';
     var detalle = fila('vt-instalar__sub');
-    detalle.textContent = sub;
+    detalle.textContent = 'Queda con su icono en el móvil y se abre sin las barras del navegador.';
     texto.appendChild(titulo);
     texto.appendChild(detalle);
     caja.appendChild(texto);
 
-    if (alPulsar) {
-      var boton = document.createElement('button');
-      boton.type = 'button';
-      boton.className = 'vt-btn vt-btn--sm vt-instalar__accion';
-      boton.textContent = 'Instalar';
-      boton.addEventListener('click', function () { alPulsar(boton, detalle); });
-      caja.appendChild(boton);
-    }
+    var boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'vt-btn vt-btn--sm vt-instalar__accion';
+    boton.textContent = 'Instalar';
+    boton.addEventListener('click', function () { instalar(boton, detalle); });
+    caja.appendChild(boton);
 
     caja.appendChild(botonCerrar());
     hueco.appendChild(caja);
@@ -115,19 +114,13 @@
     });
   }
 
-  if (esIOS) {
-    if (!rechazada()) {
-      tarjeta('Pulsa Compartir y luego «Añadir a pantalla de inicio». En el iPhone es además el único modo de recibir avisos.', null);
-    }
-  } else {
-    window.addEventListener('beforeinstallprompt', function (e) {
-      // El aviso lo damos en la tarjeta, no la barra que pone Chrome.
-      e.preventDefault();
-      evento = e;
-      if (rechazada() || hueco.firstChild) return;
-      tarjeta('Queda con su icono en el móvil y se abre sin las barras del navegador.', instalar);
-    });
-  }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    // El aviso lo damos en la tarjeta, no la barra que pone Chrome.
+    e.preventDefault();
+    evento = e;
+    if (rechazada() || hueco.firstChild) return;
+    tarjeta();
+  });
 
   window.addEventListener('appinstalled', quitar);
 })();

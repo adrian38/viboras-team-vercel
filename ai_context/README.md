@@ -133,10 +133,10 @@ que hay.
   «Instalando…» y no aparece nada.
 - `instalar_la_app.md`: por qué no existe ni puede existir un botón «abrir en
   la app» desde el navegador, qué pide a cambio `handle_links` en el
-  manifiesto, la fila que ofrece instalar en la portada y sus dos ramas
-  (`beforeinstallprompt` en Android, instrucciones en iPhone), por qué la
-  ausencia del evento ya dice que está instalada, y por qué el manifiesto no
-  recarga en caliente en Docker.
+  manifiesto, la fila que ofrece instalar en la portada, por qué la ausencia
+  de `beforeinstallprompt` ya dice que está instalada y por qué en iPhone no
+  se ofrece nada —Safari no deja saberlo—, y por qué el manifiesto no recarga
+  en caliente en Docker.
 - `avisos_push.md`: los avisos de la campanita como notificación del móvil;
   qué manda push y desde dónde, por qué la pregunta sale una vez por cuenta y
   dispositivo y el permiso sólo desde un clic, el iPhone sin instalar, las
