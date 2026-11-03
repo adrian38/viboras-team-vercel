@@ -131,6 +131,12 @@ que hay.
 - `iconos_pwa.md`: qué iconos hay y por qué, por qué el maskable va al 72 %, la
   limitación de reescalar desde 256 px y qué mirar cuando Chrome dice
   «Instalando…» y no aparece nada.
+- `instalar_la_app.md`: por qué no existe ni puede existir un botón «abrir en
+  la app» desde el navegador, qué pide a cambio `handle_links` en el
+  manifiesto, la fila que ofrece instalar en la portada y sus dos ramas
+  (`beforeinstallprompt` en Android, instrucciones en iPhone), por qué la
+  ausencia del evento ya dice que está instalada, y por qué el manifiesto no
+  recarga en caliente en Docker.
 - `avisos_push.md`: los avisos de la campanita como notificación del móvil;
   qué manda push y desde dónde, por qué la pregunta sale una vez por cuenta y
   dispositivo y el permiso sólo desde un clic, el iPhone sin instalar, las

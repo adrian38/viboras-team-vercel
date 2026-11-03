@@ -14,6 +14,10 @@
 <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
 <script src="/front/comun/splash.js"></script>
 <script src="/front/comun/pwa.js" defer></script>
+<!-- Solo aqui, no en las veinte: el hueco #vtInstalar esta en esta pagina.
+     Va en el <head> y no al pie porque tiene que estar escuchando antes de que
+     Chrome emita beforeinstallprompt. Detalle: ai_context/instalar_la_app.md -->
+<script src="/front/comun/instalar.js" defer></script>
 <script src="/front/comun/auth-client.js" defer></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
@@ -291,6 +295,12 @@ label.small{
        letra fina de «VÍBORAS TEAM» que lleva dentro. -->
   <h1><img src="/icon-512.png" alt="Víboras Team" width="200" height="200" style="max-width:62vw;height:auto"></h1>
 </div>
+
+<!-- Aqui pinta instalar.js la oferta de instalar la app, y nada si ya lo esta
+     o si el navegador no la ofrece. Fuera de .site a proposito: en escritorio
+     .site es una rejilla con areas con nombre y una fila mas descuadraria las
+     cuatro tarjetas. -->
+<div id="vtInstalar"></div>
 
 <div class="site">
 
