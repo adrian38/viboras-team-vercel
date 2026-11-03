@@ -57,6 +57,34 @@ producción y en local llega vacío: hasta el 2026-10-17 votar desde `/day`
 fallaba en local con «missing data» sin que la página dijera nada. Todo
 `fetch` que mande JSON lleva `Content-Type: application/json`.
 
+## `cleanUrls` también hay que imitarlo: el 308 de las URL con `.html`
+
+`vercel.json` lleva `"cleanUrls": true`, y eso no es sólo que las rutas se
+sirvan sin extensión: Vercel **redirige con un 308** cualquier URL acabada en
+`.html` a la versión sin ella, exista el fichero o no, y lo hace antes de mirar
+el sistema de ficheros y antes de las reescrituras. Medido el 2026-11-03 contra
+el despliegue de `dev`:
+
+| URL | Vercel |
+| --- | --- |
+| `/submit-result.html` | 308 → `/submit-result` |
+| `/noexiste.html` | 308 → `/noexiste` (y después 404) |
+| `/front/pantallas/history/index.html` | 308 → `/front/pantallas/history` |
+| `/index.html` | 308 → `/` |
+
+El servidor local no hacía nada de eso y daba 404. Se notó porque siete botones
+de la portada siguen navegando a `history.html`, `rating.html` y compañía: en
+Vercel funcionan dando un salto de más, y en local no funcionaban. **El 404 era
+del entorno local, no de los botones**, y por eso se arregló aquí y no en la
+portada.
+
+`docker/server.js` tiene ahora ese 308, delante de los estáticos. Con una
+excepción deliberada: **`/index.html` lo sigue sirviendo la ruta de la portada**,
+porque `sw.js` precachea ese nombre y `cache.addAll` falla entero si una de sus
+URL responde con una redirección. Que en Vercel sea un 308 está medido; lo que
+eso le hace al precaché en producción **no está comprobado** y se mira con el
+arnés de [[service_worker]].
+
 ## Los service workers no se pueden probar en local
 
 El navegador integrado no registra service workers sobre `http://localhost`
