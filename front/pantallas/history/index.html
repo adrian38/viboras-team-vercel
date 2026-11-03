@@ -205,7 +205,11 @@ td:nth-child(4) button + button{margin-left:6px}
        largo, «Guillermo P / Diego Gonzalez», para no partirse. */
     grid-template-columns:18px 1fr auto;
     align-items:center;
-    gap:4px var(--vt-sm);
+    /* Aire entre los nombres y el marcador, y entre los nombres y los botones.
+       Lo que la columna de nombres pierde con el hueco de 16 px lo devuelven
+       las pildoras, con 8 px de padding lateral en vez de 10, y el marcador,
+       con 6 px entre sets en vez de 8. */
+    gap:var(--vt-sm) var(--vt-md);
     padding:var(--vt-sm) 0;
     border-bottom:1px solid var(--vt-border);
   }
@@ -226,7 +230,7 @@ td:nth-child(4) button + button{margin-left:6px}
     display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;
   }
   td:nth-child(4) button + button{margin-left:0}
-  .set-list{display:flex;justify-content:flex-end;gap:8px}
+  .set-list{display:flex;justify-content:flex-end;gap:6px}
   .set-item{display:inline}
   .set-item:not(:last-child)::after{content:""}
   /* La fila en edicion no es una ficha, son once campos: en la rejilla de tres
@@ -239,6 +243,7 @@ td:nth-child(4) button + button{margin-left:6px}
   .mobile-only{
     display:block;
     margin:0 0 4px;
+    padding:3px 8px;
     border-radius:var(--vt-r);
     text-align:center;
   }
