@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/site.webmanifest",
-      "has": [{ "type": "host", "value": ".*-git-.*\\.vercel\\.app" }],
+      "has": [{ "type": "host", "value": ".*-git-dev-.*\\.vercel\\.app" }],
       "destination": "/front/iconos-dev/site.webmanifest"
     },
     {
@@ -12,7 +12,7 @@
     },
     {
       "source": "/apple-touch-icon.png",
-      "has": [{ "type": "host", "value": ".*-git-.*\\.vercel\\.app" }],
+      "has": [{ "type": "host", "value": ".*-git-dev-.*\\.vercel\\.app" }],
       "destination": "/front/iconos-dev/apple-touch-icon.png"
     },
     {

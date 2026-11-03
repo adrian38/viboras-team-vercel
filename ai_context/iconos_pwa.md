@@ -46,9 +46,21 @@ front/iconos-dev/   los mismos + icon-192/512/maskable-512     ramas de pruebas
 
 **Las páginas no cambian.** Siguen pidiendo `/site.webmanifest` y
 `/apple-touch-icon.png`, igual en las veinte; lo que cambia es a qué fichero
-resuelven esas dos URLs. El rewrite mira el host: cualquier
-`*-git-*.vercel.app` —el alias estable de una rama— se lleva los de pruebas, y
-todo lo demás los de producción.
+resuelven esas dos URLs. El rewrite mira el host: `*-git-dev-*.vercel.app` —el
+alias estable de la rama `dev`— se lleva los de pruebas, y todo lo demás los de
+producción.
+
+### Por qué el patrón nombra a `dev` y no a cualquier rama
+
+La primera versión decía `*-git-*`, con la idea de que cualquier rama de
+pruebas quedara cubierta. Está mal: **Vercel crea un alias de rama también
+para `viboras`**, `viboras-team-vercel-git-viboras-<scope>.vercel.app`, y ése
+lleva `-git-` igual que los demás. Por esa URL, producción habría instalado el
+icono de pruebas.
+
+El precio es que una rama de pruebas nueva no se lleva el violeta hasta que se
+la añada aquí a mano. Es el lado barato de equivocarse: olvidarlo deja la rama
+nueva con el icono del grupo, no al revés.
 
 ### Por qué hubo que sacarlos de la raíz
 
