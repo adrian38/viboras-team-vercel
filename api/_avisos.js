@@ -58,10 +58,39 @@ async function estadoNeutro() {
     END $$`;
 }
 
+// Una revancha comparte pantalla y eleccion con los demas partidos del mismo
+// dia entre los mismos cuatro. Las filas siguen separadas por partido para
+// saber si cada uno esta valorado, pero toda lectura estadistica usa una sola
+// opinion logica. Si unas copias antiguas discrepan, manda la mas reciente.
+async function crearVistaOpiniones() {
+  await sql`
+    CREATE OR REPLACE VIEW match_feedback_por_dia AS
+    SELECT fecha, jugadores, rater_player_id, rated_player_id,
+      (array_agg(actitud ORDER BY updated_at DESC, id DESC)
+        FILTER (WHERE actitud IS NOT NULL))[1] AS actitud,
+      (array_agg(nivel ORDER BY updated_at DESC, id DESC)
+        FILTER (WHERE nivel IS NOT NULL))[1] AS nivel
+    FROM (
+      SELECT f.*, CASE
+          WHEN m.date ~ '^\\d{4}-\\d{2}-\\d{2}$' THEN m.date::date
+          WHEN m.date ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(m.date, 'DD/MM/YYYY')
+        END AS fecha,
+        ARRAY(SELECT jugador FROM unnest(ARRAY[
+          m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id
+        ]) AS jugador ORDER BY jugador) AS jugadores
+      FROM match_feedback f JOIN matches m ON m.id = f.match_id
+      WHERE f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+        AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+    ) opiniones
+    WHERE fecha IS NOT NULL
+    GROUP BY fecha, jugadores, rater_player_id, rated_player_id`;
+}
+
 // Memoizada y reintentable, como ensureAuthSchema: si falla, la siguiente
 // peticion lo vuelve a intentar.
 export function ensureAvisosSchema() {
-  if (!listo) listo = crearTablas().then(estadoNeutro).catch((err) => { listo = null; throw err; });
+  if (!listo) listo = crearTablas().then(estadoNeutro).then(crearVistaOpiniones)
+    .catch((err) => { listo = null; throw err; });
   return listo;
 }
 

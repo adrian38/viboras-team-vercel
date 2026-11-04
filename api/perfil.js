@@ -168,11 +168,8 @@ async function valoraciones(playerId) {
       count(*) FILTER (WHERE f.nivel IS NOT NULL)::int AS nivel_votos,
       COALESCE(SUM(CASE f.nivel
         WHEN 'por_debajo' THEN -1 WHEN 'por_encima' THEN 1 ELSE 0 END), 0)::int AS nivel_neto
-    FROM match_feedback f
-    JOIN matches m ON m.id = f.match_id
-    WHERE f.rated_player_id = ${playerId}
-      AND f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
-      AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)`;
+    FROM match_feedback_por_dia f
+    WHERE f.rated_player_id = ${playerId}`;
   const v = rows[0];
   // El filtro no sobra: partidosParaValorar() devuelve TODOS los partidos
   // recientes con lo que falta de cada uno, no solo los que tienen algo

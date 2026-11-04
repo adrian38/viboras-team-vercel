@@ -235,18 +235,12 @@ async function getNivelVotos(req, res) {
   try {
     await ensureAvisosSchema();
     const { rows } = await sql`
-      SELECT to_char(CASE
-          WHEN m.date ~ '^\\d{4}-\\d{2}-\\d{2}$' THEN m.date::date
-          WHEN m.date ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(m.date, 'DD/MM/YYYY')
-        END, 'YYYY-MM-DD') AS fecha,
+      SELECT to_char(f.fecha, 'YYYY-MM-DD') AS fecha,
         p.name AS jugador,
         SUM(CASE f.nivel WHEN 'en_su_nivel' THEN 1 ELSE -1 END)::int AS neto
-      FROM match_feedback f
-      JOIN matches m ON m.id = f.match_id
+      FROM match_feedback_por_dia f
       JOIN players p ON p.id = f.rated_player_id
       WHERE f.nivel IS NOT NULL
-        AND f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
-        AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
       GROUP BY 1, 2
       HAVING SUM(CASE f.nivel WHEN 'en_su_nivel' THEN 1 ELSE -1 END) <> 0`;
     res.setHeader('cache-control', 'no-store');
@@ -282,11 +276,8 @@ function filasDeComunidad() {
         count(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
         count(*) FILTER (WHERE f.actitud = 'neutro')::int AS neutro,
         count(*) FILTER (WHERE f.actitud = 'mejorable')::int AS mejorable
-      FROM match_feedback f
-      JOIN matches m ON m.id = f.match_id
+      FROM match_feedback_por_dia f
       WHERE f.actitud IS NOT NULL
-        AND f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
-        AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
       GROUP BY f.rated_player_id
     )
     SELECT p.id, p.name, p.court_side,
@@ -349,11 +340,8 @@ async function getAmbiente(req, res) {
         COUNT(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
         COUNT(*) FILTER (WHERE f.actitud = 'neutro')::int AS neutro,
         COUNT(*) FILTER (WHERE f.actitud = 'mejorable')::int AS mejorable
-      FROM match_feedback f
-      JOIN matches m ON m.id = f.match_id
+      FROM match_feedback_por_dia f
       WHERE f.actitud IS NOT NULL
-        AND f.rater_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
-        AND f.rated_player_id IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
       GROUP BY f.rated_player_id`;
     res.setHeader('cache-control', 'no-store');
     res.status(200).json({ ok: true, ambiente: rows });
