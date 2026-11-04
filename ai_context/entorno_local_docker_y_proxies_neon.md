@@ -11,6 +11,11 @@ existen sólo porque `@vercel/postgres` **no habla con un Postgres normal**:
 | `app` | Express que imita a Vercel: sirve los `.html` y enruta `api/*.js` como si fueran funciones. Cada endpoint nuevo necesita su línea en `FUNCTIONS` de `docker/server.js`. |
 | `mailpit` | Buzón de pruebas: recoge los correos de la app y no los manda fuera. Se leen en `http://localhost:8025`, y por API en `/api/v1/search?query=to:…` ([[cuentas_y_sesiones]]). |
 
+La app se publica en **`http://localhost:3001`** (el proceso sigue escuchando
+en el 3000 dentro del contenedor). Se cambió el 2026-11-04 porque otro proyecto
+del equipo ya ocupa el 3000. `APP_URL` usa también el 3001 para que los enlaces
+de los correos locales apunten al origen que realmente sirve Docker.
+
 El servidor local está en `docker/server.js` y **no modifica** los ficheros de
 `api/`: los importa tal cual, replicando el contrato que esperan
 (`req.query`, `req.body`, `res.status().json()`). `extensions: ['html']` de

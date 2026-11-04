@@ -18,7 +18,7 @@ en vez de en una pestaña.
 
 **No está comprobado.** Es una línea declarativa y no se puede medir en local:
 hace falta el WebAPK real instalado desde un despliegue con HTTPS, y el entorno
-de Docker sirve `http://localhost:3000`. Si alguna vez se comprueba en el móvil,
+de Docker sirve `http://localhost:3001`. Si alguna vez se comprueba en el móvil,
 el resultado va aquí. En iPhone no hay nada que esperar: Safari nunca cede el
 enlace a la app instalada.
 

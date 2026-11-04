@@ -2,7 +2,7 @@
 #
 #   docker compose up -d --build
 #   docker compose exec postgres psql -U postgres -d padel -f /backups/<fichero>.sql
-#   -> http://localhost:3000
+#   -> http://localhost:3001
 
 name: viboras-team-vercel
 
@@ -87,7 +87,7 @@ services:
       SMTP_USER: "${SMTP_USER:-}"
       SMTP_PASS: "${SMTP_PASS:-}"
       MAIL_FROM: "${MAIL_FROM:-Víboras Team <no-responder@viboras.local>}"
-      APP_URL: "${APP_URL:-http://localhost:3000}"
+      APP_URL: "${APP_URL:-http://localhost:3001}"
       # Avisos push. Vacias, la app no ofrece activarlos y no manda nada. Para
       # probarlos, un par propio en .env: npx web-push generate-vapid-keys
       VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-}"
@@ -101,7 +101,7 @@ services:
       HTTP_PROXY_NEON: "neon-http:4444"
       PORT: "3000"
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       # Codigo montado en caliente: editas un .html o un api/*.js y se recarga.
       - ./api:/app/api

@@ -67,7 +67,7 @@ No hay pruebas automáticas. Lo mínimo:
 
 ```bash
 npm run check                 # índice de ai_context, paridad del rating, tamaño del código
-docker compose up -d --build  # y comprobar el cambio en http://localhost:3000
+docker compose up -d --build  # y comprobar el cambio en http://localhost:3001
 ```
 
 El resto (medir en el navegador, contrastar con un `SELECT`) está en
@@ -93,11 +93,11 @@ Servicios que arranca:
 | `postgres`   | 5433   | la base de datos (volumen `pgdata`, persiste)          |
 | `neon-http`  | 4444   | traduce el API HTTP de Neon -> Postgres normal         |
 | `wsproxy`    | —      | lo mismo para el camino WebSocket (hoy sin uso)        |
-| `app`        | 3000   | servidor Express que emula las funciones de Vercel     |
+| `app`        | 3001   | servidor Express que emula las funciones de Vercel     |
 | `mailpit`    | 8025   | recoge los correos de la app sin mandarlos fuera       |
 
-App en http://localhost:3000 y comprobacion de la conexion en
-http://localhost:3000/health
+App en http://localhost:3001 y comprobacion de la conexion en
+http://localhost:3001/health
 
 ### Por que hacen falta los proxies
 

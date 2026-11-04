@@ -45,6 +45,18 @@ Desde el 2026-10-17. Tres piezas que comparten tabla de avisos y campanita.
    en local insertando dos partidos del mismo día con los mismos cuatro: un
    solo `valorar:345,346` en la campanita, y un tercer partido con otros
    jugadores sigue saliendo aparte.
+
+   **Desde el 2026-11-04 esas copias cuentan como una sola opinión también en
+   los cálculos.** Antes, la interfaz cumplía la regla de una elección por día
+   y grupo, pero `getNivelVotos`, `/cuenta`, `/comunidad` y el panel de admin
+   sumaban las filas por partido: una revancha duplicaba tanto el ajuste del RD
+   como los totales de ambiente. `match_feedback_por_dia`, creada por
+   `ensureAvisosSchema()`, agrupa por fecha + los cuatro ids ordenados + quien
+   vota + quien recibe. Las filas físicas siguen existiendo para completar
+   todos los partidos del aviso, pero las cuatro lecturas consumen la opinión
+   lógica. Verificado en una transacción local: tres filas físicas —dos
+   revanchas con el mismo cuarteto y otro partido con un cuarteto distinto—
+   dieron dos opiniones, un buen rollo, un neutro y neto de nivel cero.
 2. **El nivel mueve la fiabilidad.** Desde el 2026-11-01, sólo «en su nivel»
    sube la fiabilidad (baja el RD). Tanto «por encima» como «por debajo» dicen
    que el rating no representa bien al jugador y bajan la fiabilidad (suben el
