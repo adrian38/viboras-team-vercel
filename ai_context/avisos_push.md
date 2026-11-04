@@ -336,7 +336,7 @@ publicación del tablón en local, se comprobó qué pasaría:
 - Publicar en `/tablon` llama a `crearAviso` (`api/_tablon.js`), y ésa es
   **la única puerta**: siempre empuja.
 
-O sea que un «aviso de prueba» escrito en `http://localhost:3000` sale a
+O sea que un «aviso de prueba» escrito en `http://localhost:3001` sale a
 Internet y suena en trece teléfonos ajenos. Lo mismo vale para `/valorar`,
 `/buzon` y todo lo que acabe en `crearAviso`.
 
