@@ -69,7 +69,7 @@ Lo descartado es esa navegación, no toda. El 2026-11-02 Adrián trajo una
 maqueta nueva con una **barra de pestañas inferior**, cuyos cinco destinos sí
 son páginas que existen, y esa sí se portó: [[barra_de_navegacion]].
 
-## Los iconos: Material Symbols recortada a 33 glifos
+## Los iconos: Material Symbols recortada a la lista (53 glifos el 2026-11-12)
 
 Las maquetas usan Material Symbols. La fuente entera son unos 300 KB, que en
 una PWA que carga red primero no se sostiene; pero Google Fonts acepta
@@ -86,12 +86,26 @@ ligadura —el contenido del elemento es `arrow_back` y la fuente lo convierte e
 flecha—. El `display:block` del `@import` tapa el caso mientras carga, pero no
 el de un nombre que no está en la lista.
 
-Para comprobar que ninguno se quedó en texto, los glifos miden ~24 px y una
-palabra mucho más:
+**Lo vigila `node tools/iconos.mjs`**, dentro de `npm run check` desde el
+2026-11-12. Lee el `icon_names=` del `@import` y lo compara con todo nombre de
+icono escrito en los `.html` y `.js` de `front/`: los `<span class="ms">` y las
+llamadas a un ayudante que monte el icono, que hoy son `icono()` en las
+pantallas del pozo y `simbolo()` en `instalar.js`. Se puso después de que
+pasara cuatro veces: `install_mobile` y `close`, `home`, y `save` y `sort` el
+mismo 2026-11-12.
+
+No ve un nombre que venga en una variable, ni comprueba que el icono exista de
+verdad en Material Symbols: un nombre inventado entra en la lista, Google lo
+ignora y la palabra sale igual. Eso se ve abriendo la pantalla, y se mide
+comparando el ancho del texto con el de la fuente —un glifo ocupa 1 em—:
 
 ```js
-[...document.querySelectorAll('.ms')].filter(e => e.getBoundingClientRect().width > 44)
+const at = n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect().width };
+[...document.querySelectorAll('.ms')].filter(e => at(e) > parseFloat(getComputedStyle(e).fontSize) * 1.6)
 ```
+
+El ancho del elemento no vale: en `/` los iconos van en una caja de 40 px con
+fuente de 20 y darían un falso positivo.
 
 Los iconos que sólo existían en el cromo descartado no se portaron. Los que
 quedaron fuera a propósito aunque la maqueta los ponga sobre algo real son dos:

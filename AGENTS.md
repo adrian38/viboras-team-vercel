@@ -177,6 +177,17 @@ motivo.
   la única vía y nadie vigila que su color base siga pegado a su token.
 - Detalle: `ai_context/sistema_visual_viper_strike.md`.
 
+## Invariante: el icono tiene que estar en la lista de glifos
+
+La fuente de iconos viene recortada a los nombres del `icon_names=` del
+`@import` de `front/comun/theme.css`. Un icono que no esté en esa lista **no
+da error**: el navegador pinta el nombre escrito en texto dentro del botón.
+
+- Guarda: `node tools/iconos.mjs`.
+- No ve un nombre que venga en una variable, ni comprueba que el icono exista
+  de verdad en Material Symbols.
+- Detalle: `ai_context/sistema_visual_viper_strike.md`.
+
 ## Invariante: la barra de pestañas está escrita en las 23 páginas
 
 El `<nav class="vt-nav">` del pie está copiado en las veintitrés, justo detrás de
@@ -269,7 +280,8 @@ manual y está descrita aquí.
    ```
 
    Ejecuta `tools/ai-context-index.mjs`, `tools/rating-parity.mjs`,
-   `tools/code-size.mjs`, `tools/palette.mjs` y `tools/barra-navegacion.mjs`.
+   `tools/code-size.mjs`, `tools/palette.mjs`, `tools/barra-navegacion.mjs` y
+   `tools/iconos.mjs`.
 
 2. **Entorno local**, que replica Vercel con Postgres propio. **Se actualiza
    al terminar cada corrección, antes de comprobar nada**:
