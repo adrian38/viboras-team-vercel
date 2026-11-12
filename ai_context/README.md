@@ -75,6 +75,10 @@ que hay.
   qué sale de `/rating` y no de `/cuenta`, qué estados tiene (y por qué no hay
   «Rechazado») y a qué fecha calcula el rating. También cómo `excel-export.js`
   escribe los `.xlsx` sin librerías, que usan las dos descargas de la app.
+- `exportar_encuestas_desde_el_escritorio.md`: `npm run export:encuestas`, el
+  script que saca a Excel y CSV quién votó a quién en cada partido; cómo se ata
+  a sólo lectura contra producción, por qué 210 filas son 171 opiniones y qué
+  no lleva (el rating no está en la base).
 
 ## Datos y base de datos
 
