@@ -111,6 +111,12 @@ que hay.
   número equivocado: en los torneos las columnas de marcador son juegos y no
   sets, y un partido organizado y sin jugar está ahí con 0-0, que no es NULL.
   Con los números que salían de cada cuenta.
+- `pozo_americano.md`: el pozo de `/pozo`, reproducido del Excel del grupo:
+  cómo se siembra la primera ronda y cómo se mueven las pistas, por qué el
+  desempate pone por delante a quien empezó abajo (y por qué las dos versiones
+  de la hoja dicen lo contrario), el empate a juegos que la hoja se quedaba en
+  silencio, por qué las rondas no existen hasta que se pueden formar, quién
+  puede corregir qué y a qué pantallas afecta sin querer.
 
 ## Entorno y despliegue
 
