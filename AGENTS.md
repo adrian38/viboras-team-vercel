@@ -3,7 +3,7 @@
 ## Alcance
 
 - Este repositorio es `viboras-team-vercel`: la web del grupo de pádel Viboras
-  Team. Estático (20 páginas HTML) más diez funciones serverless en `api/`,
+  Team. Estático (23 páginas HTML) más diez funciones serverless en `api/`,
   desplegado en Vercel sobre Neon Postgres.
 - **`viboras` es la rama por defecto y la de producción.** Un push despliega al
   grupo sin paso intermedio. `master` existe y está obsoleta. Detalle en
@@ -177,29 +177,29 @@ motivo.
   la única vía y nadie vigila que su color base siga pegado a su token.
 - Detalle: `ai_context/sistema_visual_viper_strike.md`.
 
-## Invariante: la barra de pestañas está escrita en las 20 páginas
+## Invariante: la barra de pestañas está escrita en las 23 páginas
 
-El `<nav class="vt-nav">` del pie está copiado en las veinte, justo detrás de
+El `<nav class="vt-nav">` del pie está copiado en las veintitrés, justo detrás de
 `<body>`, con su `aria-current="page"` ya puesto. **No lo monta ningún
 script**: montada con `defer` no existe en el primer pintado y parpadea, y el
 fundido del navegador la desvanece porque toma la instantánea antes.
 
 - Guarda: `node tools/barra-navegacion.mjs`.
 - Detalle y qué hacer: `ai_context/barra_de_navegacion.md`.
-- Cambiar una pestaña son veinte ediciones, y además la tabla `SECCIONES` de
+- Cambiar una pestaña son veintitrés ediciones, y además la tabla `SECCIONES` de
   la guarda. Hacerlo en diecinueve no da error; la guarda sí.
 
-## Invariante: el `<head>` se cambia en las 20 páginas
+## Invariante: el `<head>` se cambia en las 23 páginas
 
 No hay plantilla ni layout compartido: cada `.html` repite su `<head>`. Los
 cinco elementos de la PWA —favicon, `apple-touch-icon`, `manifest`,
 `apple-mobile-web-app-title`, `theme-color`— y el `<script src="/front/comun/pwa.js">`
-están copiados en las 20 páginas (y `/front/comun/auth-client.js` y
+están copiados en las 23 páginas (y `/front/comun/auth-client.js` y
 `/front/comun/splash.js` también; este último **sin** `defer`, a propósito: ver
 `ai_context/sistema_visual_viper_strike.md`).
 
 Añadir uno a una sola página no da error: simplemente no funciona en las otras
-diecisiete. Al tocar el `<head>`, recorrer todas y comprobar el resultado:
+veintidós. Al tocar el `<head>`, recorrer todas y comprobar el resultado:
 
 ```bash
 grep -c '<etiqueta que sea>' front/pantallas/*/index.html
