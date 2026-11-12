@@ -33,7 +33,11 @@ import { existsSync, readFileSync } from 'node:fs';
 const MOTOR = 'front/comun/vt-glicko.js';
 
 // Cada pantalla es una carpeta: su index.html y el fichero que salio de el.
-const PANTALLAS = ['rating', 'players', 'rating-test'].map((n) => ({
+// pozo-nuevo no calcula rating: solo pide el ranking para ordenar la lista
+// del torneo. Esta aqui por lo mismo que las otras —si se trae su propio
+// Glicko «para no depender del fichero», ordenaria por un numero que no es el
+// que ve el grupo— y porque sin el <script> el boton de ordenar revienta.
+const PANTALLAS = ['rating', 'players', 'rating-test', 'pozo-nuevo'].map((n) => ({
   pagina: `front/pantallas/${n}/index.html`,
   propio: `front/pantallas/${n}/${n}.js`
 }));

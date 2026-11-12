@@ -34,6 +34,14 @@ pistas y 16 jugadores:
 - **Los cuatro primeros empiezan en la última pista**, los cuatro siguientes
   una más arriba, y los cuatro últimos en la pista 1. La 1 es la de arriba:
   hacia ella se sube.
+- **«Ordenar por ranking» usa el ranking de verdad.** El botón de la pantalla
+  de crear llama al motor de `front/comun/vt-glicko.js` con el rating de
+  partida y los votos de nivel, arrancado igual que `rating.js`, y deja a los
+  mejores arriba de la lista: con eso los cuatro primeros empiezan en la
+  pista de abajo, que es como lo monta el grupo. Después acomoda cada pareja
+  por lados si uno es de drive y el otro de revés. Por eso `pozo-nuevo` está
+  en `tools/rating-parity.mjs`: si algún día se trae su propio Glicko,
+  ordenaría por un número que no es el que el grupo ve en `/rating`.
 - **El lado del perfil es una ayuda, no una regla.** La pantalla de crear
   enseña junto a cada nombre el `players.court_side` que esa persona eligió en
   `/cuenta` —llega por `getComunidad`— y pinta en naranja el puesto cuyo lado

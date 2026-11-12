@@ -11,6 +11,11 @@
 <script src="/front/comun/pwa.js" defer></script>
 <script src="/front/comun/auth-client.js" defer></script>
 <script src="/front/comun/vt-cargando.js"></script>
+<!-- El motor del rating, para ordenar la lista por ranking. El mismo fichero
+     que /rating y /players, con sus dos acompanantes y en el mismo orden: si
+     esta pantalla calculara el ranking de otra manera, diria un orden que no
+     es el que el grupo ve. Guarda: tools/rating-parity.mjs -->
+<script src="/front/comun/vt-glicko.js"></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -164,7 +169,9 @@
         el 1.º y el 2.º forman una pareja y el 3.º y el 4.º la otra, y de cada pareja el primero
         juega al <strong>drive</strong> y el segundo al <strong>revés</strong>. Se juega tal cual.
         Los cuatro primeros empiezan en la pista de abajo y los cuatro últimos en la pista 1.
-        Toca un nombre para añadirlo y usa las flechas para colocarlo.
+        Toca un nombre para añadirlo y usa las flechas para colocarlo. <strong>Ordenar por ranking</strong>
+        los coloca de mejor a peor —los cuatro mejores a la pista de abajo— con el mismo ranking
+        que enseña <a href="/rating?volver=%2Fpozo-nuevo">Rating</a>.
       </p>
       <p class="vt-muted" style="font-size:13px">
         El lado pequeño junto a cada nombre es el que tiene puesto en su perfil; los que no lo han
@@ -178,6 +185,12 @@
       </div>
       <div id="disponibles" class="disponibles"></div>
       <p style="margin:var(--vt-md) 0 0"><span id="cuenta" class="vt-chip">0 jugadores</span></p>
+      <div class="vt-acciones" style="margin-top:var(--vt-sm)">
+        <button class="vt-btn vt-btn--ghost vt-btn--sm" id="ordenarBtn" type="button">
+          <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">sort</span>
+          <span id="ordenarTexto">Ordenar por ranking</span>
+        </button>
+      </div>
       <ol id="elegidos" class="elegidos"></ol>
     </div>
 
@@ -204,6 +217,8 @@
   </div>
 </div>
 
+<script src="/front/comun/nivel-votos.js"></script>
+<script src="/front/comun/rating-inicial.js"></script>
 <script src="/front/pantallas/pozo-nuevo/pozo-nuevo.js"></script>
 </body>
 </html>

@@ -271,6 +271,55 @@ async function nombrePorDefecto() {
   }
 }
 
+// --- Ordenar por ranking -------------------------------------------------
+
+// Dentro de cada pareja, si uno es de drive y el otro de reves, se ponen en
+// ese orden. No cambia quien juega con quien ni en que pista: solo el lado.
+function porLadoDentroDeCadaPareja() {
+  const hasta = Math.min(estado.elegidos.length, hacenFalta());
+  for (let i = 0; i + 1 < hasta; i += 2) {
+    if (ladoDelPerfil(estado.elegidos[i]) === 'reves' && ladoDelPerfil(estado.elegidos[i + 1]) === 'drive') {
+      [estado.elegidos[i], estado.elegidos[i + 1]] = [estado.elegidos[i + 1], estado.elegidos[i]];
+    }
+  }
+}
+
+// El ranking es el de /rating: el mismo motor (`front/comun/vt-glicko.js`),
+// con el rating de partida y los votos de nivel y arrancado igual que lo
+// arranca `rating.js`. Calcularlo de otra manera daria un orden que no es el
+// que el grupo ve, que es la definicion de dato inventado.
+//
+// Los mejores van arriba de la lista y por tanto a la pista de abajo, que es
+// como empieza el pozo: los cuatro primeros a la ultima pista.
+async function ordenarPorRanking() {
+  const [partidos] = await Promise.all([
+    window.vtGlicko.leerPartidos(), window.vtNivel.listo, window.vtInicial.listo
+  ]);
+  const hoyIso = window.vtGlicko.hoyIso();
+  const ratings = new Map(window.vtGlicko.calcularRatings(estado.nombres, partidos, hoyIso)
+    .map((f) => [f.name, f.rating]));
+  estado.elegidos.sort((a, b) => (ratings.get(b) || 0) - (ratings.get(a) || 0));
+  porLadoDentroDeCadaPareja();
+  pintarJugadores();
+}
+
+async function alOrdenar() {
+  const boton = document.getElementById('ordenarBtn');
+  const texto = document.getElementById('ordenarTexto');
+  const aviso = document.getElementById('aviso');
+  boton.disabled = true;
+  texto.textContent = 'Calculando el ranking…';
+  aviso.textContent = '';
+  try {
+    await ordenarPorRanking();
+  } catch {
+    aviso.textContent = 'No se ha podido calcular el ranking. La lista se queda como estaba.';
+  } finally {
+    boton.disabled = false;
+    texto.textContent = 'Ordenar por ranking';
+  }
+}
+
 // Si esto falla, la lista sale sin los lados del perfil y se puede montar el
 // torneo igual: es una ayuda, no un requisito.
 async function cargarLados() {
@@ -301,6 +350,7 @@ async function arrancar() {
 }
 
 document.getElementById('buscar').addEventListener('input', pintarDisponibles);
+document.getElementById('ordenarBtn').addEventListener('click', alOrdenar);
 document.getElementById('pistas').addEventListener('change', () => { pintarPuntos(); pintarJugadores(); });
 document.getElementById('crearBtn').addEventListener('click', crear);
 
