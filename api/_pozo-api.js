@@ -191,7 +191,14 @@ export async function createPozo(req, res, user) {
     const id = await crearPozo(datos);
     res.status(200).json({ ok: true, id });
   } catch (err) {
-    if (String(err?.code) === '23505') {
+    // Solo la restriccion del nombre habla del nombre. El mismo 23505 lo da
+    // la clave primaria cuando la secuencia de events.id se ha quedado
+    // detras, y decir «ya hay un torneo con ese nombre» de un nombre que no
+    // existe deja al administrador cambiandolo una y otra vez sin que ninguno
+    // se guarde. Paso el 2026-11-12. Lo de la secuencia lo arregla
+    // sincronizarSecuencias(), en preparar(); si aun asi choca, es otra cosa
+    // y sale por el 500 con su constraint en el log.
+    if (err?.constraint === 'events_name_key') {
       const sugerencia = await nombreLibre(datos?.nombre || '').catch(() => null);
       res.status(409).json({
         ok: false,
@@ -201,7 +208,7 @@ export async function createPozo(req, res, user) {
       });
       return;
     }
-    console.error('write:createPozo error', err);
+    console.error('write:createPozo error', err?.code || '', err?.constraint || '', err);
     res.status(500).json({ ok: false, error: 'server_error' });
   }
 }

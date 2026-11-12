@@ -162,16 +162,35 @@ es lo que la pantalla sabe pintar. La tabla de puntos viene puesta solo con
 cuatro pistas, que es la única que el grupo ha decidido; con otro número la
 escribe quien crea el torneo, porque inventarla sería inventar un dato.
 
-## El nombre del torneo es único en toda la tabla `events`
+## «Ya hay un torneo con ese nombre» eran dos fallos distintos
 
-`events.name` tiene un `UNIQUE` de toda la vida (`api/_db.js`), y no distingue
-tipos: el nombre de un pozo compite con el de las ligas y con los tres eventos
-fijos. La página proponía «Pozo» y la fecha de hoy, idéntico para todos los
-pozos del mismo día, así que **el segundo pozo del día no se podía crear**: salía
-«Ya hay un torneo con ese nombre» sobre un nombre que el administrador no había
-escrito. Le pasó a Dani el 2026-11-12 con los 16 ya metidos.
+El 2026-11-12 Dani no pudo crear el pozo con los 16 ya metidos: ese aviso, y
+ninguno se guardaba ni cambiando el nombre. Eran dos cosas a la vez, y las dos
+daban el mismo `23505`, que es el único código que el `catch` miraba.
 
-Desde entonces:
+**El de verdad: la secuencia de `events.id`.** Una fila insertada con su `id`
+puesto a mano no mueve la secuencia del `SERIAL` —comprobado con un
+`CREATE TEMP TABLE`: tres filas con id 1, 2 y 3 dejan `last_value` en 1—, y
+`ensureSchema()` siembra exactamente así los eventos 1, 2 y 3. En una base
+recién hecha la secuencia se queda en 1, de modo que **los tres primeros
+`INSERT` que no ponen id chocan contra `events_pkey`**. Reproducido en local
+con `setval('events_id_seq', 1, true)`: tres nombres distintos, los dos
+primeros 409 «ya hay un torneo con ese nombre», el tercero entró. El mismo
+agujero lo tiene cualquier tabla restaurada de un volcado con sus ids.
+
+Lo arregla `sincronizarSecuencias()` en `api/_db.js`, que pone `events.id` y
+`matches.id` en su `max(id)` y la llama `ensurePozoSchema()`. **Sólo la llama
+el pozo**: los demás sitios que crean eventos o partidos siguen expuestos.
+
+Y `createPozo` ya no cuenta cualquier `23505` como nombre repetido: mira
+`err.constraint`, y lo que no sea `events_name_key` sale como 500 con su
+constraint en el log, que es lo honesto.
+
+**El otro: el nombre sí es único.** `events.name` tiene un `UNIQUE` de toda la
+vida y no distingue tipos: el nombre de un pozo compite con el de las ligas y
+con los tres eventos fijos. Eso se queda así —dos pozos no pueden llamarse
+igual—, pero **sí puede haber varios el mismo día**, y la página proponía «Pozo»
+con la fecha de hoy, idéntico para todos. Desde entonces:
 
 - `pozo-nuevo.js` pide `getPozos` al arrancar y propone el primer nombre libre:
   «Pozo 12/11/2026», «Pozo 12/11/2026 (2)», y así.

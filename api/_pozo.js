@@ -14,6 +14,7 @@
 //
 // Detalle: ai_context/pozo_americano.md
 import { sql } from '@vercel/postgres';
+import { sincronizarSecuencias } from './_db.js';
 import {
   JUGADORES_POR_PISTA, PISTAS_MIN, PISTAS_MAX, RONDAS_MIN, RONDAS_MAX,
   clasificacion, rondaInicial, rondaSiguiente
@@ -35,6 +36,9 @@ export function ensurePozoSchema() {
       // Quien gana cuando los juegos quedan iguales. Solo se mira si
       // set1_team1 = set1_team2, y lo dicen los jugadores.
       await sql`ALTER TABLE matches ADD COLUMN IF NOT EXISTS tie_winner SMALLINT`;
+      // Crear un pozo es un INSERT en events y cuatro en matches sin poner el
+      // id: si la secuencia se quedo detras, chocan contra la clave primaria.
+      await sincronizarSecuencias();
     })().catch((err) => { pozoReady = null; throw err; });
   }
   return pozoReady;
