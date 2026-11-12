@@ -119,9 +119,11 @@ Aquí un empate **no resuelve el partido**: `resultadoDe()` devuelve `null` y la
 ronda siguiente no se forma. Hasta el 2026-11-12 la pantalla preguntaba qué
 pareja se llevaba la pista y lo guardaba en `matches.tie_winner`; **ahora no
 se empata**: lo dijo Adrián el 2026-11-12, la ronda a reloj deja veinte minutos
-de sobra y descansos, así que se juega un punto más —o los que hagan falta— y
-se apunta cómo queda. La pantalla avisa y deja el botón de guardar apagado
-mientras los dos números sean iguales, y el API rechaza el marcador igualado.
+de sobra y descansos. La redacción que fue al grupo esa tarde es de Silvia:
+cuando suena el silbato con los juegos y los puntos iguales, **se juega la bola
+de oro** y se apunta cómo queda. La pantalla avisa y deja el botón de guardar
+apagado mientras los dos números sean iguales, y el API rechaza el marcador
+igualado.
 La columna `tie_winner` ya no la lee ni la escribe nadie; sigue en las bases
 donde se llegó a crear, vacía.
 

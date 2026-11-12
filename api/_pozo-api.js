@@ -215,10 +215,11 @@ export async function createPozo(req, res, user) {
 // --- submitPozoResult ----------------------------------------------------
 
 // Un empate no se guarda. La ronda a reloj deja veinte minutos de sobra y
-// descansos, asi que cuando los juegos quedan iguales se juega un punto mas y
-// se apunta el resultado de verdad (decision del grupo, 2026-11-12). Antes la
-// pantalla preguntaba que pareja ganaba la pista y lo guardaba en
-// matches.tie_winner; esa columna ya no la usa nadie.
+// descansos, asi que cuando suena el silbato con los juegos iguales se juega
+// la bola de oro y se apunta el resultado de verdad (Silvia y Adrian,
+// 2026-11-12, ya dicho al grupo). Antes la pantalla preguntaba que pareja
+// ganaba la pista y lo guardaba en matches.tie_winner; esa columna ya no la
+// usa nadie.
 function problemaDelMarcador(juegos1, juegos2) {
   for (const n of [juegos1, juegos2]) {
     if (!Number.isInteger(n) || n < 0 || n > JUEGOS_MAX) {
@@ -226,7 +227,7 @@ function problemaDelMarcador(juegos1, juegos2) {
     }
   }
   if (juegos1 === juegos2) {
-    return 'Un empate no vale: jugad un punto más y apuntad cómo queda.';
+    return 'Un empate no vale: jugad la bola de oro y apuntad cómo queda.';
   }
   return null;
 }

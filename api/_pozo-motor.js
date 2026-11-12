@@ -30,9 +30,10 @@ export const PUNTOS_DEL_GRUPO = [[8, 6], [8, 4], [6, 2], [4, 2]];
 // decidid quien gana» mientras la formula ya le daba la victoria al equipo 2
 // por detras; luego la pantalla lo preguntaba. Desde el 2026-11-12 no se
 // pregunta ni se guarda: la ronda a reloj deja veinte minutos de sobra y
-// descansos, asi que un empate se juega —un punto mas, lo que haga falta— y
-// se apunta como queda. Un marcador igualado deja el partido sin resolver y
-// la ronda siguiente sin formar, que es lo que empuja a jugarlo.
+// descansos, asi que cuando suena el silbato con los juegos iguales se juega
+// la bola de oro y se apunta como queda. Un marcador igualado deja el partido
+// sin resolver y la ronda siguiente sin formar, que es lo que empuja a
+// jugarlo.
 export function resultadoDe(partido) {
   const j1 = partido.juegos1;
   const j2 = partido.juegos2;

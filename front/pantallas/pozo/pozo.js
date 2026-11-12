@@ -90,11 +90,11 @@ function cajaDeEquipo(equipo, valor, marca) {
 
 // Un empate no se guarda: se juega. La pantalla lo dice y deja el boton de
 // guardar apagado mientras los dos numeros sean iguales. Hasta el 2026-11-12
-// preguntaba que pareja se llevaba la pista; ahora el grupo juega un punto
-// mas, que para eso la ronda a reloj deja tiempo de sobra.
+// preguntaba que pareja se llevaba la pista; ahora el grupo juega la bola de
+// oro, que para eso la ronda a reloj deja tiempo de sobra.
 function avisoDelEmpate() {
   return el('div', { class: 'empate' },
-    el('p', { class: 'empate__texto', texto: 'Vais empatados a juegos: jugad un punto más y apuntad cómo queda.' }));
+    el('p', { class: 'empate__texto', texto: 'Vais empatados a juegos: jugad la bola de oro y apuntad cómo queda.' }));
 }
 
 // Las dos casillas se montan UNA vez y no se vuelven a crear: rehacerlas en
