@@ -1,4 +1,4 @@
-// La barra de pestanas esta escrita en las veinte paginas. Esta guarda
+// La barra de pestanas esta escrita en todas las paginas. Esta guarda
 // defiende que sigan diciendo lo mismo.
 //
 //   node tools/barra-navegacion.mjs
@@ -10,14 +10,14 @@
 // navegador es peor todavia, porque la instantanea de la pantalla que entra se
 // toma antes de que corra el script, asi que la barra se desvanecia.
 //
-// El precio es el de siempre en este repositorio: veinte copias de un marcado
-// que cambia a la vez, y quitar una pestana en diecinueve no da error. Por eso
-// esto es una guarda y no un consejo.
+// El precio es el de siempre en este repositorio: una copia por pagina de un
+// marcado que cambia a la vez, y quitar una pestana en todas menos una no da
+// error. Por eso esto es una guarda y no un consejo.
 //
 // Comprueba tres cosas:
 //
-//   1. Las veinte paginas tienen su <nav class="vt-nav">.
-//   2. Las veinte lo tienen IGUAL, byte a byte, salvo el aria-current.
+//   1. Todas las paginas tienen su <nav class="vt-nav">.
+//   2. Todas lo tienen IGUAL, byte a byte, salvo el aria-current.
 //   3. El aria-current de cada una es el que le toca por su ruta.
 //
 // Detalle: ai_context/barra_de_navegacion.md
@@ -30,7 +30,7 @@ const BASE = 'front/pantallas';
 // encienden. La portada es `index`, que es la carpeta `portada`.
 const SECCIONES = {
   '/': ['portada'],
-  '/history': ['history', 'results', 'submit-result', 'tournaments', 'day'],
+  '/history': ['history', 'results', 'submit-result', 'tournaments', 'day', 'pozo'],
   '/tablon': ['tablon'],
   '/comunidad': ['comunidad', 'valorar'],
   '/cuenta': ['cuenta']
@@ -40,8 +40,9 @@ const pestanaDe = (pagina) => {
   for (const [ruta, paginas] of Object.entries(SECCIONES)) {
     if (paginas.includes(pagina)) return ruta;
   }
-  // rating y sus seis hermanas, buzon, group-normativa e inscripcion: se
-  // llega a ellas desde las tarjetas de la portada, no desde la barra.
+  // rating y sus seis hermanas, buzon, group-normativa, inscripcion y las dos
+  // satelites del pozo (pozo-info y pozo-nuevo): se llega a ellas desde las
+  // tarjetas de la portada o desde /pozo, no desde la barra.
   return null;
 };
 
@@ -80,7 +81,7 @@ for (const [pagina, marcado] of marcados) {
 
 if (copias.size > 1) {
   const grupos = [...copias.values()].sort((a, b) => b.length - a.length);
-  problemas.push(`la barra no es la misma en las veinte: ${grupos.length} versiones distintas`);
+  problemas.push(`la barra no es la misma en todas: ${grupos.length} versiones distintas`);
   for (const g of grupos) problemas.push(`  ${g.length}: ${g.join(', ')}`);
 }
 

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Crear un pozo</title>
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+
+<style>
+/* Igual que en /pozo: las clases de theme.css declaran display y pisarían el
+   display:none del atributo `hidden`. */
+[hidden]{display:none !important}
+
+.rejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:var(--vt-md)}
+
+/* Los jugadores que quedan por elegir: botones que caben en cualquier ancho. */
+.disponibles{
+  display:flex;flex-wrap:wrap;gap:var(--vt-sm);
+  max-height:220px;overflow-y:auto;
+  padding:var(--vt-sm);
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+}
+
+/* Los elegidos, en orden: el número manda, porque de él salen las parejas. */
+.elegidos{list-style:none;margin:var(--vt-sm) 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.elegido{
+  display:flex;align-items:center;gap:var(--vt-sm);
+  padding:4px 8px;
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+}
+.elegido__num{
+  flex:0 0 auto;width:26px;height:26px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--vt-r-full);
+  background:var(--vt-surface-4);
+  font-family:var(--vt-font-head);font-size:14px;font-weight:700;
+}
+.elegido__nombre{flex:1;min-width:0;font-size:14px}
+.elegido__pista{font-size:11px;color:var(--vt-muted);white-space:nowrap}
+
+#aviso:not(:empty){
+  padding:var(--vt-sm) var(--vt-md);
+  background:var(--vt-error-bg);
+  border-radius:var(--vt-r);
+  color:var(--vt-error);
+  font-size:14px;
+}
+
+@media(max-width:620px){
+  .elegido__pista{display:none}
+  .disponibles{max-height:180px}
+}
+</style>
+</head>
+<body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/tablon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
+</div>
+</nav>
+
+<div class="vt-page vt-page--narrow">
+
+  <header class="vt-between" style="padding-bottom:var(--vt-md);border-bottom:1px solid var(--vt-border)">
+    <div class="vt-row" style="gap:var(--vt-md)">
+      <div class="vt-header__logo" style="width:64px;height:64px"><img src="/image.png" alt="Víboras Team"></div>
+      <div>
+        <span class="vt-label vt-gold">Administración</span>
+        <h3 style="margin-top:2px">Crear un <span class="vt-gold-grad">pozo</span></h3>
+      </div>
+    </div>
+    <button class="vt-btn vt-btn--quiet vt-btn--sm" onclick="window.location.href='/pozo'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Volver</button>
+  </header>
+
+  <div id="soloAdmin" class="vt-card" hidden>
+    <div class="vt-sec-title"><h3>Esto es cosa de administradores</h3></div>
+    <p class="vt-muted">Crear un torneo lo hace un administrador. Tú puedes ver el pozo y apuntar el resultado de tu pista.</p>
+    <div class="vt-acciones">
+      <button class="vt-btn" onclick="window.location.href='/pozo'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">military_tech</span>Ir al pozo</button>
+    </div>
+  </div>
+
+  <div id="formulario">
+
+    <div class="vt-card vt-card--accent">
+      <div class="vt-sec-title"><h3>El torneo</h3></div>
+      <div class="rejilla">
+        <div class="vt-field">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" class="vt-input" type="text" maxlength="120" placeholder="Pozo de noviembre">
+        </div>
+        <div class="vt-field">
+          <label for="fecha">Día</label>
+          <input id="fecha" class="vt-input" type="date">
+        </div>
+        <div class="vt-field">
+          <label for="pistas">Pistas</label>
+          <select id="pistas" class="vt-select">
+            <option value="2">2 pistas · 8 jugadores</option>
+            <option value="3">3 pistas · 12 jugadores</option>
+            <option value="4" selected>4 pistas · 16 jugadores</option>
+            <option value="5">5 pistas · 20 jugadores</option>
+            <option value="6">6 pistas · 24 jugadores</option>
+          </select>
+        </div>
+        <div class="vt-field">
+          <label for="rondas">Rondas</label>
+          <input id="rondas" class="vt-input" type="number" min="1" max="12" value="5">
+        </div>
+      </div>
+    </div>
+
+    <div class="vt-card" style="margin-top:var(--vt-lg)">
+      <div class="vt-sec-title"><h3>Los jugadores, en orden</h3></div>
+      <p class="vt-muted" style="font-size:14px">
+        El orden forma las parejas de la primera ronda: el 1.º con el 2.º, el 3.º con el 4.º, y así.
+        Las dos primeras parejas empiezan abajo del todo y las dos últimas en la pista 1.
+        Toca un nombre para añadirlo y usa las flechas para colocarlo.
+      </p>
+      <div class="vt-field" style="margin-bottom:var(--vt-sm)">
+        <label for="buscar">Buscar jugador</label>
+        <input id="buscar" class="vt-input" type="search" placeholder="Escribe un nombre" autocomplete="off">
+      </div>
+      <div id="disponibles" class="disponibles"></div>
+      <p style="margin:var(--vt-md) 0 0"><span id="cuenta" class="vt-chip">0 jugadores</span></p>
+      <ol id="elegidos" class="elegidos"></ol>
+    </div>
+
+    <div class="vt-card" style="margin-top:var(--vt-lg)">
+      <div class="vt-sec-title"><h3>Puntos por pista</h3></div>
+      <p class="vt-muted" style="font-size:14px">
+        Lo que vale ganar y perder en cada pista. Los puntos no salen del marcador:
+        ganar arriba vale más que ganar abajo. Con cuatro pistas vienen puestos los del grupo.
+      </p>
+      <div class="vt-table-wrap" style="max-width:420px">
+        <table class="vt-table">
+          <thead><tr><th>Pista</th><th>Si ganas</th><th>Si pierdes</th></tr></thead>
+          <tbody id="puntosCuerpo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="aviso" role="alert" style="margin-top:var(--vt-md)"></div>
+
+    <div class="vt-acciones">
+      <button class="vt-btn" id="crearBtn" type="button"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">military_tech</span>Crear el pozo</button>
+      <button class="vt-btn vt-btn--ghost" type="button" onclick="window.location.href='/pozo-info'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">info</span>Cómo funciona</button>
+    </div>
+  </div>
+</div>
+
+<script src="/front/pantallas/pozo-nuevo/pozo-nuevo.js"></script>
+</body>
+</html>

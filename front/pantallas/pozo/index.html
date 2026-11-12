@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pozo americano</title>
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+
+<style>
+/* `hidden` tiene que ganar. Las clases de theme.css declaran su propio
+   `display` (.vt-btn es inline-flex, .vt-field es flex) y eso pisa el
+   display:none que el navegador da al atributo: sin esta regla, el botón de
+   crear se le veía a todo el mundo aunque llevara `hidden`. theme.css lo
+   arregla selector a selector (.vt-nav__num[hidden], .vt-avisos[hidden]);
+   aquí basta con una regla para la página. */
+[hidden]{display:none !important}
+
+/* Una pista: el número a la izquierda, las dos parejas y el marcador en medio.
+   En móvil las parejas se apilan, que es como se lee de verdad. */
+.partido{
+  display:flex;align-items:center;gap:var(--vt-md);
+  padding:var(--vt-sm) var(--vt-md);
+  border-top:1px solid var(--vt-border);
+}
+.partido--mio{background:var(--vt-surface-2);border-left:3px solid var(--vt-gold)}
+.partido__pista{
+  flex:0 0 auto;width:30px;height:30px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--vt-r-full);
+  background:var(--vt-surface-4);
+  color:var(--vt-muted);
+  font-family:var(--vt-font-head);font-size:16px;font-weight:700;
+}
+.partido__equipos{
+  flex:1;min-width:0;
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:var(--vt-sm);
+}
+.partido__equipo{font-size:14px;line-height:1.3;color:var(--vt-muted)}
+.partido__equipo:last-of-type{text-align:right}
+.partido__equipo--gana{color:var(--vt-text-strong);font-weight:600}
+.resultado{
+  font-family:var(--vt-font-head);font-size:22px;font-weight:700;
+  color:var(--vt-gold);white-space:nowrap;text-align:center;
+}
+.pendiente{font-size:12px;color:var(--vt-faint);white-space:nowrap;text-align:center}
+
+.ronda{
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  margin-bottom:var(--vt-sm);
+  overflow:hidden;
+}
+.ronda > summary{
+  padding:var(--vt-sm) var(--vt-md);
+  cursor:pointer;
+  list-style:none;
+}
+.ronda > summary::-webkit-details-marker{display:none}
+.ronda > summary::after{content:'▾';float:right;color:var(--vt-muted)}
+.ronda[open] > summary::after{content:'▴'}
+.ronda h4{margin:0;display:inline}
+.ronda--futura{padding:var(--vt-sm) var(--vt-md);opacity:.6}
+.ronda--futura h4{margin:0 0 2px}
+.ronda--futura p{margin:0;font-size:13px}
+
+/* El editor de marcador: una línea por pareja, con su casilla de juegos. */
+.marcador{
+  display:flex;flex-direction:column;gap:var(--vt-sm);
+  padding:var(--vt-md);
+  background:var(--vt-surface-deep);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  margin-top:var(--vt-sm);
+}
+.marcador__fila{display:flex;align-items:center;gap:var(--vt-md)}
+.marcador__equipo{flex:1;min-width:0;font-size:15px;line-height:1.3}
+.marcador__equipo--yo{color:var(--vt-gold-light);font-weight:600}
+.marcador .juegos{
+  flex:0 0 84px;width:84px;
+  font-family:var(--vt-font-head);font-size:28px;font-weight:700;
+  text-align:center;padding:6px 4px;
+}
+.empate{
+  display:flex;flex-direction:column;gap:var(--vt-sm);
+  padding:var(--vt-sm) var(--vt-md);
+  background:var(--vt-error-bg);
+  border-radius:var(--vt-r);
+}
+.empate__texto{margin:0;font-size:14px;font-weight:600;color:var(--vt-error)}
+
+.tabla__yo td{background:var(--vt-surface-3);font-weight:600}
+#aviso:not(:empty){
+  padding:var(--vt-sm) var(--vt-md);
+  background:var(--vt-error-bg);
+  border-radius:var(--vt-r);
+  color:var(--vt-error);
+  font-size:14px;
+}
+
+@media(max-width:620px){
+  .partido{gap:var(--vt-sm)}
+  .partido__equipos{grid-template-columns:1fr;gap:2px;text-align:left}
+  .partido__equipo:last-of-type{text-align:left}
+  .resultado{text-align:left;font-size:20px}
+  .pendiente{text-align:left}
+  .marcador .juegos{flex-basis:68px;width:68px;font-size:24px}
+}
+</style>
+</head>
+<body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/history" aria-current="page"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/tablon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
+</div>
+</nav>
+
+<div class="vt-page">
+
+  <header class="vt-between" style="padding-bottom:var(--vt-md);border-bottom:1px solid var(--vt-border)">
+    <div class="vt-row" style="gap:var(--vt-md)">
+      <div class="vt-header__logo" style="width:64px;height:64px"><img src="/image.png" alt="Víboras Team"></div>
+      <div>
+        <span class="vt-label vt-gold">Torneo en marcha</span>
+        <h3 style="margin-top:2px">Pozo <span class="vt-gold-grad">americano</span></h3>
+      </div>
+    </div>
+    <div class="vt-row" style="gap:var(--vt-sm)">
+      <button class="vt-btn vt-btn--sm" id="crear" hidden onclick="window.location.href='/pozo-nuevo'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">publish</span>Crear pozo</button>
+      <button class="vt-btn vt-btn--quiet vt-btn--sm" onclick="window.location.href='/pozo-info'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">info</span>Cómo funciona</button>
+    </div>
+  </header>
+
+  <div class="vt-field" id="selectorCaja" hidden>
+    <label for="pozoSelect">Torneo</label>
+    <select id="pozoSelect" class="vt-select"></select>
+  </div>
+
+  <div id="vacio" class="vt-card" hidden>
+    <div class="vt-sec-title"><h3>Todavía no hay ningún pozo</h3></div>
+    <p class="vt-muted">Cuando un administrador cree uno, aquí verás tu pista de cada ronda, los resultados de todas y la clasificación en directo.</p>
+    <div class="vt-acciones">
+      <button class="vt-btn vt-btn--ghost" onclick="window.location.href='/pozo-info'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">info</span>Cómo funciona un pozo</button>
+    </div>
+  </div>
+
+  <div id="cabecera" class="vt-card vt-card--accent"></div>
+  <div id="aviso" role="alert"></div>
+  <div id="tuPista" class="vt-card vt-card--glow" hidden></div>
+  <div id="rondas" class="vt-card"></div>
+  <div id="clasificacion" class="vt-card"></div>
+
+  <div class="vt-acciones">
+    <button class="vt-btn vt-btn--ghost" onclick="window.location.href='/tournaments'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">emoji_symbols</span>Torneos anteriores</button>
+    <button class="vt-btn vt-btn--ghost" onclick="window.location.href='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Inicio</button>
+  </div>
+</div>
+
+<script src="/front/pantallas/pozo/pozo.js"></script>
+</body>
+</html>

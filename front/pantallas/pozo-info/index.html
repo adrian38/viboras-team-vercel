@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pozo - Cómo funciona</title>
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+
+<style>
+/* Mismo patrón que /ranking-info: medida corta y la barra dorada en cada
+   título. Se copia en vez de compartirse porque las dos páginas son texto
+   suelto y no hay más candidatas. */
+.doc{line-height:1.65}
+.doc > p,.doc > ul,.doc > ol{max-width:72ch}
+.doc h2{display:flex;align-items:center;gap:var(--vt-sm);margin:var(--vt-xl) 0 var(--vt-md)}
+.doc h2::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
+.doc li{margin-bottom:var(--vt-sm)}
+
+/* El dibujo del movimiento de pistas. Cuatro filas, cada una su pista. */
+.pistas{display:flex;flex-direction:column;gap:var(--vt-sm);margin:var(--vt-md) 0;max-width:560px}
+.pista{
+  display:flex;align-items:center;gap:var(--vt-md);
+  padding:var(--vt-sm) var(--vt-md);
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+}
+.pista__num{
+  flex:0 0 auto;width:34px;height:34px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--vt-r-full);
+  background:var(--vt-surface-4);
+  font-family:var(--vt-font-head);font-size:17px;font-weight:700;
+}
+.pista--alta .pista__num{background:var(--vt-gold);color:var(--vt-bg)}
+.pista__texto{font-size:14px;line-height:1.4}
+.sube{color:var(--vt-win);font-weight:600}
+.baja{color:var(--vt-loss);font-weight:600}
+</style>
+</head>
+<body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/tablon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
+</div>
+</nav>
+
+<div class="vt-page vt-page--narrow">
+
+  <header class="vt-between" style="padding-bottom:var(--vt-md);border-bottom:1px solid var(--vt-border)">
+    <div class="vt-row" style="gap:var(--vt-md)">
+      <div class="vt-header__logo" style="width:64px;height:64px"><img src="/image.png" alt="Víboras Team"></div>
+      <div>
+        <span class="vt-label vt-gold">Cómo se juega</span>
+        <h3 style="margin-top:2px">Pozo <span class="vt-gold-grad">americano</span></h3>
+      </div>
+    </div>
+    <button class="vt-btn vt-btn--quiet vt-btn--sm" onclick="window.location.href='/pozo'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Volver al pozo</button>
+  </header>
+
+  <div class="vt-card vt-card--accent vt-card--glow doc">
+
+    <h1>El pozo, en <span class="vt-gold-grad">un minuto</span></h1>
+    <p>Todo el mundo juega todas las rondas. En cada ronda <strong>cambias de compañero</strong>, y según ganes o pierdas <strong>subes o bajas de pista</strong>. Al final no gana una pareja: gana un jugador.</p>
+
+    <h2>La primera ronda</h2>
+    <p>Quien organiza el torneo ordena a los jugadores en una lista. De esa lista salen las parejas y las pistas de salida:</p>
+    <ul>
+      <li>El <strong>1.º con el 2.º</strong> forman la primera pareja, el 3.º con el 4.º la segunda, y así.</li>
+      <li>Las <strong>dos primeras parejas empiezan en la última pista</strong>, las dos siguientes una pista más arriba, y las dos últimas en la <strong>pista 1</strong>.</li>
+      <li>Dentro de cada pista las dos parejas se cruzan, para que nadie juegue la primera ronda con quien venía emparejado.</li>
+    </ul>
+
+    <h2>Cómo te mueves</h2>
+    <p>La <strong>pista 1 es la de arriba</strong>. Hacia ella suben los que ganan.</p>
+    <div class="pistas">
+      <div class="pista pista--alta">
+        <span class="pista__num">1</span>
+        <span class="pista__texto">Juegan los que <span class="sube">ganan en la 1</span> y los que <span class="sube">ganan en la 2</span>.</span>
+      </div>
+      <div class="pista">
+        <span class="pista__num">2</span>
+        <span class="pista__texto">Los que <span class="baja">pierden en la 1</span> contra los que <span class="sube">ganan en la 3</span>.</span>
+      </div>
+      <div class="pista">
+        <span class="pista__num">3</span>
+        <span class="pista__texto">Los que <span class="baja">pierden en la 2</span> contra los que <span class="sube">ganan en la 4</span>.</span>
+      </div>
+      <div class="pista">
+        <span class="pista__num">4</span>
+        <span class="pista__texto">Los que <span class="baja">pierden en la 3</span> y los que <span class="baja">pierden en la 4</span>.</span>
+      </div>
+    </div>
+    <p>Y siempre cruzados: el primero de un sitio con el segundo del otro. Por eso cambias de compañero cada ronda.</p>
+    <p class="vt-muted">Con menos de cuatro pistas es lo mismo, con menos escalones: la de arriba junta a los que ganan y la de abajo a los que pierden.</p>
+
+    <h2>Los puntos</h2>
+    <p>Los puntos <strong>no salen del marcador, salen de la pista</strong>: ganar arriba vale más que ganar abajo, porque arriba están los que más han ganado.</p>
+    <p>Cada torneo lleva su propia tabla y <strong>la que vale es la que aparece en la pantalla del torneo</strong>, al lado de cada pista. La que ha venido usando el grupo es esta:</p>
+    <div class="vt-table-wrap" style="max-width:380px">
+      <table class="vt-table">
+        <thead><tr><th>Pista</th><th class="vt-num">Si ganas</th><th class="vt-num">Si pierdes</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td class="vt-num">8</td><td class="vt-num">6</td></tr>
+          <tr><td>2</td><td class="vt-num">8</td><td class="vt-num">4</td></tr>
+          <tr><td>3</td><td class="vt-num">6</td><td class="vt-num">2</td></tr>
+          <tr><td>4</td><td class="vt-num">4</td><td class="vt-num">2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>La clasificación</h2>
+    <p>Manda el número de <strong>partidos ganados</strong>. Lo demás solo desempata, por este orden:</p>
+    <ol>
+      <li><strong>Partidos ganados.</strong></li>
+      <li><strong>Pista de salida, de abajo arriba:</strong> quien empezó en la 4 va por delante de quien empezó en la 1. Subir desde abajo cuesta más.</li>
+      <li><strong>Puntos.</strong></li>
+      <li><strong>Diferencia de juegos</strong> en todo el torneo: los que has ganado menos los que te han hecho.</li>
+      <li><strong>El orden de la lista inicial</strong>, para que no haya dos jugadores en el mismo puesto.</li>
+    </ol>
+
+    <h2>Si empatáis a juegos</h2>
+    <p>Una ronda a reloj puede acabar igualada. Cuando pasa, <strong>la pantalla os pregunta qué pareja gana la pista</strong> y no guarda nada hasta que lo decís. Lo decidís vosotros cuatro, como siempre.</p>
+    <p>Mientras un empate esté sin decidir, ese partido cuenta como no terminado y la ronda siguiente no se forma.</p>
+
+    <h2>Quién apunta qué</h2>
+    <ul>
+      <li><strong>Los cuatro de una pista</strong> apuntan y corrigen el resultado de su partido, mientras su ronda sea la última formada.</li>
+      <li><strong>La ronda siguiente no existe</strong> hasta que las cuatro pistas de la actual tienen resultado. Un resultado que falta deja esperando a los demás: es el formato, no un fallo de la app.</li>
+      <li><strong>Un administrador</strong> puede corregir cualquier resultado, también el de una ronda ya cerrada. Al hacerlo, las rondas posteriores se vuelven a formar y <strong>sus resultados se pierden</strong>, porque ya no son los mismos partidos.</li>
+    </ul>
+
+    <div class="vt-acciones">
+      <button class="vt-btn" onclick="window.location.href='/pozo'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">military_tech</span>Ir al pozo</button>
+      <button class="vt-btn vt-btn--ghost" onclick="window.location.href='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Inicio</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
