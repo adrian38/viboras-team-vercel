@@ -159,11 +159,28 @@ async function siembraDeNombres(nombres) {
   return { ids };
 }
 
+// `events.name` es unica para toda la tabla —no solo entre pozos—, y la
+// pagina propone el mismo nombre a todos los pozos de un mismo dia: el
+// segundo choca. Cuando pasa, en vez de dejar al administrador adivinando, se
+// le dice un nombre que si esta libre. La tabla tiene decenas de filas, asi
+// que se traen todos los nombres y se compara aqui: un LIKE obligaria a
+// escapar el % y el _ que pueda llevar el nombre que escribio.
+async function nombreLibre(base) {
+  const { rows } = await sql`SELECT name FROM events`;
+  const usados = new Set(rows.map((r) => r.name));
+  if (!usados.has(base)) return base;
+  for (let n = 2; n <= 99; n++) {
+    if (!usados.has(`${base} (${n})`)) return `${base} (${n})`;
+  }
+  return null;
+}
+
 export async function createPozo(req, res, user) {
   if (user.role !== 'admin') { res.status(403).json({ ok: false, error: 'forbidden' }); return; }
+  let datos = null;
   try {
     await preparar();
-    const datos = datosDelFormulario(await readBody(req));
+    datos = datosDelFormulario(await readBody(req));
     const resuelta = await siembraDeNombres(datos.jugadores);
     if (resuelta.error) { res.status(400).json({ ok: false, error: 'datos', message: resuelta.error }); return; }
     datos.siembra = resuelta.ids;
@@ -175,7 +192,13 @@ export async function createPozo(req, res, user) {
     res.status(200).json({ ok: true, id });
   } catch (err) {
     if (String(err?.code) === '23505') {
-      res.status(409).json({ ok: false, error: 'repetido', message: 'Ya hay un torneo con ese nombre. Ponle otro.' });
+      const sugerencia = await nombreLibre(datos?.nombre || '').catch(() => null);
+      res.status(409).json({
+        ok: false,
+        error: 'repetido',
+        sugerencia: sugerencia === datos?.nombre ? null : sugerencia,
+        message: 'Ya hay un torneo con ese nombre. Ponle otro.'
+      });
       return;
     }
     console.error('write:createPozo error', err);

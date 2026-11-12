@@ -154,18 +154,36 @@ function cuerpoDelFormulario() {
   };
 }
 
+// El nombre del torneo es unico para toda la tabla `events`, y el que esta
+// pagina propone es el mismo para todos los pozos de un dia. Si aun asi
+// choca —otro pozo creado desde otro movil, un nombre escrito a mano— el
+// servidor dice uno libre y se deja puesto: el administrador solo tiene que
+// volver a darle al boton.
+function ponerNombreLibre(enviado, sugerencia) {
+  const campo = document.getElementById('nombre');
+  campo.value = sugerencia;
+  campo.focus();
+  document.getElementById('aviso').textContent =
+    `Ya hay un torneo llamado «${enviado}». Le he puesto «${sugerencia}»: dale otra vez a crear, o escribe el nombre que quieras.`;
+}
+
 async function crear() {
   const aviso = document.getElementById('aviso');
   const boton = document.getElementById('crearBtn');
+  const enviado = cuerpoDelFormulario();
   aviso.textContent = '';
   boton.disabled = true;
   try {
     const res = await fetch('/api/write?action=createPozo', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(cuerpoDelFormulario())
+      body: JSON.stringify(enviado)
     });
     const cuerpo = await res.json().catch(() => null);
+    if (res.status === 409 && cuerpo && cuerpo.sugerencia) {
+      ponerNombreLibre(enviado.nombre, cuerpo.sugerencia);
+      return;
+    }
     if (!res.ok || !cuerpo || cuerpo.ok === false) {
       aviso.textContent = (cuerpo && cuerpo.message) || 'No se ha podido crear el torneo.';
       return;
@@ -186,6 +204,27 @@ function hoy() {
   return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
 }
 
+// «Pozo <fecha de hoy>» lo propondrian igual todos los pozos del dia, y el
+// segundo no se podria crear. Se mira cuales hay ya y se numera.
+function primerNombreLibre(base, usados) {
+  if (!usados.has(base)) return base;
+  for (let n = 2; n <= 99; n++) {
+    if (!usados.has(`${base} (${n})`)) return `${base} (${n})`;
+  }
+  return base;
+}
+
+async function nombrePorDefecto() {
+  const base = 'Pozo ' + new Date().toLocaleDateString('es-ES');
+  try {
+    const res = await fetch('/api/read?action=getPozos&ts=' + Date.now());
+    const cuerpo = await res.json();
+    return primerNombreLibre(base, new Set((cuerpo.pozos || []).map((p) => p.nombre)));
+  } catch {
+    return base;
+  }
+}
+
 async function arrancar() {
   const user = await window.vtMe;
   if (!user || user.role !== 'admin') {
@@ -194,7 +233,7 @@ async function arrancar() {
     return;
   }
   document.getElementById('fecha').value = hoy();
-  document.getElementById('nombre').value = 'Pozo ' + new Date().toLocaleDateString('es-ES');
+  document.getElementById('nombre').value = await nombrePorDefecto();
   const res = await fetch('/api/read?action=getNames&ts=' + Date.now());
   const cuerpo = await res.json().catch(() => null);
   estado.nombres = (cuerpo && cuerpo.names) || [];
