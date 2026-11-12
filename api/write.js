@@ -1,5 +1,5 @@
 import { sql } from '@vercel/postgres';
-import { ensureSchema, getPlayerId, nombreDeJugadorValido, readBody, toInt } from './_db.js';
+import { ensureSchema, getPlayerId, nombreDeJugadorValido, readBody, toInt, EVENTOS_DE_TORNEO } from './_db.js';
 import { validateBo3Score } from './_score.js';
 import { exigirSesion, cerrarSesionesDe } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
@@ -28,8 +28,10 @@ function esAdmin(user, res) {
 // Se cierra por tipo de evento y no por rol: cada torneo tiene su pantalla y
 // sus reglas, asi que ni un administrador sube por aqui el marcador de un
 // pozo. `ranked`, `legacy` y `grupo_liga` siguen igual que antes.
-const EVENTOS_DE_TORNEO = ['pozo', 'compas', 'doble_ko'];
-
+//
+// La lista de tipos esta en `_db.js` desde el 2026-11-12: la comparten este
+// veto, el listado del panel y el borrado de torneos.
+//
 // true si el partido es de un torneo, y entonces ya ha respondido 403. Una
 // fila que no existe no es de torneo: de eso se encarga el 409 de cada accion.
 async function vetadoPorTorneo(res, id) {

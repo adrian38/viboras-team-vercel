@@ -1,5 +1,5 @@
 import { sql } from '@vercel/postgres';
-import { ensureSchema, formatSet } from './_db.js';
+import { ensureSchema, formatSet, EVENTOS_DE_TORNEO } from './_db.js';
 import { exigirSesion, exigirAdmin, ensureAuthSchema } from './_auth.js';
 import { describirInscripcion } from './_inscripcion.js';
 import { ensureAvisosSchema } from './_avisos.js';
@@ -365,6 +365,32 @@ async function getRatingsDePartida(req, res) {
   }
 }
 
+// Los torneos que un administrador puede borrar, con cuantos partidos se
+// llevaria por delante cada uno. Solo admin y solo para ese panel: la lista
+// de torneos que ve el grupo sale de getResults, con sus partidos.
+//
+// Ordenados por id descendente y no por fecha: `events.start_date` es texto
+// en DD/MM/AAAA y ordenarlo como texto pone el 01/12 antes que el 02/01. Por
+// id el ultimo creado sale arriba, que es el que se suele querer deshacer.
+async function getTournaments(req, res) {
+  if (!await exigirAdmin(req, res)) return;
+  try {
+    await ensureSchema();
+    const { rows } = await sql`
+      SELECT e.id, e.name, e.type, e.start_date, COUNT(m.id)::int AS partidos
+      FROM events e
+      LEFT JOIN matches m ON m.event_id = e.id
+      WHERE e.type = ANY(${EVENTOS_DE_TORNEO})
+      GROUP BY e.id, e.name, e.type, e.start_date
+      ORDER BY e.id DESC`;
+    res.setHeader('cache-control', 'no-store');
+    res.status(200).json({ ok: true, torneos: rows });
+  } catch (err) {
+    console.error('read:getTournaments error', err);
+    res.status(500).json({ ok: false, error: 'server_error', torneos: [] });
+  }
+}
+
 export default async function handler(req, res) {
   // Desde el 2026-10-16 la app entera va detras de la sesion, lecturas
   // incluidas: ai_context/cuentas_y_sesiones.md
@@ -391,6 +417,8 @@ export default async function handler(req, res) {
       return getAmbiente(req, res);
     case 'getRatingsDePartida':
       return getRatingsDePartida(req, res);
+    case 'getTournaments':
+      return getTournaments(req, res);
     case 'getPozos':
       return getPozos(req, res);
     case 'getPozo':

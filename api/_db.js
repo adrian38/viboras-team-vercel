@@ -1,5 +1,12 @@
 import { sql } from '@vercel/postgres';
 
+// Los tipos de `events` que son un torneo: tienen pantalla propia y reglas
+// propias. Vive aqui porque lo leen tres ficheros y tener tres copias es
+// tener tres listas que se separan: `write.js` veta por el la edicion suelta
+// de sus partidos (`vetadoPorTorneo`), `read.js` lista con el los torneos del
+// panel y `league-admin.js` solo borra eventos de estos tipos.
+export const EVENTOS_DE_TORNEO = ['pozo', 'compas', 'doble_ko'];
+
 let schemaReady = null;
 
 export async function ensureSchema() {

@@ -122,6 +122,10 @@ que hay.
   alcanzaban y sus cuatro jugadores se saltaban el «lo sube un administrador»;
   cómo se cierra por tipo de evento, qué sigue igual, lo que ninguna guarda
   vigila, y por qué editar `api/` en caliente no basta para probarlo.
+- `borrar_un_torneo.md`: el «Borrar torneo» del panel de administración: qué se
+  lleva por delante y qué no, por qué sólo los tipos de torneo y sólo
+  administradores, por qué los dos `DELETE` van en una sola sentencia contra un
+  `ON DELETE RESTRICT`, y por qué el aviso es un `<dialog>` y no un `confirm()`.
 
 ## Entorno y despliegue
 

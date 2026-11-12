@@ -199,7 +199,8 @@ una hoja y después unos pocos administradores los suben. Quedó en
 
 Hasta el 2026-11-12 la lista solo se podía escribir al crear el torneo: un
 jugador que no aparecía, un nombre metido por equivocación o dos puestos al
-revés no tenían arreglo, y tampoco se puede borrar un pozo. Lo pidió Adrián
+revés no tenían arreglo, y tampoco se podía borrar un pozo —eso llegó ese
+mismo día al panel de administración: `ai_context/borrar_un_torneo.md`. Lo pidió Adrián
 —«debería dejarme, por si acaso»— y es la sección plegada **«Cambiar
 jugadores»** de `/pozo`, que solo ve un administrador.
 

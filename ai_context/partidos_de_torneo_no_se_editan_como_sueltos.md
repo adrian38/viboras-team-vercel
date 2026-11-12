@@ -43,8 +43,12 @@ cualquiera con sesión.
 de evento del partido y responde 403 `es_de_torneo` si es uno de
 
 ```js
-const EVENTOS_DE_TORNEO = ['pozo', 'compas', 'doble_ko'];
+export const EVENTOS_DE_TORNEO = ['pozo', 'compas', 'doble_ko'];
 ```
+
+La lista nació aquí y desde el 2026-11-12 vive en `api/_db.js`, porque la leen
+también el listado y el borrado de torneos del panel
+(`ai_context/borrar_un_torneo.md`).
 
 Dos decisiones deliberadas:
 
