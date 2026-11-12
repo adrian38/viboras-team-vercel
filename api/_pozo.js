@@ -147,9 +147,21 @@ export async function crearPozo({ nombre, fecha, pistas, rondas, puntos, siembra
     VALUES ('pozo', ${nombre}, ${fecha}, ${fecha})
     RETURNING id`;
   const eventId = rows[0].id;
-  const config = { pistas, rondas, puntos, siembra };
-  await sql`UPDATE events SET pozo_config = ${JSON.stringify(config)}::jsonb WHERE id = ${eventId}`;
-  await insertarPartidos(eventId, fecha, rondaInicial(siembra, pistas));
+  try {
+    const config = { pistas, rondas, puntos, siembra };
+    await sql`UPDATE events SET pozo_config = ${JSON.stringify(config)}::jsonb WHERE id = ${eventId}`;
+    await insertarPartidos(eventId, fecha, rondaInicial(siembra, pistas));
+  } catch (err) {
+    // El driver va por HTTP y cada consulta es su propia transaccion: si algo
+    // falla despues del INSERT, la fila del evento se queda sin configuracion
+    // ni partidos. Un torneo asi no sale en la lista —getPozos pide
+    // pozo_config— y en cambio su nombre queda cogido, que es unico en toda
+    // la tabla: el administrador ve «ya hay un torneo con ese nombre» de un
+    // pozo que no existe. Se deshace a mano.
+    await sql`DELETE FROM matches WHERE event_id = ${eventId}`.catch(() => {});
+    await sql`DELETE FROM events WHERE id = ${eventId}`.catch(() => {});
+    throw err;
+  }
   return eventId;
 }
 
