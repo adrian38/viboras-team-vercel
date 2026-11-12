@@ -142,6 +142,11 @@ th.points-col{text-align:right}
 @media(max-width:720px){
   th,td{padding:8px 6px;font-size:13px}
   td.points-col{font-size:16px;width:70px}
+  /* Los puntos iban pegados al borde derecho de la tabla: con los 6px de
+     arriba el numero quedaba a 7px del borde. Con 14 queda a 15. La medalla
+     deja 10 por la izquierda, y no se igualan a proposito: el numero es un
+     glifo plano contra el borde y a la medalla la separa ya su circulo. */
+  th.points-col,td.points-col{padding-right:14px}
   .rank-col{width:44px}
   .pos-badge{width:26px;height:26px;font-size:14px}
 }
