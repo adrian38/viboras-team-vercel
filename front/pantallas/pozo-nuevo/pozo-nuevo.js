@@ -273,15 +273,60 @@ async function nombrePorDefecto() {
 
 // --- Ordenar por ranking -------------------------------------------------
 
-// Dentro de cada pareja, si uno es de drive y el otro de reves, se ponen en
-// ese orden. No cambia quien juega con quien ni en que pista: solo el lado.
-function porLadoDentroDeCadaPareja() {
-  const hasta = Math.min(estado.elegidos.length, hacenFalta());
-  for (let i = 0; i + 1 < hasta; i += 2) {
-    if (ladoDelPerfil(estado.elegidos[i]) === 'reves' && ladoDelPerfil(estado.elegidos[i + 1]) === 'drive') {
-      [estado.elegidos[i], estado.elegidos[i + 1]] = [estado.elegidos[i + 1], estado.elegidos[i]];
-    }
+// Las dos columnas del grupo: los que juegan al drive y los que juegan al
+// reves, cada una en el orden de ranking que traiga la lista.
+//
+// Hacen falta tantos de un lado como del otro, asi que quien no eligio lado
+// en /cuenta cae en la columna que vaya mas corta. Si un lado declarado se
+// pasa de la mitad, los ultimos de esa columna se van a la otra: la lista los
+// pinta en naranja, que es lo que esta pantalla hace desde siempre con un
+// puesto que no cuadra con el perfil. El lado del perfil es una ayuda, no una
+// regla; el que se juega es el puesto.
+function dosColumnas(jugando) {
+  const drives = [];
+  const reveses = [];
+  const sinLado = [];
+  for (const nombre of jugando) {
+    const suyo = ladoDelPerfil(nombre);
+    if (suyo === 'drive') drives.push(nombre);
+    else if (suyo === 'reves') reveses.push(nombre);
+    else sinLado.push(nombre);
   }
+  const mitad = jugando.length / 2;
+  for (const nombre of sinLado) {
+    if (drives.length >= mitad) reveses.push(nombre);
+    else if (reveses.length >= mitad) drives.push(nombre);
+    else if (drives.length <= reveses.length) drives.push(nombre);
+    else reveses.push(nombre);
+  }
+  while (drives.length > mitad) reveses.push(drives.pop());
+  while (reveses.length > mitad) drives.push(reveses.pop());
+
+  // Cada columna, de mejor a peor. Los que cambiaron de lado entran por donde
+  // les toca por ranking y no al final, que es donde los dejo el reparto.
+  const puesto = new Map(jugando.map((nombre, i) => [nombre, i]));
+  const porRanking = (a, b) => puesto.get(a) - puesto.get(b);
+  return { drives: drives.sort(porRanking), reveses: reveses.sort(porRanking) };
+}
+
+// La colocacion que Adrian paso al grupo el 2026-11-12: los dos mejores de
+// cada columna juntos en la ultima pista, los dos siguientes una mas arriba,
+// y dentro de la pista cruzados, 1R-2D contra 1D-2R. En el orden de pareja de
+// esta lista eso es [2D, 1R, 1D, 2R], con el 2.º drive abriendo el puesto
+// porque el primero de cada pareja es el drive.
+//
+// Si los que juegan no son un multiplo de cuatro no hay pistas que llenar y
+// la lista se queda en el orden de ranking, sin tocar.
+function colocaPorColumnas() {
+  const hasta = Math.min(estado.elegidos.length, hacenFalta());
+  if (hasta < JUGADORES_POR_PISTA || hasta % JUGADORES_POR_PISTA !== 0) return;
+  const sobran = estado.elegidos.slice(hasta);
+  const { drives, reveses } = dosColumnas(estado.elegidos.slice(0, hasta));
+  const puestos = [];
+  for (let k = 0; 2 * k + 1 < drives.length; k++) {
+    puestos.push(drives[2 * k + 1], reveses[2 * k], drives[2 * k], reveses[2 * k + 1]);
+  }
+  estado.elegidos = puestos.concat(sobran);
 }
 
 // El ranking es el de /rating: el mismo motor (`front/comun/vt-glicko.js`),
@@ -290,7 +335,8 @@ function porLadoDentroDeCadaPareja() {
 // que el grupo ve, que es la definicion de dato inventado.
 //
 // Los mejores van arriba de la lista y por tanto a la pista de abajo, que es
-// como empieza el pozo: los cuatro primeros a la ultima pista.
+// como empieza el pozo: los cuatro primeros a la ultima pista. De ahi la
+// colocacion por columnas, que es la que el grupo juega.
 async function ordenarPorRanking() {
   const [partidos] = await Promise.all([
     window.vtGlicko.leerPartidos(), window.vtNivel.listo, window.vtInicial.listo
@@ -299,7 +345,7 @@ async function ordenarPorRanking() {
   const ratings = new Map(window.vtGlicko.calcularRatings(estado.nombres, partidos, hoyIso)
     .map((f) => [f.name, f.rating]));
   estado.elegidos.sort((a, b) => (ratings.get(b) || 0) - (ratings.get(a) || 0));
-  porLadoDentroDeCadaPareja();
+  colocaPorColumnas();
   pintarJugadores();
 }
 

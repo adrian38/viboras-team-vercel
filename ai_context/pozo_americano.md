@@ -39,15 +39,21 @@ pistas y 16 jugadores:
   drive y la de los que juegan al revés. Los dos mejores de cada columna
   empiezan juntos en la última pista, los dos siguientes una más arriba, y
   dentro de la pista cruzados: **1R-2D contra 1D-2R**. Con la siembra en orden
-  de pareja eso es `[2D, 1R, 1D, 2R]`. **El botón no lo hace solo**: ordena por
-  rating global, no por dos columnas, así que el administrador acaba la
-  colocación a mano.
+  de pareja eso es `[2D, 1R, 1D, 2R]`, con el 2.º drive abriendo el puesto
+  porque el primero de cada pareja es el drive. Lo hace el botón, en
+  `colocaPorColumnas()` de `front/pantallas/pozo-nuevo/pozo-nuevo.js`.
+- **Las columnas se reparten, no se exigen.** `dosColumnas()` necesita tantos
+  de un lado como del otro: quien no eligió lado en `/cuenta` cae en la
+  columna que vaya más corta, y si un lado declarado se pasa de la mitad, los
+  últimos de esa columna se van a la otra y la lista los pinta en naranja.
+  Después cada columna se reordena por ranking, para que quien cambió de lado
+  entre por donde le toca y no al final. Con los que juegan sin ser múltiplo
+  de cuatro no hay pistas que llenar y la lista se queda en orden de ranking.
 - **«Ordenar por ranking» usa el ranking de verdad.** El botón de la pantalla
   de crear llama al motor de `front/comun/vt-glicko.js` con el rating de
   partida y los votos de nivel, arrancado igual que `rating.js`, y deja a los
   mejores arriba de la lista: con eso los cuatro primeros empiezan en la
-  pista de abajo, que es como lo monta el grupo. Después acomoda cada pareja
-  por lados si uno es de drive y el otro de revés. Por eso `pozo-nuevo` está
+  pista de abajo, que es como lo monta el grupo. Por eso `pozo-nuevo` está
   en `tools/rating-parity.mjs`: si algún día se trae su propio Glicko,
   ordenaría por un número que no es el que el grupo ve en `/rating`.
 - **El lado del perfil es una ayuda, no una regla.** La pantalla de crear
