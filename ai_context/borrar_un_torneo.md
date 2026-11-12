@@ -26,11 +26,32 @@ El evento y **todos sus partidos**. Con ellos se van en cascada las
 valoraciones de esos partidos (`match_feedback.match_id` es `ON DELETE
 CASCADE`). No tiene vuelta atrás y no hay papelera.
 
-Lo que **no** se va: los avisos de la campanita que mandó `avisarTorneo()` al
-crearlo. Son filas de `avisos` con un texto y un enlace a `/valorar`, sin
-referencia al partido, así que quedan ahí hasta que su jugador los vea. Un
-aviso que lleva a valorar un torneo que ya no existe no rompe nada —`/valorar`
-se calcula al vuelo sobre los partidos que hay— pero es un aviso de más.
+**No queda ningún aviso suelto apuntando al torneo**, y conviene saber por qué,
+porque a primera vista parece que sí:
+
+- `avisarTorneo()` (`api/_avisos.js`) **no pasa por `crearAviso()`**: llama
+  directo a `pushAJugadores`. Es decir, manda el push al móvil y **no guarda
+  nada** en la tabla `avisos`. Un push ya entregado no se puede retirar, pero
+  tampoco deja fila que borrar.
+- Lo que sí se ve en la campanita y en `/valorar` son las valoraciones
+  pendientes, y ésas **no son filas**: `partidosParaValorar()` las calcula al
+  vuelo leyendo `matches`. Sin los partidos, desaparecen solas.
+
+Medido el 2026-11-12 en la base local: cero filas en `avisos` cuyo texto
+empiece por «Ya están los resultados de», y los únicos enlaces guardados son
+`/buzon`, `/tablon` y `/history`.
+
+Y ese push casi nunca ha salido. `avisarTorneo()` tiene **un solo sitio que lo
+llama**: `crearTorneo()` de `api/league-admin.js`, o sea los torneos que entran
+por CSV desde el panel (Pozo y Compás). El pozo de `/pozo-nuevo` va por
+`crearPozo()` de `api/_pozo.js`, que **no avisa a nadie**. Además, aunque se
+llame, el push se queda en nada si la fecha del torneo cae fuera de los
+`DIAS_PARA_VALORAR` (14) o si quien debería recibirlo no tiene ningún
+dispositivo en `push_subscriptions`.
+
+Si llegó a salir, sigue en los móviles que lo recibieron y al tocarlo lleva a
+`/valorar`, que estará vacío o con otros partidos. Eso no tiene arreglo desde
+aquí.
 
 ## Sólo torneos, y sólo administradores
 
