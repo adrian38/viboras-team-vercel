@@ -1,5 +1,13 @@
 # La calificación de estrellas del perfil
 
+**Desde el 2026-11-12 la fórmula vive en `front/comun/vt-calificacion.js`** y
+la usan tres pantallas: `/cuenta`, `/comunidad` y la categoría Fair play de
+`/ranking` ([[ranking_tres_categorias]]). Las funciones de `cuenta-perfil.js`
+siguen existiendo y llaman al común. Ojo con una diferencia que viene de
+antes: las tres aplican la misma fórmula, pero `/comunidad` corta el motor en
+el último partido y `/cuenta` y `/ranking` en el día de hoy, así que la
+calificación puede variar una décima entre pantallas.
+
 Escrito el 2026-10-31. Vive en `cuenta-perfil.js` (`fiabilidadDeRd`,
 `calificacionDe`, `pintarCalificacion`) y se enseña en la tarjeta «Valoración
 del jugador» de `/cuenta`.

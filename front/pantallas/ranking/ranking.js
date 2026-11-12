@@ -99,14 +99,39 @@ function actividadDelPeriodo(partidos, activos) {
 //
 // Solo sale quien ha jugado dentro del periodo: sin partidos la diferencia es
 // cero exacto, y cuarenta ceros no son una clasificacion.
-function revelacionDelPeriodo(nombres, partidos, jugaron) {
-  const deAntes = window.vtGlicko.calcularRatings(nombres, partidos, diaAnterior(PERIODO.desde));
-  const deAhora = window.vtGlicko.calcularRatings(nombres, partidos, corteActual());
+function revelacionDelPeriodo(deAhora, deAntes, jugaron) {
   const antes = new Map(deAntes.map((r) => [r.name, r.rating]));
   const filas = new Map();
   deAhora.forEach((r) => {
     if (!jugaron.has(r.name) || !antes.has(r.name)) return;
     filas.set(r.name, { inicio: antes.get(r.name), actual: r.rating });
+  });
+  return filas;
+}
+
+// Fair play es la calificacion de 1 a 5 del jugador, la misma que enseñan
+// /cuenta y /comunidad: las opiniones de ambiente pesadas por la fiabilidad
+// de su ranking (ai_context/calificacion_de_estrellas.md).
+//
+// Es el valor ACTUAL, no el del periodo: la calificacion se calcula sobre
+// todas las opiniones recibidas y sobre el RD de hoy. Por eso esta categoria
+// no se pone a cero al empezar un trimestre, a diferencia de las otras dos.
+//
+// Sale quien tenga calificacion: sin una sola opinion de ambiente no hay nada
+// que puntuar, y un 3 de oficio seria un dato inventado.
+function fairPlayAhora(comunidad, deAhora, activos) {
+  const rd = new Map(deAhora.map((r) => [r.name, r.rd]));
+  const filas = new Map();
+  comunidad.forEach((j) => {
+    const n = String(j.nombre || '').trim();
+    if (!n || !activos.has(n)) return;
+    const calificacion = window.vtCalificacion.deJugador(j.buenRollo, rd.get(n));
+    if (calificacion === null) return;
+    filas.set(n, {
+      calificacion: calificacion,
+      votos: j.votos,
+      fiabilidad: window.vtCalificacion.fiabilidadDeRd(rd.get(n))
+    });
   });
   return filas;
 }
@@ -122,14 +147,15 @@ function fetchActivePlayers() {
     .catch((e) => { console.error('Error cargando jugadores', e); return []; });
 }
 
-// Los «buen rollo» del periodo. Si falla, fair play sale a cero y las otras
-// dos categorias siguen funcionando.
-function fetchFairPlay() {
-  const url = `/api/read?action=getFairPlay&desde=${PERIODO.desde}&hasta=${PERIODO.hasta}&ts=${Date.now()}`;
-  return fetch(url)
+// Las opiniones de ambiente de cada jugador, que es la mitad de su
+// calificacion; la otra mitad, el RD, la pone el motor. Es el mismo endpoint
+// que usa /comunidad, asi que las dos pantallas ensenan el mismo numero.
+// Si falla, fair play sale vacio y las otras dos categorias siguen.
+function fetchComunidad() {
+  return fetch('/api/read?action=getComunidad&ts=' + Date.now())
     .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then((j) => (j && j.fairplay) ? j.fairplay : [])
-    .catch((e) => { console.error('Error cargando fair play', e); return []; });
+    .then((j) => (j && j.jugadores) ? j.jugadores : [])
+    .catch((e) => { console.error('Error cargando las opiniones', e); return []; });
 }
 
 // ============================================================================
@@ -152,6 +178,7 @@ function conSigno(n) {
 const CATEGORIAS = {
   actividad: {
     nombre: 'Actividad',
+    columna: 'Puntos',
     detalle: ['Partidos', 'Torneos'],
     celdas: (f) => [f.partidos, f.torneos],
     puntos: (f) => f.partidos + f.torneos,
@@ -160,14 +187,16 @@ const CATEGORIAS = {
   },
   fairplay: {
     nombre: 'Fair play',
-    detalle: ['Valoraciones'],
-    celdas: (f) => [f.valoraciones],
-    puntos: (f) => f.buenRollo,
-    escribir: (v) => v.toLocaleString('es-ES'),
-    vacio: 'Todavia no hay valoraciones en este periodo'
+    columna: 'Calificación',
+    detalle: ['Opiniones', 'Fiabilidad'],
+    celdas: (f) => [f.votos, Math.round(f.fiabilidad * 100) + '%'],
+    puntos: (f) => f.calificacion,
+    escribir: (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    vacio: 'Todavía no hay opiniones de ambiente'
   },
   revelacion: {
     nombre: 'Revelación',
+    columna: 'Nivel',
     detalle: ['Inicio', 'Actual'],
     celdas: (f) => [Math.round(f.inicio), Math.round(f.actual)],
     puntos: (f) => f.actual - f.inicio,
@@ -206,7 +235,7 @@ function pintarCabecera(cat) {
             <th class="rank-col">Pos</th>
             <th>Jugador</th>
             ${detalle}
-            <th class="points-col">${cat === CATEGORIAS.revelacion ? 'Nivel' : 'Puntos'}</th>
+            <th class="points-col">${cat.columna}</th>
           </tr>`;
 }
 
@@ -254,33 +283,29 @@ function pintarPeriodo() {
     `Periodo actual: ${comoDdMmAaaa(PERIODO.desde)} - ${comoDdMmAaaa(PERIODO.hasta)}`;
 }
 
-function fairPlayEnFilas(lista, activos) {
-  const filas = new Map();
-  lista.forEach((r) => {
-    const n = String(r.jugador || '').trim();
-    if (!n || !activos.has(n)) return;
-    filas.set(n, { buenRollo: Number(r.buenRollo) || 0, valoraciones: Number(r.valoraciones) || 0 });
-  });
-  return filas;
-}
-
 async function init() {
   pintarPeriodo();
   try {
-    const [nombres, partidos, fairplay] = await Promise.all([
+    const [nombres, partidos, comunidad] = await Promise.all([
       fetchActivePlayers(),
       window.vtGlicko.leerPartidos(),
-      fetchFairPlay(),
+      fetchComunidad(),
       window.vtNivel.listo,
       window.vtInicial.listo
     ]);
     const activos = new Set(nombres.map((n) => String(n || '').trim()).filter(Boolean));
+    const lista = Array.from(activos);
+
+    // Las dos pasadas del motor se hacen una sola vez: el RD de hoy lo usan
+    // fair play y revelacion, y recorrer el historico no es gratis.
+    const deAhora = window.vtGlicko.calcularRatings(lista, partidos, corteActual());
+    const deAntes = window.vtGlicko.calcularRatings(lista, partidos, diaAnterior(PERIODO.desde));
 
     const actividad = actividadDelPeriodo(partidos, activos);
     datos = {
       actividad: actividad,
-      fairplay: fairPlayEnFilas(fairplay, activos),
-      revelacion: revelacionDelPeriodo(Array.from(activos), partidos, new Set(actividad.keys()))
+      fairplay: fairPlayAhora(comunidad, deAhora, activos),
+      revelacion: revelacionDelPeriodo(deAhora, deAntes, new Set(actividad.keys()))
     };
 
     cambiarCategoria(categoriaActual);

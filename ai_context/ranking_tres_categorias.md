@@ -10,7 +10,7 @@ texto que escribió Adrián.
 | Categoría | Cómo puntúa | De dónde sale |
 | --- | --- | --- |
 | Actividad | 1 punto por partido competitivo jugado **y** 1 punto por torneo jugado | `getResults`, vía `vtGlicko.leerPartidos()` |
-| Fair play | 1 punto por cada «buen rollo» recibido en el periodo | `getFairPlay` (`api/read.js`) |
+| Fair play | La calificación de 1 a 5 del jugador, la misma de /cuenta | `getComunidad` + `vt-calificacion.js` |
 | Revelación | Rating de hoy menos el de la víspera del periodo | `vtGlicko.calcularRatings()`, dos pasadas |
 
 Dos reglas que el texto recibido no fijaba las decidió Adrián el 2026-11-12:
@@ -18,9 +18,12 @@ Dos reglas que el texto recibido no fijaba las decidió Adrián el 2026-11-12:
 - **Un torneo es una unidad, no sus partidos.** Los tipos `pozo`, `compas` y
   `doble_ko` se cuentan por `event_id`: un pozo de quince partidos da 1 punto.
   Los demás (`ranked`, `grupo_liga`, `legacy`) dan 1 punto por partido.
-- **Fair play no penaliza.** Sólo suman los «buen rollo»; «neutro» y
-  «mejorable» no restan. La columna de detalle «Valoraciones» enseña el total
-  recibido, para que se vea la diferencia.
+- **Fair play es la calificación, no un recuento.** Adrián lo cambió el mismo
+  día: en vez de contar «buen rollo» del periodo, puntúa el valor actual de la
+  calificación de estrellas ([[calificacion_de_estrellas]]). Lleva dentro la
+  proporción de buen rollo y la fiabilidad del ranking, así que dos opiniones
+  no dan un 5. Las columnas de detalle enseñan las dos mitades: opiniones
+  recibidas y fiabilidad.
 
 ## Lo que había antes
 
@@ -41,10 +44,20 @@ y 24. Por eso todos los puntos que se veían eran pares.
 - **El texto de Adrián dice «trimestre natural» y el periodo vigente es
   01/09–30/11**, que no lo es. Se dejó su redacción tal cual; cuando se
   programe el reinicio habrá que resolverlo.
-- **`getFairPlay` devuelve el total del periodo, no el desglose por día**, al
-  revés que `getNivelVotos`. El total de un trimestre es público porque el
-  ranking lo es, pero el desglose diario dejaría deducir quién votó qué en un
-  día de un solo partido ([[valoraciones_y_avisos]]).
+- **Fair play no se reinicia cada trimestre, y las otras dos sí.** La
+  calificación se calcula sobre todas las opiniones recibidas y sobre el RD de
+  hoy, así que es un valor actual, no acumulado en el periodo. El reglamento
+  lo dice. Hubo una acción `getFairPlay` que contaba los «buen rollo» del
+  periodo; duró un commit y se quitó al cambiar la regla.
+- **`/ranking` y `/cuenta` dan la misma calificación; `/comunidad` puede dar
+  una décima más.** No es de esta pantalla: las tres usan la misma fórmula,
+  pero cortan el motor en fechas distintas. `/cuenta` (`isoDeHace(0)`) y
+  `/ranking` usan el RD de **hoy**; `/comunidad` llama a `calcularRatings` sin
+  fecha de corte, que para en el **último partido**. El decaimiento diario sube
+  el RD entre esas dos fechas y baja la calificación. Medido el 2026-11-12 con
+  el último partido el 31/10: Rodrigo RD 232,12 → 237,87 y calificación 3,87 →
+  3,83; Adrián C 187,26 → 194,34 y 4,21 → 4,15. Está así desde antes; unificar
+  las dos pantallas es una decisión de Adrián.
 - **Revelación sólo lista a quien jugó en el periodo.** Sin partidos la
   diferencia es cero exacto, y cuarenta ceros no son una clasificación. Por
   eso Actividad y Revelación tienen las mismas filas.
@@ -66,11 +79,10 @@ y 24. Por eso todos los puntos que se veían eran pares.
 - **El torneo como unidad**, insertando un pozo de prueba de 3 partidos entre
   cuatro jugadores: los cuatro sumaron **1** en Torneos y su columna Partidos
   no se movió. Borrado después; la base local volvió a 13 partidos.
-- **Fair play** contra el mismo `SELECT` que ejecuta el API: las diecisiete
-  filas iguales. Que «neutro» y «mejorable» no suman se probó en una
-  transacción con `ROLLBACK` cambiando tres opiniones de Adrián C: las
-  valoraciones siguieron en 8 y los puntos bajaron. Bajaron 2 y no 3 porque
-  dos de las filas físicas eran la misma opinión lógica de una revancha.
+- **Fair play** contra `/comunidad`, que enseña la misma calificación: Adrián
+  C 4,2, Oti 4,0, Jorge S 3,9, Silvia 3,9, Diego Gonzalez 3,8. Rodrigo salió
+  3,9 allí y 3,8 aquí, que es la diferencia de corte explicada arriba. Las 17
+  filas son las de quien ha recibido alguna opinión.
 - **Revelación** contra `/rating`: Eli Pastor 2097,25 → +297 sobre 1800; Rober
   hd 1692,15; ANDER G 1546,17; Silvia 1515,06. El mismo motor, el mismo
   número.
@@ -85,5 +97,6 @@ y 24. Por eso todos los puntos que se veían eran pares.
 | Las tres categorías y el periodo | `front/pantallas/ranking/ranking.js` |
 | Pestañas y tabla | `front/pantallas/ranking/index.html` |
 | Reglamento | `front/pantallas/ranking-info/index.html` |
-| «Buen rollo» del periodo | `api/read.js` `getFairPlay` |
+| Fórmula de la calificación | `front/comun/vt-calificacion.js` |
+| Opiniones de ambiente | `api/read.js` `getComunidad` |
 | Motor de rating | `front/comun/vt-glicko.js` |
