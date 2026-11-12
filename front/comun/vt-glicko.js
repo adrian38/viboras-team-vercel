@@ -41,6 +41,18 @@ function addDaysToIso(iso, days) {
   return date.toISOString().split('T')[0];
 }
 
+// La fecha de corte de «ahora». Importa que sea una sola: el RD sube cada dia
+// que pasa sin jugar, asi que cortar en el ultimo partido y cortar hoy dan
+// fiabilidades distintas, y con ellas calificaciones distintas. Hasta el
+// 2026-11-12 /comunidad cortaba en el ultimo partido y /cuenta hoy, y el
+// mismo jugador salia con una decima de diferencia en cada pantalla.
+function hoyIso() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 const Q = Math.LN10 / 400.0;
 const C_DAILY = 15.0; // Daily decay constant
 const INITIAL_RATING = 1500.0;
@@ -448,7 +460,7 @@ return {
   GlickoPlayer, g, expected, decayAllPlayersOneDay, getPlayerOrCreate,
   getTeamState, getEffectiveObservationR, getEffectiveObservationRd, clamp,
   getReliabilityWeight, updatePeriod, calcularRatings, leerPartidos,
-  usarJugadorNuevo, usarAjustePorNivel
+  usarJugadorNuevo, usarAjustePorNivel, hoyIso
 };
 
 })();

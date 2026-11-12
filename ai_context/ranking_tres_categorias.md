@@ -49,15 +49,13 @@ y 24. Por eso todos los puntos que se veían eran pares.
   hoy, así que es un valor actual, no acumulado en el periodo. El reglamento
   lo dice. Hubo una acción `getFairPlay` que contaba los «buen rollo» del
   periodo; duró un commit y se quitó al cambiar la regla.
-- **`/ranking` y `/cuenta` dan la misma calificación; `/comunidad` puede dar
-  una décima más.** No es de esta pantalla: las tres usan la misma fórmula,
-  pero cortan el motor en fechas distintas. `/cuenta` (`isoDeHace(0)`) y
-  `/ranking` usan el RD de **hoy**; `/comunidad` llama a `calcularRatings` sin
-  fecha de corte, que para en el **último partido**. El decaimiento diario sube
-  el RD entre esas dos fechas y baja la calificación. Medido el 2026-11-12 con
-  el último partido el 31/10: Rodrigo RD 232,12 → 237,87 y calificación 3,87 →
-  3,83; Adrián C 187,26 → 194,34 y 4,21 → 4,15. Está así desde antes; unificar
-  las dos pantallas es una decisión de Adrián.
+- **Fair play corta el motor en hoy, no en el fin del periodo.** Revelación usa
+  `corteActual()`, que se queda en el último día del periodo cuando ya se ha
+  cerrado; fair play usa `vtGlicko.hoyIso()` a secas, porque es la calificación
+  actual y tiene que ser la misma que el jugador ve en `/cuenta`. Mientras el
+  periodo está abierto las dos fechas son el mismo día y basta una pasada del
+  motor; cuando se cierre harán falta dos. Esa fecha única arregló de paso que
+  `/comunidad` enseñara una décima distinta ([[calificacion_de_estrellas]]).
 - **Revelación sólo lista a quien jugó en el periodo.** Sin partidos la
   diferencia es cero exacto, y cuarenta ceros no son una clasificación. Por
   eso Actividad y Revelación tienen las mismas filas.
@@ -76,13 +74,15 @@ y 24. Por eso todos los puntos que se veían eran pares.
 - **Actividad** contra un `SELECT` que cuenta partidos jugados por jugador en
   el periodo: las dieciséis primeras filas idénticas (Adrián C 8, Eli Pastor,
   Oti y Silvia 4, cinco con 3…).
-- **El torneo como unidad**, insertando un pozo de prueba de 3 partidos entre
-  cuatro jugadores: los cuatro sumaron **1** en Torneos y su columna Partidos
-  no se movió. Borrado después; la base local volvió a 13 partidos.
-- **Fair play** contra `/comunidad`, que enseña la misma calificación: Adrián
-  C 4,2, Oti 4,0, Jorge S 3,9, Silvia 3,9, Diego Gonzalez 3,8. Rodrigo salió
-  3,9 allí y 3,8 aquí, que es la diferencia de corte explicada arriba. Las 17
-  filas son las de quien ha recibido alguna opinión.
+- **El torneo como unidad**, primero con un pozo de prueba de 3 partidos
+  (borrado después) y luego, el mismo día, contra un pozo real de 8 partidos
+  que apareció en la base local: Alicia, Alvaro G y BORJA U, que sólo jugaron
+  ese pozo, salen con 0 partidos y **1 punto**; Adrián C con 8 partidos y el
+  mismo pozo, 9. El `SELECT` da lo mismo.
+- **Fair play** contra `/comunidad`, cargadas uña y carne: los siete iguales
+  (Adrián C 4,2, Oti 4,0, Jorge S 3,9, Silvia 3,9, Eli Pastor 3,9, Rodrigo 3,8,
+  Diego Gonzalez 3,8). Antes de unificar la fecha de corte, Rodrigo salía 3,9
+  en `/comunidad` y 3,8 aquí.
 - **Revelación** contra `/rating`: Eli Pastor 2097,25 → +297 sobre 1800; Rober
   hd 1692,15; ANDER G 1546,17; Silvia 1515,06. El mismo motor, el mismo
   número.

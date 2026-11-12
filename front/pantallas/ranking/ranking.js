@@ -26,13 +26,6 @@ let categoriaActual = 'actividad';
 // FECHAS
 // ============================================================================
 
-function hoyIso() {
-  const d = new Date();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${mm}-${dd}`;
-}
-
 function diaAnterior(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   const t = new Date(Date.UTC(y, m - 1, d) - 24 * 60 * 60 * 1000);
@@ -50,10 +43,14 @@ function enPeriodo(iso) {
   return !!iso && iso >= PERIODO.desde && iso <= PERIODO.hasta;
 }
 
-// El corte del «ahora»: hoy mientras el periodo siga abierto, y su ultimo dia
-// si ya se cerro. Sin esto, un periodo pasado seguiria moviendose.
+// El corte de revelacion: hoy mientras el periodo siga abierto, y su ultimo
+// dia si ya se cerro. Sin esto, un periodo pasado seguiria moviendose.
+//
+// Fair play NO usa este corte sino hoy a secas, porque es la calificacion
+// actual del jugador y tiene que ser la misma que ve en /cuenta. Mientras el
+// periodo esta abierto las dos fechas coinciden y basta una pasada.
 function corteActual() {
-  const hoy = hoyIso();
+  const hoy = window.vtGlicko.hoyIso();
   return hoy < PERIODO.hasta ? hoy : PERIODO.hasta;
 }
 
@@ -296,15 +293,19 @@ async function init() {
     const activos = new Set(nombres.map((n) => String(n || '').trim()).filter(Boolean));
     const lista = Array.from(activos);
 
-    // Las dos pasadas del motor se hacen una sola vez: el RD de hoy lo usan
-    // fair play y revelacion, y recorrer el historico no es gratis.
-    const deAhora = window.vtGlicko.calcularRatings(lista, partidos, corteActual());
+    // Recorrer el historico no es gratis, asi que se hace lo justo: con el
+    // periodo abierto, el corte de revelacion y el de hoy son el mismo dia y
+    // una sola pasada vale para las dos categorias.
+    const hoy = window.vtGlicko.hoyIso();
+    const corte = corteActual();
+    const deAhora = window.vtGlicko.calcularRatings(lista, partidos, corte);
     const deAntes = window.vtGlicko.calcularRatings(lista, partidos, diaAnterior(PERIODO.desde));
+    const deHoy = corte === hoy ? deAhora : window.vtGlicko.calcularRatings(lista, partidos, hoy);
 
     const actividad = actividadDelPeriodo(partidos, activos);
     datos = {
       actividad: actividad,
-      fairplay: fairPlayAhora(comunidad, deAhora, activos),
+      fairplay: fairPlayAhora(comunidad, deHoy, activos),
       revelacion: revelacionDelPeriodo(deAhora, deAntes, new Set(actividad.keys()))
     };
 

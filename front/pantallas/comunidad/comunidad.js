@@ -155,7 +155,10 @@ async function cargar() {
     if (!res.ok || !json.ok) throw new Error('No se pudo cargar la comunidad. Inténtalo otra vez.');
     const nombres = json.jugadores.map((j) => j.nombre);
     const [, , partidos] = await Promise.all([window.vtNivel.listo, window.vtInicial.listo, window.vtGlicko.leerPartidos()]);
-    const ratings = new Map(window.vtGlicko.calcularRatings(nombres, partidos).map((r) => [r.name, r]));
+    // Con la fecha de hoy, no la del ultimo partido: si no, la fiabilidad y
+    // la calificacion que se ven aqui no son las de /cuenta ni las de
+    // /ranking (ai_context/calificacion_de_estrellas.md).
+    const ratings = new Map(window.vtGlicko.calcularRatings(nombres, partidos, window.vtGlicko.hoyIso()).map((r) => [r.name, r]));
     jugadores = json.jugadores.map((j) => {
       const r = ratings.get(j.nombre) || {};
       return { ...j, rating: r.rating, rd: r.rd, categoria: window.categoriaDeRating(r.rating) };
