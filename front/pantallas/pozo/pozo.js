@@ -335,6 +335,15 @@ async function arrancar() {
   pintar();
 }
 
+// «Atrás» vuelve a donde estabas. Si no hay a donde volver —la app abierta
+// de cero justo en esta pagina, que en el movil instalado pasa— lleva a la
+// portada, porque un boton que no hace nada es peor que uno que hace algo
+// razonable.
+document.getElementById('atrasBtn').addEventListener('click', () => {
+  if (window.history.length > 1) window.history.back();
+  else window.location.href = '/';
+});
+
 document.getElementById('pozoSelect').addEventListener('change', async (ev) => {
   estado.editando = null;
   await window.vtCargando.mientras(async () => {

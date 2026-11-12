@@ -36,6 +36,24 @@ function formatEventDates(startDate, endDate){
   return `${start} - ${end}`
 }
 
+// Un pozo con pantalla propia no ensena aqui ni clasificacion ni resultados:
+// la vista de arriba manda a /pozo, donde estan las rondas con sus marcadores
+// y la clasificacion con sus desempates. Ensenar ademas la pestana de
+// resultados era pintar los mismos partidos peor y en otro orden. Lo dijo
+// Dani el 2026-11-12. Los demas torneos la siguen teniendo: ahi la
+// clasificacion son victorias y juegos, y los partidos no se ven en ningun
+// otro sitio.
+function esPozoConPantallaPropia(eventId){
+  return pozosPropios.has(String(eventId || '').trim())
+}
+
+function pintarElSelectorDeVista(){
+  const toggle = document.getElementById('tournamentViewToggle')
+  if (!toggle) return
+  const seleccionado = (document.getElementById('eventSelect').value || '').trim()
+  toggle.style.display = (seleccionado && !esPozoConPantallaPropia(seleccionado)) ? 'flex' : 'none'
+}
+
 function setTournamentView(view){
   const nextView = (view === 'results') ? 'results' : 'rating'
   currentTournamentView = nextView
@@ -51,11 +69,7 @@ function setTournamentView(view){
   if (ratingContainer) ratingContainer.style.display = (nextView === 'rating') ? 'block' : 'none'
   if (tableContainer) tableContainer.style.display = (nextView === 'results') ? 'block' : 'none'
 
-  const toggle = document.getElementById('tournamentViewToggle')
-  if (toggle) {
-    const selectedEvent = (document.getElementById('eventSelect').value || '').trim()
-    toggle.style.display = selectedEvent ? 'flex' : 'none'
-  }
+  pintarElSelectorDeVista()
 }
 
 function parseMatches(raw){
@@ -164,8 +178,7 @@ function applyFilter(){
 
 
   // filter by selected event (this set is used for rating)
-  const toggle = document.getElementById('tournamentViewToggle')
-  if (toggle) toggle.style.display = selectedEvent ? 'flex' : 'none'
+  pintarElSelectorDeVista()
 
   if (!selectedEvent) {
     document.getElementById('summary').innerText = ''
@@ -198,7 +211,7 @@ function applyFilter(){
   const eventType = (eventFiltered && eventFiltered.length) ? (eventFiltered[0].event_type || '') : ''
   renderTable(filtered, eventType)
   renderRating(eventFiltered, eventType, selectedEvent)
-  setTournamentView(currentTournamentView)
+  setTournamentView(esPozoConPantallaPropia(selectedEvent) ? 'rating' : currentTournamentView)
 }
 
 function pairKeyFromPlayers(players){

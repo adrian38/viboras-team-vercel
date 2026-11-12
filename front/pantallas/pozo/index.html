@@ -167,9 +167,15 @@
   <div id="rondas" class="vt-card"></div>
   <div id="clasificacion" class="vt-card"></div>
 
+  <!-- El primero decia «Torneos anteriores» y llevaba a /tournaments. Quien
+       entra aqui desde el torneo, la portada o un aviso lo usa para volver,
+       y la etiqueta prometia otra cosa: lo dijo Dani el 2026-11-12. Ahora
+       vuelve de verdad, y a los torneos se va desde la portada, que ya tiene
+       su boton. Sin historial —la app abierta de cero en esta pagina— lleva
+       a la portada, que es lo unico que se puede prometer. -->
   <div class="vt-acciones">
-    <button class="vt-btn vt-btn--ghost" onclick="window.location.href='/tournaments'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">emoji_symbols</span>Torneos anteriores</button>
-    <button class="vt-btn vt-btn--ghost" onclick="window.location.href='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Inicio</button>
+    <button class="vt-btn vt-btn--ghost" id="atrasBtn" type="button"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Atrás</button>
+    <button class="vt-btn vt-btn--ghost" onclick="window.location.href='/'"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">home</span>Inicio</button>
   </div>
 </div>
 
