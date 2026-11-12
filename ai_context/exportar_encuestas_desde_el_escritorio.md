@@ -1,42 +1,69 @@
 # Exportar las encuestas desde el escritorio
 
-Desde el 2026-11-12, `npm run export:encuestas` (`scripts/exportar-encuestas.mjs`)
-deja en `backups/encuestas-AAAA-MM-DD-HHMM/` cuatro CSV y un `.xlsx` de cuatro
-hojas con las valoraciones de partido, los jugadores, los partidos y las
-cuentas. Lo pidió Adrián para gestionar fuera de la app: la pantalla
-«Jugadores» del panel enseña el resumen, pero no quién votó a quién.
-
-Es un script de escritorio, no una pantalla: no hay nada en la web que lo
-llame, y por eso puede sacar la matriz entera sin pasar por `exigirAdmin`.
-
-## Lee de producción, y sólo lee
-
-Carga el fichero de entorno que se le pase (`.env.local` por defecto, que son
-**las URL de producción**: [[neon_en_produccion]]) y conecta con
-`POSTGRES_URL_NON_POOLING`. **La pooled no vale**: `createClient` la rechaza
-con `invalid_connection_string`, y además `SET SESSION` sólo se mantiene entre
-consultas en una conexión directa.
-
-Lo primero que hace al conectar:
+Desde el 2026-11-12, la carpeta `exportar-encuestas/` saca a Excel y CSV las
+valoraciones de partido: quién votó a quién, con qué y en qué partido, más los
+jugadores, los partidos y las cuentas. Lo pidió Adrián para gestionar fuera de
+la app: la pantalla «Jugadores» del panel enseña el resumen, pero no la matriz.
 
 ```
-SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY
-SHOW default_transaction_read_only   -- si no dice 'on', aborta
+npm run export:encuestas          desde el proyecto
+exportar-encuestas\exportar.bat   doble clic, también fuera del proyecto
 ```
 
-No es un adorno: comprobado el 2026-11-12 contra producción, un
-`CREATE TEMP TABLE` en esa sesión muere con «cannot execute CREATE TABLE in a
-read-only transaction». La garantía la da Postgres, no el cuidado de quien
-escribe la consulta.
+No hay nada en la web que lo llame, y por eso puede sacar la matriz entera sin
+pasar por `exigirAdmin`.
 
-Para leer el clon de pruebas se le pasa otro fichero de entorno
-(`npm run export:encuestas -- .env.dev`), nunca se apunta el de producción a
-otra base: [[entorno_dev_y_clon_neon]].
+## Es una carpeta que se le puede dar a alguien
 
-## La salida va a `backups/`, que está en `.gitignore`
+Esa es la razón de que no esté en `scripts/` y de que no use
+`@vercel/postgres`: **la carpeta se copia a otro ordenador tal cual y funciona
+con Node a secas**, sin `npm install` y sin `node_modules`.
 
-Lleva nombres, correos y las respuestas de la inscripción (teléfono incluido).
-No se commitea y no se manda por un canal del grupo sin pensarlo.
+| Fichero | Qué hace |
+| --- | --- |
+| `exportar.mjs` | Busca la conexión, pide los datos y escribe la salida. |
+| `neon.mjs` | Habla con la base por HTTP. |
+| `consultas.mjs` | El SQL, una consulta por hoja. Lo único que se toca para cambiar lo que sale. |
+| `xlsx.mjs` | El `.xlsx`, sin librerías. |
+| `exportar.bat` | Doble clic en Windows; avisa si no hay Node. |
+| `LEEME.md` | Las instrucciones para quien reciba la carpeta. |
+
+La conexión se busca en cuatro sitios, en este orden: el argumento de la línea
+de órdenes, `conexion.txt` al lado del script, la variable
+`POSTGRES_URL_NON_POOLING`, y el `.env.local` del proyecto (que es lo que usa
+`npm run export:encuestas`). La salida va a `salida/` dentro de la propia
+carpeta. `conexion.txt` y `salida/` están en `.gitignore`.
+
+## SQL por HTTP, que es lo que quita las dependencias
+
+`neon.mjs` hace un `POST https://<host>/sql` con la cadena de conexión en la
+cabecera `Neon-Connection-String`. Es el mismo endpoint que usa por dentro
+`@neondatabase/serverless`, y con `fetch`, que Node trae de serie desde la 18,
+no hace falta nada más. El host sale de la propia cadena.
+
+Las consultas van en un lote (`queries`) con la cabecera
+`Neon-Batch-Read-Only: true`: **Postgres abre la transacción en sólo lectura**.
+Antes de la primera consulta el script pregunta `SHOW transaction_read_only` y
+para si no contesta `on`. La garantía la da Postgres, no el cuidado de quien
+escriba el SQL.
+
+Neon devuelve **todos los valores como texto**. `exportar.mjs` mira el
+`dataTypeID` de cada columna y convierte a número las que la base declara
+numéricas (`int2/4/8`, `float4/8`, `numeric`), para que en Excel se puedan
+sumar y ordenar. Sin eso, los ids y los votos serían texto.
+
+## Quien reciba la carpeta recibe la base entera
+
+La cadena de conexión no es de sólo lectura: lo de sólo lectura es esta
+herramienta. Con la cadena y cualquier otro programa se escribe en producción.
+Para dársela a alguien de fuera, lo suyo es un usuario de sólo lectura en el
+panel de Neon ([[neon_en_produccion]]). Está dicho en el `LEEME.md`, que es lo
+que esa persona va a leer.
+
+Lo que sale lleva nombres, correos y teléfonos: `salida/` no se commitea.
+
+Para leer el clon de pruebas se le pasa su cadena como argumento; nunca se
+apunta la de producción a otra base ([[entorno_dev_y_clon_neon]]).
 
 ## La trampa: 210 filas son 171 opiniones
 
@@ -71,11 +98,12 @@ La hoja **Jugadores** no usa la tabla sino la vista, para que sus columnas
 - **Quién votó a quién no se enseña en ninguna pantalla**, ni siquiera a los
   administradores. Este fichero sí lo lleva.
 
-## El `.xlsx` lo escribe `tools/xlsx.mjs`
+## El `.xlsx` lo escribe `xlsx.mjs`
 
 Mismo zip *store* de unos pocos XML que `front/comun/excel-export.js`, el del
 navegador, con dos diferencias: escribe un fichero en vez de un `Blob` y
-admite varias hojas. Sin librerías.
+admite varias hojas. Vive dentro de `exportar-encuestas/` y no en `tools/`
+porque la carpeta tiene que poder viajar sola.
 
 Comprobado el 2026-11-12: las cuatro hojas se abren con openpyxl sin avisos y
 coinciden celda a celda con los CSV. **Excel de escritorio no se ha probado**,
@@ -83,7 +111,8 @@ igual que con el del navegador.
 
 ## Los números del 2026-11-12
 
-Contrastados contra la base en la misma ejecución:
+Contrastados contra la base, con la carpeta copiada fuera del repositorio y
+corriendo con su `conexion.txt`:
 
 | | Base | Exportación |
 | --- | --- | --- |
@@ -95,3 +124,7 @@ Contrastados contra la base en la misma ejecución:
 | Partidos con alguna opinión | 30 de 32 | 30 de 32 |
 | Jugadores | 42 | 42 |
 | Cuentas | 42 | 42 |
+
+Los tres errores que se pueden dar están probados y dicen qué hacer: sin
+`conexion.txt`, con una cadena que no es una URL, y con la contraseña
+equivocada.

@@ -1,20 +1,7 @@
-// Saca a Excel y CSV lo que hay en la base sobre las valoraciones de partido
-// («encuestas»): quien vota a quien, con que, y en que partido. Se ejecuta en
-// el escritorio, no en la web, y SOLO LEE: la sesion se pone en read only
-// antes de la primera consulta y se comprueba que Postgres lo aplico.
-//
-//   npm run export:encuestas              -> lee .env.local (PRODUCCION)
-//   npm run export:encuestas -- .env.dev  -> otro fichero de entorno
-//
-// Deja cuatro CSV y un .xlsx de cuatro hojas en backups/, que esta en
-// .gitignore: llevan nombres y correos del grupo.
+// Las consultas de la exportacion, una por hoja. Separadas del resto porque
+// son lo unico que hay que tocar para cambiar lo que sale.
 //
 // Detalle: ai_context/exportar_encuestas_desde_el_escritorio.md
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createClient } from '@vercel/postgres';
-import { escribirLibro } from '../tools/xlsx.mjs';
 
 // matches.date es texto en dos formatos; lo que no encaja en ninguno queda
 // NULL, igual que en la vista match_feedback_por_dia (api/_avisos.js).
@@ -150,96 +137,7 @@ const CUENTAS = `
   FROM users u LEFT JOIN players p ON p.id = u.player_id
   ORDER BY u.id`;
 
-function cargarEntorno(ruta) {
-  let texto;
-  try {
-    texto = readFileSync(ruta, 'utf8');
-  } catch {
-    throw new Error(`No encuentro ${ruta}. Pasa el fichero de entorno como argumento.`);
-  }
-  for (const linea of texto.split(/\r?\n/)) {
-    const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
-    if (m) process.env[m[1]] = m[2].trim().replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
-  }
-}
-
-// La conexion directa (non pooling) es la que acepta createClient y la unica
-// con la que SET SESSION se mantiene entre consultas.
-async function conectarSoloLectura() {
-  const url = process.env.POSTGRES_URL_NON_POOLING;
-  if (!url) throw new Error('Falta POSTGRES_URL_NON_POOLING en el fichero de entorno.');
-  const cliente = createClient({ connectionString: url });
-  await cliente.connect();
-  await cliente.query('SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY');
-  const { rows } = await cliente.query('SHOW default_transaction_read_only');
-  if (rows[0].default_transaction_read_only !== 'on') {
-    await cliente.end();
-    throw new Error('La sesion no quedo en solo lectura; no sigo.');
-  }
-  const donde = await cliente.query('SELECT current_database() AS base');
-  return { cliente, base: donde.rows[0].base };
-}
-
-function csv(filas) {
-  const texto = filas.map((fila) => fila.map((v) => {
-    if (v === null || v === undefined) return '';
-    const s = String(v);
-    return /[";\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }).join(';')).join('\r\n');
-  return '﻿' + texto + '\r\n';
-}
-
-// El driver devuelve los numeros grandes como texto; a Excel le interesa que
-// un numero sea un numero, asi que lo que venga como numero se queda numero.
-function aFilas(rows) {
-  if (!rows.length) return [['sin datos']];
-  const cabecera = Object.keys(rows[0]);
-  return [cabecera, ...rows.map((r) => cabecera.map((k) => {
-    const v = r[k];
-    return v === null || v === undefined ? '' : v;
-  }))];
-}
-
-function carpetaDeSalida(raiz) {
-  const ahora = new Date();
-  const dos = (n) => String(n).padStart(2, '0');
-  const sello = `${ahora.getFullYear()}-${dos(ahora.getMonth() + 1)}-${dos(ahora.getDate())}` +
-    `-${dos(ahora.getHours())}${dos(ahora.getMinutes())}`;
-  const carpeta = join(raiz, 'backups', `encuestas-${sello}`);
-  mkdirSync(carpeta, { recursive: true });
-  return { carpeta, sello };
-}
-
-async function main() {
-  const raiz = fileURLToPath(new URL('..', import.meta.url));
-  const ficheroEntorno = process.argv[2] || join(raiz, '.env.local');
-  cargarEntorno(ficheroEntorno);
-  const { cliente, base } = await conectarSoloLectura();
-  console.log(`Leyendo de ${base} (${ficheroEntorno}), sesion en SOLO LECTURA.`);
-
-  const consultas = [
-    ['Opiniones', OPINIONES], ['Jugadores', JUGADORES],
-    ['Partidos', PARTIDOS], ['Cuentas', CUENTAS]
-  ];
-  const hojas = [];
-  for (const [nombre, sql] of consultas) {
-    const { rows } = await cliente.query(sql);
-    hojas.push({ nombre, filas: aFilas(rows), cuantas: rows.length });
-  }
-  await cliente.end();
-
-  const { carpeta, sello } = carpetaDeSalida(raiz);
-  for (const h of hojas) {
-    writeFileSync(join(carpeta, `${h.nombre.toLowerCase()}.csv`), csv(h.filas), 'utf8');
-  }
-  const xlsx = join(carpeta, `viboras-encuestas-${sello}.xlsx`);
-  escribirLibro(xlsx, hojas);
-
-  console.log(hojas.map((h) => `  ${h.nombre}: ${h.cuantas} filas`).join('\n'));
-  console.log(`\nListo en ${carpeta}`);
-}
-
-main().catch((err) => {
-  console.error('\nERROR:', err.message);
-  process.exit(1);
-});
+export const CONSULTAS = [
+  ['Opiniones', OPINIONES], ['Jugadores', JUGADORES],
+  ['Partidos', PARTIDOS], ['Cuentas', CUENTAS]
+];
