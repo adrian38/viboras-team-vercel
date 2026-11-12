@@ -735,7 +735,11 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 .vt-table td{padding:10px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
 .vt-table tbody tr:last-child td{border-bottom:0}
 .vt-table tbody tr:hover td{background:var(--vt-surface-2)}
-.vt-table .vt-num{font-variant-numeric:tabular-nums;text-align:right}
+/* Centrada, no a la derecha: en la clasificacion del pozo la columna «Dif»
+   mezcla +2, -2 y 0, y alineada a la derecha el cero quedaba desplazado
+   respecto a los que llevan signo. Es tambien lo que hace /ranking. Las
+   columnas que llevan `width:1%` siguen encogiendo a su contenido. */
+.vt-table .vt-num{font-variant-numeric:tabular-nums;text-align:center}
 
 /* Podio: oro, plata, bronce en las tres primeras posiciones. */
 .vt-rank-1{color:var(--vt-gold);font-weight:700}

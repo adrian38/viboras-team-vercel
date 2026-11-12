@@ -131,7 +131,9 @@ td {
 tbody tr:last-child td { border-bottom: none; }
 
 td:nth-child(2), th:nth-child(2) { text-align: center; }
-td:nth-child(3), th:nth-child(3) { text-align: right; }
+/* Centrada igual que la de rating, y que las demas columnas numericas de la
+   app: a la derecha, un RD de dos cifras no cuadraba con uno de tres. */
+td:nth-child(3), th:nth-child(3) { text-align: center; }
 /* El ancho que sobra se lo lleva «Jugador». La tabla es width:100% y no
    declara ninguna anchura, asi que el navegador repartia el hueco entre las
    tres columnas: medido a 1013 px, la de RD eran 225 px para un numero de 69
