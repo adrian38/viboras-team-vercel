@@ -117,6 +117,11 @@ que hay.
   de la hoja dicen lo contrario), el empate a juegos que la hoja se quedaba en
   silencio, por qué las rondas no existen hasta que se pueden formar, quién
   puede corregir qué y a qué pantallas afecta sin querer.
+- `partidos_de_torneo_no_se_editan_como_sueltos.md`: un partido de pozo es una
+  fila de `matches` como las demás, así que `submitResult` y `deleteResult` lo
+  alcanzaban y sus cuatro jugadores se saltaban el «lo sube un administrador»;
+  cómo se cierra por tipo de evento, qué sigue igual, lo que ninguna guarda
+  vigila, y por qué editar `api/` en caliente no basta para probarlo.
 
 ## Entorno y despliegue
 
