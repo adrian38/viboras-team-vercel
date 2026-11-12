@@ -2,11 +2,16 @@
 //
 // Todo lo que se ve sale de /api/read?action=getPozo. Esta pagina no calcula
 // ni emparejamientos ni clasificacion: eso vive en api/_pozo-motor.js y basta
-// con un sitio. Aqui solo se pinta y se manda el marcador.
+// con un sitio. Aqui solo se pinta, se manda el marcador y —si eres
+// administrador— se cambian los jugadores.
 //
 // Detalle: ai_context/pozo_americano.md
 
-const estado = { pozos: [], id: null, datos: null, editando: null };
+const JUGADORES_POR_PISTA = 4;
+
+// `lista` son los nombres de los puestos mientras se editan, antes de
+// guardarlos; `nombres`, los del grupo, para los desplegables.
+const estado = { pozos: [], id: null, datos: null, editando: null, lista: null, nombres: [] };
 
 function el(tag, props, ...hijos) {
   const nodo = document.createElement(tag);
@@ -70,6 +75,9 @@ async function cargarPozo(id) {
   if (!ok) { estado.datos = null; return false; }
   estado.datos = cuerpo;
   estado.id = id;
+  // Lo que viene de la base manda: una lista a medio editar de otro pozo —o
+  // del mismo antes de guardar— no se arrastra.
+  estado.lista = null;
   document.getElementById('pozoSelect').value = String(id);
   return true;
 }
@@ -303,10 +311,139 @@ function pintarClasificacion() {
       texto: 'Orden: partidos ganados → puntos → diferencia de juegos.' }));
 }
 
+// --- Cambiar jugadores ---------------------------------------------------
+
+// Un jugador que no aparece y entra otro, un nombre metido por equivocacion,
+// dos puestos cambiados: hasta el 2026-11-12 la lista solo se podia escribir
+// al crear el torneo. Se manda entera, y el servidor vuelve a montar la ronda
+// 1 con ella (api/_pozo.js:cambiarSiembra).
+//
+// El puesto es lo que se juega, igual que en /pozo-nuevo: los cuatro primeros
+// empiezan en la ultima pista, el 1.º y el 2.º son una pareja y el 3.º y el
+// 4.º la otra, y dentro de la pareja el primero va al drive.
+function pistaDelPuesto(i) {
+  return estado.datos.evento.pistas - Math.floor(i / JUGADORES_POR_PISTA);
+}
+
+function listaGuardada() {
+  return estado.datos.jugadores.map((j) => j.nombre);
+}
+
+function haCambiado() {
+  const guardada = listaGuardada();
+  return estado.lista.some((nombre, i) => nombre !== guardada[i]);
+}
+
+// Los del grupo mas los que ya juegan: `getNames` solo trae los activos, y a
+// un jugador del torneo dado de baja despues hay que poder seguir viendolo en
+// su puesto. Sin esto el desplegable no tendria su nombre y lo cambiaria por
+// otro sin que nadie lo pidiera.
+function opcionesDelPuesto() {
+  const todos = new Set(estado.nombres);
+  for (const nombre of listaGuardada()) todos.add(nombre);
+  return [...todos].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+// Elegir a alguien que ya juega cambia a los dos de sitio; elegir a alguien
+// de fuera sustituye, y el que sale se queda fuera del torneo.
+function ponerEn(i, nombre) {
+  const estaba = estado.lista.indexOf(nombre);
+  const salia = estado.lista[i];
+  estado.lista[i] = nombre;
+  if (estaba !== -1 && estaba !== i) estado.lista[estaba] = salia;
+  pintarPuestos();
+}
+
+function moverPuesto(i, salto) {
+  const destino = i + salto;
+  if (destino < 0 || destino >= estado.lista.length) return;
+  const lista = estado.lista;
+  [lista[i], lista[destino]] = [lista[destino], lista[i]];
+  pintarPuestos();
+}
+
+function selectorDePuesto(nombre, i, opciones) {
+  const caja = el('select', { class: 'vt-select puesto__quien', 'aria-label': `Quién juega en el puesto ${i + 1}` });
+  for (const uno of opciones) caja.append(el('option', { value: uno, texto: uno }));
+  caja.value = nombre;
+  caja.addEventListener('change', () => ponerEn(i, caja.value));
+  return caja;
+}
+
+function filaDePuesto(nombre, i, opciones) {
+  const flecha = (texto, salto, etiqueta) => el('button', {
+    type: 'button', class: 'vt-btn vt-btn--quiet vt-btn--sm puesto__accion',
+    'aria-label': `${etiqueta} a ${nombre}`, texto, onclick: () => moverPuesto(i, salto)
+  });
+  return el('li', { class: 'puesto' + (i % JUGADORES_POR_PISTA === 2 ? ' puesto--pareja2' : '') },
+    el('span', { class: 'puesto__num', texto: String(i + 1) }),
+    selectorDePuesto(nombre, i, opciones),
+    el('span', { class: 'puesto__lado', texto: i % 2 === 0 ? 'drive' : 'revés' }),
+    flecha('↑', -1, 'Subir'),
+    flecha('↓', 1, 'Bajar'));
+}
+
+function pintarPuestos() {
+  const lista = vaciar('puestos');
+  const opciones = opcionesDelPuesto();
+  estado.lista.forEach((nombre, i) => {
+    if (i % JUGADORES_POR_PISTA === 0) {
+      lista.append(el('li', { class: 'puestos__pista', texto: `Pista ${pistaDelPuesto(i)}` }));
+    }
+    lista.append(filaDePuesto(nombre, i, opciones));
+  });
+  const cambiada = haCambiado();
+  document.getElementById('guardarJugadores').disabled = !cambiada;
+  document.getElementById('deshacerJugadores').disabled = !cambiada;
+}
+
+function pintarJugadores() {
+  const caja = document.getElementById('jugadores');
+  caja.hidden = !estado.datos.yo.esAdmin;
+  if (caja.hidden) return;
+  if (!estado.lista) estado.lista = listaGuardada();
+  document.getElementById('avisoJugadores').textContent = '';
+  document.getElementById('jugadoresTexto').textContent = 'Cada puesto es el que se juega: los cuatro'
+    + ` primeros empiezan en la pista ${estado.datos.evento.pistas} y el primero de cada pareja va al drive.`
+    + ' Elegir a alguien que ya juega los cambia de sitio; elegir a alguien de fuera sustituye.'
+    + ' Al guardar, la pista cuyos cuatro jugadores cambien pierde su resultado y las rondas siguientes'
+    + ' se vuelven a formar.';
+  pintarPuestos();
+}
+
+function hayResultados() {
+  return estado.datos.rondas.some((r) => r.partidos.some((p) => p.juegos1 !== null));
+}
+
+async function guardarJugadores() {
+  const aviso = document.getElementById('avisoJugadores');
+  const boton = document.getElementById('guardarJugadores');
+  aviso.textContent = '';
+  if (hayResultados() && !confirm('Este torneo ya tiene resultados. Las pistas cuyos cuatro jugadores cambien los pierden y las rondas siguientes se vuelven a formar. ¿Cambiar los jugadores?')) return;
+  boton.disabled = true;
+  const { ok, cuerpo } = await pedir('/api/write?action=editPozoPlayers', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ eventId: estado.id, jugadores: estado.lista })
+  });
+  if (!ok) {
+    aviso.textContent = (cuerpo && cuerpo.message) || 'No se han podido cambiar los jugadores. Inténtalo otra vez.';
+    boton.disabled = false;
+    return;
+  }
+  window.vtToast(cuerpo.perdidos
+    ? `Jugadores cambiados. Se han borrado ${cuerpo.perdidos} resultado(s).`
+    : 'Jugadores cambiados', cuerpo.perdidos ? 6000 : undefined);
+  await cargarPozo(estado.id);
+  pintar();
+  document.getElementById('jugadores').open = true;
+}
+
 function pintar() {
   document.getElementById('aviso').textContent = '';
   if (!estado.datos) {
     document.getElementById('vacio').hidden = false;
+    document.getElementById('jugadores').hidden = true;
     for (const id of ['cabecera', 'tuPista', 'rondas', 'clasificacion']) vaciar(id).hidden = true;
     return;
   }
@@ -316,6 +453,7 @@ function pintar() {
   pintarTuPista();
   pintarRondas();
   pintarClasificacion();
+  pintarJugadores();
 }
 
 // --- Arranque ------------------------------------------------------------
@@ -326,12 +464,23 @@ function idPedido() {
   return estado.pozos.length ? estado.pozos[0].id : null;
 }
 
+// Los nombres del grupo, para los desplegables de los puestos. Solo le hacen
+// falta a un administrador, asi que a los demas no se les pide. Si falla, los
+// desplegables se quedan con los que ya juegan: se pueden cambiar de sitio
+// pero no sustituir, y eso es mejor que no poder abrir la lista.
+async function cargarNombres() {
+  const { cuerpo } = await pedir('/api/read?action=getNames&ts=' + Date.now());
+  estado.nombres = (cuerpo && cuerpo.names) || [];
+}
+
 async function arrancar() {
   const user = await window.vtMe;
-  if (user && user.role === 'admin') document.getElementById('crear').hidden = false;
+  const esAdmin = Boolean(user && user.role === 'admin');
+  if (esAdmin) document.getElementById('crear').hidden = false;
   await cargarLista();
   const id = idPedido();
   if (id) await cargarPozo(id);
+  if (esAdmin) await cargarNombres().catch(() => { estado.nombres = []; });
   pintar();
 }
 
@@ -350,6 +499,15 @@ document.getElementById('pozoSelect').addEventListener('change', async (ev) => {
     await cargarPozo(Number(ev.target.value));
     pintar();
   }, 'Cargando el torneo');
+});
+
+document.getElementById('guardarJugadores').addEventListener('click', guardarJugadores);
+
+// «Deshacer» no llama al servidor: tira la lista a medio editar y vuelve a la
+// que esta guardada.
+document.getElementById('deshacerJugadores').addEventListener('click', () => {
+  estado.lista = null;
+  pintarJugadores();
 });
 
 // auth-client.js va con defer: window.vtMe existe en DOMContentLoaded, no

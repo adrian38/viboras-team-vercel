@@ -237,6 +237,26 @@ export async function sincronizarRondas(evento) {
   return perdidos;
 }
 
+// Cambiar los jugadores de un pozo ya creado. La lista que entra es la misma
+// que la de crear —la primera ronda entera, puesto por puesto— y con ella se
+// vuelve a montar la ronda 1; de ahi en adelante lo encadena
+// sincronizarRondas(), igual que un marcador corregido.
+//
+// Asi que vale lo mismo que corregir una ronda cerrada: la pista cuyos cuatro
+// jugadores se quedan como estaban conserva su resultado, la que cambia lo
+// pierde, y las rondas posteriores se vuelven a formar. Devuelve cuantos
+// resultados se han perdido, que es lo que la pantalla tiene que decir.
+//
+// El numero de pistas y de rondas no se toca: lo valida quien llama con
+// problemaDeLaConfig(), que exige tantos jugadores como puestos hay.
+export async function cambiarSiembra(evento, siembra) {
+  const config = { ...evento.config, siembra };
+  await sql`UPDATE events SET pozo_config = ${JSON.stringify(config)}::jsonb WHERE id = ${evento.id}`;
+  const actuales = agrupaPorRonda(await partidosDelPozo(evento.id)).get(1) || [];
+  const hecho = await ajustarRonda(evento.id, evento.fecha, actuales, rondaInicial(siembra, config.pistas));
+  return hecho.reiniciados + await sincronizarRondas({ ...evento, config });
+}
+
 export async function guardarMarcador(matchId, juegos1, juegos2) {
   await sql`
     UPDATE matches

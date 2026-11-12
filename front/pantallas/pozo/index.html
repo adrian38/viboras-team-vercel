@@ -103,13 +103,46 @@
 .empate__texto{margin:0;font-size:14px;font-weight:600;color:var(--vt-error)}
 
 .tabla__yo td{background:var(--vt-surface-3);font-weight:600}
-#aviso:not(:empty){
+#aviso:not(:empty),#avisoJugadores:not(:empty){
   padding:var(--vt-sm) var(--vt-md);
   background:var(--vt-error-bg);
   border-radius:var(--vt-r);
   color:var(--vt-error);
   font-size:14px;
 }
+
+/* Los puestos del torneo, para cambiar jugadores. Mismo dibujo que la lista
+   de /pozo-nuevo —el número manda, porque de él salen las parejas— pero cada
+   puesto es un desplegable: lo que se cambia es quién lo ocupa. */
+.puestos{list-style:none;margin:var(--vt-sm) 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.puestos__pista{
+  margin-top:var(--vt-sm);
+  font-family:var(--vt-font-head);font-size:12px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--vt-muted);
+}
+.puesto{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 8px;
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r);
+}
+.puesto--pareja2{margin-top:var(--vt-sm)}
+.puesto__num{
+  flex:0 0 auto;width:26px;height:26px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--vt-r-full);
+  background:var(--vt-surface-4);
+  font-family:var(--vt-font-head);font-size:14px;font-weight:700;
+}
+.puesto__quien{flex:1;min-width:0;padding:4px 8px;font-size:14px}
+.puesto__lado{flex:0 0 auto;font-size:11px;color:var(--vt-muted);white-space:nowrap}
+.puesto__accion{flex:0 0 auto;padding:4px 7px;min-width:0}
+/* Plegado, como las rondas: es mantenimiento y lo normal es no abrirlo. */
+#jugadores > summary{cursor:pointer;list-style:none}
+#jugadores > summary::-webkit-details-marker{display:none}
+#jugadores > summary::after{content:'▾';float:right;color:var(--vt-muted)}
+#jugadores[open] > summary::after{content:'▴'}
 
 @media(max-width:620px){
   .partido{gap:var(--vt-sm)}
@@ -166,6 +199,21 @@
   <div id="tuPista" class="vt-card vt-card--glow" hidden></div>
   <div id="rondas" class="vt-card"></div>
   <div id="clasificacion" class="vt-card"></div>
+
+  <!-- Cambiar quien juega: solo administradores, y plegado, porque lo normal
+       es no tocarlo. Hace falta igual —uno que no aparece y entra otro, un
+       nombre metido por equivocacion— y hasta ahora la lista solo se podia
+       escribir al crear el torneo. -->
+  <details id="jugadores" class="vt-card" hidden>
+    <summary><h3 style="margin:0;display:inline">Cambiar jugadores</h3></summary>
+    <p class="vt-muted" id="jugadoresTexto" style="margin-top:var(--vt-sm)"></p>
+    <ol class="puestos" id="puestos"></ol>
+    <div id="avisoJugadores" role="alert" style="margin-top:var(--vt-sm)"></div>
+    <div class="vt-acciones">
+      <button class="vt-btn" id="guardarJugadores" type="button" disabled><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">save</span>Guardar jugadores</button>
+      <button class="vt-btn vt-btn--ghost" id="deshacerJugadores" type="button" disabled>Deshacer</button>
+    </div>
+  </details>
 
   <!-- El primero decia «Torneos anteriores» y llevaba a /tournaments. Quien
        entra aqui desde el torneo, la portada o un aviso lo usa para volver,

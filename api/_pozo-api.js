@@ -1,4 +1,4 @@
-// Las cuatro acciones del pozo. Viven aqui y no dentro de read.js y write.js
+// Las cinco acciones del pozo. Viven aqui y no dentro de read.js y write.js
 // para que esos dos no crezcan: alli solo esta el `case` que llama.
 //
 // Quien puede que:
@@ -7,13 +7,14 @@
 //     2026-11-12 lo apuntaban tambien los cuatro que jugaban en ella; el grupo
 //     lo cerro porque durante el torneo nadie anda con el movil. Cada pista
 //     apunta en la hoja y un administrador lo sube.
+//   - cambiar los jugadores de un pozo ya creado: solo un administrador.
 //
 // Detalle: ai_context/pozo_americano.md
 import { sql } from '@vercel/postgres';
 import { ensureSchema, getPlayerId, readBody, toInt } from './_db.js';
 import {
-  crearPozo, ensurePozoSchema, eventoPozo, guardarMarcador, leerPozo,
-  partidosDelPozo, problemaDeLaConfig, sincronizarRondas
+  cambiarSiembra, crearPozo, ensurePozoSchema, eventoPozo, guardarMarcador,
+  leerPozo, partidosDelPozo, problemaDeLaConfig, sincronizarRondas
 } from './_pozo.js';
 
 const JUEGOS_MAX = 99;
@@ -111,6 +112,10 @@ export async function getPozo(req, res, user) {
     res.status(200).json({
       ok: true,
       evento: { id: evento.id, nombre: evento.nombre, fecha: evento.fecha, ...evento.config },
+      // La siembra en su orden, con nombre: es la lista de puestos que el
+      // administrador edita. `evento.siembra` son los ids y la pantalla
+      // trabaja con nombres, como el resto de la app.
+      jugadores: conNombres(evento.config.siembra, nombres),
       rondas: pintaRondas(partidos, nombres, evento.config),
       clasificacion: clasificacion.map((f) => ({ ...f, nombre: nombres.get(f.playerId) || '' })),
       yo: {
@@ -265,6 +270,40 @@ export async function submitPozoResult(req, res, user) {
     res.status(200).json({ ok: true, perdidos });
   } catch (err) {
     console.error('write:submitPozoResult error', err);
+    res.status(500).json({ ok: false, error: 'server_error' });
+  }
+}
+
+// --- editPozoPlayers -----------------------------------------------------
+
+// Cambiar los jugadores de un pozo ya creado: uno que no viene y entra otro,
+// un nombre metido por equivocacion, dos puestos cambiados. Entra la lista
+// entera —los mismos puestos que la pantalla de crear, en el mismo orden— y
+// no el cambio suelto: asi la valida el mismo problemaDeLaConfig() y no hay
+// una segunda manera de describir una siembra.
+//
+// El numero de pistas y de rondas no se puede cambiar aqui. Eso moveria el
+// torneo entero y no hay pantalla que lo explique; si hacen falta otras
+// pistas, se crea otro pozo.
+export async function editPozoPlayers(req, res, user) {
+  if (user.role !== 'admin') { res.status(403).json({ ok: false, error: 'forbidden' }); return; }
+  try {
+    await preparar();
+    const body = await readBody(req);
+    const evento = await eventoPozo(toInt(body?.eventId));
+    if (!evento) { res.status(404).json({ ok: false, error: 'no_existe' }); return; }
+
+    const nombres = (Array.isArray(body?.jugadores) ? body.jugadores : []).map((n) => String(n || '').trim());
+    const resuelta = await siembraDeNombres(nombres);
+    if (resuelta.error) { res.status(400).json({ ok: false, error: 'datos', message: resuelta.error }); return; }
+
+    const problema = problemaDeLaConfig({ ...evento.config, siembra: resuelta.ids });
+    if (problema) { res.status(400).json({ ok: false, error: 'datos', message: problema }); return; }
+
+    const perdidos = await cambiarSiembra(evento, resuelta.ids);
+    res.status(200).json({ ok: true, perdidos });
+  } catch (err) {
+    console.error('write:editPozoPlayers error', err);
     res.status(500).json({ ok: false, error: 'server_error' });
   }
 }

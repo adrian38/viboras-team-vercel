@@ -4,7 +4,7 @@ import { validateBo3Score } from './_score.js';
 import { exigirSesion, cerrarSesionesDe } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
 import { avisarEdicion, avisarPartidoNuevo, avisarResultadoNuevo } from './_avisos.js';
-import { createPozo, submitPozoResult } from './_pozo-api.js';
+import { createPozo, editPozoPlayers, submitPozoResult } from './_pozo-api.js';
 
 // Dar de alta jugadores es de administradores desde el 2026-10-17: la pagina
 // solo lo ensenaba a ellos, pero el API lo dejaba a cualquiera con sesion.
@@ -421,6 +421,8 @@ export default async function handler(req, res) {
       return createPozo(req, res, user);
     case 'submitPozoResult':
       return submitPozoResult(req, res, user);
+    case 'editPozoPlayers':
+      return editPozoPlayers(req, res, user);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;

@@ -20,7 +20,7 @@ esta app, donde cualquiera sube el suyo cuando quiere.
 | Las normas, explicadas | `front/pantallas/pozo-info/` |
 
 `read.js` y `write.js` solo tienen el `case` que llama. Las acciones son
-`getPozos`, `getPozo`, `createPozo` y `submitPozoResult`.
+`getPozos`, `getPozo`, `createPozo`, `submitPozoResult` y `editPozoPlayers`.
 
 ## El formato, tal cual lo hace la hoja
 
@@ -174,6 +174,8 @@ pantalla lo enseña.
   cualquier marcador, también el de una ronda cerrada. Corregir una ronda ya
   cerrada vuelve a formar las posteriores y **pierde sus resultados**, porque
   ya no son los mismos partidos.
+- **Cambiar los jugadores de un pozo ya creado**: solo un administrador, desde
+  la sección plegada «Cambiar jugadores» de `/pozo`. Ver abajo.
 
 **Hasta el 2026-11-12 lo apuntaban también los cuatro de la pista**, mientras
 su ronda fuera la última formada. Lo cerró el grupo ese día: durante las dos
@@ -181,6 +183,43 @@ horas nadie anda con el móvil, así que cada pista apunta parejas y resultado e
 una hoja y después unos pocos administradores los suben. Quedó en
 `puedeTocar()` de `api/_pozo-api.js` y en `puedoEditar()` de
 `front/pantallas/pozo/pozo.js`, que ya no miran ni el partido ni la ronda.
+
+## Cambiar los jugadores de un pozo ya creado
+
+Hasta el 2026-11-12 la lista solo se podía escribir al crear el torneo: un
+jugador que no aparecía, un nombre metido por equivocación o dos puestos al
+revés no tenían arreglo, y tampoco se puede borrar un pozo. Lo pidió Adrián
+—«debería dejarme, por si acaso»— y es la sección plegada **«Cambiar
+jugadores»** de `/pozo`, que solo ve un administrador.
+
+- **Se manda la lista entera**, los mismos puestos y en el mismo orden que la
+  pantalla de crear, y no el cambio suelto. Así la valida el mismo
+  `problemaDeLaConfig()` y no hay una segunda manera de describir una siembra.
+- **El número de pistas y de rondas no se toca.** Eso movería el torneo entero
+  y no hay pantalla que lo explique; si hacen falta otras pistas, se crea otro
+  pozo. El servidor lo garantiza porque `problemaDeLaConfig()` exige tantos
+  jugadores como puestos hay.
+- **Elegir en un puesto a alguien que ya juega los cambia de sitio**; elegir a
+  alguien de fuera sustituye, y quien sale se queda fuera del torneo. Las
+  flechas mueven el puesto, igual que en `/pozo-nuevo`.
+- **El desplegable son los activos de `getNames` más los que ya juegan.** Un
+  jugador del torneo dado de baja después no sale en `getNames`, y sin añadirlo
+  su desplegable no tendría su nombre: lo cambiaría por otro sin que nadie lo
+  pidiera.
+- **Vale lo mismo que corregir una ronda cerrada.** `cambiarSiembra()` de
+  `api/_pozo.js` guarda la siembra nueva, vuelve a montar la ronda 1 con ella
+  por el mismo `ajustarRonda()` y deja que `sincronizarRondas()` encadene el
+  resto: la pista cuyos cuatro jugadores se quedan igual conserva su resultado,
+  la que cambia lo pierde, y las rondas posteriores se vuelven a formar. La
+  respuesta dice cuántos resultados se han perdido y la pantalla lo enseña.
+  **Cambiar de lado a alguien con su pareja también pierde el resultado de esa
+  pista**, aunque el marcador siga siendo el mismo: `mismosJugadores()` compara
+  puesto por puesto. Es el precio de tener un solo camino; la pantalla avisa
+  antes de guardar cuando el torneo ya tiene resultados.
+- **La clasificación se recalcula sola**: sale de `matches` y de la siembra,
+  no hay nada acumulado que arreglar. Quien sale del torneo desaparece de la
+  tabla y quien entra hereda el puesto, con los resultados que ese puesto
+  conserve.
 
 ## El esquema
 
