@@ -27,25 +27,45 @@ esta app, donde cualquiera sube el suyo cuando quiere.
 Reproducido celda a celda y comprobado contra las fórmulas del Excel. Con 4
 pistas y 16 jugadores:
 
-- **La siembra es una lista ordenada.** El 1.º con el 2.º forman la pareja 1,
-  el 3.º con el 4.º la pareja 2, y así hasta ocho parejas.
-- **Las parejas 1 y 2 empiezan en la última pista**, las 3 y 4 una más arriba,
-  y las 7 y 8 en la pista 1. La 1 es la de arriba: hacia ella se sube.
-- **Dentro de cada pista las dos parejas se cruzan**: `[baja.a + alta.b]`
-  contra `[alta.a + baja.b]`.
+- **La siembra es una lista ordenada**, y es la primera ronda entera: cada
+  cuatro puestos son una pista, dentro de la pista el 1.º y el 2.º son una
+  pareja y el 3.º y el 4.º la otra, y **dentro de la pareja el primero juega
+  al drive y el segundo al revés**.
+- **Los cuatro primeros empiezan en la última pista**, los cuatro siguientes
+  una más arriba, y los cuatro últimos en la pista 1. La 1 es la de arriba:
+  hacia ella se sube.
+- **La primera ronda no se cruza.** Se juega lo que puso quien creó el
+  torneo. La hoja sí la cruzaba (`[baja.a + alta.b]` contra
+  `[alta.a + baja.b]`), y eso hacía que nadie jugase con quien la pantalla de
+  crear le había puesto de pareja: lo vio Dani el 2026-11-12 y lo cambió
+  Adrián. Las parejas de salida, con su lado, las decide el administrador.
 - **El movimiento** de la ronda siguiente, por pista:
   - pista 1: los que ganan en la 1 y los que ganan en la 2;
   - pistas de enmedio: los que pierden arriba contra los que ganan abajo;
   - última pista: los que pierden en la penúltima y los que pierden en ella.
-  Y siempre cruzados, el primero de un sitio con el segundo del otro.
+  Y siempre cruzados, el primero de un sitio con el segundo del otro. Ese
+  cruce es el que **conserva los lados**: el primero de cada pareja es el
+  drive y el segundo el revés, así que cada pareja nueva sale con uno de cada
+  y cada uno sigue en su lado toda la mañana.
 - **Los puntos salen de la pista donde se juega**, no del marcador ni de la
   pista a la que vas después. Con la tabla del grupo: pista 1 → 8/6,
   pista 2 → 8/4, pista 3 → 6/2, pista 4 → 4/2.
 
-La prueba que lo fijó: con la siembra del Excel y ganando siempre el equipo 1,
-la ronda 2 sale `Guillermo+Adrian vs Silvia+Jaime`, `Harald+Dave vs
-InakiM+Rodrigo`, `Oti+Eli vs Txirla+Lara` y `Aitor+Dani vs Emilio+Lander`, que
-es lo que dan las fórmulas `D6=J2 E6=K3 F6=J3 G6=K2` y sus hermanas.
+El movimiento entre rondas se fijó contra las fórmulas del Excel
+(`D6=J2 E6=K3 F6=J3 G6=K2` y sus hermanas) y no ha cambiado. Lo que ya no sale
+como en la hoja es la **primera** ronda, que ahora se juega tal cual.
+Comprobado el 2026-11-12 con la siembra `A…P` y cuatro pistas, ganando siempre
+el equipo 1:
+
+```
+RONDA 1   pista 4: A+B vs C+D   pista 3: E+F vs G+H
+          pista 2: I+J vs K+L   pista 1: M+N vs O+P
+RONDA 2   pista 1: M+J vs I+N   pista 2: O+F vs E+P
+          pista 3: K+B vs A+L   pista 4: G+D vs C+H
+```
+
+El primero de cada pareja es siempre el mismo jugador que empezó al drive, y
+en la ronda 2 no se repite ninguna pareja de la 1.
 
 ## El desempate va al revés de lo que parece
 

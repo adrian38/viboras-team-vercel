@@ -52,8 +52,15 @@
   background:var(--vt-surface-4);
   font-family:var(--vt-font-head);font-size:14px;font-weight:700;
 }
-.elegido__nombre{flex:1;min-width:0;font-size:14px}
+.elegido__nombre{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* El lado y la pareja no son adorno: es lo que se va a jugar, asi que se ven
+   tambien en el movil, que es donde se monta el torneo. */
 .elegido__pista{font-size:11px;color:var(--vt-muted);white-space:nowrap}
+.elegidos__pista{
+  margin-top:var(--vt-sm);
+  font-family:var(--vt-font-head);font-size:12px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--vt-muted);
+}
 
 #aviso:not(:empty){
   padding:var(--vt-sm) var(--vt-md);
@@ -64,7 +71,6 @@
 }
 
 @media(max-width:620px){
-  .elegido__pista{display:none}
   .disponibles{max-height:180px}
 }
 </style>
@@ -134,8 +140,10 @@
     <div class="vt-card" style="margin-top:var(--vt-lg)">
       <div class="vt-sec-title"><h3>Los jugadores, en orden</h3></div>
       <p class="vt-muted" style="font-size:14px">
-        El orden forma las parejas de la primera ronda: el 1.º con el 2.º, el 3.º con el 4.º, y así.
-        Las dos primeras parejas empiezan abajo del todo y las dos últimas en la pista 1.
+        El orden monta la primera ronda entera: cada cuatro jugadores son una pista, dentro de ella
+        el 1.º y el 2.º forman una pareja y el 3.º y el 4.º la otra, y de cada pareja el primero
+        juega al <strong>drive</strong> y el segundo al <strong>revés</strong>. Se juega tal cual.
+        Los cuatro primeros empiezan en la pista de abajo y los cuatro últimos en la pista 1.
         Toca un nombre para añadirlo y usa las flechas para colocarlo.
       </p>
       <div class="vt-field" style="margin-bottom:var(--vt-sm)">

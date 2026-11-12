@@ -69,18 +69,30 @@ function mover(indice, salto) {
   pintarJugadores();
 }
 
-// La pareja 1 y la 2 empiezan en la ultima pista, y las dos ultimas en la 1.
-function pistaDeLaPareja(numeroDePareja) {
-  return pistas() - Math.floor((numeroDePareja - 1) / 2);
+// La lista es la primera ronda, puesto por puesto: cada cuatro jugadores son
+// una pista —los cuatro primeros en la de abajo, los cuatro ultimos en la 1—,
+// dentro de la pista el 1.º y el 2.º son una pareja y el 3.º y el 4.º la
+// otra, y dentro de la pareja el primero juega al drive y el segundo al
+// reves. Se juega tal cual, asi que la pantalla lo tiene que ensenar tal
+// cual: ai_context/pozo_americano.md.
+function pistaDelPuesto(i) {
+  return pistas() - Math.floor(i / JUGADORES_POR_PISTA);
+}
+
+function cabeceraDePista(i) {
+  return el('li', {
+    class: 'elegidos__pista',
+    texto: i < hacenFalta() ? `Pista ${pistaDelPuesto(i)}` : 'Sobran'
+  });
 }
 
 function filaDeElegido(nombre, i) {
-  const pareja = Math.floor(i / 2) + 1;
-  const pista = pistaDeLaPareja(pareja);
+  const pareja = (i % JUGADORES_POR_PISTA) < 2 ? 1 : 2;
+  const lado = i % 2 === 0 ? 'drive' : 'revés';
   return el('li', { class: 'elegido' },
     el('span', { class: 'elegido__num', texto: String(i + 1) }),
     el('span', { class: 'elegido__nombre', texto: nombre }),
-    el('span', { class: 'elegido__pista', texto: i < hacenFalta() ? `pareja ${pareja} · pista ${pista}` : 'sobra' }),
+    el('span', { class: 'elegido__pista', texto: i < hacenFalta() ? `pareja ${pareja} · ${lado}` : 'sobra' }),
     el('button', { type: 'button', class: 'vt-btn vt-btn--quiet vt-btn--sm', 'aria-label': 'Subir a ' + nombre, texto: '↑', onclick: () => mover(i, -1) }),
     el('button', { type: 'button', class: 'vt-btn vt-btn--quiet vt-btn--sm', 'aria-label': 'Bajar a ' + nombre, texto: '↓', onclick: () => mover(i, 1) }),
     el('button', {
@@ -92,7 +104,11 @@ function filaDeElegido(nombre, i) {
 function pintarJugadores() {
   const lista = document.getElementById('elegidos');
   lista.textContent = '';
-  estado.elegidos.forEach((nombre, i) => lista.append(filaDeElegido(nombre, i)));
+  estado.elegidos.forEach((nombre, i) => {
+    const abrePista = i < hacenFalta() ? i % JUGADORES_POR_PISTA === 0 : i === hacenFalta();
+    if (abrePista) lista.append(cabeceraDePista(i));
+    lista.append(filaDeElegido(nombre, i));
+  });
 
   const faltan = hacenFalta() - estado.elegidos.length;
   const cuenta = document.getElementById('cuenta');

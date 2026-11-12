@@ -46,22 +46,31 @@ export function resultadoDe(partido) {
     : { ganan: partido.team2, pierden: partido.team1 };
 }
 
-// La primera ronda sale de la siembra, que es una lista ordenada de jugadores:
-// el 1 con el 2 forman la pareja 1, el 3 con el 4 la pareja 2, y asi.
+// La primera ronda la monta quien crea el torneo, y se juega tal cual. La
+// siembra va de cuatro en cuatro, un bloque por pista: dentro del bloque el
+// 1.º y el 2.º son una pareja y el 3.º y el 4.º la otra, y esas dos parejas
+// se enfrentan.
 //
-// Las parejas 1 y 2 empiezan en la ultima pista y las dos ultimas en la 1, que
-// es la de arriba: hacia ella suben los que ganan. Dentro de cada pista las
-// dos parejas se cruzan, igual que en la hoja.
+// El sitio dentro de la pareja es el lado de la pista: **el primero juega al
+// drive y el segundo al reves**. rondaSiguiente() lo mantiene solo, porque
+// cruza el primero de un sitio con el segundo del otro: cada pareja nueva
+// sale con un drive y un reves.
+//
+// Los cuatro primeros empiezan en la ultima pista y los cuatro ultimos en la
+// 1, que es la de arriba: hacia ella suben los que ganan.
+//
+// Hasta el 2026-11-12 esto cruzaba tambien la primera ronda, como la hoja del
+// grupo, de modo que nadie jugaba con quien la pantalla de crear le habia
+// puesto de pareja. Lo cambio Adrian: las parejas de salida las decide quien
+// crea el torneo, con su lado, y de ahi parte el pozo.
 export function rondaInicial(siembra, pistas) {
   const partidos = [];
   for (let p = 0; p < pistas; p++) {
-    const baja = [siembra[4 * p], siembra[4 * p + 1]];
-    const alta = [siembra[4 * p + 2], siembra[4 * p + 3]];
     partidos.push({
       round: 1,
       court: pistas - p,
-      team1: [baja[0], alta[1]],
-      team2: [alta[0], baja[1]]
+      team1: [siembra[4 * p], siembra[4 * p + 1]],
+      team2: [siembra[4 * p + 2], siembra[4 * p + 3]]
     });
   }
   return partidos.sort((a, b) => a.court - b.court);
@@ -74,8 +83,10 @@ export function rondaInicial(siembra, pistas) {
 //   ultima pista     los que pierden en la penultima y los que pierden en ella
 //
 // Y en las tres, cruzados: el primero de un sitio con el segundo del otro.
-// Devuelve null si falta algun resultado, que es lo que mantiene cerrada la
-// ronda siguiente.
+// Ese cruce es el que conserva los lados: el primero de cada pareja es el
+// drive y el segundo el reves, asi que una pareja nueva siempre sale con uno
+// de cada. Devuelve null si falta algun resultado, que es lo que mantiene
+// cerrada la ronda siguiente.
 export function rondaSiguiente(partidosDeLaRonda, pistas, numeroDeRonda) {
   const ganan = new Map();
   const pierden = new Map();
