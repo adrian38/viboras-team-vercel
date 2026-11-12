@@ -57,9 +57,7 @@ function datoValoracion(nota) {
 }
 
 function calificacion(j) {
-  if (j.buenRollo === null || !Number.isFinite(j.rd)) return null;
-  const fiabilidad = Math.min(1, Math.max(0, (window.MAX_RD - j.rd) / (window.MAX_RD - window.MIN_RD)));
-  return Math.min(5, Math.max(1, 3 + 2 * fiabilidad * (2 * j.buenRollo - 1)));
+  return window.vtCalificacion.deJugador(j.buenRollo, j.rd);
 }
 
 function cabezaDeJugador(j) {
