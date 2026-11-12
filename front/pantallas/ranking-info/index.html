@@ -30,6 +30,24 @@
 .doc h2::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
 .doc h3{margin:var(--vt-lg) 0 var(--vt-sm);color:var(--vt-gold-soft)}
 
+/* La tabla del ejemplo de fiabilidad. */
+.points-table{width:100%;border-collapse:collapse;font-size:14px;margin:var(--vt-md) 0 var(--vt-lg);max-width:72ch}
+.points-table th,.points-table td{padding:8px 14px;border-bottom:1px solid var(--vt-border);text-align:left}
+.points-table tr:last-child td{border-bottom:none}
+.points-table th{
+  background:var(--vt-surface-3);
+  color:var(--vt-muted);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+}
+.points-table td{color:var(--vt-text)}
+.points-table td.pts{font-weight:700;color:var(--vt-gold);font-variant-numeric:tabular-nums}
+.points-table tbody tr:hover td{background:var(--vt-surface-3)}
+/* En el movil la tabla no cabe: se desplaza dentro de su caja, no la pagina. */
+.tabla-scroll{overflow-x:auto;border:1px solid var(--vt-border);border-radius:var(--vt-r);margin:var(--vt-md) 0 var(--vt-lg)}
+.tabla-scroll .points-table{margin:0}
 </style>
 </head>
 <body>
@@ -59,38 +77,57 @@
   <div class="vt-card vt-card--accent vt-card--glow doc">
 
     <h1>¿Cómo funciona el <span class="vt-gold-grad">ranking?</span></h1>
-    <p>El objetivo del ranking es valorar la <strong>actividad</strong>, el <strong>buen rollo</strong> y el <strong>nivel</strong> de los integrantes del grupo en torneos, ligas, y partidos competitivos. El ranking es <strong>trimestral</strong>: el periodo vigente es el que aparece en la cabecera de la clasificación.</p>
-    <p>Durante los tres meses los jugadores acumulan puntos en <strong>tres categorías independientes</strong>. Al terminar cada mes se comunica el pódium de las tres, y al empezar un periodo nuevo todas las puntuaciones vuelven a cero.</p>
+    <p>El objetivo es valorar la actividad, buen rollo y el nivel (variación en el trimestre) de los integrantes del grupo en torneos, ligas y partidos competitivos. Al finalizar cada mes comunicaremos el pódium de las 3 categorías. Cada trimestre natural, las puntuaciones se reinician.</p>
 
-    <h2>Las tres categorías</h2>
-
-    <h3>Actividad</h3>
-    <p>Premia participar, no ganar: <strong>el resultado no influye</strong>.</p>
+    <h2>Sistema de puntuación</h2>
     <ul>
-      <li><strong>1 punto por cada partido competitivo jugado</strong>, sea suelto o de liga.</li>
-      <li><strong>1 punto por cada torneo jugado</strong>, sin importar cuántos partidos se disputen dentro ni en qué puesto se termine.</li>
+      <li><strong>Actividad:</strong> La participación en torneos, ligas y partidos competitivos otorgan puntos actividad. Cada jugador obtendrá un punto por partido / torneo jugado.</li>
+      <li><strong>Fair play:</strong> Se obtiene de la valoración de los compañeros/rivales después de cada partido.</li>
+      <li><strong>Revelación:</strong> Diferencia de nivel en el trimestre (Actual-Inicio periodo).</li>
     </ul>
-    <p>Un partido que se organiza y al final no se juega no cuenta.</p>
 
-    <h3>Fair play</h3>
-    <p>Sale de lo que responden compañeros y rivales en la pantalla <strong>Valorar</strong> a la pregunta sobre el ambiente del partido.</p>
+    <h2>Fórmulas valoración compañeros</h2>
     <ul>
-      <li><strong>1 punto por cada «buen rollo» recibido</strong> durante el periodo.</li>
-      <li><strong>«Neutro» y «no tan bien» no suman ni restan.</strong></li>
+      <li>buen rollo</li>
+      <li>Nivel</li>
     </ul>
-    <p>Las respuestas son anónimas: nadie ve quién respondió qué. Si juegas varios partidos el mismo día contra los mismos tres jugadores, sus respuestas cuentan como una sola.</p>
 
-    <h3>Revelación</h3>
-    <p>Mide cuánto has cambiado dentro del periodo: <strong>tu puntuación de nivel actual menos la que tenías al empezarlo</strong>. Quien se da de alta con el periodo ya empezado parte de la puntuación de su prueba de nivel.</p>
-    <p>Es la única categoría que puede dar un valor negativo, y no depende de cuánto juegues sino de cuánto se mueva tu nivel.</p>
+    <p>El orden es:</p>
+    <ol>
+      <li>Se calcula el rating del partido valorado.</li>
+      <li>Después se modifica la fiabilidad (RD) según las opiniones de nivel.</li>
+      <li>Esa nueva fiabilidad determina cuánto contará el jugador en sus partidos posteriores.</li>
+    </ol>
 
-    <h2>Qué hacen tus valoraciones</h2>
-    <p>Después de cada partido, la pantalla <strong>Valorar</strong> hace dos preguntas, y cada una va a un sitio distinto:</p>
+    <p>Por tanto:</p>
     <ul>
-      <li><strong>El ambiente</strong> (buen rollo / neutro / no tan bien) es lo único que puntúa en <strong>Fair play</strong>. No toca tu puntuación de nivel ni su fiabilidad.</li>
-      <li><strong>Si estabas en tu nivel</strong> (por debajo / en su nivel / por encima) no sube ni baja la puntuación de nadie: ajusta la <strong>fiabilidad</strong> del rating. Primero se calcula el rating del partido y después se ajusta la fiabilidad, que es la que decide cuánto contarán los partidos siguientes. «En su nivel» la sube; «por encima» y «por debajo» la bajan, para que el rating pueda corregirse más deprisa.</li>
+      <li>«En su nivel» → aumenta su fiabilidad.</li>
+      <li>«Por encima» o «por debajo» → reduce su fiabilidad, para que el rating pueda corregirse más deprisa.</li>
+      <li>La opinión no sube ni baja directamente el rating.</li>
+      <li>La respuesta sobre buen/mal ambiente no afecta a la fiabilidad del ranking.</li>
     </ul>
-    <p>El detalle de la fiabilidad está en el reglamento del sistema de rating.</p>
+
+    <p>Ejemplo partiendo de RD 200:</p>
+    <div class="tabla-scroll">
+      <table class="points-table">
+        <thead>
+          <tr>
+            <th>Opiniones recibidas</th>
+            <th>Neto</th>
+            <th>Nuevo RD</th>
+            <th>Efecto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1 en su nivel</td><td>+1</td><td class="pts">194</td><td>Más fiabilidad</td></tr>
+          <tr><td>2 en su nivel</td><td>+2</td><td class="pts">188</td><td>Más fiabilidad</td></tr>
+          <tr><td>3 en su nivel</td><td>+3</td><td class="pts">182</td><td>Más fiabilidad</td></tr>
+          <tr><td>1 discrepante</td><td>−1</td><td class="pts">206</td><td>Menos fiabilidad</td></tr>
+          <tr><td>3 discrepantes</td><td>−3</td><td class="pts">218</td><td>Menos fiabilidad</td></tr>
+          <tr><td>2 a favor y 2 discrepantes</td><td>0</td><td class="pts">200</td><td>Sin cambio</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
