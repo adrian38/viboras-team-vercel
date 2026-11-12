@@ -124,7 +124,13 @@
 
     <h2>Los puntos</h2>
     <p>Los puntos <strong>no salen del marcador, salen de la pista</strong>: ganar arriba vale más que ganar abajo, porque arriba están los que más han ganado.</p>
-    <div class="vt-table-wrap" style="max-width:380px">
+    <!-- `width:fit-content` y no solo el tope de 380 px: `.vt-table` es
+         width:100% y sin anchuras declaradas, asi que el sobrante se reparte
+         entre las tres columnas y las cifras, alineadas a la derecha, se
+         quedaban a 100 px de su cabecera. Encogiendo la caja a su contenido no
+         sobra nada que repartir. El tope y el overflow siguen, para un movil
+         estrecho. -->
+    <div class="vt-table-wrap" style="max-width:380px;width:fit-content">
       <table class="vt-table">
         <thead><tr><th>Pista</th><th class="vt-num">Si ganas</th><th class="vt-num">Si pierdes</th></tr></thead>
         <tbody>
