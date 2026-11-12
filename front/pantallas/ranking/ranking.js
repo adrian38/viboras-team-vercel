@@ -11,7 +11,11 @@
 // al empezar un trimestre nuevo hay que cambiar estas dos fechas. Hasta el
 // 2026-11-12 vivia en el HTML como adorno y no entraba en ningun calculo;
 // lo que separaba periodos era excluir a mano los event_id 23 y 24.
-const PERIODO = { desde: '2026-09-01', hasta: '2026-11-30' };
+//
+// Es el trimestre natural desde el 2026-11-12, que es lo que promete
+// /ranking-info («Cada trimestre natural, las puntuaciones se reinician»).
+// Antes iba del 01/09 al 30/11 y no lo era. El siguiente es 01/01-31/03.
+const PERIODO = { desde: '2026-10-01', hasta: '2026-12-31' };
 
 // Los tipos de evento que cuentan como «un torneo» y no como sus partidos:
 // el torneo entero vale un punto, se jueguen tres partidos o quince.

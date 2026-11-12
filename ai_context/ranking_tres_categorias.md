@@ -41,9 +41,12 @@ y 24. Por eso todos los puntos que se veían eran pares.
   al empezar un periodo nuevo hay que cambiar esas dos fechas. Antes el
   periodo era un texto en el HTML que no entraba en ningún cálculo; ahora es
   la única fuente, y de él sale también la chapa de la pantalla.
-- **El texto de Adrián dice «trimestre natural» y el periodo vigente es
-  01/09–30/11**, que no lo es. Se dejó su redacción tal cual; cuando se
-  programe el reinicio habrá que resolverlo.
+- **El periodo es el trimestre natural desde el 2026-11-12**: 01/10–31/12. El
+  texto de Adrián en `/ranking-info` dice «trimestre natural» y el periodo
+  vigente era 01/09–30/11, que no lo es; se resolvió moviendo el periodo, no
+  el texto. Se movió con el trimestre empezado, así que los partidos de
+  septiembre dejaron de contar para Actividad y Revelación de un día para
+  otro. Fair play no se enteró: no es del periodo.
 - **Fair play no se reinicia cada trimestre, y las otras dos sí.** La
   calificación se calcula sobre todas las opiniones recibidas y sobre el RD de
   hoy, así que es un valor actual, no acumulado en el periodo. El reglamento
