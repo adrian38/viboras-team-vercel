@@ -1,331 +1,293 @@
 // Lo que pinta /ranking.
 //
-// Hasta el 2026-11-01 estas lineas vivian dentro de ranking.html. Salen
-// aqui sin tocar una coma; el <script> de la pagina las carga en el mismo
-// sitio y sin defer, para que el orden de ejecucion no cambie.
+// Tres clasificaciones independientes —Actividad, Fair play y Revelacion—,
+// que son el sistema que describe /ranking-info desde el 2026-11-12. Antes
+// habia una sola tabla: dos mejores torneos puntuados por puesto, una tabla
+// de liga que no aplicaba nadie (ligasPts valia 0 siempre) y 2 puntos por
+// partido con tope de 20.
+// Detalle: ai_context/ranking_tres_categorias.md
+
+// El periodo del ranking, escrito a mano: nadie reinicia nada solo, asi que
+// al empezar un trimestre nuevo hay que cambiar estas dos fechas. Hasta el
+// 2026-11-12 vivia en el HTML como adorno y no entraba en ningun calculo;
+// lo que separaba periodos era excluir a mano los event_id 23 y 24.
+const PERIODO = { desde: '2026-09-01', hasta: '2026-11-30' };
+
+// Los tipos de evento que cuentan como «un torneo» y no como sus partidos:
+// el torneo entero vale un punto, se jueguen tres partidos o quince.
+const TORNEOS = new Set(['pozo', 'compas', 'doble_ko']);
+
+// Las tres tablas ya calculadas, y cual se esta viendo. Se llenan una sola
+// vez en init: cambiar de pestana no vuelve a pedir nada.
+let datos = {};
+let categoriaActual = 'actividad';
 
 // ============================================================================
-// TABLAS DE TABULACIÓN DE TORNEOS Y REGLAS
+// FECHAS
 // ============================================================================
 
-const TOURNAMENT_POINTS_12 = {
-  1: 20, 2: 16, 3: 13, 4: 11, 5: 10, 6: 9, 7: 8, 8: 7, 9: 6, 10: 5, 11: 4, 12: 4
-};
+function hoyIso() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
 
-const TOURNAMENT_POINTS_16 = {
-  1: 25, 2: 20, 3: 16, 4: 13, 5: 11, 6: 10, 7: 9, 8: 8, 9: 7, 10: 7, 11: 6, 12: 6, 13: 5, 14: 5, 15: 4, 16: 4
-};
+function diaAnterior(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d) - 24 * 60 * 60 * 1000);
+  const mm = String(t.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(t.getUTCDate()).padStart(2, '0');
+  return `${t.getUTCFullYear()}-${mm}-${dd}`;
+}
 
-const COMPAS_TOURNAMENT_POINTS = {
-  1: 18, 2: 10, 3: 10, 4: 10, 5: 6, 6: 6, 7: 6, 8: 4
-};
+function comoDdMmAaaa(iso) {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
 
-function getTournamentPoints(position, totalPlayers, eventType) {
-  const normalizedEventType = String(eventType || '').trim().toLowerCase();
-  if (normalizedEventType === 'compas') {
-    if (COMPAS_TOURNAMENT_POINTS[position] !== undefined) return COMPAS_TOURNAMENT_POINTS[position];
-    return 4;
-  }
+function enPeriodo(iso) {
+  return !!iso && iso >= PERIODO.desde && iso <= PERIODO.hasta;
+}
 
-  const table = totalPlayers >= 15 ? TOURNAMENT_POINTS_16 : TOURNAMENT_POINTS_12;
-  if (table[position]) return table[position];
-  // Si la posición supera el máximo previsto en la tabla, otorga la puntuación mínima (4 pts)
-  return 4;
+// El corte del «ahora»: hoy mientras el periodo siga abierto, y su ultimo dia
+// si ya se cerro. Sin esto, un periodo pasado seguiria moviendose.
+function corteActual() {
+  const hoy = hoyIso();
+  return hoy < PERIODO.hasta ? hoy : PERIODO.hasta;
 }
 
 // ============================================================================
-// UI & TABLA
+// LAS TRES CATEGORIAS
 // ============================================================================
 
-function toggleColumns() {
-  const table = document.getElementById('rankingTable');
-  const isChecked = document.getElementById('toggleDetail').checked;
-  if (isChecked) {
-    table.classList.remove('hide-detail');
-  } else {
-    table.classList.add('hide-detail');
-  }
+// Un punto por partido competitivo jugado y un punto por torneo jugado. Los
+// partidos de dentro de un torneo no suman de uno en uno; por eso los torneos
+// se cuentan por event_id y no por partido.
+//
+// Un partido organizado y sin jugar no llega hasta aqui: partidoDelApi
+// (vt-glicko.js) descarta los que no tienen juegos.
+function actividadDelPeriodo(partidos, activos) {
+  const filas = new Map();
+  const torneosDe = new Map();
+
+  const fila = (n) => {
+    if (!filas.has(n)) filas.set(n, { partidos: 0, torneos: 0 });
+    return filas.get(n);
+  };
+
+  partidos.forEach((m) => {
+    if (!enPeriodo(m.date)) return;
+    const esTorneo = TORNEOS.has(m.event_type);
+    m.team1.concat(m.team2).forEach((nombre) => {
+      const n = String(nombre || '').trim();
+      if (!n || !activos.has(n)) return;
+      if (!esTorneo) { fila(n).partidos += 1; return; }
+      if (!torneosDe.has(n)) torneosDe.set(n, new Set());
+      torneosDe.get(n).add(m.event_id);
+    });
+  });
+
+  torneosDe.forEach((ids, n) => { fila(n).torneos = ids.size; });
+  return filas;
 }
 
-function renderRanking(data) {
-  const tbody = document.getElementById('rankingBody');
-
-  if (!data || data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center; padding:24px;">No hay jugadores en el ranking</td></tr>';
-    return;
-  }
-
-  // Ordenar por Puntos totales descendente, y en caso de empate alfabéticamente
-  data.sort((a, b) => {
-    if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-    return a.name.localeCompare(b.name, 'es', { sensitivity: 'base', numeric: true });
+// Cuanto ha cambiado el nivel dentro del periodo: el rating de hoy menos el
+// de la vispera del primer dia. Son dos pasadas del mismo motor con distinta
+// fecha de corte; quien no jugo antes del periodo arranca de su rating de
+// partida (rating-inicial.js), que es justo lo que dice el reglamento.
+//
+// Solo sale quien ha jugado dentro del periodo: sin partidos la diferencia es
+// cero exacto, y cuarenta ceros no son una clasificacion.
+function revelacionDelPeriodo(nombres, partidos, jugaron) {
+  const deAntes = window.vtGlicko.calcularRatings(nombres, partidos, diaAnterior(PERIODO.desde));
+  const deAhora = window.vtGlicko.calcularRatings(nombres, partidos, corteActual());
+  const antes = new Map(deAntes.map((r) => [r.name, r.rating]));
+  const filas = new Map();
+  deAhora.forEach((r) => {
+    if (!jugaron.has(r.name) || !antes.has(r.name)) return;
+    filas.set(r.name, { inicio: antes.get(r.name), actual: r.rating });
   });
-
-  let html = '';
-  let currentRank = 1;
-
-  data.forEach((row, index) => {
-    if (index > 0 && row.puntos < data[index - 1].puntos) {
-      currentRank = index + 1;
-    }
-
-    html += `
-      <tr>
-        <td class="rank-col"><span class="pos-badge pos-${currentRank <= 3 ? currentRank : 'x'}">${currentRank}</span></td>
-        <td class="name-col">${escapeHtml(row.name)}</td>
-        <td class="detail-col">${row.torneos}</td>
-        <td class="detail-col">${row.ligas}</td>
-        <td class="detail-col">${row.partidos}</td>
-        <td class="points-col">${row.puntos.toLocaleString('es-ES')}</td>
-      </tr>
-    `;
-  });
-
-  tbody.innerHTML = html;
-}
-
-function escapeHtml(s) {
-  return String(s || '').replace(/[&<>"']/g, function(c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
+  return filas;
 }
 
 // ============================================================================
-// CÁLCULO DE CLASIFICACIÓN DE TORNEOS (LÓGICA TOURNAME_HTML)
-// ============================================================================
-
-function computeTournamentStandings(matches) {
-  const stats = new Map();
-
-  function ensure(name) {
-    if (!stats.has(name)) stats.set(name, { name: name, wins: 0, gamesWon: 0, gamesLost: 0 });
-  }
-
-  matches.forEach(m => {
-    const p1 = [(m.p1a || '').trim(), (m.p1b || '').trim()].filter(Boolean);
-    const p2 = [(m.p2a || '').trim(), (m.p2b || '').trim()].filter(Boolean);
-
-    let team1Sets = 0, team2Sets = 0;
-    for (let i = 1; i <= 3; i++) {
-      const aRaw = m['s1' + i];
-      const bRaw = m['s2' + i];
-
-      const isSet2Flag = (i === 2) && (String(m.format) === 'timed_games' || String(m.format) === 'timed_games_long' || String(aRaw) === '1' || String(bRaw) === '1');
-      if (isSet2Flag) continue;
-
-      const ai = (aRaw !== undefined && aRaw !== '') ? parseInt(aRaw, 10) : NaN;
-      const bi = (bRaw !== undefined && bRaw !== '') ? parseInt(bRaw, 10) : NaN;
-      if (!isNaN(ai) && !isNaN(bi)) {
-        if (ai > bi) team1Sets++;
-        else if (bi > ai) team2Sets++;
-
-        p1.forEach(n => { if (n) { ensure(n); const ent = stats.get(n); ent.gamesWon += ai; ent.gamesLost += bi; } });
-        p2.forEach(n => { if (n) { ensure(n); const ent = stats.get(n); ent.gamesLost += ai; ent.gamesWon += bi; } });
-      }
-    }
-
-    if (team1Sets > team2Sets) { p1.forEach(n => { if (n) { ensure(n); stats.get(n).wins += 1; } }); }
-    else if (team2Sets > team1Sets) { p2.forEach(n => { if (n) { ensure(n); stats.get(n).wins += 1; } }); }
-    else {
-      if ((m.s12 || '') === '1') { p1.forEach(n => { if (n) { ensure(n); stats.get(n).wins += 1; } }); }
-      else if ((m.s22 || '') === '1') { p2.forEach(n => { if (n) { ensure(n); stats.get(n).wins += 1; } }); }
-    }
-  });
-
-  const out = Array.from(stats.values()).map(s => {
-    const totalGames = (s.gamesWon || 0) + (s.gamesLost || 0);
-    const pct = totalGames > 0 ? (s.gamesWon / totalGames) : null;
-    return Object.assign({}, s, { gamesTotal: totalGames, gamesPct: pct });
-  });
-
-  out.sort((a, b) => {
-    if ((b.wins || 0) !== (a.wins || 0)) return (b.wins || 0) - (a.wins || 0);
-    const pa = a.gamesPct === null ? -1 : a.gamesPct;
-    const pb = b.gamesPct === null ? -1 : b.gamesPct;
-    if (pb !== pa) return pb > pa ? 1 : -1;
-    return 0;
-  });
-
-  let lastKey = null;
-  let pos = 0;
-  let displayPos = 0;
-  out.forEach(row => {
-    pos++;
-    const key = `${row.wins}_${row.gamesPct}`;
-    if (key !== lastKey) { displayPos = pos; lastKey = key; }
-    row.position = displayPos;
-  });
-
-  return out;
-}
-
-// ============================================================================
-// FETCH & PROCESAMIENTO
+// FETCH
 // ============================================================================
 
 function fetchActivePlayers() {
   return fetch('/api/read?action=getNames')
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(db => (db && db.names) ? db.names : [])
-    .catch(e => { console.error('Error cargando jugadores', e); return []; });
+    .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then((db) => (db && db.names) ? db.names : [])
+    .catch((e) => { console.error('Error cargando jugadores', e); return []; });
 }
 
-function fetchMatches() {
-  const url = `/api/read?action=getResults&eventType=ranked,grupo_liga,pozo,compas,doble_ko&ts=${Date.now()}`;
+// Los «buen rollo» del periodo. Si falla, fair play sale a cero y las otras
+// dos categorias siguen funcionando.
+function fetchFairPlay() {
+  const url = `/api/read?action=getFairPlay&desde=${PERIODO.desde}&hasta=${PERIODO.hasta}&ts=${Date.now()}`;
   return fetch(url)
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(db => {
-      const data = db || { matches: [], events: [] };
-      // Always exclude specific old-tournament event IDs (pre-September)
-      const filteredMatches = (data.matches || []).filter(m => {
-        const eventId = (m && (m.event_id !== undefined && m.event_id !== null)) ? Number(m.event_id) : null;
-        if (eventId === 23 || eventId === 24) return false;
-        return true;
-      });
-      return Object.assign({}, data, { matches: filteredMatches });
-    })
-    .catch(e => { console.error('Error cargando resultados', e); return { matches: [], events: [] }; });
+    .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then((j) => (j && j.fairplay) ? j.fairplay : [])
+    .catch((e) => { console.error('Error cargando fair play', e); return []; });
 }
 
-function processRanking(players, dbData) {
-  const matches = dbData.matches || [];
-  const activePlayersSet = new Set(players.map(p => String(p || '').trim()).filter(Boolean));
+// ============================================================================
+// LAS TABLAS
+// ============================================================================
 
-  // Mapa principal indexado por nombre del jugador
-  const playerScores = new Map();
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
 
-  // Inicializar solo jugadores activos
-  activePlayersSet.forEach(name => {
-    playerScores.set(name, {
-      name: name,
-      tournamentScores: [], // Array con las puntuaciones obtenidas en torneos
-      matchScores: [],      // Array con las puntuaciones de sus partidos (3 vic, 1 der)
-      torneosPts: 0,
-      ligasPts: 0,
-      partidosPts: 0,
-      puntosTotales: 0
+function conSigno(n) {
+  const r = Math.round(n);
+  return (r > 0 ? '+' : '') + r.toLocaleString('es-ES');
+}
+
+// Cada categoria dice como se llama, que columnas de detalle ensena, como
+// saca sus puntos de la fila y como se escriben.
+const CATEGORIAS = {
+  actividad: {
+    nombre: 'Actividad',
+    detalle: ['Partidos', 'Torneos'],
+    celdas: (f) => [f.partidos, f.torneos],
+    puntos: (f) => f.partidos + f.torneos,
+    escribir: (v) => v.toLocaleString('es-ES'),
+    vacio: 'Nadie ha jugado todavia en este periodo'
+  },
+  fairplay: {
+    nombre: 'Fair play',
+    detalle: ['Valoraciones'],
+    celdas: (f) => [f.valoraciones],
+    puntos: (f) => f.buenRollo,
+    escribir: (v) => v.toLocaleString('es-ES'),
+    vacio: 'Todavia no hay valoraciones en este periodo'
+  },
+  revelacion: {
+    nombre: 'Revelación',
+    detalle: ['Inicio', 'Actual'],
+    celdas: (f) => [Math.round(f.inicio), Math.round(f.actual)],
+    puntos: (f) => f.actual - f.inicio,
+    escribir: conSigno,
+    vacio: 'Todavia no hay niveles que comparar'
+  }
+};
+
+// Empate: mismo puesto para todos, y el siguiente salta. Con dos segundos no
+// hay tercero, asi que el puesto no se puede contar por filas.
+function ordenar(filas, cat) {
+  return Array.from(filas.entries())
+    .map(([name, f]) => ({ name, celdas: cat.celdas(f), puntos: cat.puntos(f) }))
+    .sort((a, b) => {
+      if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+      return a.name.localeCompare(b.name, 'es', { sensitivity: 'base', numeric: true });
     });
-  });
+}
 
-  // 1. PROCESAR TORNEOS (pozo / doble_ko)
-  const matchesByEvent = new Map();
-  matches.forEach(m => {
-    const type = String(m.event_type || '').trim().toLowerCase();
-    if (type === 'pozo' || type === 'doble_ko' || type === 'compas') {
-      const eventId = String(m.event_id || '');
-      if (eventId) {
-        if (!matchesByEvent.has(eventId)) matchesByEvent.set(eventId, []);
-        matchesByEvent.get(eventId).push(m);
-      }
-    }
-  });
+function filaHtml(row, puesto, cat) {
+  const medalla = puesto <= 3 ? puesto : 'x';
+  const detalle = row.celdas.map((c) => `<td class="detail-col">${c}</td>`).join('');
+  return `
+      <tr>
+        <td class="rank-col"><span class="pos-badge pos-${medalla}">${puesto}</span></td>
+        <td class="name-col">${escapeHtml(row.name)}</td>
+        ${detalle}
+        <td class="points-col">${cat.escribir(row.puntos)}</td>
+      </tr>`;
+}
 
-  // Calcular las posiciones de cada torneo y asignar puntos
-  matchesByEvent.forEach((eventMatches) => {
-    const standings = computeTournamentStandings(eventMatches);
-    const totalPlayers = standings.length;
-    const eventType = String((eventMatches[0] && eventMatches[0].event_type) || '').trim().toLowerCase();
+function pintarCabecera(cat) {
+  const detalle = cat.detalle.map((t) => `<th class="detail-col">${t}</th>`).join('');
+  document.getElementById('rankingHead').innerHTML = `
+          <tr>
+            <th class="rank-col">Pos</th>
+            <th>Jugador</th>
+            ${detalle}
+            <th class="points-col">${cat === CATEGORIAS.revelacion ? 'Nivel' : 'Puntos'}</th>
+          </tr>`;
+}
 
-    standings.forEach(playerRes => {
-      const pName = playerRes.name;
-      if (activePlayersSet.has(pName)) {
-        const pts = getTournamentPoints(playerRes.position, totalPlayers, eventType);
-        playerScores.get(pName).tournamentScores.push(pts);
-      }
-    });
-  });
+function pintarCategoria(clave) {
+  const cat = CATEGORIAS[clave];
+  const tbody = document.getElementById('rankingBody');
+  const columnas = cat.detalle.length + 3;
+  pintarCabecera(cat);
 
-  // 2. PROCESAR PARTIDOS: un único partido por jugador y día (cualquier tipo).
-  //    Si el partido es de tipo 'ranked' y el jugador no tiene ya otro partido
-  //    en esa misma fecha, se le otorgan 2 puntos (independientemente de victoria).
-  const playedDatesByPlayer = new Map(); // name -> Set of dateKeys
-
-  function dateKeyFromMatch(m) {
-    const d = String(m.date || '').trim();
-    // Esperamos formato DD/MM/YYYY en los datos; normalizamos a YYYY-MM-DD
-    const parts = d.split('/');
-    if (parts.length === 3 && parts[2].length === 4) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-    return d || '';
+  const filas = ordenar(datos[clave] || new Map(), cat);
+  if (!filas.length) {
+    tbody.innerHTML = `<tr><td colspan="${columnas}" class="muted" style="text-align:center; padding:24px;">${cat.vacio}</td></tr>`;
+    return;
   }
 
-  // Procesar matches en orden (por fecha si está disponible)
-  matches.slice().sort((a, b) => {
-    const ka = dateKeyFromMatch(a) || '';
-    const kb = dateKeyFromMatch(b) || '';
-    if (ka < kb) return -1;
-    if (ka > kb) return 1;
-    return 0;
-  }).forEach(m => {
-    const type = String(m.event_type || '').trim().toLowerCase();
-    const p1 = [(m.p1a || '').trim(), (m.p1b || '').trim()].filter(Boolean);
-    const p2 = [(m.p2a || '').trim(), (m.p2b || '').trim()].filter(Boolean);
-    const dateKey = dateKeyFromMatch(m) || '__unknown__';
+  let puesto = 1;
+  tbody.innerHTML = filas.map((row, i) => {
+    if (i > 0 && row.puntos < filas[i - 1].puntos) puesto = i + 1;
+    return filaHtml(row, puesto, cat);
+  }).join('');
+}
 
-    // marca la fecha como jugada para cada jugador si aún no la tiene.
-    function markPlayer(pName, givePointsIfRanked) {
-      if (!activePlayersSet.has(pName)) return;
-      if (!playedDatesByPlayer.has(pName)) playedDatesByPlayer.set(pName, new Set());
-      const s = playedDatesByPlayer.get(pName);
-      if (s.has(dateKey)) return; // ya cuenta un partido ese día
-      // Si es un partido ranked y aún no tuvo partido ese día, otorgar 2 pts
-      if (givePointsIfRanked) {
-        playerScores.get(pName).matchScores.push(2);
-      }
-      s.add(dateKey);
-    }
+// ============================================================================
+// PANTALLA
+// ============================================================================
 
-    // Para cualquier partido (torneo/liga/ranked/otro) reservamos la fecha.
-    // Solo otorgamos puntos cuando se trate de 'ranked' y no exista ya partido ese día.
-    p1.forEach(n => markPlayer(n, type === 'ranked'));
-    p2.forEach(n => markPlayer(n, type === 'ranked'));
+function toggleColumns() {
+  const table = document.getElementById('rankingTable');
+  const marcado = document.getElementById('toggleDetail').checked;
+  table.classList.toggle('hide-detail', !marcado);
+}
+
+function cambiarCategoria(clave) {
+  categoriaActual = clave;
+  document.querySelectorAll('.cat-tab').forEach((b) => {
+    const suya = b.dataset.cat === clave;
+    b.classList.toggle('is-active', suya);
+    b.setAttribute('aria-selected', suya ? 'true' : 'false');
   });
+  pintarCategoria(clave);
+}
 
-  // 3. CALCULAR PUNTUACIÓN FINAL SEGÚN TOP DE CADA CATEGORÍA
-  const rankingList = [];
+function pintarPeriodo() {
+  document.getElementById('periodo').textContent =
+    `Periodo actual: ${comoDdMmAaaa(PERIODO.desde)} - ${comoDdMmAaaa(PERIODO.hasta)}`;
+}
 
-  playerScores.forEach(pData => {
-    // Top 2 torneos
-    pData.tournamentScores.sort((a, b) => b - a);
-    const top2Torneos = pData.tournamentScores.slice(0, 2);
-    pData.torneosPts = top2Torneos.reduce((acc, v) => acc + v, 0);
-
-    // Ligas: 0 pts por ahora
-    pData.ligasPts = 0;
-
-    // Top 10 partidos (puntos por ranked) — aplicar tope máximo de 20 puntos
-    const MAX_RANKED_POINTS = 20;
-    pData.matchScores.sort((a, b) => b - a);
-    const top10Partidos = pData.matchScores.slice(0, 10);
-    const sumMatches = top10Partidos.reduce((acc, v) => acc + v, 0);
-    pData.partidosPts = Math.min(sumMatches, MAX_RANKED_POINTS);
-
-    // Suma global
-    pData.puntosTotales = pData.torneosPts + pData.ligasPts + pData.partidosPts;
-
-    rankingList.push({
-      name: pData.name,
-      torneos: pData.torneosPts,
-      ligas: pData.ligasPts,
-      partidos: pData.partidosPts,
-      puntos: pData.puntosTotales
-    });
+function fairPlayEnFilas(lista, activos) {
+  const filas = new Map();
+  lista.forEach((r) => {
+    const n = String(r.jugador || '').trim();
+    if (!n || !activos.has(n)) return;
+    filas.set(n, { buenRollo: Number(r.buenRollo) || 0, valoraciones: Number(r.valoraciones) || 0 });
   });
-
-  return rankingList;
+  return filas;
 }
 
 async function init() {
+  pintarPeriodo();
   try {
-    const [players, dbData] = await Promise.all([
+    const [nombres, partidos, fairplay] = await Promise.all([
       fetchActivePlayers(),
-      fetchMatches()
+      window.vtGlicko.leerPartidos(),
+      fetchFairPlay(),
+      window.vtNivel.listo,
+      window.vtInicial.listo
     ]);
+    const activos = new Set(nombres.map((n) => String(n || '').trim()).filter(Boolean));
 
-    const rankingData = processRanking(players, dbData);
-    renderRanking(rankingData);
+    const actividad = actividadDelPeriodo(partidos, activos);
+    datos = {
+      actividad: actividad,
+      fairplay: fairPlayEnFilas(fairplay, activos),
+      revelacion: revelacionDelPeriodo(Array.from(activos), partidos, new Set(actividad.keys()))
+    };
+
+    cambiarCategoria(categoriaActual);
   } catch (err) {
     console.error('Error al inicializar el ranking:', err);
-    document.getElementById('rankingBody').innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center; padding: 24px;">Error cargando los datos del ranking</td></tr>';
+    document.getElementById('rankingBody').innerHTML =
+      '<tr><td colspan="5" class="muted" style="text-align:center; padding: 24px;">Error cargando los datos del ranking</td></tr>';
   }
 }
 

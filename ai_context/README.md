@@ -61,10 +61,11 @@ que hay.
   (el RD del motor); por qué la proporción de opiniones a secas daba un 5,0 a
   todo el grupo, por qué se calcula en el navegador y en dos mitades, y qué
   fiabilidad inventada se quitó de en medio.
-- `ranking_tres_categorias.md`: el reglamento de `/ranking-info` pasó a
-  Actividad, Fair play y Revelación, pero `/ranking` sigue calculando el
-  sistema anterior; qué puntúa cada categoría, de dónde saldría cada dato y por
-  qué la columna «Ligas» siempre fue cero.
+- `ranking_tres_categorias.md`: `/ranking` son tres clasificaciones
+  —Actividad, Fair play y Revelación—; qué puntúa cada una, por qué un torneo
+  vale un punto y no sus partidos, por qué el periodo está escrito a mano y
+  nadie lo reinicia, y por qué la columna «Ligas» del sistema anterior siempre
+  fue cero.
 - `rating_de_partida.md`: las altas nuevas arrancan en el rating de su nivel BK
   (Entreno en 2000,01, no 2000), sólo si no tenían partidos, y por qué un alta
   sin partidos no sale en `/rating` por defecto.

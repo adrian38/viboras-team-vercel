@@ -227,6 +227,48 @@ async function filasDeJugadores() {
   return filas;
 }
 
+// Los «buen rollo» que ha recibido cada jugador dentro de un periodo, para la
+// categoria de fair play de /ranking: un punto por cada uno, y ni «neutro» ni
+// «mejorable» suman o restan (ai_context/ranking_tres_categorias.md).
+//
+// Devuelve el total del periodo y NO el desglose por dia, a diferencia de
+// getNivelVotos: el total de un trimestre es publico porque el ranking lo es,
+// pero en un dia de un solo partido el desglose dejaria deducir quien voto
+// que. Las valoraciones son anonimas (ai_context/valoraciones_y_avisos.md).
+async function getFairPlay(req, res) {
+  try {
+    await ensureAvisosSchema();
+    const desde = String(req.query?.desde || '').trim();
+    const hasta = String(req.query?.hasta || '').trim();
+    const esFecha = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+    if (!esFecha(desde) || !esFecha(hasta)) {
+      res.status(400).json({ ok: false, error: 'bad_period', fairplay: [] });
+      return;
+    }
+    const { rows } = await sql`
+      SELECT p.name AS jugador,
+        count(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
+        count(*)::int AS valoraciones
+      FROM match_feedback_por_dia f
+      JOIN players p ON p.id = f.rated_player_id
+      WHERE f.actitud IS NOT NULL
+        AND f.fecha BETWEEN ${desde}::date AND ${hasta}::date
+      GROUP BY p.name`;
+    res.setHeader('cache-control', 'no-store');
+    res.status(200).json({
+      ok: true,
+      fairplay: rows.map((r) => ({
+        jugador: r.jugador,
+        buenRollo: r.buen_rollo,
+        valoraciones: r.valoraciones
+      }))
+    });
+  } catch (err) {
+    console.error('read:getFairPlay error', err);
+    res.status(500).json({ ok: false, fairplay: [] });
+  }
+}
+
 // Votos de «¿estaban en su nivel?» sumados por dia y jugador, para el motor
 // de rating (nivel-votos.js): en su nivel +1; por encima o por debajo -1.
 // Solo cuentan los votos entre jugadores que siguen en el partido: si se
@@ -382,6 +424,8 @@ export default async function handler(req, res) {
       return getSlots(req, res, user);
     case 'exportPlayers':
       return exportPlayers(req, res);
+    case 'getFairPlay':
+      return getFairPlay(req, res);
     case 'getNivelVotos':
       return getNivelVotos(req, res);
     case 'getComunidad':

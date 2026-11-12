@@ -11,6 +11,7 @@
 <script src="/front/comun/pwa.js" defer></script>
 <script src="/front/comun/auth-client.js" defer></script>
 <script src="/front/comun/vt-cargando.js"></script>
+<script src="/front/comun/vt-glicko.js"></script>
 <meta name="apple-mobile-web-app-title" content="Viboras">
 <meta name="theme-color" content="#121316">
 
@@ -98,6 +99,34 @@ th.points-col{text-align:right}
 }
 .info-btn:hover{background:rgba(245,158,11,0.12);border-color:var(--vt-gold)}
 
+/* Las tres categorias. Una fila de pestanas que en el movil se desplaza de
+   lado en vez de partirse en dos lineas. */
+.cat-tabs{
+  display:flex;
+  gap:var(--vt-xs);
+  margin-bottom:var(--vt-md);
+  padding:4px;
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+  border-radius:var(--vt-r-lg);
+  overflow-x:auto;
+}
+.cat-tab{
+  flex:1 1 auto;
+  padding:8px 14px;
+  background:transparent;
+  border:0;
+  border-radius:var(--vt-r);
+  color:var(--vt-muted);
+  font-family:var(--vt-font-body);
+  font-size:13px;font-weight:700;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease;
+}
+.cat-tab:hover{color:var(--vt-gold-light)}
+.cat-tab.is-active{background:var(--vt-surface-4);color:var(--vt-gold)}
+
 .periodo{
   display:inline-block;
   margin-bottom:var(--vt-md);
@@ -147,26 +176,24 @@ th.points-col{text-align:right}
       </label>
     </div>
 
-    <!-- Periodo Actual -->
-    <div class="periodo">
-      Periodo actual: 01/09/2026 - 30/11/2026
+    <!-- Periodo Actual. El texto lo pone ranking.js desde PERIODO, que es
+         lo mismo que filtra los tres calculos. -->
+    <div class="periodo" id="periodo"></div>
+
+    <!-- Las tres categorias del reglamento. Cada una es una clasificacion
+         aparte, con su propio podium. -->
+    <div class="cat-tabs" role="tablist" aria-label="Categoría del ranking">
+      <button class="cat-tab is-active" type="button" role="tab" aria-selected="true" data-cat="actividad" onclick="cambiarCategoria('actividad')">Actividad</button>
+      <button class="cat-tab" type="button" role="tab" aria-selected="false" data-cat="fairplay" onclick="cambiarCategoria('fairplay')">Fair play</button>
+      <button class="cat-tab" type="button" role="tab" aria-selected="false" data-cat="revelacion" onclick="cambiarCategoria('revelacion')">Revelación</button>
     </div>
 
     <!-- Contenedor del Ranking -->
     <div class="table-container">
       <table id="rankingTable" class="hide-detail" aria-label="Ranking">
-        <thead>
-          <tr>
-            <th class="rank-col">Pos</th>
-            <th>Jugador</th>
-            <th class="detail-col">Torneos</th>
-            <th class="detail-col">Ligas</th>
-            <th class="detail-col">Partidos</th>
-            <th class="points-col">Puntos</th>
-          </tr>
-        </thead>
+        <thead id="rankingHead"></thead>
         <tbody id="rankingBody">
-          <tr><td colspan="6" class="muted" style="text-align:center; padding: 24px;">Cargando ranking…</td></tr>
+          <tr><td colspan="5" class="muted" style="text-align:center; padding: 24px;">Cargando ranking…</td></tr>
         </tbody>
       </table>
     </div>
@@ -181,6 +208,8 @@ th.points-col{text-align:right}
   </div>
 </div>
 
+<script src="/front/comun/nivel-votos.js"></script>
+<script src="/front/comun/rating-inicial.js"></script>
 <script src="/front/pantallas/ranking/ranking.js"></script>
 
 </body>
