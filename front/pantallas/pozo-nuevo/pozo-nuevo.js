@@ -14,7 +14,21 @@ const JUGADORES_POR_PISTA = 4;
 // tabla decidida y la escribe quien crea el torneo.
 const PUNTOS_DEL_GRUPO = [[8, 6], [8, 4], [6, 2], [4, 2]];
 
-const estado = { nombres: [], elegidos: [] };
+const estado = { nombres: [], elegidos: [], lados: new Map() };
+
+// El lado que cada uno eligio en /cuenta (`players.court_side`, que llega por
+// `getComunidad`). Aqui es una ayuda para colocar la lista y nada mas: **no
+// decide** el lado del torneo, que es el puesto en el que lo pongas, ni se
+// guarda en el pozo. Quien no lo ha elegido cuenta para los dos lados y no
+// sale nada.
+function ladoDelPerfil(nombre) {
+  const lado = estado.lados.get(nombre);
+  return lado === 'drive' || lado === 'reves' ? lado : null;
+}
+
+function comoSeLee(lado) {
+  return lado === 'reves' ? 'revés' : 'drive';
+}
 
 function el(tag, props, ...hijos) {
   const nodo = document.createElement(tag);
@@ -54,10 +68,11 @@ function pintarDisponibles() {
     return;
   }
   for (const nombre of libres) {
+    const suyo = ladoDelPerfil(nombre);
     caja.append(el('button', {
-      type: 'button', class: 'vt-btn vt-btn--ghost vt-btn--sm', texto: nombre,
+      type: 'button', class: 'vt-btn vt-btn--ghost vt-btn--sm',
       onclick: () => { estado.elegidos.push(nombre); pintarJugadores(); }
-    }));
+    }, nombre, suyo ? el('span', { class: 'suyo', texto: comoSeLee(suyo) }) : null));
   }
 }
 
@@ -86,17 +101,32 @@ function cabeceraDePista(i) {
   });
 }
 
+// Cambiar de lado es cambiarse con tu pareja: en una pareja hay un drive y un
+// reves, asi que no se puede mover uno solo.
+function botonDeLado(nombre, i) {
+  const juega = i % 2 === 0 ? 'drive' : 'reves';
+  const suyo = ladoDelPerfil(nombre);
+  return el('button', {
+    type: 'button',
+    class: 'elegido__lado' + (suyo && suyo !== juega ? ' elegido__lado--choca' : ''),
+    'aria-label': `${nombre} juega al ${comoSeLee(juega)}; tocar para cambiarlo de lado con su pareja`,
+    texto: comoSeLee(juega),
+    onclick: () => mover(i, i % 2 === 0 ? 1 : -1)
+  });
+}
+
 function filaDeElegido(nombre, i) {
-  const pareja = (i % JUGADORES_POR_PISTA) < 2 ? 1 : 2;
-  const lado = i % 2 === 0 ? 'drive' : 'revés';
-  return el('li', { class: 'elegido' },
+  const juega = i < hacenFalta();
+  const suyo = ladoDelPerfil(nombre);
+  return el('li', { class: 'elegido' + (i % JUGADORES_POR_PISTA === 2 ? ' elegido--pareja2' : '') },
     el('span', { class: 'elegido__num', texto: String(i + 1) }),
     el('span', { class: 'elegido__nombre', texto: nombre }),
-    el('span', { class: 'elegido__pista', texto: i < hacenFalta() ? `pareja ${pareja} · ${lado}` : 'sobra' }),
-    el('button', { type: 'button', class: 'vt-btn vt-btn--quiet vt-btn--sm', 'aria-label': 'Subir a ' + nombre, texto: '↑', onclick: () => mover(i, -1) }),
-    el('button', { type: 'button', class: 'vt-btn vt-btn--quiet vt-btn--sm', 'aria-label': 'Bajar a ' + nombre, texto: '↓', onclick: () => mover(i, 1) }),
+    suyo ? el('span', { class: 'suyo', texto: comoSeLee(suyo) }) : null,
+    juega ? botonDeLado(nombre, i) : el('span', { class: 'elegido__pista', texto: 'sobra' }),
+    el('button', { type: 'button', class: 'vt-btn vt-btn--quiet vt-btn--sm elegido__accion', 'aria-label': 'Subir a ' + nombre, texto: '↑', onclick: () => mover(i, -1) }),
+    el('button', { type: 'button', class: 'vt-btn vt-btn--quiet vt-btn--sm elegido__accion', 'aria-label': 'Bajar a ' + nombre, texto: '↓', onclick: () => mover(i, 1) }),
     el('button', {
-      type: 'button', class: 'vt-btn vt-btn--danger vt-btn--sm', 'aria-label': 'Quitar a ' + nombre, texto: '✕',
+      type: 'button', class: 'vt-btn vt-btn--danger vt-btn--sm elegido__accion', 'aria-label': 'Quitar a ' + nombre, texto: '✕',
       onclick: () => { estado.elegidos.splice(i, 1); pintarJugadores(); }
     }));
 }
@@ -241,6 +271,18 @@ async function nombrePorDefecto() {
   }
 }
 
+// Si esto falla, la lista sale sin los lados del perfil y se puede montar el
+// torneo igual: es una ayuda, no un requisito.
+async function cargarLados() {
+  try {
+    const res = await fetch('/api/read?action=getComunidad&ts=' + Date.now());
+    const cuerpo = await res.json();
+    estado.lados = new Map((cuerpo.jugadores || []).map((j) => [j.nombre, j.lado]));
+  } catch {
+    estado.lados = new Map();
+  }
+}
+
 async function arrancar() {
   const user = await window.vtMe;
   if (!user || user.role !== 'admin') {
@@ -253,6 +295,7 @@ async function arrancar() {
   const res = await fetch('/api/read?action=getNames&ts=' + Date.now());
   const cuerpo = await res.json().catch(() => null);
   estado.nombres = (cuerpo && cuerpo.names) || [];
+  await cargarLados();
   pintarPuntos();
   pintarJugadores();
 }

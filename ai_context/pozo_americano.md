@@ -34,6 +34,13 @@ pistas y 16 jugadores:
 - **Los cuatro primeros empiezan en la última pista**, los cuatro siguientes
   una más arriba, y los cuatro últimos en la pista 1. La 1 es la de arriba:
   hacia ella se sube.
+- **El lado del perfil es una ayuda, no una regla.** La pantalla de crear
+  enseña junto a cada nombre el `players.court_side` que esa persona eligió en
+  `/cuenta` —llega por `getComunidad`— y pinta en naranja el puesto cuyo lado
+  no coincide. El lado que se juega es **el puesto**, no el perfil: nada de
+  esto se guarda en el torneo, y quien no lo ha elegido no lleva etiqueta.
+  Tocar el lado de un puesto lo cambia con su pareja, porque en una pareja hay
+  un drive y un revés y no se puede mover uno solo.
 - **La primera ronda no se cruza.** Se juega lo que puso quien creó el
   torneo. La hoja sí la cruzaba (`[baja.a + alta.b]` contra
   `[alta.a + baja.b]`), y eso hacía que nadie jugase con quien la pantalla de

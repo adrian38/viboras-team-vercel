@@ -38,8 +38,10 @@
 
 /* Los elegidos, en orden: el número manda, porque de él salen las parejas. */
 .elegidos{list-style:none;margin:var(--vt-sm) 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+/* Seis cosas en una fila y 375 px de movil: los huecos y los tres botones de
+   colocar van justos a proposito, para que el nombre no se quede sin sitio. */
 .elegido{
-  display:flex;align-items:center;gap:var(--vt-sm);
+  display:flex;align-items:center;gap:6px;
   padding:4px 8px;
   background:var(--vt-surface-2);
   border:1px solid var(--vt-border);
@@ -53,9 +55,27 @@
   font-family:var(--vt-font-head);font-size:14px;font-weight:700;
 }
 .elegido__nombre{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* El lado y la pareja no son adorno: es lo que se va a jugar, asi que se ven
-   tambien en el movil, que es donde se monta el torneo. */
+/* El lado no es adorno: es lo que se va a jugar, asi que se ve tambien en el
+   movil, que es donde se monta el torneo. */
 .elegido__pista{font-size:11px;color:var(--vt-muted);white-space:nowrap}
+/* El lado del puesto. Es un boton: tocarlo cambia a ese jugador con su
+   pareja, que es la unica manera de cambiarle el lado sin dejar dos drives
+   juntos. En naranja cuando no es el que tiene puesto en su perfil. */
+.elegido__lado{
+  flex:0 0 auto;
+  padding:2px 8px;
+  border:1px solid var(--vt-border-strong);
+  border-radius:var(--vt-r-full);
+  background:var(--vt-surface-3);
+  color:var(--vt-text);
+  font-family:var(--vt-font-body);font-size:11px;
+  cursor:pointer;
+}
+.elegido__lado--choca{color:var(--vt-orange);border-color:var(--vt-orange)}
+.elegido--pareja2{margin-top:var(--vt-sm)}
+.elegido__accion{flex:0 0 auto;padding:4px 7px;min-width:0}
+/* El lado que cada uno tiene puesto en su perfil. */
+.suyo{flex:0 0 auto;margin-left:2px;font-size:11px;color:var(--vt-faint)}
 .elegidos__pista{
   margin-top:var(--vt-sm);
   font-family:var(--vt-font-head);font-size:12px;font-weight:700;
@@ -145,6 +165,12 @@
         juega al <strong>drive</strong> y el segundo al <strong>revés</strong>. Se juega tal cual.
         Los cuatro primeros empiezan en la pista de abajo y los cuatro últimos en la pista 1.
         Toca un nombre para añadirlo y usa las flechas para colocarlo.
+      </p>
+      <p class="vt-muted" style="font-size:13px">
+        El lado pequeño junto a cada nombre es el que tiene puesto en su perfil; los que no lo han
+        elegido no llevan ninguno. Manda el de esta lista: toca <span class="elegido__lado">drive</span>
+        o <span class="elegido__lado">revés</span> para cambiarlo de lado con su pareja, y sale en
+        naranja cuando no es el suyo.
       </p>
       <div class="vt-field" style="margin-bottom:var(--vt-sm)">
         <label for="buscar">Buscar jugador</label>
