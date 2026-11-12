@@ -103,6 +103,14 @@
 .empate__texto{margin:0;font-size:14px;font-weight:600;color:var(--vt-error)}
 
 .tabla__yo td{background:var(--vt-surface-3);font-weight:600}
+/* El hueco que sobra se lo lleva «Jugador», no el «#».
+   `.vt-table` es `width:100%` y no declara ninguna anchura, asi que el
+   navegador reparte el sobrante entre las cinco columnas: medido a 1013 px,
+   la del «#» se quedaba 122 px para una cifra, y como `.vt-num` va alineada a
+   la derecha esos 90 px de mas se veian como un margen enorme a su izquierda.
+   `width:1%` encoge una columna a su contenido; la unica elastica queda la
+   del nombre, que es la que puede crecer. */
+#clasificacion .vt-num{width:1%;white-space:nowrap}
 #aviso:not(:empty),#avisoJugadores:not(:empty){
   padding:var(--vt-sm) var(--vt-md);
   background:var(--vt-error-bg);
