@@ -26,22 +26,20 @@ export const PUNTOS_DEL_GRUPO = [[8, 6], [8, 4], [6, 2], [4, 2]];
 
 // Quien gana un partido.
 //
-// Un empate a juegos no lo decide el marcador: en la hoja lo avisaba un
-// «EMPATE: decidid quien gana» mientras la formula ya le daba la victoria al
-// equipo 2 por detras. Aqui, mientras nadie diga quien gano, el partido
-// simplemente no esta resuelto y la ronda no se cierra.
+// Un empate a juegos no resuelve la pista. En la hoja salia un «EMPATE:
+// decidid quien gana» mientras la formula ya le daba la victoria al equipo 2
+// por detras; luego la pantalla lo preguntaba. Desde el 2026-11-12 no se
+// pregunta ni se guarda: la ronda a reloj deja veinte minutos de sobra y
+// descansos, asi que un empate se juega —un punto mas, lo que haga falta— y
+// se apunta como queda. Un marcador igualado deja el partido sin resolver y
+// la ronda siguiente sin formar, que es lo que empuja a jugarlo.
 export function resultadoDe(partido) {
   const j1 = partido.juegos1;
   const j2 = partido.juegos2;
   if (j1 === null || j1 === undefined || j2 === null || j2 === undefined) return null;
+  if (j1 === j2) return null;
 
-  let ganaEl1;
-  if (j1 === j2) {
-    if (partido.tieWinner !== 1 && partido.tieWinner !== 2) return null;
-    ganaEl1 = partido.tieWinner === 1;
-  } else {
-    ganaEl1 = j1 > j2;
-  }
+  const ganaEl1 = j1 > j2;
 
   return ganaEl1
     ? { ganan: partido.team1, pierden: partido.team2 }

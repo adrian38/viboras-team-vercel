@@ -75,10 +75,15 @@ no es un error de aquí.
 mientras la celda de al lado avisaba «EMPATE: decidid quién gana» y la
 clasificación ya había contado la victoria.
 
-Aquí un empate **no resuelve el partido**: `resultadoDe()` devuelve `null`
-hasta que alguien dice qué pareja gana (`matches.tie_winner`), la pantalla lo
-pregunta con los dos nombres y la ronda siguiente no se forma. No es una regla
-de pádel inventada: es la que la propia hoja pedía a gritos sin aplicarla.
+Aquí un empate **no resuelve el partido**: `resultadoDe()` devuelve `null` y la
+ronda siguiente no se forma. Hasta el 2026-11-12 la pantalla preguntaba qué
+pareja se llevaba la pista y lo guardaba en `matches.tie_winner`; **ahora no
+se empata**: lo dijo Adrián el 2026-11-12, la ronda a reloj deja veinte minutos
+de sobra y descansos, así que se juega un punto más —o los que hagan falta— y
+se apunta cómo queda. La pantalla avisa y deja el botón de guardar apagado
+mientras los dos números sean iguales, y el API rechaza el marcador igualado.
+La columna `tie_winner` ya no la lee ni la escribe nadie; sigue en las bases
+donde se llegó a crear, vacía.
 
 **La pista 4 perdía dos jugadores por ronda.** En la primera versión, la
 ronda 2 de la pista 4 solo recogía `N5` y `M5` —los dos perdedores de la pista
@@ -127,8 +132,10 @@ rompe `npm run check`. Viven en `ensurePozoSchema()`, en `api/_pozo.js`:
   por `api/league-admin.js`, y esta pantalla lo ignora.
 - `matches.court`: en qué pista se juega. No se puede deducir del marcador, y
   de ella salen los puntos y el movimiento de la ronda siguiente.
-- `matches.tie_winner`: qué pareja gana cuando los juegos quedan iguales. Solo
-  se mira si `set1_team1 = set1_team2`.
+- `matches.tie_winner` existió para decir qué pareja ganaba una pista
+  igualada. **Desde el 2026-11-12 no se usa**: no se empata, se juega un punto
+  más. El `ALTER TABLE` que la creaba ya no está, así que una base nueva no la
+  tiene y las viejas la conservan vacía.
 
 Los partidos entran con `format = 'timed_games'` y los juegos en
 `set1_team1` / `set1_team2`, que es lo que ya hacían los torneos: ver
@@ -145,11 +152,11 @@ Los partidos entran con `format = 'timed_games'` y los juegos en
   pozo.
 - **Un pozo en marcha aparece en `/tournaments`** con las filas de las rondas
   ya formadas y sin marcador. Es correcto: están organizadas y sin jugar.
-- **Un empate decidido por `tie_winner` no cuenta en `/cuenta`.** `decidido()`
-  en `api/perfil.js` da por no jugado todo partido con `sets1 + sets2 = 0`, y
-  un 5-5 lo es. Es la misma limitación que ya describía
-  `contar_partidos_de_un_jugador.md`, no una nueva; cuando haya que arreglarla,
-  se arregla allí.
+- **Un marcador igualado no cuenta en `/cuenta`.** `decidido()` en
+  `api/perfil.js` da por no jugado todo partido con `sets1 + sets2 = 0`, y un
+  5-5 lo es. Ya no se pueden guardar, así que solo afecta a los pozos de antes
+  del 2026-11-12. Es la misma limitación que describía
+  `contar_partidos_de_un_jugador.md`, no una nueva.
 - **El pozo no toca el rating Glicko**: `/rating` y `/history` piden
   `eventType=ranked,legacy` y no ven estos partidos.
 - **No hay avisos push** cuando se cierra una ronda. Se podría colgar de

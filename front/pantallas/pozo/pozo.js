@@ -88,29 +88,20 @@ function cajaDeEquipo(equipo, valor, marca) {
   return { fila, campo };
 }
 
-// Pregunta quien gana, y solo cuando hace falta: los juegos iguales no dicen
-// quien se lleva la pista. Hasta que se elige, el boton de guardar no vale.
-function preguntaDelEmpate(partido, estadoLocal, repintar) {
-  const caja = el('div', { class: 'empate' },
-    el('p', { class: 'empate__texto', texto: '¡Empate a juegos! ¿Qué pareja gana la pista?' }));
-  for (const lado of [1, 2]) {
-    const equipo = lado === 1 ? partido.team1 : partido.team2;
-    caja.append(el('button', {
-      type: 'button',
-      class: 'vt-btn vt-btn--sm ' + (estadoLocal.tieWinner === lado ? '' : 'vt-btn--ghost'),
-      texto: nombresDe(equipo),
-      onclick: () => { estadoLocal.tieWinner = lado; repintar(); }
-    }));
-  }
-  return caja;
+// Un empate no se guarda: se juega. La pantalla lo dice y deja el boton de
+// guardar apagado mientras los dos numeros sean iguales. Hasta el 2026-11-12
+// preguntaba que pareja se llevaba la pista; ahora el grupo juega un punto
+// mas, que para eso la ronda a reloj deja tiempo de sobra.
+function avisoDelEmpate() {
+  return el('div', { class: 'empate' },
+    el('p', { class: 'empate__texto', texto: 'Vais empatados a juegos: jugad un punto más y apuntad cómo queda.' }));
 }
 
 // Las dos casillas se montan UNA vez y no se vuelven a crear: rehacerlas en
 // cada tecla le quitaba el foco a quien estaba escribiendo, y un marcador de
 // dos cifras se quedaba en la primera. Lo que se rehace es solo lo que depende
-// de los valores: la pregunta del empate y los botones.
+// de los valores: el aviso del empate y los botones.
 function editorDeMarcador(partido) {
-  const local = { tieWinner: partido.tieWinner };
   const yo = estado.datos.yo.playerId;
   const uno = cajaDeEquipo(partido.team1, partido.juegos1, partido.team1.some((j) => j.id === yo));
   const dos = cajaDeEquipo(partido.team2, partido.juegos2, partido.team2.some((j) => j.id === yo));
@@ -121,11 +112,10 @@ function editorDeMarcador(partido) {
     const a = uno.campo.value.trim();
     const b = dos.campo.value.trim();
     const empatan = a !== '' && a === b;
-    if (!empatan) local.tieWinner = null;
     zonaEmpate.textContent = '';
-    if (empatan) zonaEmpate.append(preguntaDelEmpate(partido, local, refrescar));
+    if (empatan) zonaEmpate.append(avisoDelEmpate());
     acciones.textContent = '';
-    for (const boton of botonesDelEditor(partido, uno.campo, dos.campo, local, empatan)) acciones.append(boton);
+    for (const boton of botonesDelEditor(partido, uno.campo, dos.campo, empatan)) acciones.append(boton);
   };
 
   for (const campo of [uno.campo, dos.campo]) campo.addEventListener('input', refrescar);
@@ -133,14 +123,12 @@ function editorDeMarcador(partido) {
   return el('div', { class: 'marcador' }, uno.fila, dos.fila, zonaEmpate, acciones);
 }
 
-function botonesDelEditor(partido, campo1, campo2, local, empatan) {
-  const listo = campo1.value.trim() !== '' && campo2.value.trim() !== ''
-    && (!empatan || local.tieWinner === 1 || local.tieWinner === 2);
+function botonesDelEditor(partido, campo1, campo2, empatan) {
+  const listo = campo1.value.trim() !== '' && campo2.value.trim() !== '' && !empatan;
   const guardar = el('button', {
     type: 'button', class: 'vt-btn', disabled: listo ? null : 'disabled',
     onclick: () => enviar(partido, {
-      juegos1: Number(campo1.value), juegos2: Number(campo2.value),
-      tieWinner: empatan ? local.tieWinner : null
+      juegos1: Number(campo1.value), juegos2: Number(campo2.value)
     })
   }, icono('scoreboard', true), 'Guardar resultado');
 
@@ -233,14 +221,16 @@ function pintarTuPista() {
 function marcadorDe(partido) {
   if (partido.juegos1 === null) return el('span', { class: 'pendiente', texto: 'sin resultado' });
   const texto = `${partido.juegos1} – ${partido.juegos2}`;
-  if (partido.tieWinner) return el('span', { class: 'resultado', texto: `${texto} (gana la ${partido.tieWinner}.ª pareja)` });
   return el('span', { class: 'resultado', texto });
 }
 
 function filaDePartido(partido, ronda) {
-  const gana1 = partido.juegos1 !== null
-    && (partido.tieWinner ? partido.tieWinner === 1 : partido.juegos1 > partido.juegos2);
-  const gana2 = partido.juegos1 !== null && !gana1;
+  // Un marcador igualado no lo gana nadie: el partido sigue sin resolver, lo
+  // mismo que si no hubiera resultado. Guardarlo ya no se puede, pero un pozo
+  // de antes del 2026-11-12 puede tenerlo.
+  const resuelto = partido.juegos1 !== null && partido.juegos1 !== partido.juegos2;
+  const gana1 = resuelto && partido.juegos1 > partido.juegos2;
+  const gana2 = resuelto && !gana1;
   const clase = (gano) => 'partido__equipo' + (gano ? ' partido__equipo--gana' : '');
 
   const fila = el('div', { class: 'partido' + (soyDe(partido) ? ' partido--mio' : '') },

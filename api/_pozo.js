@@ -33,9 +33,6 @@ export function ensurePozoSchema() {
       // sitio, y en el pozo decide los puntos y el movimiento de la ronda
       // siguiente: no se puede deducir del marcador.
       await sql`ALTER TABLE matches ADD COLUMN IF NOT EXISTS court INTEGER`;
-      // Quien gana cuando los juegos quedan iguales. Solo se mira si
-      // set1_team1 = set1_team2, y lo dicen los jugadores.
-      await sql`ALTER TABLE matches ADD COLUMN IF NOT EXISTS tie_winner SMALLINT`;
       // Crear un pozo es un INSERT en events y cuatro en matches sin poner el
       // id: si la secuencia se quedo detras, chocan contra la clave primaria.
       await sincronizarSecuencias();
@@ -54,8 +51,7 @@ function aPartido(fila) {
     team1: [fila.player1a_id, fila.player1b_id],
     team2: [fila.player2a_id, fila.player2b_id],
     juegos1: fila.set1_team1 === null ? null : Number(fila.set1_team1),
-    juegos2: fila.set1_team2 === null ? null : Number(fila.set1_team2),
-    tieWinner: fila.tie_winner === null ? null : Number(fila.tie_winner)
+    juegos2: fila.set1_team2 === null ? null : Number(fila.set1_team2)
   };
 }
 
@@ -63,7 +59,7 @@ export async function partidosDelPozo(eventId) {
   const { rows } = await sql`
     SELECT id, round, court,
            player1a_id, player1b_id, player2a_id, player2b_id,
-           set1_team1, set1_team2, tie_winner
+           set1_team1, set1_team2
     FROM matches
     WHERE event_id = ${eventId}`;
   return rows.map(aPartido).sort((a, b) => (a.round - b.round) || (a.court - b.court));
@@ -203,7 +199,7 @@ async function ajustarRonda(eventId, fecha, actuales, deseados) {
       UPDATE matches SET
         player1a_id = ${deseado.team1[0]}, player1b_id = ${deseado.team1[1]},
         player2a_id = ${deseado.team2[0]}, player2b_id = ${deseado.team2[1]},
-        set1_team1 = NULL, set1_team2 = NULL, tie_winner = NULL
+        set1_team1 = NULL, set1_team2 = NULL
       WHERE id = ${actual.id}`;
     if (actual.juegos1 !== null) reiniciados += 1;
     cambios += 1;
@@ -241,9 +237,9 @@ export async function sincronizarRondas(evento) {
   return perdidos;
 }
 
-export async function guardarMarcador(matchId, juegos1, juegos2, tieWinner) {
+export async function guardarMarcador(matchId, juegos1, juegos2) {
   await sql`
     UPDATE matches
-    SET set1_team1 = ${juegos1}, set1_team2 = ${juegos2}, tie_winner = ${tieWinner}
+    SET set1_team1 = ${juegos1}, set1_team2 = ${juegos2}
     WHERE id = ${matchId}`;
 }

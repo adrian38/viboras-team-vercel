@@ -88,7 +88,6 @@ function pintaRondas(partidos, nombres, config) {
         team2: conNombres(p.team2, nombres),
         juegos1: p.juegos1,
         juegos2: p.juegos2,
-        tieWinner: p.tieWinner,
         puntos: config.puntos[p.court - 1] || [0, 0]
       }))
     });
@@ -215,14 +214,19 @@ export async function createPozo(req, res, user) {
 
 // --- submitPozoResult ----------------------------------------------------
 
-function problemaDelMarcador(juegos1, juegos2, tieWinner) {
+// Un empate no se guarda. La ronda a reloj deja veinte minutos de sobra y
+// descansos, asi que cuando los juegos quedan iguales se juega un punto mas y
+// se apunta el resultado de verdad (decision del grupo, 2026-11-12). Antes la
+// pantalla preguntaba que pareja ganaba la pista y lo guardaba en
+// matches.tie_winner; esa columna ya no la usa nadie.
+function problemaDelMarcador(juegos1, juegos2) {
   for (const n of [juegos1, juegos2]) {
     if (!Number.isInteger(n) || n < 0 || n > JUEGOS_MAX) {
       return `Los juegos son números enteros de 0 a ${JUEGOS_MAX}.`;
     }
   }
-  if (juegos1 === juegos2 && tieWinner !== 1 && tieWinner !== 2) {
-    return 'Habéis empatado a juegos: hace falta decir qué pareja gana la pista.';
+  if (juegos1 === juegos2) {
+    return 'Un empate no vale: jugad un punto más y apuntad cómo queda.';
   }
   return null;
 }
@@ -252,14 +256,13 @@ export async function submitPozoResult(req, res, user) {
     if (veto) { res.status(403).json({ ok: false, error: 'forbidden', message: veto }); return; }
 
     if (body?.borrar) {
-      await guardarMarcador(partido.id, null, null, null);
+      await guardarMarcador(partido.id, null, null);
     } else {
       const juegos1 = toInt(body?.juegos1);
       const juegos2 = toInt(body?.juegos2);
-      const tieWinner = toInt(body?.tieWinner) || null;
-      const problema = problemaDelMarcador(juegos1, juegos2, tieWinner);
+      const problema = problemaDelMarcador(juegos1, juegos2);
       if (problema) { res.status(400).json({ ok: false, error: 'marcador', message: problema }); return; }
-      await guardarMarcador(partido.id, juegos1, juegos2, juegos1 === juegos2 ? tieWinner : null);
+      await guardarMarcador(partido.id, juegos1, juegos2);
     }
 
     const perdidos = await sincronizarRondas(evento);
