@@ -42,6 +42,17 @@ pistas y 16 jugadores:
   de pareja eso es `[2D, 1R, 1D, 2R]`, con el 2.º drive abriendo el puesto
   porque el primero de cada pareja es el drive. Lo hace el botón, en
   `colocaPorColumnas()` de `front/pantallas/pozo-nuevo/pozo-nuevo.js`.
+- **La pista de la app no es la pista del club.** El mensaje al grupo del
+  torneo del 14 numeraba las pistas reales —«Pista 2: 7R-8D vs 7D-8R», y
+  luego la 3, la 6 y la 7, con 1R-2D contra 1D-2R en la 7—, que son las
+  cuatro que se alquilan. En la app esas mismas cuatro son la 1, la 2, la 3 y
+  la 4, en el mismo orden: la 1 de la app (la de arriba, a la que se sube) es
+  la 2 del club y la 4 es la 7. **Esa correspondencia no se guarda en ningún
+  sitio** y cambiará con las pistas que toquen, así que `/pozo-info` dice
+  sólo que la numeración es la de la app y que la del club la dice quien
+  organiza. Las parejas de salida de ese mensaje salen clavadas de
+  `colocaPorColumnas()` + `rondaInicial()`: comprobado el 2026-11-12 con
+  `1D…8D` y `1R…8R`.
 - **Las columnas se reparten, no se exigen.** `dosColumnas()` necesita tantos
   de un lado como del otro: quien no eligió lado en `/cuenta` cae en la
   columna que vaya más corta, y si un lado declarado se pasa de la mitad, los
