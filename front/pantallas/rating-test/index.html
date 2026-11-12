@@ -132,6 +132,12 @@ tbody tr:last-child td { border-bottom: none; }
 
 td:nth-child(2), th:nth-child(2) { text-align: center; }
 td:nth-child(3), th:nth-child(3) { text-align: right; }
+/* El ancho que sobra se lo lleva «Jugador». La tabla es width:100% y no
+   declara ninguna anchura, asi que el navegador repartia el hueco entre las
+   tres columnas: medido a 1013 px, la de RD eran 225 px para un numero de 69
+   y, al ir alineado a la derecha, los otros 157 se veian como un margen a su
+   izquierda. `width:1%` encoge una columna a su contenido. */
+td:nth-child(2), th:nth-child(2), td:nth-child(3), th:nth-child(3) { width: 1%; white-space: nowrap; }
 /* Las columnas son Jugador, Rating y RD: el oro va en la segunda, que es el
    rating, igual que en rating.html. La tercera es la incertidumbre y se
    queda en gris. */
