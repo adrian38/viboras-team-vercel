@@ -178,10 +178,12 @@ function rondaEnJuego() {
   return formadas.length ? formadas[formadas.length - 1] : null;
 }
 
-function puedoEditar(partido, ronda) {
-  if (estado.datos.yo.esAdmin) return true;
-  const ultima = rondaEnJuego();
-  return soyDe(partido) && ultima && ronda.numero === ultima.numero;
+// Desde el 2026-11-12 el marcador lo mete solo un administrador. Lo decidio
+// el grupo: durante las dos horas nadie anda con el movil, asi que cada pista
+// apunta en la hoja y despues unos pocos lo suben. Ya no depende del partido
+// ni de la ronda, asi que no recibe ninguno de los dos.
+function puedoEditar() {
+  return estado.datos.yo.esAdmin;
 }
 
 function pintarCabecera() {
@@ -214,8 +216,8 @@ function pintarTuPista() {
     el('div', { class: 'vt-sec-title' }, el('h3', { texto: `Tu pista · ronda ${ultima.numero}` })),
     el('p', { class: 'vt-muted', texto: `Pista ${mio.pista} · ganar vale ${mio.puntos[0]} puntos, perder ${mio.puntos[1]}` })
   );
-  if (puedoEditar(mio, ultima)) caja.append(editorDeMarcador(mio));
-  else caja.append(el('p', { class: 'vt-muted', texto: 'Esta ronda ya está cerrada. Si hay que corregirla, habla con un administrador.' }));
+  if (puedoEditar()) caja.append(editorDeMarcador(mio));
+  else caja.append(el('p', { class: 'vt-muted', texto: 'Al acabar, apuntad parejas y resultado en la hoja. De subirlo se encarga un administrador.' }));
 }
 
 function marcadorDe(partido) {
@@ -224,7 +226,7 @@ function marcadorDe(partido) {
   return el('span', { class: 'resultado', texto });
 }
 
-function filaDePartido(partido, ronda) {
+function filaDePartido(partido) {
   // Un marcador igualado no lo gana nadie: el partido sigue sin resolver, lo
   // mismo que si no hubiera resultado. Guardarlo ya no se puede, pero un pozo
   // de antes del 2026-11-12 puede tenerlo.
@@ -240,7 +242,7 @@ function filaDePartido(partido, ronda) {
       marcadorDe(partido),
       el('span', { class: clase(gana2), texto: nombresDe(partido.team2) })));
 
-  if (puedoEditar(partido, ronda) && estado.editando !== partido.id) {
+  if (puedoEditar() && estado.editando !== partido.id) {
     fila.append(el('button', {
       type: 'button', class: 'vt-btn vt-btn--ghost vt-btn--sm', 'aria-label': 'Editar la pista ' + partido.pista,
       onclick: () => { estado.editando = partido.id; pintar(); }
@@ -265,7 +267,7 @@ function pintarRondas() {
     const detalle = el('details', { class: 'ronda' });
     if (ultima && ronda.numero === ultima.numero) detalle.setAttribute('open', 'open');
     detalle.append(el('summary', {}, el('h4', { texto: `Ronda ${ronda.numero}` })));
-    for (const partido of ronda.partidos) detalle.append(filaDePartido(partido, ronda));
+    for (const partido of ronda.partidos) detalle.append(filaDePartido(partido));
     caja.append(detalle);
   }
 }

@@ -149,11 +149,17 @@ pantalla lo enseña.
 ## Quién puede qué
 
 - **Crear un pozo**: solo un administrador.
-- **Apuntar o corregir el marcador de una pista**: sus cuatro jugadores, y
-  solo mientras su ronda sea la última formada. En cuanto existe la siguiente,
-  cambiarlo deshace emparejamientos de otra gente.
-- **Un administrador** puede tocar cualquier marcador, también el de una ronda
-  cerrada, con el precio de arriba.
+- **Apuntar o corregir el marcador de una pista**: solo un administrador,
+  cualquier marcador, también el de una ronda cerrada. Corregir una ronda ya
+  cerrada vuelve a formar las posteriores y **pierde sus resultados**, porque
+  ya no son los mismos partidos.
+
+**Hasta el 2026-11-12 lo apuntaban también los cuatro de la pista**, mientras
+su ronda fuera la última formada. Lo cerró el grupo ese día: durante las dos
+horas nadie anda con el móvil, así que cada pista apunta parejas y resultado en
+una hoja y después unos pocos administradores los suben. Quedó en
+`puedeTocar()` de `api/_pozo-api.js` y en `puedoEditar()` de
+`front/pantallas/pozo/pozo.js`, que ya no miran ni el partido ni la ronda.
 
 ## El esquema
 

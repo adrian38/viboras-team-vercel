@@ -3,10 +3,10 @@
 //
 // Quien puede que:
 //   - crear un pozo: solo un administrador.
-//   - apuntar el marcador de una pista: los cuatro que juegan en ella, y un
-//     administrador. Pero solo mientras no exista una ronda posterior: una vez
-//     formada la siguiente, cambiar el resultado deshace emparejamientos de
-//     otra gente, y eso es de administrador.
+//   - apuntar el marcador de una pista: solo un administrador. Hasta el
+//     2026-11-12 lo apuntaban tambien los cuatro que jugaban en ella; el grupo
+//     lo cerro porque durante el torneo nadie anda con el movil. Cada pista
+//     apunta en la hoja y un administrador lo sube.
 //
 // Detalle: ai_context/pozo_americano.md
 import { sql } from '@vercel/postgres';
@@ -231,14 +231,9 @@ function problemaDelMarcador(juegos1, juegos2) {
   return null;
 }
 
-function puedeTocar(user, partido, partidos) {
+function puedeTocar(user) {
   if (user.role === 'admin') return null;
-  const suyo = user.player_id && [...partido.team1, ...partido.team2].includes(user.player_id);
-  if (!suyo) return 'Ese partido no es tuyo: solo lo apuntan sus cuatro jugadores o un administrador.';
-  if (partidos.some((p) => p.round > partido.round)) {
-    return 'Esa ronda ya está cerrada y las siguientes están formadas. Si hay que corregirla, que lo haga un administrador.';
-  }
-  return null;
+  return 'El marcador lo sube un administrador. Apuntad parejas y resultado en la hoja.';
 }
 
 export async function submitPozoResult(req, res, user) {
@@ -252,7 +247,7 @@ export async function submitPozoResult(req, res, user) {
     const partido = partidos.find((p) => p.id === toInt(body?.matchId));
     if (!partido) { res.status(404).json({ ok: false, error: 'no_existe' }); return; }
 
-    const veto = puedeTocar(user, partido, partidos);
+    const veto = puedeTocar(user);
     if (veto) { res.status(403).json({ ok: false, error: 'forbidden', message: veto }); return; }
 
     if (body?.borrar) {
