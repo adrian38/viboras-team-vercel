@@ -129,8 +129,7 @@ function filaVacia(playerId, orden) {
     jugados: 0,
     ganados: 0,
     puntos: 0,
-    difJuegos: 0,
-    pistaInicio: 0
+    difJuegos: 0
   };
 }
 
@@ -152,14 +151,16 @@ function anotaPartido(filas, partido, tablaDePuntos, resultado) {
   }
 }
 
-// El orden del Excel, con el desempate ya corregido: a igualdad de partidos
-// ganados va por delante el que empezo mas abajo (pista 4 antes que pista 1),
-// porque subir desde abajo cuesta mas. Despues los puntos, despues la
+// Manda el numero de partidos ganados; despues los puntos, despues la
 // diferencia de juegos, y al final el orden de la siembra, para que no haya
 // dos jugadores en el mismo puesto.
+//
+// Hasta el 2026-11-12 habia un desempate mas entre ganados y puntos: la pista
+// de salida, de abajo arriba, porque subir desde abajo cuesta mas. Lo quito
+// Adrian el 2026-11-12 porque no habia manera de explicarlo: la pantalla
+// ensenaba una columna «Pista» que nadie sabia leer.
 export function ordenDeLaClasificacion(a, b) {
   return (b.ganados - a.ganados)
-    || (b.pistaInicio - a.pistaInicio)
     || (b.puntos - a.puntos)
     || (b.difJuegos - a.difJuegos)
     || (a.orden - b.orden);
@@ -169,12 +170,6 @@ export function clasificacion(partidos, siembra, tablaDePuntos) {
   const filas = new Map(siembra.map((id, i) => [id, filaVacia(id, i)]));
 
   for (const partido of partidos) {
-    if (partido.round === 1) {
-      for (const id of [...partido.team1, ...partido.team2]) {
-        const fila = filas.get(id);
-        if (fila) fila.pistaInicio = partido.court;
-      }
-    }
     const resultado = resultadoDe(partido);
     if (resultado) anotaPartido(filas, partido, tablaDePuntos, resultado);
   }

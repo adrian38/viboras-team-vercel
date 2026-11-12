@@ -278,7 +278,6 @@ function filaDeClasificacion(fila, yo) {
     el('td', { class: 'vt-num' + medalla, texto: String(fila.puesto) }),
     el('td', { texto: fila.nombre }),
     el('td', { class: 'vt-num', texto: String(fila.ganados) }),
-    el('td', { class: 'vt-num', texto: String(fila.pistaInicio || '-') }),
     el('td', { class: 'vt-num', texto: String(fila.puntos) }),
     el('td', { class: 'vt-num', texto: (fila.difJuegos > 0 ? '+' : '') + fila.difJuegos }));
 }
@@ -297,12 +296,11 @@ function pintarClasificacion() {
           el('th', { class: 'vt-num', texto: '#' }),
           el('th', { texto: 'Jugador' }),
           el('th', { class: 'vt-num', texto: 'Gan.' }),
-          el('th', { class: 'vt-num', texto: 'Pista' }),
           el('th', { class: 'vt-num', texto: 'Pts' }),
           el('th', { class: 'vt-num', texto: 'Dif' }))),
         cuerpo)),
     el('p', { class: 'vt-muted', style: 'margin-top:var(--vt-sm);font-size:13px',
-      texto: 'Orden: partidos ganados → pista de salida más baja (la 4 antes que la 1) → puntos → diferencia de juegos.' }));
+      texto: 'Orden: partidos ganados → puntos → diferencia de juegos.' }));
 }
 
 function pintar() {

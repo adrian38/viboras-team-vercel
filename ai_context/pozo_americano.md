@@ -82,16 +82,22 @@ RONDA 2   pista 1: M+J vs I+N   pista 2: O+F vs E+P
 El primero de cada pareja es siempre el mismo jugador que empezó al drive, y
 en la ronda 2 no se repite ninguna pareja de la 1.
 
-## El desempate va al revés de lo que parece
+## El desempate: la pista de salida ya no cuenta
 
-El orden es: **partidos ganados → pista de salida más alta de número (la 4
-antes que la 1) → puntos → diferencia de juegos → orden de la siembra**.
+El orden es: **partidos ganados → puntos → diferencia de juegos → orden de la
+siembra**.
 
-El quinto criterio no es adorno: sin él dos jugadores empatados en todo caerían
+El cuarto criterio no es adorno: sin él dos jugadores empatados en todo caerían
 en el mismo puesto y la tabla no tendría un orden estable.
 
-Lo de la pista hay que leerlo despacio, porque **las dos versiones del Excel
-dicen cosas contrarias**:
+**Hasta el 2026-11-12 había un criterio más**, entre los partidos ganados y los
+puntos: la pista de salida, de abajo arriba. Lo quitó Adrián ese día, después
+de que Silvia dijera que nadie entendía la clasificación: la tabla enseñaba una
+columna «Pista» que no se podía leer sin esta nota. Con él se fue la columna de
+`/pozo` y el campo `pistaInicio` del motor.
+
+Lo que sigue queda escrito porque **las dos versiones del Excel dicen cosas
+contrarias** y alguien volverá a mirarlas:
 
 - La hoja del 2026-11-14 que llegó primero usaba
   `SUMPRODUCT((D=D)*(E<E2))`: ponía por delante a quien empezó en la **pista
@@ -100,8 +106,7 @@ dicen cosas contrarias**:
   inicio más baja (P4 > P3 > P2 > P1)»*. Por delante va quien empezó **abajo**,
   porque subir desde la 4 cuesta más.
 
-Vale la segunda. Si alguien vuelve a mirar la hoja vieja y ve lo contrario,
-no es un error de aquí.
+Valía la segunda. Hoy no vale ninguna: el criterio no existe.
 
 ## Lo que la hoja hacía mal y aquí no
 
