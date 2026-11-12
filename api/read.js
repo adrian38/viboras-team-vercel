@@ -3,6 +3,7 @@ import { ensureSchema, formatSet } from './_db.js';
 import { exigirSesion, exigirAdmin, ensureAuthSchema } from './_auth.js';
 import { describirInscripcion } from './_inscripcion.js';
 import { ensureAvisosSchema } from './_avisos.js';
+import { getPozo, getPozos } from './_pozo-api.js';
 
 async function getNames(req, res) {
   try {
@@ -390,6 +391,10 @@ export default async function handler(req, res) {
       return getAmbiente(req, res);
     case 'getRatingsDePartida':
       return getRatingsDePartida(req, res);
+    case 'getPozos':
+      return getPozos(req, res);
+    case 'getPozo':
+      return getPozo(req, res, user);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;
