@@ -34,6 +34,14 @@ pistas y 16 jugadores:
 - **Los cuatro primeros empiezan en la última pista**, los cuatro siguientes
   una más arriba, y los cuatro últimos en la pista 1. La 1 es la de arriba:
   hacia ella se sube.
+- **Cómo llena el grupo esa lista** (Adrián al grupo, 2026-11-12, para el
+  torneo del 14): el ranking partido en dos columnas, la de los que juegan al
+  drive y la de los que juegan al revés. Los dos mejores de cada columna
+  empiezan juntos en la última pista, los dos siguientes una más arriba, y
+  dentro de la pista cruzados: **1R-2D contra 1D-2R**. Con la siembra en orden
+  de pareja eso es `[2D, 1R, 1D, 2R]`. **El botón no lo hace solo**: ordena por
+  rating global, no por dos columnas, así que el administrador acaba la
+  colocación a mano.
 - **«Ordenar por ranking» usa el ranking de verdad.** El botón de la pantalla
   de crear llama al motor de `front/comun/vt-glicko.js` con el rating de
   partida y los votos de nivel, arrancado igual que `rating.js`, y deja a los
