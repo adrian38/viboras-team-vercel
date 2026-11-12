@@ -161,3 +161,25 @@ De 2 a 6 pistas (8 a 24 jugadores) y de 1 a 12 rondas. No son reglas de pádel:
 es lo que la pantalla sabe pintar. La tabla de puntos viene puesta solo con
 cuatro pistas, que es la única que el grupo ha decidido; con otro número la
 escribe quien crea el torneo, porque inventarla sería inventar un dato.
+
+## El nombre del torneo es único en toda la tabla `events`
+
+`events.name` tiene un `UNIQUE` de toda la vida (`api/_db.js`), y no distingue
+tipos: el nombre de un pozo compite con el de las ligas y con los tres eventos
+fijos. La página proponía «Pozo» y la fecha de hoy, idéntico para todos los
+pozos del mismo día, así que **el segundo pozo del día no se podía crear**: salía
+«Ya hay un torneo con ese nombre» sobre un nombre que el administrador no había
+escrito. Le pasó a Dani el 2026-11-12 con los 16 ya metidos.
+
+Desde entonces:
+
+- `pozo-nuevo.js` pide `getPozos` al arrancar y propone el primer nombre libre:
+  «Pozo 12/11/2026», «Pozo 12/11/2026 (2)», y así.
+- Si aun así choca —otro móvil, un nombre escrito a mano, o un evento que no es
+  un pozo y por tanto no sale en `getPozos`—, el 409 de `createPozo` viene con
+  `sugerencia`, la página la deja puesta en el campo y lo dice. Hay que volver
+  a darle al botón: no se crea nada con un nombre que no se ha visto.
+- `crearPozo` deshace el evento si falla después del `INSERT`. El driver va por
+  HTTP y cada consulta es su propia transacción: un torneo a medias no sale en
+  la lista (`getPozos` pide `pozo_config`) y en cambio deja el nombre cogido,
+  que era la manera de quedarse atascado sin nada que borrar por pantalla.
