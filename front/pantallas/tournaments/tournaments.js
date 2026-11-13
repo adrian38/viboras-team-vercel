@@ -8,6 +8,12 @@ let parsedMatches = []
 let lastFiltered = []
 let currentTournamentView = 'rating'
 let tournamentDateMap = new Map()
+// Los pozos creados desde /pozo (los que tienen pozo_config). Esta pagina no
+// calcula su clasificacion: la buena es la del pozo, que ordena por partidos
+// ganados y pista de salida, y la de aqui ordenaria por victorias y juegos.
+// Dos clasificaciones distintas del mismo torneo es justo lo que no puede
+// ensenar la app, asi que para esos se enlaza a su pantalla.
+let pozosPropios = new Set()
 
 function formatEventDates(startDate, endDate){
   const normalize = (value) => {
@@ -30,6 +36,24 @@ function formatEventDates(startDate, endDate){
   return `${start} - ${end}`
 }
 
+// Un pozo con pantalla propia no ensena aqui ni clasificacion ni resultados:
+// la vista de arriba manda a /pozo, donde estan las rondas con sus marcadores
+// y la clasificacion con sus desempates. Ensenar ademas la pestana de
+// resultados era pintar los mismos partidos peor y en otro orden. Lo dijo
+// Dani el 2026-11-12. Los demas torneos la siguen teniendo: ahi la
+// clasificacion son victorias y juegos, y los partidos no se ven en ningun
+// otro sitio.
+function esPozoConPantallaPropia(eventId){
+  return pozosPropios.has(String(eventId || '').trim())
+}
+
+function pintarElSelectorDeVista(){
+  const toggle = document.getElementById('tournamentViewToggle')
+  if (!toggle) return
+  const seleccionado = (document.getElementById('eventSelect').value || '').trim()
+  toggle.style.display = (seleccionado && !esPozoConPantallaPropia(seleccionado)) ? 'flex' : 'none'
+}
+
 function setTournamentView(view){
   const nextView = (view === 'results') ? 'results' : 'rating'
   currentTournamentView = nextView
@@ -45,11 +69,7 @@ function setTournamentView(view){
   if (ratingContainer) ratingContainer.style.display = (nextView === 'rating') ? 'block' : 'none'
   if (tableContainer) tableContainer.style.display = (nextView === 'results') ? 'block' : 'none'
 
-  const toggle = document.getElementById('tournamentViewToggle')
-  if (toggle) {
-    const selectedEvent = (document.getElementById('eventSelect').value || '').trim()
-    toggle.style.display = selectedEvent ? 'flex' : 'none'
-  }
+  pintarElSelectorDeVista()
 }
 
 function parseMatches(raw){
@@ -114,6 +134,7 @@ async function loadData(){
 
     parsedMatches = parseMatches(db.matches || [])
     setupEventSelector(db.events || [], parsedMatches)
+    await loadPozosPropios()
     await loadPlayerNames()
     document.getElementById('summary').innerText = ''
     document.getElementById('tableContainer').innerHTML = '<div class="muted">Selecciona un torneo para ver los resultados y la clasificación.</div>'
@@ -122,6 +143,18 @@ async function loadData(){
     console.error('Could not load tournament results', e)
     document.getElementById('summary').innerText = 'No se pudieron cargar los resultados del torneo.'
     document.getElementById('tableContainer').innerHTML = '<div class="muted">No hay resultados para mostrar.</div>'
+  }
+}
+
+async function loadPozosPropios(){
+  try{
+    const res = await fetch('/api/read?action=getPozos&ts=' + Date.now())
+    const db = await res.json()
+    pozosPropios = new Set((db.pozos || []).map(p => String(p.id)))
+  }catch(e){
+    // Sin esta lista se pinta la clasificacion de siempre, que es lo que
+    // habia antes del pozo: peor, pero no roto.
+    pozosPropios = new Set()
   }
 }
 
@@ -145,8 +178,7 @@ function applyFilter(){
 
 
   // filter by selected event (this set is used for rating)
-  const toggle = document.getElementById('tournamentViewToggle')
-  if (toggle) toggle.style.display = selectedEvent ? 'flex' : 'none'
+  pintarElSelectorDeVista()
 
   if (!selectedEvent) {
     document.getElementById('summary').innerText = ''
@@ -178,8 +210,8 @@ function applyFilter(){
   lastFiltered = filtered
   const eventType = (eventFiltered && eventFiltered.length) ? (eventFiltered[0].event_type || '') : ''
   renderTable(filtered, eventType)
-  renderRating(eventFiltered, eventType)
-  setTournamentView(currentTournamentView)
+  renderRating(eventFiltered, eventType, selectedEvent)
+  setTournamentView(esPozoConPantallaPropia(selectedEvent) ? 'rating' : currentTournamentView)
 }
 
 function pairKeyFromPlayers(players){
@@ -275,8 +307,22 @@ function computeRating(matches, eventType = ''){
   return out
 }
 
-function renderRating(matches, eventType = ''){
+function renderRating(matches, eventType = '', eventId = ''){
   const container = document.getElementById('ratingContainer')
+  if (pozosPropios.has(String(eventId))) {
+    container.innerHTML = ''
+    const aviso = document.createElement('div')
+    aviso.className = 'muted'
+    aviso.textContent = 'Este pozo lleva su propia clasificación, con sus desempates y sus puntos por pista.'
+    const enlace = document.createElement('button')
+    enlace.className = 'btn'
+    enlace.style.marginTop = '10px'
+    enlace.textContent = 'Ver la clasificación del pozo'
+    enlace.addEventListener('click', () => { window.location = '/pozo?id=' + encodeURIComponent(eventId) })
+    container.appendChild(aviso)
+    container.appendChild(enlace)
+    return
+  }
   const rating = computeRating(matches || [], eventType)
   if(!rating || rating.length === 0){ container.innerHTML = '<div class="muted">Sin clasificación para mostrar.</div>'; return }
 

@@ -1,5 +1,12 @@
 import { sql } from '@vercel/postgres';
 
+// Los tipos de `events` que son un torneo: tienen pantalla propia y reglas
+// propias. Vive aqui porque lo leen tres ficheros y tener tres copias es
+// tener tres listas que se separan: `write.js` veta por el la edicion suelta
+// de sus partidos (`vetadoPorTorneo`), `read.js` lista con el los torneos del
+// panel y `league-admin.js` solo borra eventos de estos tipos.
+export const EVENTOS_DE_TORNEO = ['pozo', 'compas', 'doble_ko'];
+
 let schemaReady = null;
 
 export async function ensureSchema() {
@@ -123,6 +130,22 @@ export async function ensureSchema() {
   })();
 
   return schemaReady;
+}
+
+// Una fila insertada con su `id` puesto a mano no mueve la secuencia del
+// SERIAL. ensureSchema() siembra asi los eventos 1, 2 y 3, de modo que en una
+// base recien creada la secuencia se queda en 1 y los TRES primeros INSERT
+// que no ponen id chocan contra la clave primaria. El error es un 23505, el
+// mismo codigo que un nombre repetido, y por eso el pozo lo contaba como «ya
+// hay un torneo con ese nombre» con un nombre que no existia. Le pasa igual a
+// cualquier tabla restaurada de un volcado, que trae los ids puestos.
+//
+// Poner la secuencia en max(id) es idempotente: donde ya esta bien, la deja
+// donde estaba. De momento solo lo llama el pozo (ensurePozoSchema); los demas
+// sitios que crean eventos o partidos no, y por eso siguen expuestos.
+export async function sincronizarSecuencias() {
+  await sql`SELECT setval(pg_get_serial_sequence('events', 'id'), GREATEST((SELECT max(id) FROM events), 1))`;
+  await sql`SELECT setval(pg_get_serial_sequence('matches', 'id'), GREATEST((SELECT max(id) FROM matches), 1))`;
 }
 
 // Las paginas pintan los nombres con innerHTML: con < > " ' ` o & un nombre

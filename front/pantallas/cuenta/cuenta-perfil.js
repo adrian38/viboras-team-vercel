@@ -319,8 +319,7 @@ const coma = (n) => n.toFixed(1).replace('.', ',')
 // multiplicar: RD 350 (nadie sabe nada de ti) es 0 y RD 80 (el suelo del
 // motor) es 1. Los dos limites son los del motor, no inventados aqui.
 function fiabilidadDeRd(rd){
-  const t = (window.MAX_RD - rd) / (window.MAX_RD - window.MIN_RD)
-  return Math.min(1, Math.max(0, t))
+  return window.vtCalificacion.fiabilidadDeRd(rd)
 }
 
 // La calificacion: las opiniones de buen rollo del grupo, pesadas por lo
@@ -329,7 +328,7 @@ function fiabilidadDeRd(rd){
 // multiplica en vez de sumar, que es lo que evita que dos opiniones den un 5
 // redondo.
 function calificacionDe(buenRollo, fiabilidad){
-  return Math.min(5, Math.max(1, 3 + 2 * fiabilidad * (2 * buenRollo - 1)))
+  return window.vtCalificacion.calificacionDe(buenRollo, fiabilidad)
 }
 
 // Lo ultimo que llega del API, para componer la calificacion cuando el motor

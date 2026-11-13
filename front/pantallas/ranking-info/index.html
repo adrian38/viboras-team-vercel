@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sistema de Rating - Explicación</title>
+<title>Ranking - Reglamento</title>
 <link rel="icon" href="/image.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
@@ -30,48 +30,8 @@
 .doc h2::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
 .doc h3{margin:var(--vt-lg) 0 var(--vt-sm);color:var(--vt-gold-soft)}
 
-/* Spoilers de las tablas de puntuacion. */
-details{
-  background:var(--vt-surface-2);
-  border:1px solid var(--vt-border);
-  border-radius:var(--vt-r);
-  margin:var(--vt-md) 0 var(--vt-lg);
-  overflow:hidden;
-  max-width:72ch;
-}
-summary{
-  padding:10px 14px;
-  background:var(--vt-surface-3);
-  color:var(--vt-text);
-  font-size:13px;
-  font-weight:600;
-  letter-spacing:0.02em;
-  cursor:pointer;
-  user-select:none;
-  list-style:none;
-  display:flex;
-  align-items:center;
-  gap:var(--vt-sm);
-  transition:background .15s ease,color .15s ease;
-}
-summary::-webkit-details-marker{display:none}
-/* El triangulo nativo no se ve sobre el carbono; se dibuja uno con bordes,
-   que no depende de que la fuente tenga el glifo. */
-summary::before{
-  content:'';
-  flex:0 0 auto;
-  width:0;height:0;
-  border-left:6px solid var(--vt-gold);
-  border-top:4px solid transparent;
-  border-bottom:4px solid transparent;
-  transition:transform .15s ease;
-}
-details[open] summary::before{transform:rotate(90deg)}
-summary:hover{background:var(--vt-surface-4);color:var(--vt-gold-light)}
-details[open] summary{border-bottom:1px solid var(--vt-border)}
-
-/* Tablas de puntuacion. */
-.points-table{width:100%;border-collapse:collapse;font-size:14px}
+/* La tabla del ejemplo de fiabilidad. */
+.points-table{width:100%;border-collapse:collapse;font-size:14px;margin:var(--vt-md) 0 var(--vt-lg);max-width:72ch}
 .points-table th,.points-table td{padding:8px 14px;border-bottom:1px solid var(--vt-border);text-align:left}
 .points-table tr:last-child td{border-bottom:none}
 .points-table th{
@@ -83,8 +43,11 @@ details[open] summary{border-bottom:1px solid var(--vt-border)}
   text-transform:uppercase;
 }
 .points-table td{color:var(--vt-text)}
-.points-table td.pts{font-weight:700;color:var(--vt-gold);width:100px;font-variant-numeric:tabular-nums}
+.points-table td.pts{font-weight:700;color:var(--vt-gold);font-variant-numeric:tabular-nums}
 .points-table tbody tr:hover td{background:var(--vt-surface-3)}
+/* En el movil la tabla no cabe: se desplaza dentro de su caja, no la pagina. */
+.tabla-scroll{overflow-x:auto;border:1px solid var(--vt-border);border-radius:var(--vt-r);margin:var(--vt-md) 0 var(--vt-lg)}
+.tabla-scroll .points-table{margin:0}
 </style>
 </head>
 <body>
@@ -114,142 +77,63 @@ details[open] summary{border-bottom:1px solid var(--vt-border)}
   <div class="vt-card vt-card--accent vt-card--glow doc">
 
     <h1>¿Cómo funciona el <span class="vt-gold-grad">ranking?</span></h1>
-    <p>El objetivo del ranking es valorar la <strong>actividad y el desempeño</strong> de los integrantes del grupo en torneos, ligas, y partidos competitivos. El ranking es <strong>trimestral</strong>, coincidiendo con el periodo de cada liga.</p>
-    <p>Durante los tres meses, los jugadores acumulan puntos, declarándose una clasificación final al terminar el periodo actual. Al empezar un nuevo periodo trimestral del ranking, todas las puntuaciones vuelven a colocarse a cero.</p>
+    <p>El objetivo es valorar la actividad, buen rollo y el nivel (variación en el trimestre) de los integrantes del grupo en torneos, ligas y partidos competitivos. Al finalizar cada mes comunicaremos el pódium de las 3 categorías. Cada trimestre natural, las puntuaciones se reinician.</p>
 
     <h2>Sistema de puntuación</h2>
-    <p>La participación en <strong>torneos, ligas, y partidos competitivos</strong> otorga puntos para el ranking. Cada jugador obtendrá puntuación de los siguientes eventos:</p>
     <ul>
-      <li>Sus <strong>dos torneos</strong> con mejor desempeño. Si un jugador ha disputado más de dos torneos durante el periodo de ranking, contabilizarán los dos torneos que le otorguen más puntos.</li>
-      <li>Su desempeño en la <strong>liga</strong> disputada en el periodo de ranking, en caso de haber participado.</li>
-      <li>Hasta 20 puntos por <strong>partidos competitivos</strong> jugados.</li>
+      <li><strong>Actividad:</strong> La participación en torneos, ligas y partidos competitivos otorgan puntos actividad. Cada jugador obtendrá un punto por partido / torneo jugado.</li>
+      <li><strong>Fair play:</strong> Se obtiene de la valoración de los compañeros/rivales después de cada partido. Puntúa <strong>tu calificación de 1 a 5</strong>, la misma que ves en tu perfil y en la comunidad: las opiniones de ambiente pesadas por la fiabilidad de tu ranking. Como es tu calificación actual, esta categoría no vuelve a cero al empezar un trimestre.</li>
+      <li><strong>Revelación:</strong> Diferencia de nivel en el trimestre (Actual-Inicio periodo).</li>
     </ul>
 
-    <h3>Puntuación de torneos</h3>
-    <p>Cada torneo de tipo <strong><i>pozo</i></strong> otorga una <strong>puntuación en función de la clasificación</strong>.</p>
+    <h2>Fórmulas valoración compañeros</h2>
+    <ul>
+      <li>buen rollo</li>
+      <li>Nivel</li>
+    </ul>
 
-    <!-- Spoiler Torneo Pozo 12 Jugadores -->
-    <details>
-      <summary>Ver tabla de puntuación: Torneo pozo de 12 jugadores</summary>
+    <p>El orden es:</p>
+    <ol>
+      <li>Se calcula el rating del partido valorado.</li>
+      <li>Después se modifica la fiabilidad (RD) según las opiniones de nivel.</li>
+      <li>Esa nueva fiabilidad determina cuánto contará el jugador en sus partidos posteriores.</li>
+    </ol>
+
+    <p>Por tanto:</p>
+    <ul>
+      <li>«En su nivel» → aumenta su fiabilidad.</li>
+      <li>«Por encima» o «por debajo» → reduce su fiabilidad, para que el rating pueda corregirse más deprisa.</li>
+      <li>La opinión no sube ni baja directamente el rating.</li>
+      <li>La respuesta sobre buen/mal ambiente no afecta a la fiabilidad del ranking.</li>
+    </ul>
+
+    <p>Nadie puntúa de 1 a 5: la calificación es un cálculo sobre la respuesta
+    de ambiente. El 3 es el centro, y la fiabilidad del ranking multiplica, de
+    modo que te separa del 3 hacia el 5 según el sistema se fía más de tu
+    puntuación. Sin ninguna opinión recibida no hay calificación, y no sales en
+    esta clasificación.</p>
+
+    <p>Ejemplo partiendo de RD 200:</p>
+    <div class="tabla-scroll">
       <table class="points-table">
         <thead>
           <tr>
-            <th>Posición</th>
-            <th class="pts">Puntos</th>
+            <th>Opiniones recibidas</th>
+            <th>Neto</th>
+            <th>Nuevo RD</th>
+            <th>Efecto</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>1º puesto</td><td class="pts">20 pts</td></tr>
-          <tr><td>2º puesto</td><td class="pts">16 pts</td></tr>
-          <tr><td>3º puesto</td><td class="pts">13 pts</td></tr>
-          <tr><td>4º puesto</td><td class="pts">11 pts</td></tr>
-          <tr><td>5º puesto</td><td class="pts">10 pts</td></tr>
-          <tr><td>6º puesto</td><td class="pts">9 pts</td></tr>
-          <tr><td>7º puesto</td><td class="pts">8 pts</td></tr>
-          <tr><td>8º puesto</td><td class="pts">7 pts</td></tr>
-          <tr><td>9º puesto</td><td class="pts">6 pts</td></tr>
-          <tr><td>10º puesto</td><td class="pts">5 pts</td></tr>
-          <tr><td>11º y 12º puesto</td><td class="pts">4 pts</td></tr>
+          <tr><td>1 en su nivel</td><td>+1</td><td class="pts">194</td><td>Más fiabilidad</td></tr>
+          <tr><td>2 en su nivel</td><td>+2</td><td class="pts">188</td><td>Más fiabilidad</td></tr>
+          <tr><td>3 en su nivel</td><td>+3</td><td class="pts">182</td><td>Más fiabilidad</td></tr>
+          <tr><td>1 discrepante</td><td>−1</td><td class="pts">206</td><td>Menos fiabilidad</td></tr>
+          <tr><td>3 discrepantes</td><td>−3</td><td class="pts">218</td><td>Menos fiabilidad</td></tr>
+          <tr><td>2 a favor y 2 discrepantes</td><td>0</td><td class="pts">200</td><td>Sin cambio</td></tr>
         </tbody>
       </table>
-    </details>
-
-    <!-- Spoiler Torneo Pozo 16 Jugadores -->
-    <details>
-      <summary>Ver tabla de puntuación: Torneo pozo de 16 jugadores</summary>
-      <table class="points-table">
-        <thead>
-          <tr>
-            <th>Posición</th>
-            <th class="pts">Puntos</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>1º puesto</td><td class="pts">25 pts</td></tr>
-          <tr><td>2º puesto</td><td class="pts">20 pts</td></tr>
-          <tr><td>3º puesto</td><td class="pts">16 pts</td></tr>
-          <tr><td>4º puesto</td><td class="pts">13 pts</td></tr>
-          <tr><td>5º puesto</td><td class="pts">11 pts</td></tr>
-          <tr><td>6º puesto</td><td class="pts">10 pts</td></tr>
-          <tr><td>7º puesto</td><td class="pts">9 pts</td></tr>
-          <tr><td>8º puesto</td><td class="pts">8 pts</td></tr>
-          <tr><td>9º y 10º puesto</td><td class="pts">7 pts</td></tr>
-          <tr><td>11º y 12º puesto</td><td class="pts">6 pts</td></tr>
-          <tr><td>13º y 14º puesto</td><td class="pts">5 pts</td></tr>
-          <tr><td>15º y 16º puesto</td><td class="pts">4 pts</td></tr>
-        </tbody>
-      </table>
-    </details>
-
-    <p>Cada torneo de <strong><i>eliminación con cuadro de brújula</i></strong> otorga una <strong>puntuación en función del número de victorias</strong> a cada miembro de cada pareja.</p>
-
-    <!-- Spoiler Torneo Brújula 16 Jugadores -->
-    <details>
-      <summary>Ver tabla de puntuación: Torneo de eliminación con cuadro de brújula de 8 parejas</summary>
-      <table class="points-table">
-        <thead>
-          <tr>
-            <th>Posición</th>
-            <th class="pts">Puntos</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>3 Victorias - 0 Derrotas</td><td class="pts">18 pts</td></tr>
-          <tr><td>2 Victorias - 1 Derrota</td><td class="pts">10 pts</td></tr>
-          <tr><td>1 Victoria - 2 Derrotas</td><td class="pts">6 pts</td></tr>
-          <tr><td>0 Victorias - 3 Derrotas</td><td class="pts">4 pts</td></tr>
-        </tbody>
-      </table>
-    </details>
-
-    <h3>Puntuación de liga</h3>
-    <p>La participación en la liga otorga una <strong>puntuación en función de la clasificación</strong>.</p>
-
-    <!-- Spoiler Liga -->
-    <details>
-      <summary>Ver tabla de puntuación: Liga</summary>
-      <table class="points-table">
-        <thead>
-          <tr>
-            <th>Posición</th>
-            <th class="pts">Puntos</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>1º puesto</td><td class="pts">50 pts</td></tr>
-          <tr><td>2º puesto</td><td class="pts">45 pts</td></tr>
-          <tr><td>3º puesto</td><td class="pts">41 pts</td></tr>
-          <tr><td>4º puesto</td><td class="pts">37 pts</td></tr>
-          <tr><td>5º puesto</td><td class="pts">34 pts</td></tr>
-          <tr><td>6º puesto</td><td class="pts">31 pts</td></tr>
-          <tr><td>7º puesto</td><td class="pts">29 pts</td></tr>
-          <tr><td>8º puesto</td><td class="pts">27 pts</td></tr>
-          <tr><td>9º puesto</td><td class="pts">25 pts</td></tr>
-          <tr><td>10º puesto</td><td class="pts">23 pts</td></tr>
-          <tr><td>11º puesto</td><td class="pts">22 pts</td></tr>
-          <tr><td>12º puesto</td><td class="pts">21 pts</td></tr>
-          <tr><td>13º puesto</td><td class="pts">20 pts</td></tr>
-          <tr><td>14º puesto</td><td class="pts">19 pts</td></tr>
-          <tr><td>15º puesto</td><td class="pts">18 pts</td></tr>
-          <tr><td>16º puesto</td><td class="pts">17 pts</td></tr>
-          <tr><td>17º puesto</td><td class="pts">16 pts</td></tr>
-          <tr><td>18º puesto</td><td class="pts">15 pts</td></tr>
-          <tr><td>19º puesto</td><td class="pts">14 pts</td></tr>
-          <tr><td>20º y 21º puesto</td><td class="pts">13 pts</td></tr>
-          <tr><td>22º y 23º puesto</td><td class="pts">12 pts</td></tr>
-          <tr><td>24º y 25º puesto</td><td class="pts">11 pts</td></tr>
-          <tr><td>26º y 27º puesto</td><td class="pts">10 pts</td></tr>
-          <tr><td>28º y 29º puesto</td><td class="pts">9 pts</td></tr>
-          <tr><td>30º y 31º puesto</td><td class="pts">8 pts</td></tr>
-          <tr><td>32º y 33º puesto</td><td class="pts">7 pts</td></tr>
-          <tr><td>34º a 36º puesto</td><td class="pts">6 pts</td></tr>
-        </tbody>
-      </table>
-    </details>
-
-    <h3>Puntuación de partidos competitivos</h3>
-    <p>Se contabilizan <strong>2 puntos por partido competitvo jugado hasta 10 partidos</strong>, es decir, hasta un máximo de 20 puntos. No importa el resultado, y no se contabiliza más de un partido por día. El objetivo de este apartado es premiar a los jugadores por alcanzar una actividad razonable en el grupo.</p>
-
+    </div>
   </div>
 </div>
 

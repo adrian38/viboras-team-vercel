@@ -31,3 +31,9 @@ stitch_*.zip
 # Nuestro flujo (Identity Services) no lo necesita, solo el client_id, que va
 # en la variable de entorno GOOGLE_CLIENT_ID.
 client_secret_*.json
+
+# la carpeta que se puede dar a alguien para que exporte las encuestas: su
+# cadena de conexion abre la base entera, y lo que saca lleva nombres, correos
+# y telefonos del grupo.
+exportar-encuestas/conexion.txt
+exportar-encuestas/salida/

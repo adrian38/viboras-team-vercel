@@ -1,5 +1,5 @@
 import { sql } from '@vercel/postgres';
-import { ensureSchema, readBody } from './_db.js';
+import { ensureSchema, readBody, EVENTOS_DE_TORNEO } from './_db.js';
 import { exigirSesion } from './_auth.js';
 import { avisarTorneo } from './_avisos.js';
 import { asInt, ensureValidDateText, normalizeDateToText, validatePhaseSchedule, buildEventName, normalizeSubstitutionGroupsInput, parseRows, parseCsvRows, parseCompasRows } from './_ligas.js';
@@ -258,6 +258,53 @@ async function createCompasTournament(req, res) {
   }
 }
 
+// Borrar un torneo entero: el evento y sus partidos. No tiene vuelta atras.
+//
+// Solo de los tipos de EVENTOS_DE_TORNEO. Un `grupo_liga` no se borra por
+// aqui —se llevaria por delante una fase de la liga sin tocar la fila de
+// `leagues`, que quedaria coja— y un `ranked` o un `legacy` tampoco: esos
+// partidos se borran de uno en uno desde /history, que es donde se ven.
+//
+// Las dos sentencias van en UNA: `matches.event_id` es ON DELETE RESTRICT, y
+// con el driver HTTP de Neon cada `sql` suelto es su propia transaccion, asi
+// que borrar los partidos y fallar al borrar el evento dejaria un torneo
+// vacio con el nombre cogido —unico en toda la tabla—, que es justo el
+// atasco que describe ai_context/pozo_americano.md.
+async function deleteTournament(req, res) {
+  try {
+    await ensureSchema();
+    const data = await readBody(req);
+    const eventId = asInt(data?.event_id, 0);
+    if (!(eventId > 0)) {
+      res.status(400).json({ ok: false, error: 'Falta el torneo' });
+      return;
+    }
+
+    const { rows: eventos } = await sql`SELECT id, name, type FROM events WHERE id = ${eventId}`;
+    if (!eventos.length) {
+      res.status(404).json({ ok: false, error: 'Ese torneo ya no existe.' });
+      return;
+    }
+    const tipo = String(eventos[0].type || '').toLowerCase();
+    if (!EVENTOS_DE_TORNEO.includes(tipo)) {
+      res.status(400).json({ ok: false, error: `"${eventos[0].name}" no es un torneo: es un evento de tipo ${tipo || 'desconocido'}.` });
+      return;
+    }
+
+    const { rows } = await sql`
+      WITH partidos AS (
+        DELETE FROM matches WHERE event_id = ${eventId} RETURNING id
+      ), ev AS (
+        DELETE FROM events WHERE id = ${eventId} RETURNING name
+      )
+      SELECT (SELECT count(*) FROM partidos)::int AS partidos, (SELECT name FROM ev) AS nombre`;
+    res.status(200).json({ ok: true, name: rows[0].nombre, partidos: rows[0].partidos });
+  } catch (err) {
+    console.error('league-admin:deleteTournament error', err);
+    res.status(400).json({ ok: false, error: motivo(err, 'Error al borrar el torneo') });
+  }
+}
+
 async function updateLeagueSubstitutions(req, res) {
   try {
     await ensureSchema();
@@ -307,6 +354,8 @@ export default async function handler(req, res) {
       return createCompasTournament(req, res);
     case 'updateLeagueSubstitutions':
       return updateLeagueSubstitutions(req, res);
+    case 'deleteTournament':
+      return deleteTournament(req, res);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;

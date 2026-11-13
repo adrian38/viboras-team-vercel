@@ -117,6 +117,14 @@ mjx-container{color:var(--vt-text)}
       </li>
       <li><strong>Adaptación a Partidos 2v2:</strong> El algoritmo calcula la fuerza conjunta de cada pareja, promediando el nivel de cada miembro, para luego comparar los niveles de ambas parejas.</li>
       <li><strong>Peso por Resultado, Formato, y Fiabilidad:</strong> El impacto en tu rating depende de lo contundente que sea la victoria. Ganar de forma holgada (ej. 6–2 6–1) otorga más puntos que un triunfo apretado en tres sets (ej. 7–6 3–6 6–3). Los partidos cortos por tiempo (por ejemplo los que se juegan en torneos pozo) tienen menos peso que un partido completo a 3 sets. Por último, cuanto más fiable sea la puntuación actual de tu pareja y la de tus oponentes, mayor será el impacto en tu rating, ya que el sistema tiene más confianza en el resultado.</li>
+      <li><strong>Opiniones de Nivel de tus Compañeros y Rivales:</strong> Después de cada partido, los otros tres jugadores responden en la pantalla Valorar si estabas <em>por debajo</em>, <em>en tu nivel</em> o <em>por encima</em>. Esa respuesta <strong>no sube ni baja tu puntuación</strong>: primero se calcula el rating del partido y después se ajusta tu fiabilidad, que es la que decide cuánto contarán tus partidos siguientes.
+        <ul style="margin-top:8px">
+          <li><strong>En su nivel</strong> sube tu fiabilidad: el sistema confía más en la puntuación que ya tienes.</li>
+          <li><strong>Por encima</strong> o <strong>por debajo</strong> la bajan, para que tus próximos partidos puedan corregir el rating más deprisa.</li>
+        </ul>
+        Cuenta el saldo del día entero: respuestas «en su nivel» menos las que discrepan. Cada punto de saldo mueve tu fiabilidad un 3 %. Partiendo de $RD = 200$, un «en su nivel» lo deja en 194 y tres lo dejan en 182; una respuesta discrepante lo sube a 206 y tres lo suben a 218. Con tantas a favor como en contra, no cambia nada.
+      </li>
+      <li><strong>El Ambiente no Cuenta Aquí:</strong> la otra pregunta de la pantalla Valorar, la del ambiente del partido, no afecta ni a tu puntuación de nivel ni a tu fiabilidad. Es la que forma tu calificación de 1 a 5, que es lo que puntúa en la categoría Fair play del ranking.</li>
       <li><strong>Pérdida por Inactividad:</strong> Cada día que pasas sin jugar, tu nivel de fiabilidad disminuye ligeramente. Si estás meses sin jugar, tu puntuación se vuelve más flexible para que al volver puedas ajustar tu nivel rápidamente.</li>
       <li><strong>Límite de Incertidumbre:</strong> La fiabilidad tiene un tope máximo. Esto evita que tu puntuación se quede "bloqueada" tras una temporada con mucha actividad.</li>
     </ul>
@@ -137,6 +145,7 @@ mjx-container{color:var(--vt-text)}
       <li>Construir el mapa de jugadores y preparar su estado inicial en la escala de Glicko ($\mu,\phi$).</li>
       <li>Procesar partidos por fecha: antes de cada fecha se aplica la inflación diaria de $\phi$; luego se computan las observaciones del día y se actualizan los jugadores.</li>
       <li>Para cada jugador se agregan observaciones ponderadas y se calcula $v$ y $\Delta$ adaptados; después se recalcula la nueva $\phi$ y $\mu$.</li>
+      <li>Hecho eso, se aplica a esa misma fecha el ajuste de $\phi$ por las opiniones de nivel recibidas ese día.</li>
     </ol>
 
     <p><strong>Modelado 2v2</strong></p>
@@ -197,6 +206,13 @@ mjx-container{color:var(--vt-text)}
       \mu' = \mu + \phi'^2 \; \sum_i w_i \; g(\phi_i) \; (s_i - E_i)$$
     </div>
     <p>El resultado final se almacena como el nuevo estado $(\mu',\phi')$ del jugador.</p>
+
+    <p><strong>Ajuste de la fiabilidad por opiniones de nivel</strong></p>
+    <p>Terminada una fecha, a cada jugador que compitió ese día y recibió opiniones de nivel se le ajusta sólo la incertidumbre:</p>
+    <div class="formula-box">
+      $$RD' = clamp\left(RD \cdot (1 - 0.03\,n),\; RD_{\min},\; RD_{\max}\right)$$
+    </div>
+    <p>Siendo $n$ el saldo del día: opiniones «en su nivel» menos opiniones «por encima» o «por debajo». El ajuste se aplica una sola vez por jugador y día, aunque haya jugado varios partidos, y no modifica $\mu$: el rating de ese día es exactamente el que sale del paso anterior. Lo que cambia es cuánto se moverá en los partidos siguientes, tanto los suyos como los de quien juegue contra él. Con $n=0$ no hay ajuste.</p>
 
   </div>
 </div>

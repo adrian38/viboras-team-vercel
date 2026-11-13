@@ -1,9 +1,10 @@
 import { sql } from '@vercel/postgres';
-import { ensureSchema, getPlayerId, nombreDeJugadorValido, readBody, toInt } from './_db.js';
+import { ensureSchema, getPlayerId, nombreDeJugadorValido, readBody, toInt, EVENTOS_DE_TORNEO } from './_db.js';
 import { validateBo3Score } from './_score.js';
 import { exigirSesion, cerrarSesionesDe } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
 import { avisarEdicion, avisarPartidoNuevo, avisarResultadoNuevo } from './_avisos.js';
+import { createPozo, editPozoPlayers, submitPozoResult } from './_pozo-api.js';
 
 // Dar de alta jugadores es de administradores desde el 2026-10-17: la pagina
 // solo lo ensenaba a ellos, pero el API lo dejaba a cualquiera con sesion.
@@ -12,6 +13,40 @@ function esAdmin(user, res) {
   if (user.role === 'admin') return true;
   res.status(403).json({ ok: false, error: 'forbidden' });
   return false;
+}
+
+// Los partidos de un torneo no se editan ni se borran por aqui. Son filas de
+// `matches` como las demas, y hasta el 2026-11-12 el permiso de submitResult y
+// deleteResult —«los cuatro jugadores o un administrador»— alcanzaba tambien
+// al pozo: uno de los cuatro de una pista podia sobrescribir su marcador o
+// borrar el partido, saltandose el 403 de submitPozoResult que lo reserva a
+// los administradores. Por la interfaz no se llegaba —/history pide
+// eventType=ranked,legacy y no los ve—, pero el id, la fecha y los cuatro
+// nombres que hacen falta los da getResults?eventType=pozo a cualquiera con
+// sesion.
+//
+// Se cierra por tipo de evento y no por rol: cada torneo tiene su pantalla y
+// sus reglas, asi que ni un administrador sube por aqui el marcador de un
+// pozo. `ranked`, `legacy` y `grupo_liga` siguen igual que antes.
+//
+// La lista de tipos esta en `_db.js` desde el 2026-11-12: la comparten este
+// veto, el listado del panel y el borrado de torneos.
+//
+// true si el partido es de un torneo, y entonces ya ha respondido 403. Una
+// fila que no existe no es de torneo: de eso se encarga el 409 de cada accion.
+async function vetadoPorTorneo(res, id) {
+  if (!id) return false;
+  const { rows } = await sql`
+    SELECT e.type FROM matches m LEFT JOIN events e ON e.id = m.event_id
+    WHERE m.id = ${id}`;
+  const tipo = rows.length ? String(rows[0].type || '').toLowerCase() : '';
+  if (!EVENTOS_DE_TORNEO.includes(tipo)) return false;
+  res.status(403).json({
+    ok: false,
+    error: 'es_de_torneo',
+    message: 'Este partido es de un torneo: su resultado se cambia en la pantalla del torneo, no aquí.'
+  });
+  return true;
 }
 
 async function submitName(req, res, user) {
@@ -186,6 +221,7 @@ async function submitResult(req, res, user) {
     }
 
     const original = data._original;
+    if (await vetadoPorTorneo(res, toInt(original?.id))) return;
     const editada = (original && typeof original === 'object') ? await updateExistingMatch(original, m, user) : null;
     if (editada === 'forbidden') {
       res.status(403).json({ ok: false, error: 'forbidden', message: 'Solo pueden editar este partido sus jugadores y los administradores.' });
@@ -216,6 +252,7 @@ async function deleteResult(req, res, user) {
     await ensureSchema();
     const data = await readBody(req);
     const id = toInt(data.id);
+    if (await vetadoPorTorneo(res, id)) return;
     const date = String(data.date || '').trim();
     const p1a_id = await getPlayerId(data.p1a);
     const p1b_id = await getPlayerId(data.p1b);
@@ -416,6 +453,12 @@ export default async function handler(req, res) {
       return updatePlayer(req, res, user);
     case 'submitVote':
       return submitVote(req, res, user);
+    case 'createPozo':
+      return createPozo(req, res, user);
+    case 'submitPozoResult':
+      return submitPozoResult(req, res, user);
+    case 'editPozoPlayers':
+      return editPozoPlayers(req, res, user);
     default:
       res.status(404).json({ ok: false, error: 'unknown_action' });
       return;

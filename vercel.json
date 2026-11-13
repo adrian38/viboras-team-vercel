@@ -60,6 +60,18 @@
       "destination": "/front/pantallas/players"
     },
     {
+      "source": "/pozo",
+      "destination": "/front/pantallas/pozo"
+    },
+    {
+      "source": "/pozo-info",
+      "destination": "/front/pantallas/pozo-info"
+    },
+    {
+      "source": "/pozo-nuevo",
+      "destination": "/front/pantallas/pozo-nuevo"
+    },
+    {
       "source": "/ranking",
       "destination": "/front/pantallas/ranking"
     },

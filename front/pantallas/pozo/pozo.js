@@ -1,0 +1,517 @@
+// Lo que pinta /pozo: tu pista primero, luego las rondas y la clasificacion.
+//
+// Todo lo que se ve sale de /api/read?action=getPozo. Esta pagina no calcula
+// ni emparejamientos ni clasificacion: eso vive en api/_pozo-motor.js y basta
+// con un sitio. Aqui solo se pinta, se manda el marcador y —si eres
+// administrador— se cambian los jugadores.
+//
+// Detalle: ai_context/pozo_americano.md
+
+const JUGADORES_POR_PISTA = 4;
+
+// `lista` son los nombres de los puestos mientras se editan, antes de
+// guardarlos; `nombres`, los del grupo, para los desplegables.
+const estado = { pozos: [], id: null, datos: null, editando: null, lista: null, nombres: [] };
+
+function el(tag, props, ...hijos) {
+  const nodo = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === 'class') nodo.className = v;
+    else if (k === 'texto') nodo.textContent = v;
+    else if (k === 'onclick') nodo.addEventListener('click', v);
+    else if (v !== null && v !== undefined) nodo.setAttribute(k, v);
+  }
+  for (const hijo of hijos.flat()) {
+    if (hijo === null || hijo === undefined || hijo === false) continue;
+    nodo.append(typeof hijo === 'string' ? document.createTextNode(hijo) : hijo);
+  }
+  return nodo;
+}
+
+function icono(nombre, pequeno) {
+  const span = el('span', { class: 'ms' + (pequeno ? ' ms--sm' : '') + ' notranslate', translate: 'no', 'aria-hidden': 'true' });
+  span.textContent = nombre;
+  return span;
+}
+
+function vaciar(id) {
+  const nodo = document.getElementById(id);
+  nodo.textContent = '';
+  return nodo;
+}
+
+function nombresDe(equipo) {
+  return equipo.map((j) => j.nombre).join(' y ');
+}
+
+function soyDe(partido) {
+  const yo = estado.datos && estado.datos.yo.playerId;
+  if (!yo) return false;
+  return [...partido.team1, ...partido.team2].some((j) => j.id === yo);
+}
+
+// --- Carga ---------------------------------------------------------------
+
+async function pedir(url, opciones) {
+  const res = await fetch(url, opciones);
+  let cuerpo = null;
+  try { cuerpo = await res.json(); } catch { cuerpo = null; }
+  return { ok: res.ok && cuerpo && cuerpo.ok !== false, cuerpo };
+}
+
+async function cargarLista() {
+  const { cuerpo } = await pedir('/api/read?action=getPozos&ts=' + Date.now());
+  estado.pozos = (cuerpo && cuerpo.pozos) || [];
+  const select = document.getElementById('pozoSelect');
+  select.textContent = '';
+  for (const p of estado.pozos) {
+    select.append(el('option', { value: String(p.id), texto: `${p.nombre} · ${p.fecha}` }));
+  }
+  document.getElementById('selectorCaja').hidden = estado.pozos.length < 2;
+}
+
+async function cargarPozo(id) {
+  const { ok, cuerpo } = await pedir(`/api/read?action=getPozo&id=${id}&ts=${Date.now()}`);
+  if (!ok) { estado.datos = null; return false; }
+  estado.datos = cuerpo;
+  estado.id = id;
+  // Lo que viene de la base manda: una lista a medio editar de otro pozo —o
+  // del mismo antes de guardar— no se arrastra.
+  estado.lista = null;
+  document.getElementById('pozoSelect').value = String(id);
+  return true;
+}
+
+// --- Marcador ------------------------------------------------------------
+
+function cajaDeEquipo(equipo, valor, marca) {
+  const campo = el('input', {
+    class: 'vt-input juegos', type: 'number', inputmode: 'numeric',
+    min: '0', max: '99', value: valor === null ? '' : String(valor),
+    'aria-label': 'Juegos de ' + nombresDe(equipo)
+  });
+  const fila = el('div', { class: 'marcador__fila' },
+    el('span', { class: 'marcador__equipo' + (marca ? ' marcador__equipo--yo' : ''), texto: nombresDe(equipo) }),
+    campo);
+  return { fila, campo };
+}
+
+// Un empate no se guarda: se juega. La pantalla lo dice y deja el boton de
+// guardar apagado mientras los dos numeros sean iguales. Hasta el 2026-11-12
+// preguntaba que pareja se llevaba la pista; ahora el grupo juega la bola de
+// oro, que para eso la ronda a reloj deja tiempo de sobra.
+function avisoDelEmpate() {
+  return el('div', { class: 'empate' },
+    el('p', { class: 'empate__texto', texto: 'Vais empatados a juegos: jugad la bola de oro y apuntad cómo queda.' }));
+}
+
+// Las dos casillas se montan UNA vez y no se vuelven a crear: rehacerlas en
+// cada tecla le quitaba el foco a quien estaba escribiendo, y un marcador de
+// dos cifras se quedaba en la primera. Lo que se rehace es solo lo que depende
+// de los valores: el aviso del empate y los botones.
+function editorDeMarcador(partido) {
+  const yo = estado.datos.yo.playerId;
+  const uno = cajaDeEquipo(partido.team1, partido.juegos1, partido.team1.some((j) => j.id === yo));
+  const dos = cajaDeEquipo(partido.team2, partido.juegos2, partido.team2.some((j) => j.id === yo));
+  const zonaEmpate = el('div');
+  const acciones = el('div', { class: 'vt-acciones' });
+
+  const refrescar = () => {
+    const a = uno.campo.value.trim();
+    const b = dos.campo.value.trim();
+    const empatan = a !== '' && a === b;
+    zonaEmpate.textContent = '';
+    if (empatan) zonaEmpate.append(avisoDelEmpate());
+    acciones.textContent = '';
+    for (const boton of botonesDelEditor(partido, uno.campo, dos.campo, empatan)) acciones.append(boton);
+  };
+
+  for (const campo of [uno.campo, dos.campo]) campo.addEventListener('input', refrescar);
+  refrescar();
+  return el('div', { class: 'marcador' }, uno.fila, dos.fila, zonaEmpate, acciones);
+}
+
+function botonesDelEditor(partido, campo1, campo2, empatan) {
+  const listo = campo1.value.trim() !== '' && campo2.value.trim() !== '' && !empatan;
+  const guardar = el('button', {
+    type: 'button', class: 'vt-btn', disabled: listo ? null : 'disabled',
+    onclick: () => enviar(partido, {
+      juegos1: Number(campo1.value), juegos2: Number(campo2.value)
+    })
+  }, icono('scoreboard', true), 'Guardar resultado');
+
+  const botones = [guardar];
+  if (partido.juegos1 !== null) {
+    botones.push(el('button', {
+      type: 'button', class: 'vt-btn vt-btn--danger vt-btn--sm',
+      onclick: () => { if (confirm('¿Borrar el resultado de esta pista?')) enviar(partido, { borrar: true }); }
+    }, 'Borrar'));
+  }
+  if (estado.editando === partido.id) {
+    botones.push(el('button', {
+      type: 'button', class: 'vt-btn vt-btn--ghost vt-btn--sm',
+      texto: 'Cancelar', onclick: () => { estado.editando = null; pintar(); }
+    }));
+  }
+  return botones;
+}
+
+async function enviar(partido, datos) {
+  const aviso = document.getElementById('aviso');
+  aviso.textContent = '';
+  const cuerpo = Object.assign({ eventId: estado.id, matchId: partido.id }, datos);
+  const { ok, cuerpo: respuesta } = await pedir('/api/write?action=submitPozoResult', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(cuerpo)
+  });
+  if (!ok) {
+    aviso.textContent = (respuesta && respuesta.message) || 'No se ha podido guardar. Inténtalo otra vez.';
+    return;
+  }
+  estado.editando = null;
+  if (respuesta.perdidos) {
+    window.vtToast(`Guardado. Se han borrado ${respuesta.perdidos} resultado(s) de rondas posteriores.`, 6000);
+  } else {
+    window.vtToast('Resultado guardado');
+  }
+  await cargarPozo(estado.id);
+  pintar();
+}
+
+// --- Pintado -------------------------------------------------------------
+
+function rondaEnJuego() {
+  const formadas = estado.datos.rondas.filter((r) => r.formada);
+  return formadas.length ? formadas[formadas.length - 1] : null;
+}
+
+// Desde el 2026-11-12 el marcador lo mete solo un administrador. Lo decidio
+// el grupo: durante las dos horas nadie anda con el movil, asi que cada pista
+// apunta en la hoja y despues unos pocos lo suben. Ya no depende del partido
+// ni de la ronda, asi que no recibe ninguno de los dos.
+function puedoEditar() {
+  return estado.datos.yo.esAdmin;
+}
+
+function pintarCabecera() {
+  const caja = vaciar('cabecera');
+  const ev = estado.datos.evento;
+  const ultima = rondaEnJuego();
+  const faltan = ultima ? ultima.partidos.filter((p) => p.juegos1 === null) : [];
+
+  caja.append(
+    el('span', { class: 'vt-label vt-gold', texto: 'Pozo americano' }),
+    el('h2', { style: 'margin-top:2px', texto: ev.nombre }),
+    el('p', { class: 'vt-muted', texto: `${ev.fecha} · ${ev.pistas} pistas · ${ev.siembra ? ev.siembra.length : ev.pistas * 4} jugadores` })
+  );
+  if (!ultima) return;
+  const resumen = faltan.length
+    ? `Ronda ${ultima.numero} de ${ev.rondas} · falta el resultado de ${faltan.length === 1 ? 'la pista ' + faltan[0].pista : faltan.length + ' pistas'}`
+    : (ultima.numero >= ev.rondas ? 'Torneo terminado' : `Ronda ${ultima.numero} de ${ev.rondas} · completa`);
+  caja.append(el('p', { class: 'vt-chip vt-chip--gold', texto: resumen }));
+}
+
+function pintarTuPista() {
+  const caja = vaciar('tuPista');
+  const ultima = rondaEnJuego();
+  if (!ultima) { caja.hidden = true; return; }
+  const mio = ultima.partidos.find((p) => soyDe(p));
+  if (!mio) { caja.hidden = true; return; }
+
+  caja.hidden = false;
+  caja.append(
+    el('div', { class: 'vt-sec-title' }, el('h3', { texto: `Tu pista · ronda ${ultima.numero}` })),
+    el('p', { class: 'vt-muted', texto: `Pista ${mio.pista} · ganar vale ${mio.puntos[0]} puntos, perder ${mio.puntos[1]}` })
+  );
+  if (puedoEditar()) caja.append(editorDeMarcador(mio));
+  else caja.append(el('p', { class: 'vt-muted', texto: 'Al acabar, apuntad parejas y resultado en la hoja. De subirlo se encarga un administrador.' }));
+}
+
+function marcadorDe(partido) {
+  if (partido.juegos1 === null) return el('span', { class: 'pendiente', texto: 'sin resultado' });
+  const texto = `${partido.juegos1} – ${partido.juegos2}`;
+  return el('span', { class: 'resultado', texto });
+}
+
+function filaDePartido(partido) {
+  // Un marcador igualado no lo gana nadie: el partido sigue sin resolver, lo
+  // mismo que si no hubiera resultado. Guardarlo ya no se puede, pero un pozo
+  // de antes del 2026-11-12 puede tenerlo.
+  const resuelto = partido.juegos1 !== null && partido.juegos1 !== partido.juegos2;
+  const gana1 = resuelto && partido.juegos1 > partido.juegos2;
+  const gana2 = resuelto && !gana1;
+  const clase = (gano) => 'partido__equipo' + (gano ? ' partido__equipo--gana' : '');
+
+  const fila = el('div', { class: 'partido' + (soyDe(partido) ? ' partido--mio' : '') },
+    el('span', { class: 'partido__pista', texto: String(partido.pista) }),
+    el('div', { class: 'partido__equipos' },
+      el('span', { class: clase(gana1), texto: nombresDe(partido.team1) }),
+      marcadorDe(partido),
+      el('span', { class: clase(gana2), texto: nombresDe(partido.team2) })));
+
+  if (puedoEditar() && estado.editando !== partido.id) {
+    fila.append(el('button', {
+      type: 'button', class: 'vt-btn vt-btn--ghost vt-btn--sm', 'aria-label': 'Editar la pista ' + partido.pista,
+      onclick: () => { estado.editando = partido.id; pintar(); }
+    }, icono('edit_note', true)));
+  }
+  if (estado.editando === partido.id) return el('div', {}, fila, editorDeMarcador(partido));
+  return fila;
+}
+
+function pintarRondas() {
+  const caja = vaciar('rondas');
+  const ultima = rondaEnJuego();
+  caja.append(el('div', { class: 'vt-sec-title' }, el('h3', { texto: 'Rondas' })));
+
+  for (const ronda of estado.datos.rondas) {
+    if (!ronda.formada) {
+      caja.append(el('div', { class: 'ronda ronda--futura' },
+        el('h4', { texto: `Ronda ${ronda.numero}` }),
+        el('p', { class: 'vt-muted', texto: 'Se formará cuando la ronda anterior tenga todos los resultados.' })));
+      continue;
+    }
+    const detalle = el('details', { class: 'ronda' });
+    if (ultima && ronda.numero === ultima.numero) detalle.setAttribute('open', 'open');
+    detalle.append(el('summary', {}, el('h4', { texto: `Ronda ${ronda.numero}` })));
+    for (const partido of ronda.partidos) detalle.append(filaDePartido(partido));
+    caja.append(detalle);
+  }
+}
+
+function filaDeClasificacion(fila, yo) {
+  const medalla = fila.puesto <= 3 ? ' vt-rank-' + fila.puesto : '';
+  return el('tr', { class: fila.playerId === yo ? 'tabla__yo' : null },
+    el('td', { class: 'vt-num' + medalla, texto: String(fila.puesto) }),
+    el('td', { texto: fila.nombre }),
+    el('td', { class: 'vt-num', texto: String(fila.ganados) }),
+    el('td', { class: 'vt-num', texto: String(fila.puntos) }),
+    el('td', { class: 'vt-num', texto: (fila.difJuegos > 0 ? '+' : '') + fila.difJuegos }));
+}
+
+function pintarClasificacion() {
+  const caja = vaciar('clasificacion');
+  const yo = estado.datos.yo.playerId;
+  const cuerpo = el('tbody');
+  for (const fila of estado.datos.clasificacion) cuerpo.append(filaDeClasificacion(fila, yo));
+
+  caja.append(
+    el('div', { class: 'vt-sec-title' }, el('h3', { texto: 'Clasificación' })),
+    el('div', { class: 'vt-table-wrap' },
+      el('table', { class: 'vt-table' },
+        el('thead', {}, el('tr', {},
+          el('th', { class: 'vt-num', texto: '#' }),
+          el('th', { texto: 'Jugador' }),
+          el('th', { class: 'vt-num', texto: 'Gan.' }),
+          el('th', { class: 'vt-num', texto: 'Pts' }),
+          el('th', { class: 'vt-num', texto: 'Dif' }))),
+        cuerpo)),
+    el('p', { class: 'vt-muted', style: 'margin-top:var(--vt-sm);font-size:13px',
+      texto: 'Orden: partidos ganados → puntos → diferencia de juegos.' }));
+}
+
+// --- Cambiar jugadores ---------------------------------------------------
+
+// Un jugador que no aparece y entra otro, un nombre metido por equivocacion,
+// dos puestos cambiados: hasta el 2026-11-12 la lista solo se podia escribir
+// al crear el torneo. Se manda entera, y el servidor vuelve a montar la ronda
+// 1 con ella (api/_pozo.js:cambiarSiembra).
+//
+// El puesto es lo que se juega, igual que en /pozo-nuevo: los cuatro primeros
+// empiezan en la ultima pista, el 1.º y el 2.º son una pareja y el 3.º y el
+// 4.º la otra, y dentro de la pareja el primero va al drive.
+function pistaDelPuesto(i) {
+  return estado.datos.evento.pistas - Math.floor(i / JUGADORES_POR_PISTA);
+}
+
+function listaGuardada() {
+  return estado.datos.jugadores.map((j) => j.nombre);
+}
+
+function haCambiado() {
+  const guardada = listaGuardada();
+  return estado.lista.some((nombre, i) => nombre !== guardada[i]);
+}
+
+// Los del grupo mas los que ya juegan: `getNames` solo trae los activos, y a
+// un jugador del torneo dado de baja despues hay que poder seguir viendolo en
+// su puesto. Sin esto el desplegable no tendria su nombre y lo cambiaria por
+// otro sin que nadie lo pidiera.
+function opcionesDelPuesto() {
+  const todos = new Set(estado.nombres);
+  for (const nombre of listaGuardada()) todos.add(nombre);
+  return [...todos].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+// Elegir a alguien que ya juega cambia a los dos de sitio; elegir a alguien
+// de fuera sustituye, y el que sale se queda fuera del torneo.
+function ponerEn(i, nombre) {
+  const estaba = estado.lista.indexOf(nombre);
+  const salia = estado.lista[i];
+  estado.lista[i] = nombre;
+  if (estaba !== -1 && estaba !== i) estado.lista[estaba] = salia;
+  pintarPuestos();
+}
+
+function moverPuesto(i, salto) {
+  const destino = i + salto;
+  if (destino < 0 || destino >= estado.lista.length) return;
+  const lista = estado.lista;
+  [lista[i], lista[destino]] = [lista[destino], lista[i]];
+  pintarPuestos();
+}
+
+function selectorDePuesto(nombre, i, opciones) {
+  const caja = el('select', { class: 'vt-select puesto__quien', 'aria-label': `Quién juega en el puesto ${i + 1}` });
+  for (const uno of opciones) caja.append(el('option', { value: uno, texto: uno }));
+  caja.value = nombre;
+  caja.addEventListener('change', () => ponerEn(i, caja.value));
+  return caja;
+}
+
+function filaDePuesto(nombre, i, opciones) {
+  const flecha = (texto, salto, etiqueta) => el('button', {
+    type: 'button', class: 'vt-btn vt-btn--quiet vt-btn--sm puesto__accion',
+    'aria-label': `${etiqueta} a ${nombre}`, texto, onclick: () => moverPuesto(i, salto)
+  });
+  return el('li', { class: 'puesto' + (i % JUGADORES_POR_PISTA === 2 ? ' puesto--pareja2' : '') },
+    el('span', { class: 'puesto__num', texto: String(i + 1) }),
+    selectorDePuesto(nombre, i, opciones),
+    el('span', { class: 'puesto__lado', texto: i % 2 === 0 ? 'drive' : 'revés' }),
+    flecha('↑', -1, 'Subir'),
+    flecha('↓', 1, 'Bajar'));
+}
+
+function pintarPuestos() {
+  const lista = vaciar('puestos');
+  const opciones = opcionesDelPuesto();
+  estado.lista.forEach((nombre, i) => {
+    if (i % JUGADORES_POR_PISTA === 0) {
+      lista.append(el('li', { class: 'puestos__pista', texto: `Pista ${pistaDelPuesto(i)}` }));
+    }
+    lista.append(filaDePuesto(nombre, i, opciones));
+  });
+  const cambiada = haCambiado();
+  document.getElementById('guardarJugadores').disabled = !cambiada;
+  document.getElementById('deshacerJugadores').disabled = !cambiada;
+}
+
+function pintarJugadores() {
+  const caja = document.getElementById('jugadores');
+  caja.hidden = !estado.datos.yo.esAdmin;
+  if (caja.hidden) return;
+  if (!estado.lista) estado.lista = listaGuardada();
+  document.getElementById('avisoJugadores').textContent = '';
+  document.getElementById('jugadoresTexto').textContent = 'Cada puesto es el que se juega: los cuatro'
+    + ` primeros empiezan en la pista ${estado.datos.evento.pistas} y el primero de cada pareja va al drive.`
+    + ' Elegir a alguien que ya juega los cambia de sitio; elegir a alguien de fuera sustituye.'
+    + ' Al guardar, la pista cuyos cuatro jugadores cambien pierde su resultado y las rondas siguientes'
+    + ' se vuelven a formar.';
+  pintarPuestos();
+}
+
+function hayResultados() {
+  return estado.datos.rondas.some((r) => r.partidos.some((p) => p.juegos1 !== null));
+}
+
+async function guardarJugadores() {
+  const aviso = document.getElementById('avisoJugadores');
+  const boton = document.getElementById('guardarJugadores');
+  aviso.textContent = '';
+  if (hayResultados() && !confirm('Este torneo ya tiene resultados. Las pistas cuyos cuatro jugadores cambien los pierden y las rondas siguientes se vuelven a formar. ¿Cambiar los jugadores?')) return;
+  boton.disabled = true;
+  const { ok, cuerpo } = await pedir('/api/write?action=editPozoPlayers', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ eventId: estado.id, jugadores: estado.lista })
+  });
+  if (!ok) {
+    aviso.textContent = (cuerpo && cuerpo.message) || 'No se han podido cambiar los jugadores. Inténtalo otra vez.';
+    boton.disabled = false;
+    return;
+  }
+  window.vtToast(cuerpo.perdidos
+    ? `Jugadores cambiados. Se han borrado ${cuerpo.perdidos} resultado(s).`
+    : 'Jugadores cambiados', cuerpo.perdidos ? 6000 : undefined);
+  await cargarPozo(estado.id);
+  pintar();
+  document.getElementById('jugadores').open = true;
+}
+
+function pintar() {
+  document.getElementById('aviso').textContent = '';
+  if (!estado.datos) {
+    document.getElementById('vacio').hidden = false;
+    document.getElementById('jugadores').hidden = true;
+    for (const id of ['cabecera', 'tuPista', 'rondas', 'clasificacion']) vaciar(id).hidden = true;
+    return;
+  }
+  document.getElementById('vacio').hidden = true;
+  for (const id of ['cabecera', 'rondas', 'clasificacion']) document.getElementById(id).hidden = false;
+  pintarCabecera();
+  pintarTuPista();
+  pintarRondas();
+  pintarClasificacion();
+  pintarJugadores();
+}
+
+// --- Arranque ------------------------------------------------------------
+
+function idPedido() {
+  const enLaUrl = Number(new URLSearchParams(location.search).get('id'));
+  if (enLaUrl && estado.pozos.some((p) => p.id === enLaUrl)) return enLaUrl;
+  return estado.pozos.length ? estado.pozos[0].id : null;
+}
+
+// Los nombres del grupo, para los desplegables de los puestos. Solo le hacen
+// falta a un administrador, asi que a los demas no se les pide. Si falla, los
+// desplegables se quedan con los que ya juegan: se pueden cambiar de sitio
+// pero no sustituir, y eso es mejor que no poder abrir la lista.
+async function cargarNombres() {
+  const { cuerpo } = await pedir('/api/read?action=getNames&ts=' + Date.now());
+  estado.nombres = (cuerpo && cuerpo.names) || [];
+}
+
+async function arrancar() {
+  const user = await window.vtMe;
+  const esAdmin = Boolean(user && user.role === 'admin');
+  if (esAdmin) document.getElementById('crear').hidden = false;
+  await cargarLista();
+  const id = idPedido();
+  if (id) await cargarPozo(id);
+  if (esAdmin) await cargarNombres().catch(() => { estado.nombres = []; });
+  pintar();
+}
+
+// «Atrás» vuelve a donde estabas. Si no hay a donde volver —la app abierta
+// de cero justo en esta pagina, que en el movil instalado pasa— lleva a la
+// portada, porque un boton que no hace nada es peor que uno que hace algo
+// razonable.
+document.getElementById('atrasBtn').addEventListener('click', () => {
+  if (window.history.length > 1) window.history.back();
+  else window.location.href = '/';
+});
+
+document.getElementById('pozoSelect').addEventListener('change', async (ev) => {
+  estado.editando = null;
+  await window.vtCargando.mientras(async () => {
+    await cargarPozo(Number(ev.target.value));
+    pintar();
+  }, 'Cargando el torneo');
+});
+
+document.getElementById('guardarJugadores').addEventListener('click', guardarJugadores);
+
+// «Deshacer» no llama al servidor: tira la lista a medio editar y vuelve a la
+// que esta guardada.
+document.getElementById('deshacerJugadores').addEventListener('click', () => {
+  estado.lista = null;
+  pintarJugadores();
+});
+
+// auth-client.js va con defer: window.vtMe existe en DOMContentLoaded, no
+// antes, y este script se ejecuta al final del body, que es antes.
+document.addEventListener('DOMContentLoaded', () => {
+  window.vtCargando.arranque(arrancar, 'Cargando el pozo');
+});

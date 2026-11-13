@@ -400,13 +400,16 @@ body{padding-inline:0}
       <span class="vt-label vt-gold">
         <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">sports_tennis</span>Lado de pista
       </span>
-      <!-- Lo que se elige aqui se guarda en players.court_side y desde el
-           2026-10-31 lo lee /comunidad, donde lo ve el grupo. /day no lo
-           mira: las parejas se forman sin tenerlo en cuenta. La frase no lo
-           dice, pero tampoco promete lo contrario; si algun dia pasa a
-           prometerlo, hay que mirar antes si /day ya lo lee. -->
+      <!-- Lo que se elige aqui se guarda en players.court_side. Lo leen dos
+           pantallas: /comunidad desde el 2026-10-31, donde lo ve el grupo, y
+           /pozo-nuevo desde el 2026-11-12, donde sale junto a cada nombre al
+           colocar la primera ronda. Ahi es una ayuda, no una regla: el lado
+           del torneo es el puesto en el que te pongan. /day sigue sin
+           mirarlo, asi que la frase no promete nada de las parejas del dia a
+           dia. -->
       <p class="vt-small vt-muted" style="margin-top:var(--vt-xs)">
-        ¿Dónde juegas mejor? Lo verá el grupo en <a href="/comunidad?volver=%2Fcuenta">Comunidad</a>.
+        ¿Dónde juegas mejor? Lo verá el grupo en <a href="/comunidad?volver=%2Fcuenta">Comunidad</a>,
+        y quien monte un pozo lo verá al repartir las parejas.
       </p>
       <div class="lado" role="group" aria-label="Lado de pista">
         <button type="button" class="lado__op" data-lado="drive" aria-pressed="false">
@@ -682,6 +685,7 @@ body{padding-inline:0}
 <script src="/front/comun/nivel-votos.js"></script>
 <script src="/front/comun/rating-inicial.js"></script>
 <script src="/front/comun/vt-glicko.js"></script>
+<script src="/front/comun/vt-calificacion.js"></script>
 <script src="/front/comun/vt-categorias.js"></script>
 <script src="/front/pantallas/cuenta/cuenta-perfil.js" defer></script>
 <script src="/front/pantallas/cuenta/cuenta-rating.js" defer></script>

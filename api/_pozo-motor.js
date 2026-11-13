@@ -1,0 +1,180 @@
+// El pozo: quien juega contra quien en cada ronda, y en que orden acaba la
+// clasificacion. Aqui no hay base de datos ni HTTP: entran y salen objetos.
+//
+// El formato es el del Excel que usa el grupo (Pozo_16_Jugadores, 14/11/2026).
+// Lo que la hoja hace con formulas, esto lo hace con indices, y reproduce su
+// movimiento de pistas celda a celda. Si algun dia cambia el formato, cambia
+// aqui y en ningun otro sitio.
+//
+// Detalle, y las dos cosas que la hoja hacia mal:
+// ai_context/pozo_americano.md
+
+// Una pista llena son dos parejas.
+export const JUGADORES_POR_PISTA = 4;
+
+// Limites del formato. No son reglas del padel: son lo que esta pantalla sabe
+// pintar y lo que una manana de pistas aguanta.
+export const PISTAS_MIN = 2;
+export const PISTAS_MAX = 6;
+export const RONDAS_MIN = 1;
+export const RONDAS_MAX = 12;
+
+// La tabla del grupo, la de la hoja `Puntos` del Excel: [gana, pierde] por
+// pista, de la 1 a la 4. Solo vale para cuatro pistas; con otro numero de
+// pistas no hay tabla decidida y la tiene que escribir quien crea el torneo.
+export const PUNTOS_DEL_GRUPO = [[8, 6], [8, 4], [6, 2], [4, 2]];
+
+// Quien gana un partido.
+//
+// Un empate a juegos no resuelve la pista. En la hoja salia un «EMPATE:
+// decidid quien gana» mientras la formula ya le daba la victoria al equipo 2
+// por detras; luego la pantalla lo preguntaba. Desde el 2026-11-12 no se
+// pregunta ni se guarda: la ronda a reloj deja veinte minutos de sobra y
+// descansos, asi que cuando suena el silbato con los juegos iguales se juega
+// la bola de oro y se apunta como queda. Un marcador igualado deja el partido
+// sin resolver y la ronda siguiente sin formar, que es lo que empuja a
+// jugarlo.
+export function resultadoDe(partido) {
+  const j1 = partido.juegos1;
+  const j2 = partido.juegos2;
+  if (j1 === null || j1 === undefined || j2 === null || j2 === undefined) return null;
+  if (j1 === j2) return null;
+
+  const ganaEl1 = j1 > j2;
+
+  return ganaEl1
+    ? { ganan: partido.team1, pierden: partido.team2 }
+    : { ganan: partido.team2, pierden: partido.team1 };
+}
+
+// La primera ronda la monta quien crea el torneo, y se juega tal cual. La
+// siembra va de cuatro en cuatro, un bloque por pista: dentro del bloque el
+// 1.º y el 2.º son una pareja y el 3.º y el 4.º la otra, y esas dos parejas
+// se enfrentan.
+//
+// El sitio dentro de la pareja es el lado de la pista: **el primero juega al
+// drive y el segundo al reves**. rondaSiguiente() lo mantiene solo, porque
+// cruza el primero de un sitio con el segundo del otro: cada pareja nueva
+// sale con un drive y un reves.
+//
+// Los cuatro primeros empiezan en la ultima pista y los cuatro ultimos en la
+// 1, que es la de arriba: hacia ella suben los que ganan.
+//
+// Hasta el 2026-11-12 esto cruzaba tambien la primera ronda, como la hoja del
+// grupo, de modo que nadie jugaba con quien la pantalla de crear le habia
+// puesto de pareja. Lo cambio Adrian: las parejas de salida las decide quien
+// crea el torneo, con su lado, y de ahi parte el pozo.
+export function rondaInicial(siembra, pistas) {
+  const partidos = [];
+  for (let p = 0; p < pistas; p++) {
+    partidos.push({
+      round: 1,
+      court: pistas - p,
+      team1: [siembra[4 * p], siembra[4 * p + 1]],
+      team2: [siembra[4 * p + 2], siembra[4 * p + 3]]
+    });
+  }
+  return partidos.sort((a, b) => a.court - b.court);
+}
+
+// El movimiento de pistas, tal cual lo encadena la hoja:
+//
+//   pista 1          los que ganan en la 1 y los que ganan en la 2
+//   pistas de enmedio los que pierden arriba y los que ganan abajo
+//   ultima pista     los que pierden en la penultima y los que pierden en ella
+//
+// Y en las tres, cruzados: el primero de un sitio con el segundo del otro.
+// Ese cruce es el que conserva los lados: el primero de cada pareja es el
+// drive y el segundo el reves, asi que una pareja nueva siempre sale con uno
+// de cada. Devuelve null si falta algun resultado, que es lo que mantiene
+// cerrada la ronda siguiente.
+export function rondaSiguiente(partidosDeLaRonda, pistas, numeroDeRonda) {
+  const ganan = new Map();
+  const pierden = new Map();
+
+  for (const partido of partidosDeLaRonda) {
+    const r = resultadoDe(partido);
+    if (!r) return null;
+    ganan.set(partido.court, r.ganan);
+    pierden.set(partido.court, r.pierden);
+  }
+  for (let c = 1; c <= pistas; c++) {
+    if (!ganan.has(c)) return null;
+  }
+
+  const partidos = [];
+  for (let c = 1; c <= pistas; c++) {
+    const arriba = c === 1 ? ganan.get(1) : pierden.get(c - 1);
+    const abajo = c === 1 ? ganan.get(2) : (c < pistas ? ganan.get(c + 1) : pierden.get(c));
+    partidos.push({
+      round: numeroDeRonda,
+      court: c,
+      team1: [arriba[0], abajo[1]],
+      team2: [abajo[0], arriba[1]]
+    });
+  }
+  return partidos;
+}
+
+// Los puntos de un partido salen de la pista donde se juega, no del marcador:
+// ganar en la pista 1 vale mas que ganar en la 4.
+function puntosDeLaPista(tablaDePuntos, court) {
+  const fila = tablaDePuntos[court - 1];
+  return Array.isArray(fila) ? fila : [0, 0];
+}
+
+function filaVacia(playerId, orden) {
+  return {
+    playerId,
+    orden,
+    jugados: 0,
+    ganados: 0,
+    puntos: 0,
+    difJuegos: 0
+  };
+}
+
+// Suma un partido ya resuelto a las filas de sus cuatro jugadores.
+function anotaPartido(filas, partido, tablaDePuntos, resultado) {
+  const [puntosGana, puntosPierde] = puntosDeLaPista(tablaDePuntos, partido.court);
+  const diferencia = partido.juegos1 - partido.juegos2;
+
+  for (const [equipo, signo] of [[partido.team1, 1], [partido.team2, -1]]) {
+    for (const id of equipo) {
+      const fila = filas.get(id);
+      if (!fila) continue;
+      fila.jugados += 1;
+      fila.difJuegos += signo * diferencia;
+      const gano = resultado.ganan.includes(id);
+      if (gano) fila.ganados += 1;
+      fila.puntos += gano ? puntosGana : puntosPierde;
+    }
+  }
+}
+
+// Manda el numero de partidos ganados; despues los puntos, despues la
+// diferencia de juegos, y al final el orden de la siembra, para que no haya
+// dos jugadores en el mismo puesto.
+//
+// Hasta el 2026-11-12 habia un desempate mas entre ganados y puntos: la pista
+// de salida, de abajo arriba, porque subir desde abajo cuesta mas. Lo quito
+// Adrian el 2026-11-12 porque no habia manera de explicarlo: la pantalla
+// ensenaba una columna «Pista» que nadie sabia leer.
+export function ordenDeLaClasificacion(a, b) {
+  return (b.ganados - a.ganados)
+    || (b.puntos - a.puntos)
+    || (b.difJuegos - a.difJuegos)
+    || (a.orden - b.orden);
+}
+
+export function clasificacion(partidos, siembra, tablaDePuntos) {
+  const filas = new Map(siembra.map((id, i) => [id, filaVacia(id, i)]));
+
+  for (const partido of partidos) {
+    const resultado = resultadoDe(partido);
+    if (resultado) anotaPartido(filas, partido, tablaDePuntos, resultado);
+  }
+
+  const orden = [...filas.values()].sort(ordenDeLaClasificacion);
+  return orden.map((fila, i) => Object.assign({ puesto: i + 1 }, fila));
+}

@@ -1,5 +1,20 @@
 # La calificación de estrellas del perfil
 
+**Desde el 2026-11-12 la fórmula vive en `front/comun/vt-calificacion.js`** y
+la usan tres pantallas: `/cuenta`, `/comunidad` y la categoría Fair play de
+`/ranking` ([[ranking_tres_categorias]]). Las funciones de `cuenta-perfil.js`
+siguen existiendo y llaman al común.
+
+**La fecha de corte también es una sola, desde el mismo día.** Hasta entonces
+`/comunidad` llamaba a `calcularRatings` sin fecha, que para en el último
+partido, mientras `/cuenta` cortaba en hoy: el RD sube cada día que pasa sin
+jugar, así que el mismo jugador salía con una décima distinta en cada
+pantalla. Medido el 2026-11-12, con el último partido el 31/10: Rodrigo RD
+232,12 contra 237,87 y calificación 3,87 contra 3,83. Ahora las tres usan
+`vtGlicko.hoyIso()`. `/valorar` sigue llamando sin fecha, pero sólo lee el
+`rating`, que el decaimiento no mueve: el decaimiento diario toca el RD y
+nada más.
+
 Escrito el 2026-10-31. Vive en `cuenta-perfil.js` (`fiabilidadDeRd`,
 `calificacionDe`, `pintarCalificacion`) y se enseña en la tarjeta «Valoración
 del jugador» de `/cuenta`.

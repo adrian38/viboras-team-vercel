@@ -107,6 +107,53 @@ push de `dev` o `vercel redeploy` y esperar a `READY`. El alias estable es:
 https://viboras-team-vercel-git-dev-adrian38s-projects.vercel.app
 ```
 
+## Refrescar el clon: reset desde `main` (hecho el 2026-11-12)
+
+Petición expresa de Adrián: volver a clonar producción sobre `dev`. Se hace con
+un reset de la rama hija, nunca tocando `main`:
+
+```powershell
+npx --yes neon@latest --% branches reset viboras_dev --parent --project-id empty-poetry-42127048
+```
+
+El `--%` no es adorno. Sin él, PowerShell deja el argumento posicional por el
+camino y el CLI contesta `Not enough non-option arguments: got 0`, con una
+ayuda que además escribe `neon branches branches reset`. Parece un fallo del
+comando y no lo es.
+
+**El reset no cambia el endpoint ni las credenciales.** Comprobado ese día: el
+host de `viboras_dev` seguía siendo `ep-snowy-bird-b22ap65c…`, distinto del
+`ep-divine-river-b2sgrlig…` de `main`, y el despliegue de Preview siguió
+funcionando con las 15 variables ya guardadas. Es decir, **no hubo que
+regenerar los overrides ni redesplegar**: eso sólo hace falta si se recrea la
+rama, que sí estrena endpoint.
+
+Lo que sí hay que demostrar es que el Preview lee el clon, y justo después de
+un reset las dos bases son idénticas, así que ningún recuento lo distingue. La
+prueba es la del incidente de abajo, con una sesión efímera insertada **sólo**
+en `viboras_dev`: `token_hash` es el SHA-256 hexadecimal del token, y la
+llamada lleva la cookie `vt_session`. 200 en `/api/read?action=getNames`
+prueba el destino; 401 lo desmiente.
+
+Un aviso sobre la herramienta, no sobre el entorno: `Invoke-WebRequest
+-Headers @{ Cookie = ... }` en Windows PowerShell 5.1 **no manda la cabecera**,
+y la prueba sale 401 aunque todo esté bien. Con `curl.exe -H "Cookie: …"` sale
+200. Un 401 con PowerShell no es prueba de nada.
+
+Recuentos y huella de los partidos antes y después, con las dos ramas leídas
+desde el `psql` del contenedor:
+
+```text
+main         players=42 matches=32 users=42 md5=5eeac8fe9d069350751c17736d07f976
+dev (antes)  players=42 matches=44 users=42 md5=13500130a65adc53b3e772b9c6a2b576
+dev (luego)  players=42 matches=32 users=42 md5=5eeac8fe9d069350751c17736d07f976
+```
+
+Los doce partidos de prueba desaparecieron, que es lo que se pedía. Y como el
+clon trae la tabla `sessions` de producción: las sesiones abiertas contra el
+Preview antes del reset dejan de valer —hay que volver a entrar— y las
+suscripciones de push que hay ahora en `dev` son las reales del grupo.
+
 ## Incidente comprobado del 2026-11-02
 
 `vercel env ls` mostraba los 15 overrides `Preview (dev)`, pero el deployment

@@ -61,6 +61,11 @@ que hay.
   (el RD del motor); por qué la proporción de opiniones a secas daba un 5,0 a
   todo el grupo, por qué se calcula en el navegador y en dos mitades, y qué
   fiabilidad inventada se quitó de en medio.
+- `ranking_tres_categorias.md`: `/ranking` son tres clasificaciones
+  —Actividad, Fair play y Revelación—; qué puntúa cada una, por qué un torneo
+  vale un punto y no sus partidos, por qué el periodo está escrito a mano y
+  nadie lo reinicia, y por qué la columna «Ligas» del sistema anterior siempre
+  fue cero.
 - `rating_de_partida.md`: las altas nuevas arrancan en el rating de su nivel BK
   (Entreno en 2000,01, no 2000), sólo si no tenían partidos, y por qué un alta
   sin partidos no sale en `/rating` por defecto.
@@ -75,6 +80,11 @@ que hay.
   qué sale de `/rating` y no de `/cuenta`, qué estados tiene (y por qué no hay
   «Rechazado») y a qué fecha calcula el rating. También cómo `excel-export.js`
   escribe los `.xlsx` sin librerías, que usan las dos descargas de la app.
+- `exportar_encuestas_desde_el_escritorio.md`: la carpeta `exportar-encuestas/`,
+  que saca a Excel y CSV quién votó a quién en cada partido y se le puede dar a
+  alguien para que la ejecute en su ordenador; el SQL por HTTP que la deja sin
+  dependencias, cómo se ata a sólo lectura, por qué 210 filas son 171 opiniones
+  y qué no lleva (el rating no está en la base).
 
 ## Datos y base de datos
 
@@ -101,6 +111,21 @@ que hay.
   número equivocado: en los torneos las columnas de marcador son juegos y no
   sets, y un partido organizado y sin jugar está ahí con 0-0, que no es NULL.
   Con los números que salían de cada cuenta.
+- `pozo_americano.md`: el pozo de `/pozo`, reproducido del Excel del grupo:
+  cómo se siembra la primera ronda y cómo se mueven las pistas, por qué el
+  desempate pone por delante a quien empezó abajo (y por qué las dos versiones
+  de la hoja dicen lo contrario), el empate a juegos que la hoja se quedaba en
+  silencio, por qué las rondas no existen hasta que se pueden formar, quién
+  puede corregir qué y a qué pantallas afecta sin querer.
+- `partidos_de_torneo_no_se_editan_como_sueltos.md`: un partido de pozo es una
+  fila de `matches` como las demás, así que `submitResult` y `deleteResult` lo
+  alcanzaban y sus cuatro jugadores se saltaban el «lo sube un administrador»;
+  cómo se cierra por tipo de evento, qué sigue igual, lo que ninguna guarda
+  vigila, y por qué editar `api/` en caliente no basta para probarlo.
+- `borrar_un_torneo.md`: el «Borrar torneo» del panel de administración: qué se
+  lleva por delante y qué no, por qué sólo los tipos de torneo y sólo
+  administradores, por qué los dos `DELETE` van en una sola sentencia contra un
+  `ON DELETE RESTRICT`, y por qué el aviso es un `<dialog>` y no un `confirm()`.
 
 ## Entorno y despliegue
 

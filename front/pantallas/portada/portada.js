@@ -33,6 +33,7 @@ async function openAdmin(){
           <button class="btn" style="width:100%;text-align:left" onclick="window.location='/buzon'">Buzón</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showCompasPanel()">Nuevo torneo Compás</button>
           <button class="btn" style="width:100%;text-align:left" onclick="showPozoPanel()">Nuevo torneo Pozo</button>
+          <button class="btn" style="width:100%;text-align:left" onclick="showBorrarTorneoPanel()">Borrar torneo</button>
           <button class="btn red" style="width:100%;text-align:left" onclick="closeAdmin()">Cerrar</button>
         </div>
         <div id="adminMain" style="flex:1;display:none;flex-direction:column;gap:8px;max-width:520px">
@@ -183,6 +184,124 @@ function showCompasPanel(){
       <button class="btn secondary-green" onclick="submitCompasTournament()">Guardar torneo</button>
     </div>
   `
+}
+
+// Borrar un torneo. El desplegable sale de getTournaments —solo admin— y dice
+// cuantos partidos se lleva cada uno: ese numero es lo unico que avisa de lo
+// que se va a perder antes de darle.
+function showBorrarTorneoPanel(){
+  const menu = document.getElementById('adminMenuColumn')
+  const content = document.getElementById('adminContent')
+  const adminMain = document.getElementById('adminMain')
+  const header = document.getElementById('adminHeaderTitle')
+  if(menu) menu.style.display = 'none'
+  if(adminMain) adminMain.style.display = 'flex'
+  if(content) content.style.display = 'flex'
+  if(header) header.innerText = 'Borrar torneo'
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <label style="display:flex;flex-direction:column;gap:6px;font-weight:600;color:var(--muted)">
+        Torneo
+        <select id="borrarTorneoSelect" class="register-input"></select>
+      </label>
+      <div style="color:var(--muted);font-size:0.9rem;line-height:1.4">
+        Se borran el torneo y todos sus partidos, con sus marcadores y las valoraciones que dejaron sus jugadores. No tiene vuelta atrás.
+      </div>
+      <button class="vt-btn vt-btn--danger" onclick="borrarTorneo()">Borrar torneo</button>
+    </div>
+  `
+  cargarTorneosBorrables()
+}
+
+async function cargarTorneosBorrables(){
+  const select = document.getElementById('borrarTorneoSelect')
+  if(!select) return
+  select.innerHTML = ''
+  try{
+    const res = await fetch('/api/read?action=getTournaments&ts=' + Date.now())
+    const json = await res.json().catch(() => ({}))
+    const torneos = (json && json.torneos) || []
+    if(!torneos.length){
+      const vacio = document.createElement('option')
+      vacio.value = ''
+      vacio.innerText = 'No hay torneos'
+      select.appendChild(vacio)
+      return
+    }
+    torneos.forEach((t) => {
+      const opt = document.createElement('option')
+      opt.value = String(t.id)
+      const partidos = Number(t.partidos) === 1 ? '1 partido' : `${Number(t.partidos)} partidos`
+      opt.innerText = `${t.name} · ${t.start_date || 'sin fecha'} · ${partidos}`
+      select.appendChild(opt)
+    })
+  }catch(e){
+    console.error(e)
+    const error = document.createElement('option')
+    error.value = ''
+    error.innerText = 'No se pudo cargar la lista'
+    select.appendChild(error)
+  }
+}
+
+// El aviso de antes de borrar. No es el confirm() del navegador: ese sale con
+// la tipografia del sistema, no se puede escribir en dos partes y en la app
+// instalada aparece como un cuadro del navegador y no de la pantalla que lo
+// pide. Es un <dialog> nativo, que trae el fondo, el foco y el Esc hechos, y
+// se pinta con .vt-dialogo, el mismo cuadro que la pregunta de los avisos.
+//
+// Devuelve una promesa: true solo si se pulsa el boton rojo. Cerrar con Esc o
+// con Cancelar es que no.
+function confirmarBorradoDeTorneo(descripcion){
+  return new Promise((resolve) => {
+    const dialogo = document.createElement('dialog')
+    dialogo.className = 'vt-dialogo'
+    const titulo = document.createElement('h2')
+    titulo.textContent = '¿Borrar este torneo?'
+    const texto = document.createElement('p')
+    texto.textContent = `${descripcion}. Desaparece para todo el grupo, con sus partidos, sus marcadores y las valoraciones que dejaron sus jugadores. No tiene vuelta atrás.`
+    const botones = document.createElement('div')
+    botones.className = 'vt-dialogo__botones'
+    const cerrar = (valor) => { dialogo.close(); dialogo.remove(); resolve(valor) }
+    const cancelar = document.createElement('button')
+    cancelar.type = 'button'
+    cancelar.className = 'vt-btn vt-btn--quiet'
+    cancelar.textContent = 'Cancelar'
+    cancelar.addEventListener('click', () => cerrar(false))
+    const borrar = document.createElement('button')
+    borrar.type = 'button'
+    borrar.className = 'vt-btn vt-btn--danger'
+    borrar.textContent = 'Borrar torneo'
+    borrar.addEventListener('click', () => cerrar(true))
+    botones.append(cancelar, borrar)
+    dialogo.append(titulo, texto, botones)
+    dialogo.addEventListener('cancel', (e) => { e.preventDefault(); cerrar(false) })
+    document.body.appendChild(dialogo)
+    dialogo.showModal()
+    // El foco arranca en Cancelar: un Enter de mas no borra un torneo.
+    cancelar.focus()
+  })
+}
+
+async function borrarTorneo(){
+  const select = document.getElementById('borrarTorneoSelect')
+  const id = select && select.value ? select.value : ''
+  if(!id){ alert('Selecciona un torneo'); return }
+  const descripcion = select.options[select.selectedIndex].innerText
+  if(!await confirmarBorradoDeTorneo(descripcion)) return
+
+  try{
+    const res = await fetch('/api/league-admin?action=deleteTournament', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_id: Number(id) })
+    })
+    const json = await res.json().catch(() => ({}))
+    if(!res.ok || !json.ok){ throw new Error(json && json.error ? json.error : 'Error al borrar el torneo') }
+    const partidos = Number(json.partidos) === 1 ? '1 partido' : `${Number(json.partidos)} partidos`
+    window.vtToast(`Torneo borrado (${partidos})`)
+    await cargarTorneosBorrables()
+  }catch(e){ console.error(e); alert(e && e.message ? e.message : 'Error al borrar el torneo') }
 }
 
 async function submitCompasTournament(){

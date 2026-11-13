@@ -6,10 +6,12 @@
   "scripts": {
     "migrate": "node scripts/migrate.js",
     "schema": "node scripts/apply-schema.js",
-    "check": "node tools/ai-context-index.mjs && node tools/rating-parity.mjs && node tools/code-size.mjs && node tools/palette.mjs && node tools/barra-navegacion.mjs",
+    "check": "node tools/ai-context-index.mjs && node tools/rating-parity.mjs && node tools/code-size.mjs && node tools/palette.mjs && node tools/barra-navegacion.mjs && node tools/iconos.mjs",
     "check:index": "node tools/ai-context-index.mjs",
     "check:rating": "node tools/rating-parity.mjs",
     "check:size": "node tools/code-size.mjs",
+    "check:iconos": "node tools/iconos.mjs",
+    "export:encuestas": "node exportar-encuestas/exportar.mjs",
     "push:dev:partido": "node tools/notificarme-dev.mjs partido_terminado",
     "push:dev:opinion": "node tools/notificarme-dev.mjs opinion_partido",
     "push:dev:torneo": "node tools/notificarme-dev.mjs resultados_torneo",
