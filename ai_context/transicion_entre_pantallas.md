@@ -87,3 +87,34 @@ barra de pestañas se ve entera y nítida con la pestaña nueva ya encendida.
   verdad el fundido con «reducir movimiento»**. Lo medido es que la regla se
   analiza: aparece como `CSSViewTransitionRule` dentro de la `CSSMediaRule`.
   No se pudo simular la preferencia en este navegador.
+
+## El efecto secundario: la pulsación del botón no se veía
+
+Lo dijo Adrián el 2026-11-13: «cuando das clic a un botón no parece que estés
+dando clic». La causa no era sólo que el estado pulsado fuera flojo —un
+`scale(0.97)` sin cambio de color—, sino **cuándo se pintaba**.
+
+`.vt-btn` anima `transform` con `.1s ease`, y esa transición vale también para
+la **ida**. Un toque de móvil dura unos 80 ms, así que el dedo se levantaba
+antes de que el botón terminara de encogerse. Y como la mayoría de estos
+botones saltan de pantalla con `onclick="window.location=..."`, lo que venía
+después era justo lo que describe este documento: el navegador congela la
+pantalla de salida y la funde con la que entra. La instantánea se tomaba con el
+botón a medio camino, y encima quedaba congelada ahí todo el fundido. Pulsar y
+cambiar de pantalla se volvían el mismo instante, sin nada en medio.
+
+El arreglo es `transition-duration:0s` dentro del `:active`: la ida deja de
+animarse y el estado pulsado se pinta en el primer fotograma; la vuelta sigue
+siendo la transición suave de `.vt-btn`, porque al soltar ya no aplica la
+regla. Medido el 2026-11-13 sobre el botón «Volver» de `/cuenta` en el entorno
+local, leyendo el estilo calculado dentro de los propios manejadores: en
+`mousedown`, en el `requestAnimationFrame` siguiente y en `click`, las tres
+veces `matrix(0.9, 0, 0, 0.9, 0, 0)` con su fondo y su sombra interior puestos
+—o sea, el botón está hundido del todo desde el primer instante y sigue
+estándolo cuando se dispara la navegación.
+
+Lo que **no** se comprobó: cómo se siente en un móvil de verdad, y si la
+instantánea del fundido llega a recoger el botón hundido o ya en su camino de
+vuelta (al soltar, el `:active` se cae y empiezan esos `.1s`). Si hiciera falta
+que aguantara hundido durante el fundido, habría que sostenerlo con una clase
+desde JavaScript, y eso ya no es sólo CSS.
