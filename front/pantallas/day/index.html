@@ -48,6 +48,7 @@
   transition:background .12s ease,border-color .12s ease,color .12s ease;
 }
 @media (hover:hover){.slot:hover{background:var(--vt-surface-3);border-color:var(--vt-gold-dark)}}
+.slot:active{background:var(--vt-surface-3);border-color:var(--vt-gold-dark);transition-duration:0s}
 
 /* Marcado: oro solido, que es la senal mas fuerte del sistema. */
 .selected{
@@ -57,6 +58,7 @@
   font-weight:800;
 }
 @media (hover:hover){.selected:hover{background:var(--vt-yellow);border-color:var(--vt-yellow)}}
+.selected:active{background:var(--vt-yellow);border-color:var(--vt-yellow);transition-duration:0s}
 
 #warning{color:var(--vt-error)}
 

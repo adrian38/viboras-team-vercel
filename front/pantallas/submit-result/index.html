@@ -121,8 +121,10 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.55
 }
 .btn.ghost{background:transparent;border-color:var(--vt-border-strong);color:var(--vt-text)}
 @media (hover:hover){.btn.ghost:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}}
+.btn.ghost:active{border-color:var(--vt-gold);color:var(--vt-gold-light);transition-duration:0s}
 .btn.warn{background:var(--vt-gold);color:var(--vt-bg);text-transform:uppercase}
 @media (hover:hover){.btn.warn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}}
+.btn.warn:active{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45);transition-duration:0s}
 .btn[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
 
 @media(min-width:820px){

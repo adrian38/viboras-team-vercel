@@ -38,6 +38,7 @@ th{
   cursor:pointer;user-select:none;
 }
 @media (hover:hover){th:hover{color:var(--vt-gold-light)}}
+th:active{color:var(--vt-gold-light);transition-duration:0s}
 td{padding:8px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text);font-size:14px}
 tbody tr:last-child td{border-bottom:none}
 @media (hover:hover){tbody tr:hover td{background:var(--vt-surface-3)}}
@@ -67,6 +68,7 @@ tbody tr:last-child td{border-bottom:none}
   transition:background .15s ease,color .15s ease,border-color .15s ease;
 }
 @media (hover:hover){.view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}}
+.view-btn:active{color:var(--vt-text);border-color:var(--vt-gold-dark);transition-duration:0s}
 .view-btn.active{background:var(--vt-gold);color:var(--vt-bg);border-color:var(--vt-gold);font-weight:700}
 
 .event-type-filter{display:flex;gap:var(--vt-sm);flex-wrap:wrap;align-items:center;padding:var(--vt-sm) 0 var(--vt-md)}
@@ -81,6 +83,7 @@ tbody tr:last-child td{border-bottom:none}
   cursor:pointer;
 }
 @media (hover:hover){.event-checkbox:hover{border-color:var(--vt-gold-dark)}}
+.event-checkbox:active{border-color:var(--vt-gold-dark);transition-duration:0s}
 .event-checkbox input{margin:0}
 
 .update-btn{
@@ -95,6 +98,7 @@ tbody tr:last-child td{border-bottom:none}
   min-width:120px;
 }
 @media (hover:hover){.update-btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}}
+.update-btn:active{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45);transition-duration:0s}
 
 /* Celda de metrica: la barra la colorea createMetricCell() mezclando
    --vt-loss y --vt-win segun el porcentaje. La rampa es el dato, asi que se

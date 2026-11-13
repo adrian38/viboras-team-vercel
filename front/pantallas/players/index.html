@@ -83,6 +83,7 @@
       background: var(--vt-gold);
     }
     @media (hover:hover){.btn:hover{ background: var(--vt-yellow); }}
+    .btn:active{background: var(--vt-yellow);transition-duration:0s}
 
     .back-btn {
       padding: 9px 16px;
@@ -94,6 +95,7 @@
       font-weight: 700;
     }
     @media (hover:hover){.back-btn:hover{ border-color: var(--vt-gold); color: var(--vt-gold-light); }}
+    .back-btn:active{border-color: var(--vt-gold); color: var(--vt-gold-light);transition-duration:0s}
 
     .chart-toolbar {
       display: flex;
@@ -124,6 +126,13 @@
       }
     }
 
+    .nav-btn:active:not(:disabled) {
+      background: var(--vt-surface-4);
+      border-color: var(--vt-gold);
+      color: var(--vt-gold-light);
+      transition-duration: 0s;
+    }
+
     .nav-btn:disabled {
       opacity: 0.35;
       cursor: not-allowed;
@@ -146,6 +155,7 @@
       user-select: none;
     }
     @media (hover:hover){.range-label:hover{ border-color: var(--vt-gold); color: var(--vt-gold-light); }}
+    .range-label:active{border-color: var(--vt-gold); color: var(--vt-gold-light);transition-duration:0s}
 
     .chart-shell {
       background: var(--vt-surface-deep);

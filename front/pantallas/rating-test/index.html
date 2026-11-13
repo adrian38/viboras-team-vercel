@@ -81,6 +81,7 @@ button {
   letter-spacing: 0.02em;
 }
 @media (hover:hover){.calculate-btn:hover{ background: var(--vt-yellow); }}
+.calculate-btn:active{background: var(--vt-yellow);transition-duration:0s}
 
 /* "Importar real" y su selector de fecha traen color en linea desde el
    marcado, asi que aqui hace falta !important para ganarles. */
@@ -90,6 +91,7 @@ button {
   color: var(--vt-text) !important;
 }
 @media (hover:hover){#importRealBtn:hover{ border-color: var(--vt-gold) !important; color: var(--vt-gold-light) !important; }}
+#importRealBtn:active{border-color: var(--vt-gold) !important; color: var(--vt-gold-light) !important;transition-duration:0s}
 #importDate {
   background: var(--vt-surface-deep) !important;
   border: 1px solid var(--vt-border-strong) !important;

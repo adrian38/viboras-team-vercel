@@ -528,3 +528,41 @@ Lo que sigue igual que antes:
   panel oculto el reloj de animaciones no avanza (`document.timeline` se
   queda en 0): el vídeo se reproduce, pero su opacidad se lee 0 todo el rato.
   Se comprueba que la transición 0→1 existe (`getAnimations()`), no su valor.
+
+## Hover y pulsado: lo que responde al ratón y lo que responde al dedo
+
+Hasta el 2026-11-13 los `:hover` estaban sueltos, y en un móvil eso no es un
+adorno inofensivo: el `:hover` **se queda pegado** después de tocar, hasta que
+tocas otra cosa. Un botón recién tocado se quedaba encendido como si siguiera
+activo, así que lo único que separaba «pulsado» de «en reposo» era un estado
+que llegaba tarde y no se iba. De ahí la queja de que al pulsar no parece que
+pulses.
+
+El reparto ahora es este, y vale para `theme.css` y para los `<style>` de las
+páginas:
+
+- **Las 58 reglas `:hover` viven dentro de `@media (hover:hover)`**, cada una
+  en su sitio. Moverlas a un bloque al final cambiaría el orden de la cascada
+  y le ganarían al `:active`.
+- **Cada una lleva detrás su gemela `:active`** con las mismas declaraciones
+  más `transition-duration:0s`. Lo del `0s` no es manía: varios de estos
+  elementos animan sus propiedades —`.nav-btn` tiene `transition: all .15s`—
+  y un toque de móvil dura unos 80 ms, así que el estado llegaría a medio
+  camino. Es el mismo fallo que tenía `.vt-btn` y que se cuenta en
+  `transicion_entre_pantallas.md`.
+- **Sin gemela, a propósito:** las filas de tabla (`tbody tr:hover td`, seis
+  páginas), que no se tocan y sólo parpadearían al arrastrar para desplazar, y
+  la barra de desplazamiento, que con el dedo no existe.
+- Las reglas que mezclaban `:hover` con `:focus-visible` —`.ver-clave` de
+  `/cuenta` y `.jugador__accion` de `/comunidad`— van partidas en dos, para no
+  apagar de paso el foco del teclado.
+
+### La trampa de especificidad de los enlaces con pinta de botón
+
+Hay seis `<a class="vt-btn">`. `a:hover` y `a:active` puntúan (0,1,1) y le
+gana al `.vt-btn` (0,1,0) que le pone su color de texto, así que el enlace
+cambiaba de color al pasar por encima y al pulsarlo. Medido en `/inscripcion`
+leyendo el estilo calculado en el `mousedown`: el botón fantasma se iba a
+`--vt-gold-light` (251,191,36) en vez de quedarse en `--vt-text`
+(227,226,230). Por eso las dos reglas del enlace genérico llevan
+`:not(.vt-btn)`.

@@ -160,7 +160,13 @@ body::after{content:'';display:block;height:calc(var(--vt-nav-alto) + env(safe-a
 body::before{content:'';display:block;height:env(safe-area-inset-top,0px)}
 
 a{color:var(--vt-gold-soft);text-decoration-color:var(--vt-border-gold);text-underline-offset:3px}
-@media (hover:hover){a:hover{color:var(--vt-gold-light)}}
+/* El `:not(.vt-btn)` es por especificidad, no por gusto: un enlace con pinta
+ * de boton —hay seis— es un `<a>`, y `a:hover` (0,1,1) le gana al `.vt-btn`
+ * (0,1,0) que le pone su color de texto. Medido el 2026-11-13 en
+ * `/inscripcion`: al pulsar, el texto del boton fantasma se iba a
+ * `--vt-gold-light` en vez de quedarse en `--vt-text`. */
+@media (hover:hover){a:hover:not(.vt-btn){color:var(--vt-gold-light)}}
+a:active:not(.vt-btn){color:var(--vt-gold-light);transition-duration:0s}
 
 hr,.vt-divider{border:0;border-top:1px solid var(--vt-border);margin:var(--vt-lg) 0}
 
@@ -426,12 +432,14 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
 }
 .vt-avisos__item:last-child{border-bottom:0}
 @media (hover:hover){.vt-avisos__item:hover{background:var(--vt-surface-3)}}
+.vt-avisos__item:active{background:var(--vt-surface-3);transition-duration:0s}
 .vt-avisos__vacio{padding:12px;color:var(--vt-muted);font-size:13px}
 /* Activar y probar los avisos push (avisos-push.js). Es un <button> cuando se
    puede pulsar y un <div> cuando solo explica; los dos con pinta de aviso. */
 .vt-avisos__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
 button.vt-avisos__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
 @media (hover:hover){button.vt-avisos__push:hover{color:var(--vt-gold-light)}}
+button.vt-avisos__push:active{color:var(--vt-gold-light);transition-duration:0s}
 /* La pregunta de la primera vez (avisos-push.js). <dialog> nativo: trae el
    fondo, el foco y el Esc hechos.
 
@@ -496,6 +504,7 @@ button.vt-avisos__push{border:0;border-bottom:1px solid var(--vt-border);cursor:
   color:var(--vt-muted);cursor:pointer;
 }
 @media (hover:hover){.vt-instalar__cerrar:hover{background:var(--vt-surface-3);color:var(--vt-text)}}
+.vt-instalar__cerrar:active{background:var(--vt-surface-3);color:var(--vt-text);transition-duration:0s}
 .vt-instalar__cerrar:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
 /* En 375 px el boton no cabe al lado del texto: baja a su propia linea,
  * alineado con el texto, y el aspa se queda arriba a la derecha.
@@ -633,7 +642,14 @@ html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidde
  * al dedo es el `:active` de aqui abajo.
  *
  * Sigue cada regla en su sitio a proposito: mover los `:hover` a un bloque al
- * final cambiaria el orden de la cascada y le ganarian al `:active`. */
+ * final cambiaria el orden de la cascada y le ganarian al `:active`.
+ *
+ * Y cada regla de hover lleva detras su gemela `:active`, con las mismas
+ * declaraciones mas `transition-duration:0s`: lo que era el hover pegado pasa
+ * a ser la respuesta mientras el dedo esta encima, y se pinta en el primer
+ * fotograma, que es lo unico que se ve en un toque de 80 ms. Sin gemela se
+ * quedan a proposito las filas de tabla —no se tocan, y parpadearian al
+ * arrastrar para desplazar— y la barra de desplazamiento. */
 @media (hover:hover){.vt-btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}}
 
 /* Pulsado: se hunde, se oscurece y se le mete una sombra dentro.
@@ -835,6 +851,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   transition:border-color .15s ease,color .15s ease;
 }
 @media (hover:hover){.vt-volver:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}}
+.vt-volver:active{border-color:var(--vt-gold);color:var(--vt-gold-light);transition-duration:0s}
 .vt-volver:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
 
 /* Confirmacion comun de guardados: superpuesta para no mover formularios. */
@@ -893,6 +910,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   transition:color .15s ease;
 }
 @media (hover:hover){.vt-nav__item:hover{color:var(--vt-text)}}
+.vt-nav__item:active{color:var(--vt-text);transition-duration:0s}
 .vt-nav__item:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:-2px}
 .vt-nav__item[aria-current="page"]{color:var(--vt-gold)}
 
