@@ -113,7 +113,7 @@ th{
 }
 td{padding:9px 10px;border-bottom:1px solid var(--vt-border);color:var(--vt-text);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--vt-surface-3)}
+@media (hover:hover){tbody tr:hover td{background:var(--vt-surface-3)}}
 
 .rank-col{width:72px;text-align:center}
 td.rank-col{color:var(--vt-muted);font-variant-numeric:tabular-nums}
@@ -128,7 +128,7 @@ td.rating-col{
 .fiabilidad-col{width:120px;text-align:center}
 .name-col{font-weight:500;color:var(--vt-text);overflow-wrap:anywhere}
 .name-col a{color:inherit;text-decoration:none}
-.name-col a:hover{color:var(--vt-gold-light)}
+@media (hover:hover){.name-col a:hover{color:var(--vt-gold-light)}}
 .muted{color:var(--vt-muted)}
 
 /* Cinco segmentos de fiabilidad. El color lo pone getFiabilidadConfig(), con
@@ -164,7 +164,7 @@ td.rating-col{
   cursor:pointer;
   transition:background .15s ease,border-color .15s ease;
 }
-.info-btn:hover{background:rgba(245,158,11,0.12);border-color:var(--vt-gold)}
+@media (hover:hover){.info-btn:hover{background:rgba(245,158,11,0.12);border-color:var(--vt-gold)}}
 .info-btn[hidden]{display:none}
 
 /* Movil: los anchos fijos de arriba no caben en 375px, se reducen aqui.

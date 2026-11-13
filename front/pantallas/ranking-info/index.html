@@ -44,7 +44,7 @@
 }
 .points-table td{color:var(--vt-text)}
 .points-table td.pts{font-weight:700;color:var(--vt-gold);font-variant-numeric:tabular-nums}
-.points-table tbody tr:hover td{background:var(--vt-surface-3)}
+@media (hover:hover){.points-table tbody tr:hover td{background:var(--vt-surface-3)}}
 /* En el movil la tabla no cabe: se desplaza dentro de su caja, no la pagina. */
 .tabla-scroll{overflow-x:auto;border:1px solid var(--vt-border);border-radius:var(--vt-r);margin:var(--vt-md) 0 var(--vt-lg)}
 .tabla-scroll .points-table{margin:0}

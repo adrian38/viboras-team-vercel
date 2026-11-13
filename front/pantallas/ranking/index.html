@@ -50,7 +50,7 @@ th{
 }
 td{padding:9px 10px;border-bottom:1px solid var(--vt-border);color:var(--vt-text);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--vt-surface-2)}
+@media (hover:hover){tbody tr:hover td{background:var(--vt-surface-2)}}
 
 .rank-col{width:64px;text-align:center}
 .name-col{font-weight:500;color:var(--vt-text)}
@@ -98,7 +98,7 @@ th.points-col{text-align:center}
   cursor:pointer;
   transition:background .15s ease,border-color .15s ease;
 }
-.info-btn:hover{background:rgba(245,158,11,0.12);border-color:var(--vt-gold)}
+@media (hover:hover){.info-btn:hover{background:rgba(245,158,11,0.12);border-color:var(--vt-gold)}}
 
 /* Las tres categorias. Una fila de pestanas que en el movil se desplaza de
    lado en vez de partirse en dos lineas. */
@@ -125,7 +125,7 @@ th.points-col{text-align:center}
   cursor:pointer;
   transition:background .15s ease,color .15s ease;
 }
-.cat-tab:hover{color:var(--vt-gold-light)}
+@media (hover:hover){.cat-tab:hover{color:var(--vt-gold-light)}}
 .cat-tab.is-active{background:var(--vt-surface-4);color:var(--vt-gold)}
 
 .periodo{
