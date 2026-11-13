@@ -44,7 +44,8 @@
   cursor:pointer;
   transition:background .15s ease,color .15s ease,border-color .15s ease;
 }
-.view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}
+@media (hover:hover){.view-btn:hover{color:var(--vt-text);border-color:var(--vt-gold-dark)}}
+.view-btn:active{color:var(--vt-text);border-color:var(--vt-gold-dark);transition-duration:0s}
 .view-btn.active{background:var(--vt-gold);color:var(--vt-bg);border-color:var(--vt-gold);font-weight:700}
 
 .select{
@@ -64,7 +65,8 @@
 .select option{background:var(--vt-surface-2)}
 
 .small-btn{padding:6px 10px;background:transparent;border:1px solid var(--vt-border-strong);border-radius:var(--vt-r-sm);color:var(--vt-text);font-size:13px;cursor:pointer}
-.small-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+@media (hover:hover){.small-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}}
+.small-btn:active{border-color:var(--vt-gold);color:var(--vt-gold-light);transition-duration:0s}
 .btn{
   padding:9px 16px;
   background:var(--vt-gold);
@@ -75,7 +77,8 @@
   cursor:pointer;
   transition:background .15s ease,box-shadow .15s ease;
 }
-.btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
+@media (hover:hover){.btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}}
+.btn:active{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45);transition-duration:0s}
 .back-btn{
   padding:9px 16px;
   background:transparent;
@@ -86,7 +89,8 @@
   font-size:14px;font-weight:700;
   cursor:pointer;
 }
-.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+@media (hover:hover){.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}}
+.back-btn:active{border-color:var(--vt-gold);color:var(--vt-gold-light);transition-duration:0s}
 
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;margin-top:var(--vt-sm)}
@@ -100,7 +104,7 @@ th{
 }
 td{padding:10px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--vt-surface-2)}
+@media (hover:hover){tbody tr:hover td{background:var(--vt-surface-2)}}
 .muted{color:var(--vt-muted)}
 
 /* La tabla de resultados vive en #tableContainer y tiene dos columnas: la

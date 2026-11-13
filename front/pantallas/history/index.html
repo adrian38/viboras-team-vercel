@@ -73,7 +73,7 @@ th{
 th:last-child{text-align:right}
 td{padding:10px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--vt-surface-2)}
+@media (hover:hover){tbody tr:hover td{background:var(--vt-surface-2)}}
 /* El marcador es el dato que se busca de un vistazo: oro y condensada. */
 td:nth-child(3){
   text-align:right;
@@ -100,7 +100,8 @@ td:nth-child(4) button + button{margin-left:6px}
   cursor:pointer;
   transition:background .15s ease,box-shadow .15s ease;
 }
-.btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
+@media (hover:hover){.btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}}
+.btn:active{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45);transition-duration:0s}
 .back-btn{
   padding:9px 16px;
   background:transparent;
@@ -111,7 +112,8 @@ td:nth-child(4) button + button{margin-left:6px}
   font-size:14px;font-weight:700;
   cursor:pointer;
 }
-.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+@media (hover:hover){.back-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}}
+.back-btn:active{border-color:var(--vt-gold);color:var(--vt-gold-light);transition-duration:0s}
 /* Administracion escribe en la base sin pedir nada: se queda en rojo. */
 .admin-bottom{
   padding:9px 16px;
@@ -123,7 +125,8 @@ td:nth-child(4) button + button{margin-left:6px}
   font-size:14px;font-weight:700;
   cursor:pointer;
 }
-.admin-bottom:hover{background:rgba(147,0,10,0.3)}
+@media (hover:hover){.admin-bottom:hover{background:rgba(147,0,10,0.3)}}
+.admin-bottom:active{background:rgba(147,0,10,0.3);transition-duration:0s}
 .admin-btn,.small-btn{
   padding:6px 10px;
   background:transparent;
@@ -133,7 +136,8 @@ td:nth-child(4) button + button{margin-left:6px}
   font-size:13px;
   cursor:pointer;
 }
-.small-btn:hover,.admin-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+@media (hover:hover){.small-btn:hover,.admin-btn:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}}
+.small-btn:active,.admin-btn:active{border-color:var(--vt-gold);color:var(--vt-gold-light);transition-duration:0s}
 
 #adminPanel{background:var(--vt-surface-2) !important;border:1px dashed var(--vt-border-strong) !important}
 .admin-match-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--vt-sm)}

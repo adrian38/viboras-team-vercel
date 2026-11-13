@@ -51,7 +51,7 @@ const RAIZ_SUELTA = '.';
 const EXCEPCIONES = [
   { fichero: 'front/comun/theme.css', color: '#000', motivo: 'iguala el negro de splash.mp4' },
   { fichero: 'front/pantallas/results/index.html', color: '#25d366', motivo: 'verde de WhatsApp' },
-  { fichero: 'front/pantallas/results/index.html', color: '#1ebe5d', motivo: 'verde de WhatsApp, al pasar por encima' },
+  { fichero: 'front/pantallas/results/index.html', color: '#1ebe5d', motivo: 'verde de WhatsApp, al pasar por encima y al pulsarlo' },
   { fichero: 'front/pantallas/results/index.html', color: '#07301a', motivo: 'texto sobre el verde de WhatsApp' }
 ];
 

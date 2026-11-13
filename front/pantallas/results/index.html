@@ -104,7 +104,8 @@
   cursor:pointer;
   transition:background .15s ease;
 }
-.share-btn:hover{background:#1ebe5d}
+@media (hover:hover){.share-btn:hover{background:#1ebe5d}}
+.share-btn:active{background:#1ebe5d;transition-duration:0s}
 
 .acciones{display:flex;flex-wrap:wrap;gap:var(--vt-sm);justify-content:center;margin-top:var(--vt-lg)}
 

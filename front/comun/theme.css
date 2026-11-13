@@ -160,7 +160,13 @@ body::after{content:'';display:block;height:calc(var(--vt-nav-alto) + env(safe-a
 body::before{content:'';display:block;height:env(safe-area-inset-top,0px)}
 
 a{color:var(--vt-gold-soft);text-decoration-color:var(--vt-border-gold);text-underline-offset:3px}
-a:hover{color:var(--vt-gold-light)}
+/* El `:not(.vt-btn)` es por especificidad, no por gusto: un enlace con pinta
+ * de boton —hay seis— es un `<a>`, y `a:hover` (0,1,1) le gana al `.vt-btn`
+ * (0,1,0) que le pone su color de texto. Medido el 2026-11-13 en
+ * `/inscripcion`: al pulsar, el texto del boton fantasma se iba a
+ * `--vt-gold-light` en vez de quedarse en `--vt-text`. */
+@media (hover:hover){a:hover:not(.vt-btn){color:var(--vt-gold-light)}}
+a:active:not(.vt-btn){color:var(--vt-gold-light);transition-duration:0s}
 
 hr,.vt-divider{border:0;border-top:1px solid var(--vt-border);margin:var(--vt-lg) 0}
 
@@ -425,13 +431,15 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
   color:var(--vt-text);text-decoration:none;font-size:13px;line-height:18px;
 }
 .vt-avisos__item:last-child{border-bottom:0}
-.vt-avisos__item:hover{background:var(--vt-surface-3)}
+@media (hover:hover){.vt-avisos__item:hover{background:var(--vt-surface-3)}}
+.vt-avisos__item:active{background:var(--vt-surface-3);transition-duration:0s}
 .vt-avisos__vacio{padding:12px;color:var(--vt-muted);font-size:13px}
 /* Activar y probar los avisos push (avisos-push.js). Es un <button> cuando se
    puede pulsar y un <div> cuando solo explica; los dos con pinta de aviso. */
 .vt-avisos__push{width:100%;color:var(--vt-gold-soft);background:var(--vt-surface-3);font:inherit;font-size:13px;text-align:left}
 button.vt-avisos__push{border:0;border-bottom:1px solid var(--vt-border);cursor:pointer}
-button.vt-avisos__push:hover{color:var(--vt-gold-light)}
+@media (hover:hover){button.vt-avisos__push:hover{color:var(--vt-gold-light)}}
+button.vt-avisos__push:active{color:var(--vt-gold-light);transition-duration:0s}
 /* La pregunta de la primera vez (avisos-push.js). <dialog> nativo: trae el
    fondo, el foco y el Esc hechos.
 
@@ -495,7 +503,8 @@ button.vt-avisos__push:hover{color:var(--vt-gold-light)}
   background:transparent;border:0;border-radius:var(--vt-r-full);
   color:var(--vt-muted);cursor:pointer;
 }
-.vt-instalar__cerrar:hover{background:var(--vt-surface-3);color:var(--vt-text)}
+@media (hover:hover){.vt-instalar__cerrar:hover{background:var(--vt-surface-3);color:var(--vt-text)}}
+.vt-instalar__cerrar:active{background:var(--vt-surface-3);color:var(--vt-text);transition-duration:0s}
 .vt-instalar__cerrar:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
 /* En 375 px el boton no cabe al lado del texto: baja a su propia linea,
  * alineado con el texto, y el aspa se queda arriba a la derecha.
@@ -624,20 +633,59 @@ html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidde
   cursor:pointer;
   transition:background .15s ease,border-color .15s ease,box-shadow .15s ease,transform .1s ease;
 }
-.vt-btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}
-.vt-btn:active{transform:scale(0.97)}
+/* Todos los `:hover` de la aplicacion van dentro de `@media (hover:hover)`,
+ * aqui y en las paginas. No es purismo: en un movil el `:hover` se queda
+ * PEGADO despues de tocar, hasta que tocas otra cosa. Un boton tocado se
+ * quedaba encendido como si siguiera activo, asi que lo unico que separaba
+ * «pulsado» de «en reposo» era un estado que llegaba tarde y no se iba. Con
+ * la consulta, en un movil el hover sencillamente no existe y lo que responde
+ * al dedo es el `:active` de aqui abajo.
+ *
+ * Sigue cada regla en su sitio a proposito: mover los `:hover` a un bloque al
+ * final cambiaria el orden de la cascada y le ganarian al `:active`.
+ *
+ * Y cada regla de hover lleva detras su gemela `:active`, con las mismas
+ * declaraciones mas `transition-duration:0s`: lo que era el hover pegado pasa
+ * a ser la respuesta mientras el dedo esta encima, y se pinta en el primer
+ * fotograma, que es lo unico que se ve en un toque de 80 ms. Sin gemela se
+ * quedan a proposito las filas de tabla —no se tocan, y parpadearian al
+ * arrastrar para desplazar— y la barra de desplazamiento. */
+@media (hover:hover){.vt-btn:hover{background:var(--vt-yellow);box-shadow:0 0 18px -2px rgba(250,204,21,0.45)}}
+
+/* Pulsado: se hunde, se oscurece y se le mete una sombra dentro.
+ *
+ * `transition-duration:0s` no es un adorno, es la razon de que se vea. La
+ * transicion de arriba animaba tambien la IDA, asi que un toque de movil
+ * —unos 80 ms— acababa antes de que el boton llegara a encogerse; y como casi
+ * todos estos botones saltan de pantalla con `onclick="window.location=..."`,
+ * la instantanea que congela la transicion de vista se tomaba con el boton
+ * todavia a medio camino. Resultado: no se veia nada. Con 0s el estado se
+ * pinta en el primer fotograma, con el dedo aun encima, y entra entero en esa
+ * instantanea; la vuelta sigue siendo suave, que es la de `.vt-btn`.
+ *
+ * Cada variante repite su `:active` porque su `:hover` viene despues en la
+ * hoja y empata en especificidad: sin esto, el raton ganaria al dedo. */
+.vt-btn:active{
+  transform:scale(0.90);
+  background:var(--vt-gold-dark);
+  box-shadow:inset 0 3px 8px rgba(0,0,0,0.5);
+  transition-duration:0s;
+}
 .vt-btn:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
 .vt-btn[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
 
 /* Fantasma: la variante de la mayoria de acciones secundarias. */
 .vt-btn--ghost{background:var(--vt-surface-3);color:var(--vt-text);border-color:var(--vt-border-strong)}
-.vt-btn--ghost:hover{background:var(--vt-surface-4);border-color:var(--vt-gold);box-shadow:none}
+@media (hover:hover){.vt-btn--ghost:hover{background:var(--vt-surface-4);border-color:var(--vt-gold);box-shadow:none}}
+.vt-btn--ghost:active{background:var(--vt-surface-2);border-color:var(--vt-gold);box-shadow:inset 0 3px 8px rgba(0,0,0,0.5)}
 
 .vt-btn--quiet{background:transparent;color:var(--vt-gold-soft);border-color:var(--vt-border)}
-.vt-btn--quiet:hover{background:var(--vt-surface-3);color:var(--vt-gold-light);box-shadow:none}
+@media (hover:hover){.vt-btn--quiet:hover{background:var(--vt-surface-3);color:var(--vt-gold-light);box-shadow:none}}
+.vt-btn--quiet:active{background:var(--vt-surface-4);color:var(--vt-gold-light);box-shadow:inset 0 3px 8px rgba(0,0,0,0.5)}
 
 .vt-btn--danger{background:transparent;color:var(--vt-error);border-color:rgba(255,180,171,0.3)}
-.vt-btn--danger:hover{background:var(--vt-error-bg);box-shadow:none}
+@media (hover:hover){.vt-btn--danger:hover{background:var(--vt-error-bg);box-shadow:none}}
+.vt-btn--danger:active{background:var(--vt-error-bg);border-color:var(--vt-error);box-shadow:inset 0 3px 8px rgba(0,0,0,0.5)}
 
 .vt-btn--sm{padding:6px 14px;font-size:13px}
 .vt-btn--icon{padding:0;width:40px;height:40px}
@@ -743,7 +791,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 }
 .vt-table td{padding:10px 12px;border-bottom:1px solid var(--vt-border);color:var(--vt-text)}
 .vt-table tbody tr:last-child td{border-bottom:0}
-.vt-table tbody tr:hover td{background:var(--vt-surface-2)}
+@media (hover:hover){.vt-table tbody tr:hover td{background:var(--vt-surface-2)}}
 /* Centrada, no a la derecha: en la clasificacion del pozo la columna «Dif»
    mezcla +2, -2 y 0, y alineada a la derecha el cero quedaba desplazado
    respecto a los que llevan signo. Es tambien lo que hace /ranking. Las
@@ -802,7 +850,8 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   cursor:pointer;
   transition:border-color .15s ease,color .15s ease;
 }
-.vt-volver:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}
+@media (hover:hover){.vt-volver:hover{border-color:var(--vt-gold);color:var(--vt-gold-light)}}
+.vt-volver:active{border-color:var(--vt-gold);color:var(--vt-gold-light);transition-duration:0s}
 .vt-volver:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
 
 /* Confirmacion comun de guardados: superpuesta para no mover formularios. */
@@ -860,7 +909,8 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   font-size:10px;font-weight:600;line-height:12px;text-align:center;
   transition:color .15s ease;
 }
-.vt-nav__item:hover{color:var(--vt-text)}
+@media (hover:hover){.vt-nav__item:hover{color:var(--vt-text)}}
+.vt-nav__item:active{color:var(--vt-text);transition-duration:0s}
 .vt-nav__item:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:-2px}
 .vt-nav__item[aria-current="page"]{color:var(--vt-gold)}
 
@@ -910,4 +960,4 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 *::-webkit-scrollbar{width:8px;height:8px}
 *::-webkit-scrollbar-track{background:var(--vt-bg)}
 *::-webkit-scrollbar-thumb{background:var(--vt-border);border-radius:var(--vt-r-sm)}
-*::-webkit-scrollbar-thumb:hover{background:var(--vt-gold-dark)}
+@media (hover:hover){*::-webkit-scrollbar-thumb:hover{background:var(--vt-gold-dark)}}
