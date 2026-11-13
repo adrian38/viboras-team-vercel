@@ -27,6 +27,9 @@
 .doc h2{display:flex;align-items:center;gap:var(--vt-sm);margin:var(--vt-xl) 0 var(--vt-md)}
 .doc h2::before{content:'';flex:0 0 auto;width:5px;height:1.1em;border-radius:var(--vt-r-sm);background:var(--vt-gold)}
 .doc li{margin-bottom:var(--vt-sm)}
+/* Las tablas son estrechas y a la izquierda se quedaban descolgadas: centradas,
+   y con aire debajo para que el párrafo siguiente no se les pegue. */
+.doc > .vt-table-wrap{margin:var(--vt-md) auto var(--vt-lg)}
 
 /* El dibujo del movimiento de pistas. Cuatro filas, cada una su pista. */
 .pistas{display:flex;flex-direction:column;gap:var(--vt-sm);margin:var(--vt-md) 0;max-width:560px}
@@ -80,24 +83,18 @@
     <p>Todo el mundo juega todas las rondas. En cada ronda <strong>cambias de compañero</strong>, y según ganes o pierdas <strong>subes o bajas de pista</strong>. Al final no gana una pareja: gana un jugador.</p>
 
     <h2>La primera ronda</h2>
-    <p>La monta entera quien organiza el torneo, y se juega tal cual: ordena a los jugadores en una lista y de ahí salen las pistas, las parejas y los lados.</p>
     <ul>
-      <li><strong>Tu lado no cambia.</strong> El que te toca de salida, drive o revés, es el que juegas todo el torneo.</li>
-      <li><strong>Cada cuatro jugadores son una pista.</strong> Los cuatro primeros empiezan en la última, los cuatro siguientes una pista más arriba, y los cuatro últimos en la <strong>pista 1</strong>.</li>
-      <li>Dentro de la pista, el <strong>1.º y el 2.º</strong> forman una pareja y el <strong>3.º y el 4.º</strong> la otra. Esas dos se enfrentan.</li>
-      <li>Dentro de la pareja, el primero juega al <strong>drive</strong> y el segundo al <strong>revés</strong>.</li>
+      <li>Cada jugador inicia con una <strong>posición fija en la pista</strong>, drive (D) o revés (R), y se mantiene todo el torneo.</li>
+      <li><strong>Composición de pistas y parejas de inicio</strong>: basándonos en el ranking a fecha del torneo, se emparejan <strong>1-4 contra 2-3</strong> en pistas de forma inversa, es decir:</li>
     </ul>
-    <p>El grupo llena esa lista con el <strong>ranking del día en que se monta el torneo</strong>, en dos columnas: la de los que juegan al drive y la de los que juegan al revés. Los dos mejores de cada columna empiezan juntos en la <strong>última pista</strong>, los dos siguientes una más arriba, y así hasta la 1.</p>
-    <p>Y dentro de la pista se cruzan, para que una pareja no junte a los dos mejores: el <strong>revés del primero con el drive del segundo</strong>, contra el <strong>drive del primero con el revés del segundo</strong>. En la última pista, <strong>1R-2D contra 1D-2R</strong>.</p>
-    <p>Con dieciséis jugadores —ocho de cada lado, <strong>1D</strong> el mejor de la columna de drives y <strong>1R</strong> el mejor de la de revés— las pistas de salida quedan así. La letra ya dice el lado, así que el orden dentro de la pareja da igual:</p>
     <div class="vt-table-wrap" style="max-width:440px;width:fit-content">
       <table class="vt-table">
-        <thead><tr><th>Pista</th><th>Parejas de salida</th></tr></thead>
+        <thead><tr><th class="vt-num">Pista</th><th>Parejas de salida</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>7R-8D contra 7D-8R</td></tr>
-          <tr><td>2</td><td>5R-6D contra 5D-6R</td></tr>
-          <tr><td>3</td><td>3R-4D contra 3D-4R</td></tr>
-          <tr><td>4</td><td>1R-2D contra 1D-2R</td></tr>
+          <tr><td class="vt-num">1</td><td>7R-8D contra 7D-8R</td></tr>
+          <tr><td class="vt-num">2</td><td>5R-6D contra 5D-6R</td></tr>
+          <tr><td class="vt-num">3</td><td>3R-4D contra 3D-4R</td></tr>
+          <tr><td class="vt-num">4</td><td>1R-2D contra 1D-2R</td></tr>
         </tbody>
       </table>
     </div>
@@ -145,12 +142,12 @@
          estrecho. -->
     <div class="vt-table-wrap" style="max-width:380px;width:fit-content">
       <table class="vt-table">
-        <thead><tr><th>Pista</th><th class="vt-num">Si ganas</th><th class="vt-num">Si pierdes</th></tr></thead>
+        <thead><tr><th class="vt-num">Pista</th><th class="vt-num">Si ganas</th><th class="vt-num">Si pierdes</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td class="vt-num">8</td><td class="vt-num">6</td></tr>
-          <tr><td>2</td><td class="vt-num">8</td><td class="vt-num">4</td></tr>
-          <tr><td>3</td><td class="vt-num">6</td><td class="vt-num">2</td></tr>
-          <tr><td>4</td><td class="vt-num">4</td><td class="vt-num">2</td></tr>
+          <tr><td class="vt-num">1</td><td class="vt-num">8</td><td class="vt-num">6</td></tr>
+          <tr><td class="vt-num">2</td><td class="vt-num">8</td><td class="vt-num">4</td></tr>
+          <tr><td class="vt-num">3</td><td class="vt-num">6</td><td class="vt-num">2</td></tr>
+          <tr><td class="vt-num">4</td><td class="vt-num">4</td><td class="vt-num">2</td></tr>
         </tbody>
       </table>
     </div>
