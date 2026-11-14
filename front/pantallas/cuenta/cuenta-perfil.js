@@ -276,10 +276,12 @@ function pintarPartidos(p){
 
 /* -------------------------------------------------------- valoracion -- */
 
+// Lo que votaron los companeros en /valorar («Comparado con su rating: ¿jugo
+// como cabia esperar?»), no una medida del motor.
 const NIVEL = {
-  '-1': 'Por debajo de su nivel',
-  '0': 'En su nivel',
-  '1': 'Por encima de su nivel'
+  '-1': 'Su nivel real es inferior',
+  '0': 'Su nivel real coincide',
+  '1': 'Su nivel real es superior'
 }
 
 function signo(neto){
