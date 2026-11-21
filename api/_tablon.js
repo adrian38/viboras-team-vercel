@@ -19,9 +19,11 @@ export const CATEGORIAS = {
 export const TITULO_MAXIMO = 120;
 export const TEXTO_MAXIMO = 4000;
 // La imagen va como data URL en la propia fila: el proyecto no tiene
-// almacenamiento de ficheros. 400 000 caracteres de base64 son unos 300 KB de
-// imagen, y la pagina reescala antes de subir para no llegar nunca al tope.
-export const IMAGEN_MAXIMA = 400000;
+// almacenamiento de ficheros. 1 400 000 caracteres de base64 son algo mas de
+// 1 MB de imagen, y la pagina reescala y aprieta la calidad hasta caber antes
+// de subir, asi que este tope es la red, no el limite que se ve. Si sube, sube
+// tambien SUBIDA_MAXIMA en front/pantallas/tablon/tablon.js.
+export const IMAGEN_MAXIMA = 1400000;
 
 let listo = null;
 

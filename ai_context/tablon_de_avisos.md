@@ -35,12 +35,20 @@ El proyecto **no tiene almacenamiento de ficheros**: no hay Vercel Blob ni
 nada equivalente, así que la imagen se guarda como data URL en
 `tablon.imagen`. De ahí salen tres decisiones que parecen raras:
 
-- **La página reescala antes de subir.** `reescalar()` en `tablon.html` pasa la
-  foto por un `<canvas>` a 1280 px de lado mayor y la vuelve a codificar en
-  JPEG al 75 %. Sin eso, una foto de móvil no entraría.
-- **El servidor tiene su propio tope**, `IMAGEN_MAXIMA` = 400 000 caracteres
-  de base64 (unos 300 KB de imagen), y sólo acepta `data:image/(jpeg|png|webp)`.
-  El tope del servidor es el que manda: la página puede mentir.
+- **La página reescala antes de subir, y aprieta hasta caber.** `reescalar()`
+  en `front/pantallas/tablon/tablon.js` prueba los pares
+  `[lado mayor, calidad]` de `INTENTOS` —1600/0,8 primero— y sube el primero
+  que cabe en `SUBIDA_MAXIMA`. Hasta el 2026-11-21 era un solo intento a
+  1280/0,75, y una foto que no cabía se rechazaba al pulsar «Publicar», con el
+  mensaje del servidor debajo de un «Lista: 614 KB» que decía lo contrario.
+  Medido el 2026-11-21 sobre una imagen de ruido de 3000×4000 px, el peor caso
+  posible para el JPEG: el primer intento da 782 611 caracteres, así que una
+  foto real nunca llega al segundo.
+- **El servidor tiene su propio tope**, `IMAGEN_MAXIMA` = 1 400 000 caracteres
+  de base64 (algo más de 1 MB de imagen), y sólo acepta
+  `data:image/(jpeg|png|webp)`. El tope del servidor es el que manda: la página
+  puede mentir. Si cambia, cambia también `SUBIDA_MAXIMA` en la página, que es
+  su copia.
 - **`imagen` no viaja en la lista.** `avisosDelTablon()` devuelve
   `tiene_imagen` y nada más; cada foto se pide aparte
   (`action=imagen&id=…`) cuando su tarjeta se acerca a la pantalla, con un
