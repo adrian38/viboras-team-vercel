@@ -1,0 +1,58 @@
+# Dispara los recordatorios de partido llamando a /api/cron-partidos.
+#
+# Por que aqui y no en vercel.json: la cuenta esta en el plan Hobby de Vercel
+# (comprobado con `vercel teams ls`), donde un cron corre COMO MUCHO una vez
+# al dia. Y no es que vaya lento: una expresion mas frecuente que diaria
+# **rompe el despliegue**. Los avisos de «30 min antes de la reserva» y «2 h
+# antes» necesitan cadencia de minutos, asi que el reloj se pone fuera.
+#
+# El repositorio es publico, asi que los minutos de GitHub Actions son
+# gratis e ilimitados.
+#
+# Dos cosas que hay que saber y no se pueden arreglar desde aqui:
+#
+#   - El `schedule` de GitHub Actions NO es puntual: en horas punta se
+#     retrasa, a veces diez o quince minutos. Por eso el endpoint mira una
+#     ventana de seis horas hacia atras y manda lo que haya vencido, en vez
+#     de exigir que la pasada caiga en el minuto exacto.
+#   - GitHub **desactiva solo** los `schedule` de un repositorio que lleva 60
+#     dias sin actividad, y avisa por correo. Si los avisos dejan de llegar
+#     de golpe, mirar esto antes que el codigo.
+#
+# Detalle: ai_context/recordatorios_y_cron.md
+name: Recordatorios de partido
+
+on:
+  schedule:
+    # Cada cinco minutos. El endpoint es idempotente: marca antes de avisar,
+    # asi que una pasada de mas no manda nada dos veces.
+    - cron: '*/5 * * * *'
+  # Para probarlo a mano desde la pestana Actions.
+  workflow_dispatch:
+
+# Si una pasada se alarga, la siguiente no se encima.
+concurrency:
+  group: recordatorios-de-partido
+  cancel-in-progress: false
+
+jobs:
+  avisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Llamar al endpoint
+        env:
+          APP_URL: ${{ vars.APP_URL || 'https://viboras-team-vercel.vercel.app' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Falta el secreto CRON_SECRET en el repositorio." >&2
+            exit 1
+          fi
+          # --fail-with-body: que un 401 o un 500 pongan el job en rojo, pero
+          # ensenando lo que contesto el servidor. Sin esto, curl devuelve 0 y
+          # el fallo pasa desapercibido durante semanas.
+          curl --silent --show-error --fail-with-body \
+            --max-time 60 \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron-partidos"

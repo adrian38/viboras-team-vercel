@@ -108,47 +108,64 @@ un endpoint que manda pushes a todo el grupo no puede quedarse abierto porque
 alguien olvidara una variable. En `docker-compose.yml` la variable existe
 vacía; para probarlo en local, `CRON_SECRET=loquesea docker compose up -d app`.
 
-## Lo que falta, y por qué
+## El reloj está en GitHub Actions, no en Vercel
 
-**No hay ninguna entrada `crons` en `vercel.json`, y eso es deliberado.** Los
-recordatorios `reserva:1`, `reserva:2` y `2h` necesitan una pasada **cada pocos
-minutos** (`*/5 * * * *`), y eso sólo existe en el plan **Pro** de Vercel: en
-**Hobby** los cron jobs están limitados a una ejecución diaria y el disparo es
-aproximado dentro de la hora. El repositorio ya asume Hobby
-(`ai_context/buzon_de_quejas.md`: «El plan Hobby admite 12 [funciones]»), pero
-**no está verificado**.
+**`vercel.json` no tiene ni tendrá una entrada `crons`.** La cuenta está en el
+plan **Hobby** —comprobado el 2026-11-21 con `npx vercel@latest teams ls`:
+`adrian38s-projects · hobby`— y ahí un cron corre **como mucho una vez al
+día**. Y no es que vaya lento: **una expresión más frecuente que diaria hace
+fallar el despliegue**, no se queda atrasada. Además el disparo de Hobby es
+aproximado dentro de la hora indicada.
 
-Hasta que Adrián confirme el plan:
+Los avisos `reserva:1`, `reserva:2` y `2h` necesitan cadencia de minutos, así
+que el reloj vive fuera: `.github/workflows/recordatorios-de-partido.yml`
+llama a `/api/cron-partidos` cada cinco minutos con el secreto en la cabecera.
+El repositorio es **público**, así que los minutos de GitHub Actions son
+gratis e ilimitados; en uno privado, 288 pasadas al día se comerían de sobra
+los 2.000 minutos mensuales del plan gratuito y habría que espaciarlas o pagar.
 
-- **Con Pro**: añadir `"crons": [{ "path": "/api/cron-partidos", "schedule":
-  "*/5 * * * *" }]` a `vercel.json` y crear `CRON_SECRET` en Production y en el
-  override de Preview `dev`. Los seis funcionan con un desfase máximo de 5
-  minutos. Vercel añade la cabecera `Authorization: Bearer $CRON_SECRET` por su
-  cuenta a las rutas declaradas en `crons`.
-- **Con Hobby**: `48h`, `dia` y `resultado` se podrían dar «sobre media mañana»
-  (una pasada diaria en UTC cae en las 10:00 peninsulares en verano y en las
-  9:00 en invierno, más la hora de margen). `reserva:1`, `reserva:2` y `2h`
-  **no se pueden dar**, y entonces **no se construyen: no se maquetan**. La
-  alternativa barata es un workflow de GitHub Actions
-  (`on: schedule: '*/5 * * * *'`) que llame al mismo endpoint con el secreto;
-  el repositorio ya está en GitHub. Su `schedule` también se retrasa en horas
-  punta y se desactiva solo tras 60 días sin actividad en el repositorio.
+Dos cosas que no se pueden arreglar desde el repositorio:
 
-**El código está escrito y probado, y mientras tanto es inerte**: sin cron que
-lo llame y sin secreto, `/api/cron-partidos` devuelve 503.
+- **El `schedule` de Actions no es puntual.** En horas punta se retrasa, a
+  veces diez o quince minutos. Por eso el endpoint mira una ventana de seis
+  horas hacia atrás y manda lo vencido, en vez de exigir que la pasada caiga
+  en el minuto exacto.
+- **GitHub desactiva solo los `schedule` de un repositorio que lleva 60 días
+  sin actividad**, y avisa por correo. Si los avisos dejan de llegar de golpe,
+  mirar eso antes que el código.
+
+Si algún día la cuenta pasa a **Pro**, el workflow se puede borrar y poner
+`"crons": [{ "path": "/api/cron-partidos", "schedule": "*/5 * * * *" }]` en
+`vercel.json`: Vercel añade por su cuenta la cabecera
+`Authorization: Bearer $CRON_SECRET` a las rutas declaradas ahí, y el endpoint
+no cambia.
+
+### Lo que hay que crear a mano
+
+`CRON_SECRET`, con **el mismo valor** en los dos sitios, o el endpoint
+contestará 401 cada cinco minutos:
+
+1. En Vercel, variable de entorno de **Production** (y el override de Preview
+   `dev` si se quiere probar allí; `dev` tiene su propio par VAPID, así que
+   desde Preview no se alcanza a los móviles del grupo).
+2. En GitHub, **Settings → Secrets and variables → Actions**, secreto
+   `CRON_SECRET`.
+
+Hasta que existan, el workflow falla en rojo cada pasada y el endpoint
+responde 503. Es ruidoso a propósito: un recordatorio que no llega no se nota,
+y un job en rojo sí.
 
 ### El cupo de funciones
 
 `api/partidos.js` y `api/cron-partidos.js` dejan el proyecto en **12 funciones
-serverless, que es el techo de Hobby**. A partir de aquí no cabe ninguna más
-sin fusionar endpoints.
+serverless**. Hobby admite 12, así que está justo en el techo: a partir de
+aquí no cabe ninguna más sin fusionar endpoints.
 
 ### Peligro al probar
 
 El entorno local manda push a móviles **reales** si `push_subscriptions` tiene
 filas restauradas de un volcado (`ai_context/avisos_push.md`). Antes de
-ejecutar una pasada en local, vaciar esa tabla. Y `dev` tiene su propio par
-VAPID, así que desde Preview no se alcanza a los móviles del grupo.
+ejecutar una pasada en local, vaciar esa tabla.
 
 ## `sql.query` en vez del `sql` de siempre
 
