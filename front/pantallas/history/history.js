@@ -111,7 +111,7 @@ function applyFilter(){
     })
   }
 
-  filtered = filtered.sort((a,b)=>a.__date-b.__date)
+  filtered = filtered.sort((a,b)=> (b.__date-a.__date) || ((b.id||0)-(a.id||0)))
 
   const summary = document.getElementById('summary')
   summary.innerText = `Resultados: ${filtered.length}`
