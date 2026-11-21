@@ -187,6 +187,11 @@ que hay.
 - `borrado_de_partidos.md`: por qué pueden eliminar un partido sus cuatro
   participantes y los administradores, y cómo la API comprueba la sesión y la
   identidad exacta de la fila antes de borrarla.
+- `recordatorios_y_cron.md`: los seis avisos de un partido convocado y el
+  primer cron del proyecto; por qué los de dos horas llevan dos avisos de
+  reserva, por qué con un partido temprano el aviso de «30 min» llega antes
+  que el de «hoy se abre» y es lo decidido, las tres reglas que evitan mandar
+  veinte pushes de golpe, y por qué `vercel.json` aún no tiene `crons`.
 - `partidos_previstos.md`: convocar un partido antes de jugarlo; por qué va en
   tabla propia y no en `matches` a 0-0, por qué la fecha es `TIMESTAMPTZ`, por
   qué aquí no se puede crear en el pasado y en el resto de la app sí, de dónde

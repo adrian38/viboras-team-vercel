@@ -40,7 +40,8 @@ const FUNCTIONS = {
   '/api/buzon': () => import('../api/buzon.js'),
   '/api/perfil': () => import('../api/perfil.js'),
   '/api/tablon': () => import('../api/tablon.js'),
-  '/api/partidos': () => import('../api/partidos.js')
+  '/api/partidos': () => import('../api/partidos.js'),
+  '/api/cron-partidos': () => import('../api/cron-partidos.js')
 };
 
 for (const [route, load] of Object.entries(FUNCTIONS)) {

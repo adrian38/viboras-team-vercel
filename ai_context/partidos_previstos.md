@@ -134,5 +134,6 @@ En `_partidos-lista.js` la lista de columnas está repetida en las tres
 consultas. No es descuido: el `sql` de `@vercel/postgres` convierte cada `${}`
 en un parámetro, así que una constante con el trozo de SELECT dentro no
 pegaría texto, pasaría una cadena como valor y rompería la consulta. Para
-componer habría que bajar a `sql.query(texto, valores)`, que no se usa en
-ninguna parte del proyecto.
+componer hay que bajar a `sql.query(texto, valores)`, que sólo se usa en
+`api/_partidos-cron.js` y por un motivo que su nota explica
+(`ai_context/recordatorios_y_cron.md`).

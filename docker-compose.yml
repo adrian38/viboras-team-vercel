@@ -93,6 +93,12 @@ services:
       VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-}"
       VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-}"
       VAPID_SUBJECT: "${VAPID_SUBJECT:-}"
+      # El disparador de los recordatorios de partido. Vacia, /api/cron-partidos
+      # responde 503 y no hace nada, que es lo que queremos por defecto: un
+      # endpoint que manda pushes a todo el grupo no se queda abierto por
+      # olvidar una variable. Para probarlo en local:
+      #   CRON_SECRET=loquesea docker compose up -d app
+      CRON_SECRET: "${CRON_SECRET:-}"
       # ICONOS=dev sirve en local los iconos de pruebas (fondo violeta), que
       # es lo que se ve en el despliegue de la rama dev.
       ICONOS: "${ICONOS:-}"

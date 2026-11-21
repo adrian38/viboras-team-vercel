@@ -19,6 +19,7 @@ import {
   editarPartido, recalcularAvisos, olvidarSegundaFranja, avisarCambio,
   entrarEnEspera, salirDeEspera, avisarPlazaLibre
 } from './_partidos-editar.js';
+import { sellarVencidos } from './_partidos-cron.js';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -114,6 +115,7 @@ async function crear(req, res, user) {
   const choque = await partidoQueSePisa(user.player_id, empieza, datos.duracion, null);
   if (choque) return error(res, 'overlap', 409, 'Ya estás en otro partido a esa hora.');
   const id = await crearPartido({ ...datos, playerId: user.player_id, empieza });
+  await sellarVencidos(id);
   res.status(200).json({ ok: true, id });
 }
 
@@ -173,6 +175,7 @@ async function editar(req, res, user) {
   if (!antes) return error(res, 'not_found', 404, 'Ese partido ya no se puede cambiar.');
   await recalcularAvisos(partido.id);
   if (datos.duracion < 120) await olvidarSegundaFranja(partido.id);
+  await sellarVencidos(partido.id);
   const ahora = { id: partido.id, empieza_at: empieza, duracion_min: datos.duracion, sede: datos.sede, sede_libre: datos.sedeLibre };
   await avisarCambio(antes, ahora, quienEs(user), jugadores);
   res.status(200).json({ ok: true });
