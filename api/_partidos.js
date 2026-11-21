@@ -201,15 +201,27 @@ async function intentarPlaza(partidoId, playerId) {
   return rows.length ? rows[0].puesto : null;
 }
 
+async function tienePlaza(partidoId, playerId) {
+  const { rows } = await sql`
+    SELECT 1 FROM partido_plazas WHERE partido_id = ${partidoId} AND player_id = ${playerId}`;
+  return rows.length > 0;
+}
+
 // 'full' si no queda sitio, 'already_in' si ya estabas, o el puesto tomado.
-// El 23505 se distingue por el nombre de la restriccion: la primaria es la
-// carrera de dos que se apuntan a la vez y se reintenta una vez; la de
-// (partido_id, player_id) es que ya tenias plaza.
+//
+// Dos caminos llevan a 'already_in' y hacen falta los dos. Si el partido tiene
+// hueco, el INSERT choca con la restriccion (partido_id, player_id) y el 23505
+// lo dice; si esta lleno, no hay INSERT que chocar y el hueco que no hay
+// contestaria 'full', que es verdad del partido pero mentira sobre ti. De ahi
+// la comprobacion antes de rendirse.
+//
+// El otro 23505, el de la clave primaria, es la carrera de dos que se apuntan
+// a la vez a la misma plaza: ese se reintenta una vez.
 export async function tomarPlaza(partidoId, playerId) {
   for (let intento = 0; intento < 2; intento += 1) {
     try {
       const puesto = await intentarPlaza(partidoId, playerId);
-      if (puesto === null) return 'full';
+      if (puesto === null) return await tienePlaza(partidoId, playerId) ? 'already_in' : 'full';
       await sql`DELETE FROM partido_espera WHERE partido_id = ${partidoId} AND player_id = ${playerId}`;
       return puesto;
     } catch (err) {
