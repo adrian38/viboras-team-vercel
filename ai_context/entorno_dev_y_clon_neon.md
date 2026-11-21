@@ -176,6 +176,42 @@ La reparación cambió de base al Preview y, por tanto, invalidó las sesiones
 creadas mientras apuntaba al destino equivocado. El móvil tuvo que iniciar
 sesión otra vez para registrar en el clon sus claves FCM vigentes.
 
+## En `viboras_dev` sólo los administradores están activos (2026-11-21)
+
+El clon trae las cuentas de producción tal cual, y eso incluye **las
+suscripciones push de los móviles del grupo**. El aislamiento de Postgres no
+cubre eso: lo único que impide que una prueba en `dev` haga sonar el teléfono
+de alguien es que `dev` tiene **su propio par VAPID**, así que un envío firmado
+con su clave a una suscripción creada con la de producción lo rechaza el
+servicio de push. Es una red fina para apoyarse en ella a diario.
+
+Comprobado ese día, probando los recordatorios de partido: el clon tenía
+**20 suscripciones**, 9 de administradores y 11 de miembros, y las 42 cuentas
+activas. Por petición de Adrián se dejó así:
+
+| | antes | ahora |
+| --- | --- | --- |
+| Cuentas `active` | 5 admin + 37 miembros | **sólo los 5 admin** |
+| Miembros | `active` | `blocked` |
+| Suscripciones push | 9 admin + 11 miembros | **sólo las 9 de admin** |
+| Sesiones abiertas de miembros | 42 | 0 |
+
+`blocked` y no borrado: `usuarioDeLaPeticion` filtra por `status = 'active'`,
+así que una cuenta bloqueada no entra y su cookie deja de valer al instante,
+pero la fila sigue ahí y se puede volver a activar. Los 42 jugadores de
+`players` **no se tocan**: el ranking, `/comunidad` y las estadísticas siguen
+teniendo los mismos datos, que es para lo que sirve el clon.
+
+Dos cosas que recordar:
+
+- **Un reset del clon desde `main` deshace esto**, porque vuelve a copiar
+  `users` y `push_subscriptions` enteras. Después de cada reset hay que
+  repetirlo, igual que hay que volver a fijar las variables.
+- Para probar en `dev` hace falta entrar con una cuenta de administrador, o
+  sembrar una cuenta de prueba con su sesión directamente en la base (jugador
+  propio, `users` con `status = 'active'` y una fila en `sessions` con el
+  SHA-256 del token). Lo segundo evita manejar contraseñas de nadie.
+
 ## Variables no relacionadas con Postgres
 
 El usuario pidió que `dev` funcione igual que producción. Se copiaron a
