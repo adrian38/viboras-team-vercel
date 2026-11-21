@@ -4,6 +4,7 @@ import { exigirSesion, exigirAdmin, ensureAuthSchema } from './_auth.js';
 import { describirInscripcion } from './_inscripcion.js';
 import { ensureAvisosSchema } from './_avisos.js';
 import { getPozo, getPozos } from './_pozo-api.js';
+import { nombresDeJugadores, ratingsDePartida, votosDeNivel, partidosDeTipos } from './_lecturas.js';
 
 async function getNames(req, res) {
   try {
@@ -11,14 +12,10 @@ async function getNames(req, res) {
     const includeInactiveRaw = String(req.query?.includeInactive || req.body?.includeInactive || '').toLowerCase();
     const includeInactive = includeInactiveRaw === '1' || includeInactiveRaw === 'true';
 
-    const query = includeInactive
-      ? sql`SELECT name FROM players ORDER BY LOWER(name), name`
-      : sql`SELECT name FROM players WHERE active = TRUE ORDER BY LOWER(name), name`;
-
-    const { rows } = await query;
+    const names = await nombresDeJugadores(includeInactive);
     res.setHeader('content-type', 'application/json');
     res.setHeader('cache-control', 'no-store');
-    res.status(200).send(JSON.stringify({ names: rows.map((r) => r.name) }));
+    res.status(200).send(JSON.stringify({ names }));
   } catch (err) {
     console.error('read:getNames error', err);
     res.status(500).json({ ok: false, error: 'server_error' });
@@ -50,51 +47,7 @@ async function getResults(req, res) {
 
     const normalizedTypes = [...new Set(requestedTypes)];
 
-    const { rows } = await sql`
-      SELECT
-        m.id,
-        m.date,
-        m.format,
-        m.event_id,
-        m.round,
-        e.type AS event_type,
-        e.name AS event_name,
-        e.start_date AS event_start_date,
-        e.end_date AS event_end_date,
-        p1a.name AS p1a, p1b.name AS p1b,
-        p2a.name AS p2a, p2b.name AS p2b,
-        m.set1_team1, m.set1_team2,
-        m.set2_team1, m.set2_team2,
-        m.set3_team1, m.set3_team2
-      FROM matches m
-      LEFT JOIN events e ON e.id = m.event_id
-      LEFT JOIN players p1a ON m.player1a_id = p1a.id
-      LEFT JOIN players p1b ON m.player1b_id = p1b.id
-      LEFT JOIN players p2a ON m.player2a_id = p2a.id
-      LEFT JOIN players p2b ON m.player2b_id = p2b.id
-      WHERE e.type = ANY(${normalizedTypes})
-      ORDER BY m.id`;
-
-    const matches = rows.map((r) => ({
-      id: r.id, format: r.format || 'bo3_regular',
-      event_id: r.event_id || null,
-      event_type: r.event_type || null,
-      event_name: r.event_name || null,
-      start_date: r.event_start_date || '',
-      end_date: r.event_end_date || '',
-      round: r.round || null,
-      date: r.date,
-      p1a: r.p1a || '',
-      p1b: r.p1b || '',
-      p2a: r.p2a || '',
-      p2b: r.p2b || '',
-      s11: formatSet(r.set1_team1),
-      s21: formatSet(r.set1_team2),
-      s12: formatSet(r.set2_team1),
-      s22: formatSet(r.set2_team2),
-      s13: formatSet(r.set3_team1),
-      s23: formatSet(r.set3_team2)
-    }));
+    const matches = await partidosDeTipos(normalizedTypes);
 
     const events = [...new Map(
       matches
@@ -234,18 +187,8 @@ async function filasDeJugadores() {
 // edita y cambia un jugador, lo que se voto de el deja de contar.
 async function getNivelVotos(req, res) {
   try {
-    await ensureAvisosSchema();
-    const { rows } = await sql`
-      SELECT to_char(f.fecha, 'YYYY-MM-DD') AS fecha,
-        p.name AS jugador,
-        SUM(CASE f.nivel WHEN 'en_su_nivel' THEN 1 ELSE -1 END)::int AS neto
-      FROM match_feedback_por_dia f
-      JOIN players p ON p.id = f.rated_player_id
-      WHERE f.nivel IS NOT NULL
-      GROUP BY 1, 2
-      HAVING SUM(CASE f.nivel WHEN 'en_su_nivel' THEN 1 ELSE -1 END) <> 0`;
     res.setHeader('cache-control', 'no-store');
-    res.status(200).json({ ok: true, votos: rows.filter((r) => r.fecha) });
+    res.status(200).json({ ok: true, votos: await votosDeNivel() });
   } catch (err) {
     console.error('read:getNivelVotos error', err);
     res.status(500).json({ ok: false, votos: [] });
@@ -356,9 +299,8 @@ async function getAmbiente(req, res) {
 // se fija al aprobarla), para el motor de rating (rating-inicial.js).
 async function getRatingsDePartida(req, res) {
   try {
-    const { rows } = await sql`SELECT name, initial_rating FROM players WHERE initial_rating IS NOT NULL`;
     res.setHeader('cache-control', 'no-store');
-    res.status(200).json({ ok: true, ratings: rows.map((r) => ({ jugador: r.name, rating: Number(r.initial_rating) })) });
+    res.status(200).json({ ok: true, ratings: await ratingsDePartida() });
   } catch (err) {
     console.error('read:getRatingsDePartida error', err);
     res.status(500).json({ ok: false, ratings: [] });
