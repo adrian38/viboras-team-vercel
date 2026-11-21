@@ -123,6 +123,12 @@
    * medirlo, porque con el numero corto el pie de la pagina se mete debajo
    * de la barra y nadie avisa. */
   --vt-nav-alto:64px;
+  /* Lo que el circulo de «Partidos» sobresale por encima de la barra.
+   * Medido en el navegador: el borde de arriba de la barra esta en y=748 y
+   * el del circulo en y=733. Lo usa cualquier capa que llegue «hasta la
+   * barra», porque llegar hasta la barra ya no es llegar hasta el contenido:
+   * desde el 2026-11-21 hay un trozo de barra que vive mas arriba. */
+  --vt-nav-saliente:16px;
 
   /* Profundidad. */
   --vt-shadow-card:0 8px 30px rgba(0,0,0,0.45);
@@ -564,10 +570,17 @@ html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidde
 
 .vt-cargando{
   /* Se queda por encima de la barra de pestanas, no la tapa: la barra esta
-     en el marcado de las veinte paginas, asi que existe desde el primer
-     pintado y no hay ningun momento en que recortar aqui deje un hueco.
-     La rueda queda centrada en lo que se ve, 29 px mas arriba. */
-  position:fixed;inset:0 0 calc(var(--vt-nav-alto) + env(safe-area-inset-bottom,0px));
+     en el marcado de las paginas, asi que existe desde el primer pintado y
+     no hay ningun momento en que recortar aqui deje un hueco.
+     La rueda queda centrada en lo que se ve, 29 px mas arriba.
+
+     Para antes del circulo de «Partidos» y no en el borde de la barra. Con
+     el borde de la barra, el velo le pasaba por encima a los 16 px que
+     sobresalen: 82 % de negro y un desenfoque sobre su tapa, que no se ve
+     como «tapado» sino como un circulo CORTADO en plano, y justo en cada
+     cambio de pantalla. Lo que queda sin cubrir es una franja de 16 px sobre
+     la barra donde el contenido ya esta oculto, asi que no se nota. */
+  position:fixed;inset:0 0 calc(var(--vt-nav-alto) + var(--vt-nav-saliente) + env(safe-area-inset-bottom,0px));
   z-index:var(--vt-z-velo);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:var(--vt-md);
@@ -577,22 +590,7 @@ html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidde
 }
 .vt-cargando--visible{opacity:1}
 
-/* Mientras el velo esta puesto, la barra se pone POR ENCIMA de el.
- *
- * El velo llega justo al borde de arriba de la barra, y mientras la barra
- * fue plana eso bastaba para no taparla —lo dice su propio comentario—. El
- * circulo de «Partidos» sobresale 15 px por encima de ese borde, asi que
- * quedaba metido dentro del velo: 82 % de negro y un desenfoque encima de su
- * tapa. No se veia como «tapado», se veia como un circulo CORTADO en plano,
- * y en cada cambio de pantalla, que es cuando el velo esta puesto.
- *
- * Medido: el velo acaba en y=748 y el circulo empieza en y=733.
- *
- * Va aqui y no subiendo el borde del velo porque el velo tiene que seguir
- * llegando hasta la barra: un hueco sin cubrir encima de ella se notaria como
- * una franja mas clara. Y es `html.vt-cargando-pagina`, no siempre: fuera de
- * la carga la barra vuelve a su capa de siempre y no le gana a un modal. */
-html.vt-cargando-pagina .vt-nav{z-index:calc(var(--vt-z-velo) + 1)}
+
 .vt-cargando__rueda{
   width:44px;height:44px;border-radius:var(--vt-r-full);
   border:3px solid var(--vt-surface-4);
@@ -952,6 +950,14 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   font-size:10px;font-weight:600;line-height:12px;text-align:center;
   transition:color .15s ease;
 }
+/* Sin el recuadro gris del navegador al tocar.
+ *
+ * En Android, tocar un <a> pinta encima un rectangulo translucido. Sobre
+ * las cuatro pestanas planas apenas se ve, pero sobre el circulo de
+ * «Partidos» es un CUADRADO gris sobre algo redondo, y parece una sombra
+ * mal puesta. Lo que responde al dedo es el `:active` de aqui abajo, que ya
+ * esta pensado. */
+.vt-nav__item{-webkit-tap-highlight-color:transparent}
 @media (hover:hover){.vt-nav__item:hover{color:var(--vt-text)}}
 .vt-nav__item:active{color:var(--vt-text);transition-duration:0s}
 .vt-nav__item:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:-2px}

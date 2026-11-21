@@ -116,11 +116,37 @@ casí idéntico al del recorte de la instantánea y dura mucho más, así que es
 fácil arreglar el de la transición y creer que no se ha arreglado nada: son
 dos cosas distintas y hacían falta las dos.
 
-Se arregla con `html.vt-cargando-pagina .vt-nav{z-index:calc(var(--vt-z-velo) + 1)}`:
-sólo mientras el velo está puesto, y no subiendo el borde del velo, que
-dejaría una franja más clara encima de la barra. Para comprobarlo sin ojo:
-`document.elementFromPoint(x, y+3)` sobre la tapa del círculo tenía que dejar
-de responder `vt-cargando` y responder `vt-nav__icono`.
+Se arregla con un token, **`--vt-nav-saliente: 16px`**, y haciendo que el velo
+pare ahí: `inset:0 0 calc(var(--vt-nav-alto) + var(--vt-nav-saliente) + ...)`.
+
+El primer intento fue subir la barra por encima del velo sólo con
+`html.vt-cargando-pagina`, y **no valía**: esa clase la pone `arranque()`,
+pero `mostrar()` y `mientras()` enseñan el velo sin ponerla. O sea que
+quedaba arreglado al cargar una pantalla y roto en cualquier espera dentro de
+ella. El token no depende de qué camino encendió el velo.
+
+La franja de 16 px que queda sin cubrir no se nota: ahí el contenido ya está
+oculto por `visibility:hidden`, así que lo que se ve es el fondo.
+
+Para comprobarlo sin ojo: `document.elementFromPoint(x, y+3)` sobre la tapa
+del círculo tenía que dejar de responder `vt-cargando` y responder
+`vt-nav__icono`.
+
+**La regla general, que es lo que hay que recordar:** cualquier capa que
+llegue «hasta la barra» tiene que llegar hasta `--vt-nav-alto +
+--vt-nav-saliente`, porque desde el 2026-11-21 hay un trozo de barra que vive
+más arriba que la barra.
+
+### El recuadro gris al tocar
+
+Tocar un `<a>` en Android pinta encima un rectángulo translúcido. Sobre las
+cuatro pestañas planas apenas se nota; sobre el círculo es un **cuadrado**
+gris sobre algo redondo, y parece una sombra mal puesta. Se quita con
+`-webkit-tap-highlight-color:transparent` en `.vt-nav__item`: lo que responde
+al dedo es el `:active`, que ya estaba pensado.
+
+El halo dorado de debajo del círculo (`box-shadow`) **no** es eso: está
+siempre y es de la maqueta.
 
 Es la trampa de siempre con las transiciones de vista: lo que se funde no es
 el elemento, es una foto de su caja. Cualquier cosa que se salga de esa caja
