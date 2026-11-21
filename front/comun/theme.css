@@ -24,7 +24,7 @@
  * de 400 caracteres dieciseis veces: cambiar la lista es una linea. Cuesta un
  * viaje extra, que con font-display:block solo retrasa los iconos.
  */
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=admin_panel_settings,arrow_back,arrow_forward,calendar_month,campaign,chevron_right,close,cloud_upload,download,edit_note,emoji_events,emoji_symbols,error,fact_check,feedback,filter_alt,format_list_bulleted,gavel,group,history,home,info,install_mobile,leaderboard,lightbulb,lock,login,logout,menu_book,military_tech,monitoring,notifications,person,publish,query_stats,save,schedule,scoreboard,search,sort,shield_person,speed,sports_tennis,swap_vert,sync_alt,trending_up,trophy,tune,verified,verified_user,visibility,visibility_off,workspace_premium&display=block');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add,admin_panel_settings,arrow_back,arrow_forward,calendar_month,campaign,chevron_right,close,cloud_upload,download,edit_note,emoji_events,emoji_symbols,error,fact_check,feedback,filter_alt,format_list_bulleted,gavel,group,history,home,hourglass_empty,info,install_mobile,leaderboard,lightbulb,location_on,lock,login,logout,menu_book,military_tech,monitoring,notifications,person,person_add,publish,query_stats,save,schedule,scoreboard,search,share,sort,shield_person,speed,sports_tennis,swap_vert,sync_alt,trending_up,trophy,tune,verified,verified_user,visibility,visibility_off,workspace_premium&display=block');
 
 :root{
   /* Superficies: negro carbono y sus elevaciones. */
@@ -52,6 +52,15 @@
   --vt-text-strong:#ffffff;
   --vt-muted:#9ca3af;
   --vt-faint:#64748b;
+
+  /* Verde de WhatsApp. No es de la paleta y no se usa como color de la app:
+   * es informacion sobre a donde lleva el boton, igual que el azul de un
+   * enlace. Esta aqui y no como excepcion de tools/palette.mjs para que haya
+   * un solo boton de WhatsApp en toda la aplicacion y no tres parecidos, que
+   * es lo que habia cuando el unico que existia vivia suelto en /results. */
+  --vt-whatsapp:#25d366;
+  --vt-whatsapp-dark:#1ebe5d;
+  --vt-whatsapp-text:#07301a;
 
   /* Semanticos. */
   --vt-error:#ffb4ab;
@@ -687,8 +696,18 @@ html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidde
 @media (hover:hover){.vt-btn--danger:hover{background:var(--vt-error-bg);box-shadow:none}}
 .vt-btn--danger:active{background:var(--vt-error-bg);border-color:var(--vt-error);box-shadow:inset 0 3px 8px rgba(0,0,0,0.5)}
 
+/* El unico boton de WhatsApp de la aplicacion. Verde siempre, aunque sea la
+ * accion principal de su pantalla: el oro es «lo importante de aqui» y el
+ * verde es «esto sale de la app y va al grupo». Lo que cambia entre pantallas
+ * es la etiqueta, no la forma. */
+.vt-btn--whatsapp{background:var(--vt-whatsapp);color:var(--vt-whatsapp-text)}
+@media (hover:hover){.vt-btn--whatsapp:hover{background:var(--vt-whatsapp-dark);box-shadow:none}}
+.vt-btn--whatsapp:active{background:var(--vt-whatsapp-dark);box-shadow:inset 0 3px 8px rgba(0,0,0,0.5)}
+
 .vt-btn--sm{padding:6px 14px;font-size:13px}
 .vt-btn--icon{padding:0;width:40px;height:40px}
+/* Para apilar acciones a lo ancho de una tarjeta en un movil estrecho. */
+.vt-btn--ancho{width:100%}
 
 /* ------------------------------------------------------------ formulario -- */
 
@@ -955,6 +974,124 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 .vt-between{display:flex;gap:var(--vt-md);align-items:center;justify-content:space-between;flex-wrap:wrap}
 .vt-end{display:flex;justify-content:flex-end}
 .vt-grow{flex:1;min-width:0}
+
+/* ------------------------------------------------ tarjeta de partido -- */
+
+/* La tarjeta de un partido previsto. Esta aqui y no en la pagina porque la
+ * pintan cuatro: /partidos, /partido, /partidos-abiertos y, al crear, la
+ * vista previa de /partido-nuevo. Duplicarla seria garantizar que diverjan.
+ *
+ * Una forma por papel, a proposito: un chip de estado, un tamano de avatar
+ * por sitio (fila en la tarjeta, rejilla en el detalle) y las acciones
+ * siempre al pie. */
+.vt-partido{display:flex;flex-direction:column;gap:var(--vt-md)}
+
+.vt-partido__cabeza{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--vt-sm)}
+.vt-partido__cuando{
+  font-family:var(--vt-font-head);
+  font-size:22px;line-height:26px;font-weight:700;letter-spacing:0.02em;
+  color:var(--vt-text-strong);text-transform:uppercase;margin:0;
+}
+.vt-partido__donde{display:flex;align-items:center;gap:var(--vt-xs);color:var(--vt-muted);font-size:14px}
+.vt-partido__donde .ms{font-size:18px;color:var(--vt-gold-soft)}
+.vt-partido__pistas{color:var(--vt-faint)}
+
+/* Las cuatro plazas en fila. No se envuelven, que partiria la pareja en dos
+ * lineas.
+ *
+ * Rejilla con `minmax(0,1fr)` y no flex: con flex, el tamano minimo de cada
+ * plaza lo fijaba su texto mas largo («ORGANIZA», un nombre sin espacios) y
+ * las cuatro juntas sacaban la tarjeta fuera de la pantalla —389 px de
+ * tarjeta en una columna de 351—. Una columna `minmax(0,1fr)` no puede
+ * crecer por su contenido, asi que el texto se recorta y la tarjeta cabe. */
+.vt-partido__plazas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--vt-sm)}
+.vt-partido__plazas--rejilla{grid-template-columns:repeat(2,minmax(0,1fr))}
+.vt-plaza{
+  min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:var(--vt-sm);
+  border-radius:var(--vt-r-md);
+  background:var(--vt-surface-2);
+  border:1px solid var(--vt-border);
+}
+.vt-plaza__ficha{
+  width:44px;height:44px;border-radius:var(--vt-r-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--vt-surface-4);color:var(--vt-text);
+  font-family:var(--vt-font-head);font-size:16px;font-weight:700;letter-spacing:0.04em;
+}
+.vt-partido__plazas--rejilla .vt-plaza{padding:var(--vt-md)}
+.vt-partido__plazas--rejilla .vt-plaza__ficha{width:60px;height:60px;font-size:20px}
+/* `width:100%` y no `max-width`: con nowrap, el nombre largo fija el tamano
+ * minimo de su plaza y las cuatro juntas desbordaban la tarjeta en un movil
+ * (402 px de scroll en una pantalla de 375). Con el ancho atado al de la
+ * plaza, que si puede encoger, el nombre se recorta en vez de empujar. */
+.vt-plaza__nombre{
+  font-size:12px;font-weight:600;color:var(--vt-text);
+  width:100%;min-width:0;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.vt-plaza__pie{
+  font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-faint);
+  width:100%;min-width:0;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* Quien convoco. Un punto de oro sobre su ficha, no una corona de otro
+ * tamano: sale de creador_player_id y no es un rango. */
+.vt-plaza--organiza .vt-plaza__ficha{background:var(--vt-gold);color:var(--vt-bg)}
+.vt-plaza--yo{border-color:var(--vt-border-gold)}
+
+/* Plaza libre: el hueco se ve como hueco. */
+.vt-plaza--libre .vt-plaza__ficha{background:transparent;border:1px dashed var(--vt-border-strong);color:var(--vt-faint)}
+.vt-plaza__ficha .ms{font-size:22px}
+.vt-plaza--libre .vt-plaza__nombre{color:var(--vt-muted)}
+
+/* La plaza que la pantalla del enlace propone y aun NO esta guardada. Tiene
+ * que distinguirse de una de verdad a simple vista: si no, seria ensenar
+ * como dato algo que no esta en la base. */
+.vt-plaza--propuesta{border:1px dashed var(--vt-gold);background:rgba(245,158,11,0.08)}
+.vt-plaza--propuesta .vt-plaza__ficha{background:rgba(245,158,11,0.18);color:var(--vt-gold-light)}
+.vt-plaza--propuesta .vt-plaza__pie{color:var(--vt-gold-light)}
+
+.vt-partido__nota{
+  margin:0;padding:var(--vt-sm) var(--vt-md);
+  border-left:3px solid var(--vt-border-gold);
+  background:var(--vt-surface-2);border-radius:var(--vt-r);
+  color:var(--vt-text);font-size:14px;font-style:italic;
+}
+
+.vt-partido__acciones{display:flex;flex-wrap:wrap;gap:var(--vt-sm)}
+.vt-partido__acciones .vt-btn{flex:1 1 10rem}
+/* La segunda fila de acciones: lo que no es la accion principal. */
+.vt-partido__menores{display:flex;flex-wrap:wrap;gap:var(--vt-md);align-items:center}
+.vt-enlace-accion{
+  background:none;border:0;padding:0;cursor:pointer;
+  font:inherit;font-size:13px;color:var(--vt-muted);
+  text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--vt-border);
+}
+@media (hover:hover){.vt-enlace-accion:hover{color:var(--vt-gold-light)}}
+.vt-enlace-accion:active{color:var(--vt-gold-light);transition-duration:0s}
+.vt-enlace-accion:focus-visible{outline:2px solid var(--vt-gold-light);outline-offset:2px}
+
+/* Aviso dentro de una tarjeta o un formulario: lo que hay que saber antes de
+ * pulsar, no una confirmacion. Un toast se va y esto no. */
+.vt-nota-aviso{
+  display:flex;gap:var(--vt-sm);align-items:flex-start;
+  padding:var(--vt-md);border-radius:var(--vt-r-md);
+  background:rgba(245,158,11,0.08);border:1px solid var(--vt-border-gold);
+  color:var(--vt-text);font-size:14px;line-height:20px;
+}
+.vt-nota-aviso .ms{flex:0 0 auto;font-size:20px;color:var(--vt-gold-light)}
+.vt-nota-aviso[hidden]{display:none}
+.vt-nota-aviso--error{background:var(--vt-error-bg);border-color:rgba(255,180,171,0.3)}
+.vt-nota-aviso--error .ms{color:var(--vt-error)}
+
+@media(max-width:420px){
+  .vt-partido__cuando{font-size:19px;line-height:23px}
+  .vt-plaza{padding:6px var(--vt-xs)}
+  .vt-plaza__ficha{width:38px;height:38px;font-size:14px}
+}
 
 /* La barra de scroll clara desentona sobre el carbono. */
 *::-webkit-scrollbar{width:8px;height:8px}

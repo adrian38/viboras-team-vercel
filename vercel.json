@@ -104,6 +104,10 @@
       "destination": "/front/pantallas/submit-result"
     },
     {
+      "source": "/partidos",
+      "destination": "/front/pantallas/partidos"
+    },
+    {
       "source": "/tablon",
       "destination": "/front/pantallas/tablon"
     },

@@ -87,19 +87,19 @@ async function leerInstante(res, fecha, hora) {
 
 async function mios(req, res, user) {
   if (!exigirFicha(res, user)) return;
-  res.status(200).json({ ok: true, partidos: await misPartidos(user.player_id), sedes: sedesParaLaPagina() });
+  res.status(200).json({ ok: true, yo: user.player_id, partidos: await misPartidos(user.player_id), sedes: sedesParaLaPagina() });
 }
 
 async function abiertos(req, res, user) {
   if (!exigirFicha(res, user)) return;
-  res.status(200).json({ ok: true, partidos: await partidosAbiertos(user.player_id) });
+  res.status(200).json({ ok: true, yo: user.player_id, partidos: await partidosAbiertos(user.player_id) });
 }
 
 async function uno(req, res, user) {
   if (!exigirFicha(res, user)) return;
   const partido = await unPartido(toInt(req.query?.id), user.player_id);
   if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no existe.');
-  res.status(200).json({ ok: true, partido, sedes: sedesParaLaPagina() });
+  res.status(200).json({ ok: true, yo: user.player_id, yoSoy: user.player_name, partido, sedes: sedesParaLaPagina() });
 }
 
 async function crear(req, res, user) {
