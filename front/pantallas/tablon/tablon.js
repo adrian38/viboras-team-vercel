@@ -14,11 +14,15 @@ let filtro = 'todos';
 let editando = null;
 // null = no se toca la foto que ya tenga; '' = quitarla; data URL = la nueva.
 let fotoNueva = null;
-// Lado mas largo al que se reescala antes de subir, y calidad del JPEG. La
-// imagen viaja dentro de la fila (no hay almacenamiento de ficheros), asi que
-// sin reescalar una foto de movil no cabria.
-const LADO_MAXIMO = 1280;
-const CALIDAD = 0.75;
+// La imagen viaja dentro de la fila (no hay almacenamiento de ficheros), asi
+// que sin reescalar una foto de movil no cabria. Se prueban estos pares de
+// [lado mas largo, calidad del JPEG] en orden y se sube el primero que cabe:
+// una foto normal sale con el primero, y una enorme baja sola en vez de que el
+// servidor la rechace despues de pulsar Publicar.
+const INTENTOS = [[1600, 0.8], [1600, 0.7], [1280, 0.7], [1024, 0.65], [800, 0.6]];
+// Tope del servidor: IMAGEN_MAXIMA en api/_tablon.js. Si cambia alli, cambia
+// aqui.
+const SUBIDA_MAXIMA = 1400000;
 // Lo que dura el fundido del visor en la hoja de estilos de la pagina (.18s).
 // Si cambia alli, cambia aqui: retirar el <dialog> antes corta la salida.
 const FUNDIDO_VISOR = 180;
@@ -335,27 +339,40 @@ function abrirEdicion(a) {
   document.getElementById('titulo').focus();
 }
 
-// Reescala a LADO_MAXIMO y pasa a JPEG: una foto de movil en crudo no cabe en
-// la fila. Devuelve el data URL.
-function reescalar(fichero) {
+// El fichero elegido, ya decodificado y listo para dibujar en un lienzo.
+function cargarImagen(fichero) {
   return new Promise((listo, fallo) => {
     const lector = new FileReader();
     lector.onerror = () => fallo(new Error('No se pudo leer la foto.'));
     lector.onload = () => {
       const img = new Image();
       img.onerror = () => fallo(new Error('Ese fichero no es una imagen.'));
-      img.onload = () => {
-        const escala = Math.min(1, LADO_MAXIMO / Math.max(img.width, img.height));
-        const lienzo = document.createElement('canvas');
-        lienzo.width = Math.round(img.width * escala);
-        lienzo.height = Math.round(img.height * escala);
-        lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
-        listo(lienzo.toDataURL('image/jpeg', CALIDAD));
-      };
+      img.onload = () => listo(img);
       img.src = lector.result;
     };
     lector.readAsDataURL(fichero);
   });
+}
+
+// Un intento: reduce al lado pedido y pasa a JPEG con esa calidad.
+function aDataUrl(img, lado, calidad) {
+  const escala = Math.min(1, lado / Math.max(img.width, img.height));
+  const lienzo = document.createElement('canvas');
+  lienzo.width = Math.round(img.width * escala);
+  lienzo.height = Math.round(img.height * escala);
+  lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
+  return lienzo.toDataURL('image/jpeg', calidad);
+}
+
+// Devuelve el data URL del primer intento de INTENTOS que cabe en el tope del
+// servidor. Si ni el ultimo cabe, la foto no sirve y se dice aqui.
+async function reescalar(fichero) {
+  const img = await cargarImagen(fichero);
+  for (const [lado, calidad] of INTENTOS) {
+    const url = aDataUrl(img, lado, calidad);
+    if (url.length <= SUBIDA_MAXIMA) return url;
+  }
+  throw new Error('La foto pesa demasiado incluso reducida. Prueba con otra.');
 }
 
 async function elegirFoto() {
