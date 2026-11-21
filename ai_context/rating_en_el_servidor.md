@@ -49,6 +49,15 @@ haya dos cuentas distintas.
    funciones (`functions.includeFiles`). Sin esa línea el recálculo funciona
    en local y revienta con ENOENT en Vercel.
 
+   Y **`vercel.json` no admite claves desconocidas**: el primer intento llevaba
+   un `"_comentario_functions"` explicando para qué servía el bloque, y Vercel
+   rechazó el despliegue entero. Dos despliegues en **Error** seguidos, y como
+   el alias se queda sirviendo el último que funcionó, la aplicación parecía
+   estar bien: lo único raro era que el recálculo no hacía nada. Si algo
+   desplegado no cambia por mucho que se empuje, mirar
+   `vercel list` antes que el código. Las explicaciones van en el código o
+   aquí, nunca dentro de `vercel.json`.
+
 El mapeo de filas a partidos —las fechas en dos formatos, los sets, los
 formatos de torneo— lo hace el propio motor con su `leerPartidos`, al que se
 le da el JSON que esperaría de `/api/read`. Por eso no está escrito aquí otra
