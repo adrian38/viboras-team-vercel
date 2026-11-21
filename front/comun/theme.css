@@ -979,6 +979,18 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
  * que `body::after` le deja a la barra, no dentro, asi que el contenido de
  * la pagina sigue acabando donde acababa. */
 .vt-nav__item--destacado .vt-nav__icono{
+  /* Instantanea propia para el fundido entre pantallas.
+   *
+   * `.vt-nav` tiene `view-transition-name`, asi que durante la transicion no
+   * se pinta la barra sino una IMAGEN suya del tamano de su caja: 375x64. El
+   * circulo sobresale 15 px por arriba, fuera de esa caja, asi que la imagen
+   * lo recortaba y al cambiar de pantalla se veia la tapa cortada.
+   *
+   * Con nombre propio el navegador lo saca de la instantanea de la barra y le
+   * da la suya, a la medida del circulo, que ya no recorta nada. Medido:
+   * ::view-transition-group(vt-barra) daba 375x64 en y=748 mientras el
+   * circulo empezaba en y=733. */
+  view-transition-name:vt-partidos;
   width:54px;height:54px;
   margin-top:-24px;
   border-radius:var(--vt-r-full);

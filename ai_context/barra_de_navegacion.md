@@ -93,6 +93,21 @@ navegador, no calculado.** Si alguien cambia el tamaño del círculo hay que
 volver a medirlo: con el número corto, el pie de la página se mete debajo de
 la barra y no falla nada, simplemente no se ve.
 
+**Y sobresalir la cortaba en el fundido.** `.vt-nav` tiene
+`view-transition-name`, así que al cambiar de pantalla no se pinta la barra
+sino una **imagen** suya del tamaño de su caja. El círculo vive 15 px por
+encima de esa caja, fuera, así que durante la transición salía con la tapa
+cortada: medido, `::view-transition-group(vt-barra)` daba 375×64 en `y=748`
+mientras el círculo empezaba en `y=733`. Se arregla dándole **su propio**
+`view-transition-name`: el navegador lo saca de la instantánea de la barra y
+le da la suya, de 54×54, que ya no recorta nada.
+
+Es la trampa de siempre con las transiciones de vista: lo que se funde no es
+el elemento, es una foto de su caja. Cualquier cosa que se salga de esa caja
+desaparece durante el fundido y vuelve al acabar, y como dura 200 ms se ve
+como un parpadeo raro y no como un recorte. Para investigarlo, alargar la
+animación (`::view-transition-group(*){animation-duration:4s}`) y mirar.
+
 Y la guarda buscaba `class="vt-nav__item"` **exacto**. La central lleva además
 `vt-nav__item--destacado`, así que decía que no había ninguna encendida en las
 cuatro pantallas de partidos. Su patrón admite ahora clases de más.
