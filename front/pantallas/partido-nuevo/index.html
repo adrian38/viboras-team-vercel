@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Convocar partido</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+
+<style>
+.form{display:flex;flex-direction:column;gap:var(--vt-md)}
+/* El grupo de la duracion no tiene un <label for>, porque no es un campo
+   sino dos radios: su titulo va en el <legend> del <fieldset>, que lleva el
+   mismo aspecto que las etiquetas de `.vt-field`. */
+.form fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--vt-xs)}
+.form legend{
+  padding:0;font-size:12px;line-height:16px;font-weight:600;
+  letter-spacing:0.05em;text-transform:uppercase;color:var(--vt-muted);
+}
+
+/* Duracion: dos opciones y ninguna mas. Son <input type=radio> de verdad
+   escondidos bajo sus etiquetas, para que funcione el teclado y el lector de
+   pantalla; pintarlo con botones obligaria a llevar el estado a mano. */
+.duracion{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--vt-sm)}
+.duracion input{position:absolute;opacity:0;width:0;height:0}
+.duracion label{
+  display:flex;align-items:center;justify-content:center;gap:var(--vt-sm);
+  padding:12px;border-radius:var(--vt-r);
+  background:var(--vt-surface-3);border:1px solid var(--vt-border-strong);
+  color:var(--vt-text);font-size:14px;font-weight:700;cursor:pointer;
+}
+.duracion input:checked + label{background:var(--vt-gold);border-color:var(--vt-gold);color:var(--vt-bg)}
+.duracion input:focus-visible + label{outline:2px solid var(--vt-gold-light);outline-offset:2px}
+
+.contador{font-size:11px;color:var(--vt-faint);text-align:right}
+.pie-nota{font-size:13px;color:var(--vt-muted);text-align:center;margin:0}
+#campoSedeLibre[hidden]{display:none}
+</style>
+</head>
+
+<body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/history"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">emoji_events</span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/tablon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item" href="/comunidad"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
+</div>
+</nav>
+
+<div class="vt-page vt-page--narrow">
+
+  <button type="button" class="vt-btn vt-btn--quiet vt-btn--sm" id="atras" style="align-self:flex-start">
+    <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span><span id="atrasTexto">Mis partidos</span>
+  </button>
+
+  <div style="text-align:center">
+    <h3 class="vt-gold" id="titulo">Convocar partido</h3>
+    <span class="vt-label" id="subtitulo">Pon el día, la hora y dónde, y compártelo</span>
+  </div>
+
+  <div class="vt-card">
+    <form class="form" id="form" novalidate>
+
+      <div class="vt-field">
+        <label for="fecha">Día</label>
+        <input class="vt-input" type="date" id="fecha" required>
+      </div>
+
+      <div class="vt-field">
+        <label for="hora">Hora de inicio</label>
+        <input class="vt-input" type="time" id="hora" step="300" required>
+      </div>
+
+      <!-- Sale solo cuando el partido es dentro de menos de 48 h 30 min, que
+           es cuando de verdad no se mandaran los avisos de reserva. No es
+           decoracion: es un dato comprobable sobre lo que va a pasar. -->
+      <p class="vt-nota-aviso" id="avisoReserva" hidden>
+        <span class="ms notranslate" translate="no" aria-hidden="true">info</span>
+        <span>Este partido es dentro de menos de 48 h: la reserva de pista ya está abierta y no mandaremos los avisos de reserva.</span>
+      </p>
+
+      <fieldset>
+        <legend>Duración</legend>
+        <div class="duracion">
+          <input type="radio" name="duracion" id="dur60" value="60" checked>
+          <label for="dur60"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">schedule</span>1 hora</label>
+          <input type="radio" name="duracion" id="dur120" value="120">
+          <label for="dur120"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">schedule</span>2 horas</label>
+        </div>
+      </fieldset>
+
+      <div class="vt-field">
+        <label for="sede">Dónde</label>
+        <!-- Sin <option> escritos aqui: los pone partido-nuevo.js con los que
+             manda el servidor, que es la unica lista que existe. -->
+        <select class="vt-select" id="sede"></select>
+      </div>
+
+      <div class="vt-field" id="campoSedeLibre" hidden>
+        <label for="sedeLibre">¿Dónde exactamente?</label>
+        <input class="vt-input" type="text" id="sedeLibre" maxlength="60" placeholder="Nombre del club o del polideportivo">
+      </div>
+
+      <div class="vt-field">
+        <label for="comentario">Comentario</label>
+        <textarea class="vt-textarea" id="comentario" rows="3" maxlength="140" placeholder="Nivel, si la pista ya está reservada, lo que haga falta"></textarea>
+        <span class="contador" id="contador">0/140</span>
+      </div>
+
+      <p class="vt-nota-aviso vt-nota-aviso--error" id="error" hidden>
+        <span class="ms notranslate" translate="no" aria-hidden="true">error</span>
+        <span id="errorTexto"></span>
+      </p>
+
+      <button type="submit" class="vt-btn vt-btn--ancho" id="guardar">
+        <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">add</span><span id="guardarTexto">Convocar partido</span>
+      </button>
+      <p class="pie-nota" id="pieNota">Te apuntamos a ti en la primera plaza.</p>
+
+    </form>
+  </div>
+
+</div>
+
+<script src="/front/comun/vt-partido-tarjeta.js"></script>
+<script src="/front/pantallas/partido-nuevo/partido-nuevo.js"></script>
+</body>
+</html>
