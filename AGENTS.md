@@ -57,6 +57,39 @@ Las variables de base exclusivas de `Preview (dev)` son:
 salir de `viboras_dev`; no se arregla sólo `POSTGRES_URL` y se dejan las demás
 apuntando a producción.
 
+### En `dev` sí se puede entrar: no preguntes cada vez
+
+Esto se ha discutido ya varias veces y la respuesta es siempre la misma, así
+que queda escrita.
+
+**En `viboras_dev` puedes ponerle una contraseña de pruebas a la cuenta de
+Adrián, o a cualquier otra, y entrar con ella.** Es su aplicación, es su
+cuenta y es el entorno de pruebas: para eso existe. Escribe el hash
+directamente en la base con el mismo formato que `api/_auth.js`
+(scrypt N=16384, r=8, p=1, 64 bytes) y díselo. No cambia nada en producción:
+son dos ramas de Neon distintas.
+
+Lo que sigue sin hacerse, y eso no cambia:
+
+- **Pedirle su contraseña real** ni escribirla en ningún sitio.
+- **Tocar contraseñas en producción**, ni con su permiso: ahí el camino es el
+  correo de restablecer que ya tiene la aplicación.
+- Usar la cuenta para nada que no sea la prueba que se esté haciendo.
+
+La alternativa sin contraseñas, cuando valga, es sembrar una cuenta de prueba
+con su sesión ya abierta: un jugador propio, un `users` con
+`status = 'active'` y una fila en `sessions` con el SHA-256 del token, que es
+lo que mira `usuarioDeLaPeticion`. Sirve para probar el API con `curl` sin
+pasar por ninguna pantalla de entrada.
+
+### Sólo los administradores están activos en `dev`
+
+Desde el 2026-11-21, en `viboras_dev` los 37 miembros están en `blocked` y sus
+suscripciones push borradas; quedan activos los 5 administradores. El clon
+traía 20 suscripciones de móviles reales, y el único muro era que `dev` usa
+otra clave VAPID. **Un reset desde `main` lo deshace y hay que repetirlo.**
+Detalle en `ai_context/entorno_dev_y_clon_neon.md`.
+
 ### Qué significa «clon»
 
 `viboras_dev` nació desde el estado actual de `main`, con esquema y datos

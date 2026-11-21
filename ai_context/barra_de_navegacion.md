@@ -102,6 +102,26 @@ mientras el círculo empezaba en `y=733`. Se arregla dándole **su propio**
 `view-transition-name`: el navegador lo saca de la instantánea de la barra y
 le da la suya, de 54×54, que ya no recorta nada.
 
+**Y el velo de carga le comía la tapa, que era lo que de verdad se veía.**
+`.vt-cargando` va a `--vt-z-velo` (2000) y su borde de abajo llega
+exactamente al borde de arriba de la barra —`inset:0 0 var(--vt-nav-alto)`—.
+Mientras la barra fue plana eso bastaba para no taparla, y así lo dice su
+propio comentario. El círculo sobresale 15 px por encima de ese borde, o sea
+**dentro del velo**: 82 % de negro y un desenfoque sobre su tapa. Medido: el
+velo acaba en `y=748` y el círculo empieza en `y=733`.
+
+No se veía como «tapado» sino como un círculo **cortado en plano**, y en cada
+cambio de pantalla, porque el velo está puesto justo entonces. Es un síntoma
+casí idéntico al del recorte de la instantánea y dura mucho más, así que es
+fácil arreglar el de la transición y creer que no se ha arreglado nada: son
+dos cosas distintas y hacían falta las dos.
+
+Se arregla con `html.vt-cargando-pagina .vt-nav{z-index:calc(var(--vt-z-velo) + 1)}`:
+sólo mientras el velo está puesto, y no subiendo el borde del velo, que
+dejaría una franja más clara encima de la barra. Para comprobarlo sin ojo:
+`document.elementFromPoint(x, y+3)` sobre la tapa del círculo tenía que dejar
+de responder `vt-cargando` y responder `vt-nav__icono`.
+
 Es la trampa de siempre con las transiciones de vista: lo que se funde no es
 el elemento, es una foto de su caja. Cualquier cosa que se salga de esa caja
 desaparece durante el fundido y vuelve al acabar, y como dura 200 ms se ve

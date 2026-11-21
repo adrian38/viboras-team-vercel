@@ -576,6 +576,23 @@ html.vt-cargando-pagina body > *:not(.vt-cargando):not(.vt-nav){visibility:hidde
   opacity:0;transition:opacity .18s ease;
 }
 .vt-cargando--visible{opacity:1}
+
+/* Mientras el velo esta puesto, la barra se pone POR ENCIMA de el.
+ *
+ * El velo llega justo al borde de arriba de la barra, y mientras la barra
+ * fue plana eso bastaba para no taparla —lo dice su propio comentario—. El
+ * circulo de «Partidos» sobresale 15 px por encima de ese borde, asi que
+ * quedaba metido dentro del velo: 82 % de negro y un desenfoque encima de su
+ * tapa. No se veia como «tapado», se veia como un circulo CORTADO en plano,
+ * y en cada cambio de pantalla, que es cuando el velo esta puesto.
+ *
+ * Medido: el velo acaba en y=748 y el circulo empieza en y=733.
+ *
+ * Va aqui y no subiendo el borde del velo porque el velo tiene que seguir
+ * llegando hasta la barra: un hueco sin cubrir encima de ella se notaria como
+ * una franja mas clara. Y es `html.vt-cargando-pagina`, no siempre: fuera de
+ * la carga la barra vuelve a su capa de siempre y no le gana a un modal. */
+html.vt-cargando-pagina .vt-nav{z-index:calc(var(--vt-z-velo) + 1)}
 .vt-cargando__rueda{
   width:44px;height:44px;border-radius:var(--vt-r-full);
   border:3px solid var(--vt-surface-4);

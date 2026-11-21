@@ -34,6 +34,27 @@ NEON=$(grep '^POSTGRES_URL_NON_POOLING=' .env.local | cut -d= -f2-)
 docker compose exec -T -e NEON="$NEON" postgres sh -c 'psql "$NEON" -c "SELECT count(*) FROM matches;"'
 ```
 
+## Probar en `dev` sin preguntar por la contraseña
+
+La cuenta de Adrián en `viboras_dev` tiene contraseña de pruebas, puesta a
+propósito para esto. Si hace falta cambiarla o poner otra, se hace y ya: es su
+aplicación, su cuenta y el entorno de pruebas, y no toca producción porque son
+dos ramas de Neon distintas. La regla completa, con lo que sí sigue sin
+hacerse, está en `AGENTS.md`.
+
+El clon se alcanza con la cadena de **`viboras_dev`**, nunca con la de
+`.env.local`, que es producción:
+
+```bash
+DEV=$(npx -y neon@latest connection-string viboras_dev --project-id empty-poetry-42127048 --pooled false | grep -oE 'postgresql://[^ ]+')
+case "$DEV" in *ep-snowy-bird-b22ap65c*) : ;; *) echo 'HOST INESPERADO'; exit 1;; esac
+docker compose exec -T -e DEV="$DEV" postgres sh -c 'psql "$DEV" -c "SELECT count(*) FROM matches;"'
+```
+
+Ese `case` no es adorno: `main` es `ep-divine-river-b2sgrlig` y `viboras_dev`
+es `ep-snowy-bird-b22ap65c`. Comprobar el host antes de escribir es lo único
+que separa una prueba de un estropicio en producción.
+
 ## `codebase-memory-mcp` en este equipo
 
 `.mcp.json` fija `CBM_CACHE_DIR` y `CBM_RUNTIME_DIR` en `C:\cbm`, igual que los
