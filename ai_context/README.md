@@ -111,7 +111,8 @@ que hay.
   resultados, por qué los torneos quedan fuera y qué pasa con lo ya guardado.
 - `disponibilidad_quien_la_ve.md`: quién ha votado cada hora sólo lo ve un
   administrador; la restricción está en `getSlots` (`api/read.js`), no en el
-  HTML, y por eso `/results` ya no se enlaza desde `/day`.
+  HTML; y por qué `/results`, que dejó de enlazarse desde `/day`, acabó
+  borrada.
 - `contar_partidos_de_un_jugador.md`: por qué `count(*)` sobre `matches` da un
   número equivocado: en los torneos las columnas de marcador son juegos y no
   sets, y un partido organizado y sin jugar está ahí con 0-0, que no es NULL.

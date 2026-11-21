@@ -265,8 +265,12 @@ sepia. De ahí salía el color de los ejes de la gráfica.
 
 - **El negro del splash** (`#000`, tres veces en `theme.css`): iguala el negro
   de `splash.mp4`. Con `--vt-surface-deep` se vería el borde del vídeo.
-- **El verde de WhatsApp** en `results.html`: es información sobre a dónde
-  lleva el botón, no decoración.
+- **El verde de WhatsApp** ya no es una excepción. Lo fue mientras el único
+  botón que llevaba al grupo vivía suelto en `results.html`; desde el
+  2026-11-21 son `--vt-whatsapp`, `--vt-whatsapp-dark` y `--vt-whatsapp-text`
+  en el `:root`, y hay un solo `.vt-btn--whatsapp` en toda la aplicación en
+  vez de tres botones parecidos. Sigue sin ser un color de la paleta: es
+  información sobre a dónde lleva el botón, como el azul de un enlace.
 
 ### El contraste, medido después
 
@@ -278,7 +282,7 @@ fondo compuesto. Quitar el sepia **sube** el contraste donde estaba peor y lo
 | --- | --- | --- |
 | `/rating-test`, etiqueta «Fecha» | 1,79 | 7,32 |
 | `/comunidad`, clave del dato | 1,88 | 6,53 |
-| `/results`, aviso de pocos jugadores | 3,42 | 10,94 |
+| `/results`, aviso de pocos jugadores (pantalla ya borrada) | 3,42 | 10,94 |
 | `/comunidad`, texto sobre oro | 4,58 | 8,65 |
 | `/rating`, categoría más baja | 5,59 | 11,62 |
 | `/comunidad`, nivel del jugador | 10,31 | 6,92 |

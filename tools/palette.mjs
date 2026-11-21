@@ -49,10 +49,11 @@ const RAIZ_SUELTA = '.';
 
 // Lo que puede llevar un color literal, y por que.
 const EXCEPCIONES = [
-  { fichero: 'front/comun/theme.css', color: '#000', motivo: 'iguala el negro de splash.mp4' },
-  { fichero: 'front/pantallas/results/index.html', color: '#25d366', motivo: 'verde de WhatsApp' },
-  { fichero: 'front/pantallas/results/index.html', color: '#1ebe5d', motivo: 'verde de WhatsApp, al pasar por encima y al pulsarlo' },
-  { fichero: 'front/pantallas/results/index.html', color: '#07301a', motivo: 'texto sobre el verde de WhatsApp' }
+  { fichero: 'front/comun/theme.css', color: '#000', motivo: 'iguala el negro de splash.mp4' }
+  // Los tres verdes de WhatsApp estuvieron aqui mientras el unico boton que
+  // llevaba al grupo vivia suelto en /results. Desde que son --vt-whatsapp*
+  // en el :root de theme.css ya no son excepciones: son tokens, y por eso
+  // hay un solo boton de WhatsApp en toda la aplicacion y no tres parecidos.
 ];
 
 const normalizar = (c) => {

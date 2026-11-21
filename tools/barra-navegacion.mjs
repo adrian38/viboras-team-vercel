@@ -30,7 +30,7 @@ const BASE = 'front/pantallas';
 // encienden. La portada es `index`, que es la carpeta `portada`.
 const SECCIONES = {
   '/': ['portada'],
-  '/history': ['history', 'results', 'submit-result', 'tournaments', 'day', 'pozo'],
+  '/history': ['history', 'submit-result', 'tournaments', 'day', 'pozo'],
   '/tablon': ['tablon'],
   '/comunidad': ['comunidad', 'valorar'],
   '/cuenta': ['cuenta']

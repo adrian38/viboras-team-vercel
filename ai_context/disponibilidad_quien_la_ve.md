@@ -38,10 +38,14 @@ miembro -> {"17:00":["Davidmen"],"19:00":["Davidmen"]}
 
 ## Lo que esto deja tocado
 
-- **`/results` ya no se enlaza desde ninguna parte.** Sigue funcionando —y
-  sigue teniendo su «Organizar partido»— pero sólo escribiendo la URL, y sólo
-  enseña algo útil a un administrador. Si hace falta volver a alcanzarla, el
-  sitio es la pantalla de administración de jugadores, no `/day`.
+- **`/results` se borró el 2026-11-21.** Llevaba desde el 2026-10-31 sin que
+  enlazara a ella nadie, alcanzable sólo escribiendo la URL y útil sólo a un
+  administrador. Lo único que tenía de valor era su «Organizar partido», el
+  botón que abría WhatsApp con un texto compuesto a mano, y eso es justo lo
+  que hace ahora `/partidos` —guardándolo en la base y con un enlace de vuelta
+  a la app—: `ai_context/partidos_previstos.md`. Si alguna vez hace falta ver
+  los votos de un día, el sitio es la pantalla de administración de jugadores,
+  no `/day` ni una URL suelta.
 - **`/day` sigue necesitando `getSlots`**, pero sólo para marcar tus horas:
   desde que el contador entre paréntesis desapareció, no usa los nombres de
   nadie más.

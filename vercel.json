@@ -92,10 +92,6 @@
       "destination": "/front/pantallas/rating-test"
     },
     {
-      "source": "/results",
-      "destination": "/front/pantallas/results"
-    },
-    {
       "source": "/statistics",
       "destination": "/front/pantallas/statistics"
     },
