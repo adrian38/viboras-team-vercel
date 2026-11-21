@@ -44,7 +44,16 @@
 .duracion input:checked + label{background:var(--vt-gold);border-color:var(--vt-gold);color:var(--vt-bg)}
 .duracion input:focus-visible + label{outline:2px solid var(--vt-gold-light);outline-offset:2px}
 
-.contador{font-size:11px;color:var(--vt-faint);text-align:right}
+.niveles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--vt-sm);margin-top:var(--vt-sm)}
+.niveles[hidden]{display:none}
+.nivel{
+  display:flex;align-items:center;gap:var(--vt-sm);
+  padding:10px 12px;border-radius:var(--vt-r);
+  background:var(--vt-surface-2);border:1px solid var(--vt-border-strong);
+  color:var(--vt-text);font-size:14px;cursor:pointer;
+}
+.nivel--todos{background:var(--vt-surface-3)}
+.nivel:has(input:checked){border-color:var(--vt-gold);color:var(--vt-text-strong)}
 .pie-nota{font-size:13px;color:var(--vt-muted);text-align:center;margin:0}
 #campoSedeLibre[hidden]{display:none}
 </style>
@@ -120,11 +129,17 @@
         <input class="vt-input" type="text" id="sedeLibre" maxlength="60" placeholder="Nombre del club o del polideportivo">
       </div>
 
-      <div class="vt-field">
-        <label for="comentario">Comentario</label>
-        <textarea class="vt-textarea" id="comentario" rows="3" maxlength="140" placeholder="Nivel, si la pista ya está reservada, lo que haga falta"></textarea>
-        <span class="contador" id="contador">0/140</span>
-      </div>
+      <fieldset>
+        <legend>Niveles que pueden venir</legend>
+        <label class="nivel nivel--todos">
+          <input type="checkbox" id="todosLosNiveles" checked>
+          <span>Todos los niveles</span>
+        </label>
+        <!-- Las cuatro casillas las pone partido-nuevo.js con los niveles
+             que manda el servidor, que son los mismos que ya usa el resto de
+             la aplicación. -->
+        <div class="niveles" id="niveles" hidden></div>
+      </fieldset>
 
       <p class="vt-nota-aviso vt-nota-aviso--error" id="error" hidden>
         <span class="ms notranslate" translate="no" aria-hidden="true">error</span>

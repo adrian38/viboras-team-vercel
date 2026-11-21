@@ -51,6 +51,43 @@ peninsular al insertar:
 y el puente a `matches` al cerrar vuelve a `DD/MM/YYYY` con
 `to_char(empieza_at AT TIME ZONE 'Europe/Madrid', 'DD/MM/YYYY')`.
 
+## Los niveles, y los mismos cuatro nombres en tres sitios
+
+Lo que el convocante declara es **qué niveles pueden venir**. Ahí había un
+campo de comentario libre y lo sustituyó, porque el comentario era «para
+cualquier cosa» y esto es la condición que de verdad importa al mirar un
+partido del grupo.
+
+**No hay escala nueva.** Son los mismos cuatro nombres que la aplicación ya
+usa: Iniciación, Intermedio, Avanzado y Entreno. Y ahí está la trampa: esos
+cuatro nombres viven ya en **dos** sitios que no son el mismo dato.
+
+| Dónde | Qué es |
+| --- | --- |
+| `TIER_DEFINITIONS` (`front/comun/vt-categorias.js`) | la categoría que sale del **rating de hoy** |
+| `RATING_DE_PARTIDA` (`api/_inscripcion.js`) | el nivel de la prueba de **Bilbao Kirolak**, declarado al darse de alta |
+| `NIVELES` (`api/_partidos.js`) | los que el convocante **deja venir** a su partido |
+
+Hoy el tercero es **una declaración, no un filtro**: nadie comprueba el nivel
+de quien se apunta, igual que nadie comprueba nada al apuntarse. Si algún día
+filtra de verdad, lo primero que hay que decidir es **cuál de los dos
+primeros manda**, porque un jugador puede ser Intermedio por rating y haber
+declarado Avanzado en el alta, o al revés.
+
+`niveles` a NULL quiere decir «todos», y es lo normal. Hay **una sola** forma
+de decirlo: marcar los cuatro guarda NULL igual que no marcar ninguno, para
+que no convivan dos representaciones de lo mismo.
+
+En la pantalla, «Todos los niveles» no es una casilla más: es la ausencia de
+filtro, y por eso **esconde** las otras cuatro en vez de marcarlas.
+Destildarla y no marcar ninguna no es «ningún nivel», es no haber terminado
+de elegir, y se dice en vez de guardar un partido al que no puede venir
+nadie.
+
+El nivel se enseña **siempre** en la tarjeta y en el mensaje de WhatsApp,
+también cuando es «todos»: un hueco donde a veces hay algo y a veces no se
+lee como que ese partido no tiene nivel, no como que admite a cualquiera.
+
 ## La hora es en punto, y por eso es una lista
 
 Las pistas se reservan **por franja horaria**, así que las y veinte no son una

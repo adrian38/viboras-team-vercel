@@ -8,8 +8,8 @@
 import { readBody, toInt } from './_db.js';
 import { exigirSesion, sinCache } from './_auth.js';
 import {
-  ensurePartidosSchema, sedesParaLaPagina, sedeValida, nombreDeSede,
-  DURACIONES, COMENTARIO_MAXIMO, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
+  ensurePartidosSchema, sedesParaLaPagina, nivelesParaLaPagina, sedeValida, nivelesParaGuardar,
+  DURACIONES, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
   instanteDe, partidoQueSePisa, creadosHoy, crearPartido, tomarPlaza, soltarPlaza,
   partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe
 } from './_partidos.js';
@@ -57,7 +57,7 @@ async function leerFormulario(req, res) {
   const duracion = toInt(data?.duracion);
   const sede = String(data?.sede || '').trim();
   const sedeLibre = String(data?.sedeLibre || '').trim();
-  const comentario = String(data?.comentario || '').trim();
+  const niveles = nivelesParaGuardar(data?.niveles);
   if (!FECHA.test(fecha) || !HORA.test(hora)) {
     return error(res, 'bad_date', 400, 'Pon una fecha y una hora en punto.');
   }
@@ -68,10 +68,8 @@ async function leerFormulario(req, res) {
   if (sede === 'otro' && (sedeLibre.length < 2 || sedeLibre.length > SEDE_LIBRE_MAXIMA || /[<>"'`&]/.test(sedeLibre))) {
     return error(res, 'bad_venue', 400, `Escribe dónde se juega, entre 2 y ${SEDE_LIBRE_MAXIMA} caracteres y sin signos raros.`);
   }
-  if (comentario.length > COMENTARIO_MAXIMO) {
-    return error(res, 'bad_text', 400, `El comentario no pasa de ${COMENTARIO_MAXIMO} caracteres.`);
-  }
-  return { fecha, hora, duracion, sede, sedeLibre: sede === 'otro' ? sedeLibre : null, comentario: comentario || null };
+  if (niveles === false) return error(res, 'bad_level', 400, 'Ese nivel no existe.');
+  return { fecha, hora, duracion, sede, sedeLibre: sede === 'otro' ? sedeLibre : null, niveles };
 }
 
 // El instante, con sus dos fronteras. Null si no cuadra, ya contestado.
@@ -91,7 +89,7 @@ async function leerInstante(res, fecha, hora) {
 
 async function mios(req, res, user) {
   if (!exigirFicha(res, user)) return;
-  res.status(200).json({ ok: true, yo: user.player_id, partidos: await misPartidos(user.player_id), sedes: sedesParaLaPagina() });
+  res.status(200).json({ ok: true, yo: user.player_id, partidos: await misPartidos(user.player_id), sedes: sedesParaLaPagina(), niveles: nivelesParaLaPagina() });
 }
 
 async function abiertos(req, res, user) {
@@ -103,7 +101,7 @@ async function uno(req, res, user) {
   if (!exigirFicha(res, user)) return;
   const partido = await unPartido(toInt(req.query?.id), user.player_id);
   if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no existe.');
-  res.status(200).json({ ok: true, yo: user.player_id, yoSoy: user.player_name, partido, sedes: sedesParaLaPagina() });
+  res.status(200).json({ ok: true, yo: user.player_id, yoSoy: user.player_name, partido, sedes: sedesParaLaPagina(), niveles: nivelesParaLaPagina() });
 }
 
 async function crear(req, res, user) {

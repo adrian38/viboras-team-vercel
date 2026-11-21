@@ -12,7 +12,7 @@
 //
 // Detalle: ai_context/partidos_previstos.md
 import { sql } from '@vercel/postgres';
-import { ensurePartidosSchema, nombreDeSede, pistasDeSede } from './_partidos.js';
+import { ensurePartidosSchema, nombreDeSede, pistasDeSede, nivelesDice } from './_partidos.js';
 
 // Las cuatro plazas de un partido, siempre las cuatro: las libres salen con
 // `playerId` nulo para que la pagina no tenga que inventarse los huecos.
@@ -34,7 +34,8 @@ function aPartido(fila, plazas, playerId) {
     sede: fila.sede,
     sedeNombre: nombreDeSede(fila),
     sedePistas: pistasDeSede(fila),
-    comentario: fila.comentario || '',
+    niveles: fila.niveles || [],
+    nivelesTexto: nivelesDice(fila.niveles),
     creadorId: fila.creador_player_id,
     creadorNombre: fila.creador_nombre,
     soyElCreador: fila.creador_player_id === playerId,
@@ -65,7 +66,7 @@ async function conPlazas(filas, playerId) {
 export async function misPartidos(playerId) {
   await ensurePartidosSchema();
   const { rows } = await sql`
-    SELECT p.id, p.empieza_at, p.duracion_min, p.sede, p.sede_libre, p.comentario,
+    SELECT p.id, p.empieza_at, p.duracion_min, p.sede, p.sede_libre, p.niveles,
       p.creador_player_id, p.cancelado_at, p.cerrado_at,
       p.empieza_at + (p.duracion_min * interval '1 minute') AS termina_at,
       c.name AS creador_nombre,
@@ -85,7 +86,7 @@ export async function misPartidos(playerId) {
 export async function partidosAbiertos(playerId) {
   await ensurePartidosSchema();
   const { rows } = await sql`
-    SELECT p.id, p.empieza_at, p.duracion_min, p.sede, p.sede_libre, p.comentario,
+    SELECT p.id, p.empieza_at, p.duracion_min, p.sede, p.sede_libre, p.niveles,
       p.creador_player_id, p.cancelado_at, p.cerrado_at,
       p.empieza_at + (p.duracion_min * interval '1 minute') AS termina_at,
       c.name AS creador_nombre,
@@ -106,7 +107,7 @@ export async function partidosAbiertos(playerId) {
 export async function unPartido(id, playerId) {
   await ensurePartidosSchema();
   const { rows } = await sql`
-    SELECT p.id, p.empieza_at, p.duracion_min, p.sede, p.sede_libre, p.comentario,
+    SELECT p.id, p.empieza_at, p.duracion_min, p.sede, p.sede_libre, p.niveles,
       p.creador_player_id, p.cancelado_at, p.cerrado_at,
       p.empieza_at + (p.duracion_min * interval '1 minute') AS termina_at,
       c.name AS creador_nombre,

@@ -74,8 +74,12 @@
       ? `${escapar(partido.sedeNombre)} <span class="vt-partido__pistas">· ${escapar(partido.sedePistas)}</span>`
       : escapar(partido.sedeNombre);
     const plazas = partido.plazas.map((p) => plazaHtml(p, partido, o)).join('');
-    const nota = partido.comentario
-      ? `<p class="vt-partido__nota">${escapar(partido.comentario)}</p>` : '';
+    // El nivel se ensena SIEMPRE, tambien cuando es «todos»: es una
+    // condicion del partido, y un hueco donde a veces hay algo y a veces no
+    // se lee como que ese partido no tiene nivel, no como que admite a todos.
+    const nota = `<p class="vt-partido__nota">`
+      + `<span class="ms ms--sm notranslate" translate="no" aria-hidden="true">military_tech</span>`
+      + `${escapar(partido.nivelesTexto)}</p>`;
     return `<div class="vt-partido__cabeza">
         <div>
           <p class="vt-partido__cuando">${escapar(cuando(partido))}</p>

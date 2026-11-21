@@ -33,7 +33,26 @@ export const SEDES = {
 export const SEDE_POR_DEFECTO = 'san_inazio';
 
 export const DURACIONES = [60, 120];
-export const COMENTARIO_MAXIMO = 140;
+
+// Los niveles que el convocante deja jugar. Son los MISMOS cuatro que ya usa
+// la aplicacion en dos sitios: las categorias de rating
+// (front/comun/vt-categorias.js, TIER_DEFINITIONS) y el nivel de la prueba de
+// Bilbao Kirolak que se declara en el alta (RATING_DE_PARTIDA en
+// api/_inscripcion.js). No se inventa ninguna escala nueva.
+//
+// Ojo con lo que significa la coincidencia: son los mismos nombres, pero uno
+// sale del rating de hoy y el otro de lo que dijo al apuntarse. Aqui es una
+// declaracion del convocante («a este partido vienen intermedios y
+// avanzados»), no un filtro: nadie comprueba el nivel de quien se apunta.
+// Si algun dia filtra, hay que decidir cual de los dos manda.
+//
+// `niveles` a NULL quiere decir «todos», y es lo normal.
+export const NIVELES = {
+  iniciacion: 'Iniciación',
+  intermedio: 'Intermedio',
+  avanzado: 'Avanzado',
+  entreno: 'Entreno'
+};
 export const SEDE_LIBRE_MAXIMA = 60;
 // Margen contra el pasado. Ni 0 ni una hora: para dentro de diez minutos no da
 // tiempo a que nadie lo vea y se apunte, que es para lo que existe la
@@ -56,7 +75,7 @@ async function crearTablas() {
       duracion_min SMALLINT NOT NULL,
       sede TEXT NOT NULL,
       sede_libre TEXT,
-      comentario TEXT,
+      niveles TEXT[],
       creador_player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       cancelado_at TIMESTAMPTZ,
@@ -108,6 +127,24 @@ export function ensurePartidosSchema() {
   return listo;
 }
 
+// Devuelve el array a guardar, o `false` si lo pedido no cuadra. Null es
+// «todos»: ni una lista con los cuatro ni una vacia, para que haya una sola
+// forma de decir lo mismo en la base.
+export function nivelesParaGuardar(lista) {
+  if (!Array.isArray(lista) || !lista.length) return null;
+  const limpios = [...new Set(lista.map((n) => String(n)))];
+  if (limpios.some((n) => !Object.prototype.hasOwnProperty.call(NIVELES, n))) return false;
+  if (limpios.length === Object.keys(NIVELES).length) return null;
+  // En el orden de la escalera, no en el que vinieran marcados.
+  return Object.keys(NIVELES).filter((n) => limpios.includes(n));
+}
+
+// Lo que se ensena: «Todos los niveles» o los nombres en orden.
+export function nivelesDice(niveles) {
+  if (!Array.isArray(niveles) || !niveles.length) return 'Todos los niveles';
+  return Object.keys(NIVELES).filter((n) => niveles.includes(n)).map((n) => NIVELES[n]).join(', ');
+}
+
 export function sedeValida(clave) {
   return Object.prototype.hasOwnProperty.call(SEDES, clave);
 }
@@ -132,6 +169,11 @@ export function sedesParaLaPagina() {
     lista: Object.entries(SEDES).map(([clave, s]) => ({ clave, nombre: s.nombre, pistas: s.pistas })),
     porDefecto: SEDE_POR_DEFECTO
   };
+}
+
+// Los niveles tal y como los pide la pagina para montar sus casillas.
+export function nivelesParaLaPagina() {
+  return Object.entries(NIVELES).map(([clave, nombre]) => ({ clave, nombre }));
 }
 
 // El instante del partido y si cae fuera de las dos fronteras, resuelto en la
@@ -175,11 +217,11 @@ export async function creadosHoy(playerId) {
 // cuatro plazas libres, que es un estado valido y del que su autor puede
 // borrarse o al que puede volver a apuntarse.
 export async function crearPartido(datos) {
-  const { playerId, empieza, duracion, sede, sedeLibre, comentario } = datos;
+  const { playerId, empieza, duracion, sede, sedeLibre, niveles } = datos;
   const { rows } = await sql`
     INSERT INTO partidos_previstos
-      (empieza_at, duracion_min, sede, sede_libre, comentario, creador_player_id)
-    VALUES (${empieza}, ${duracion}, ${sede}, ${sedeLibre}, ${comentario}, ${playerId})
+      (empieza_at, duracion_min, sede, sede_libre, niveles, creador_player_id)
+    VALUES (${empieza}, ${duracion}, ${sede}, ${sedeLibre}, ${niveles}, ${playerId})
     RETURNING id`;
   const id = rows[0].id;
   await sql`INSERT INTO partido_plazas (partido_id, puesto, player_id) VALUES (${id}, 1, ${playerId})`;
@@ -243,7 +285,7 @@ export async function soltarPlaza(partidoId, playerId) {
 // si se cancelo, si ya se cerro o si ya empezo.
 export async function partidoVivo(id) {
   const { rows } = await sql`
-    SELECT id, empieza_at, duracion_min, sede, sede_libre, comentario, creador_player_id
+    SELECT id, empieza_at, duracion_min, sede, sede_libre, niveles, creador_player_id
     FROM partidos_previstos
     WHERE id = ${id} AND cancelado_at IS NULL AND cerrado_at IS NULL AND empieza_at > now()`;
   return rows.length ? rows[0] : null;

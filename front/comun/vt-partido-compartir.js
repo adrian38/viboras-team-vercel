@@ -17,7 +17,7 @@
 // nunca el que esta pintado: el mensaje dice quien va, y decir que vas cuando
 // el servidor no te ha metido seria mandarle una mentira al grupo.
 (function () {
-  const EMOJI = { fecha: '\u{1F4C5}', sitio: '\u{1F3DF}\u{FE0F}', hora: '\u{23F0}', jugador: '\u{1F3BE}', libre: '\u{26AA}' };
+  const EMOJI = { fecha: '\u{1F4C5}', sitio: '\u{1F3DF}\u{FE0F}', hora: '\u{23F0}', nivel: '\u{1F4CA}', jugador: '\u{1F3BE}', libre: '\u{26AA}' };
 
   function enHoraLocal(iso, opciones) {
     return new Date(iso).toLocaleString('es-ES', { timeZone: 'Europe/Madrid', ...opciones });
@@ -41,12 +41,12 @@
     const lineas = [
       `${EMOJI.fecha}${diaLargo(partido.empieza)}`,
       `${EMOJI.sitio}${sitio}`,
-      `${EMOJI.hora}Hora ${soloHora(partido.empieza)} a ${soloHora(fin)}`
+      `${EMOJI.hora}Hora ${soloHora(partido.empieza)} a ${soloHora(fin)}`,
+      `${EMOJI.nivel}Nivel ${partido.nivelesTexto}`
     ];
     for (const plaza of partido.plazas) {
       lineas.push(plaza.nombre ? `${EMOJI.jugador}${plaza.nombre}` : `${EMOJI.libre}Libre`);
     }
-    if (partido.comentario) lineas.push(partido.comentario);
     lineas.push('', `${location.origin}/partido?id=${partido.id}`);
     return lineas.join('\n');
   }

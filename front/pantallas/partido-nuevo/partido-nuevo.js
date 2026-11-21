@@ -35,11 +35,36 @@ function pintarHoras(actual) {
   const horas = [];
   for (let h = PRIMERA_HORA; h <= ULTIMA_HORA; h += 1) horas.push(comoHora(h));
   // Un partido viejo a una hora que ya no esta en la lista conserva la suya:
-  // editar el comentario no puede moverle la hora por la espalda.
+  // editar el nivel no puede moverle la hora por la espalda.
   if (actual && !horas.includes(actual)) horas.push(actual);
   horas.sort();
   $('hora').innerHTML = horas.map((h) => `<option value="${h}">${h}</option>`).join('');
   $('hora').value = actual && horas.includes(actual) ? actual : comoHora(19);
+}
+
+// Las casillas de nivel. «Todos» no es un nivel mas: es la ausencia de
+// filtro, y por eso esconde las otras cuatro en vez de marcarlas. Al
+// servidor se le manda una lista vacia, que guarda NULL.
+function pintarNiveles(lista) {
+  $('niveles').innerHTML = lista.map((n) => `
+    <label class="nivel">
+      <input type="checkbox" class="nivel__casilla" value="${n.clave}">
+      <span>${n.nombre}</span>
+    </label>`).join('');
+}
+
+function nivelesMarcados() {
+  if ($('todosLosNiveles').checked) return [];
+  return [...document.querySelectorAll('.nivel__casilla:checked')].map((c) => c.value);
+}
+
+function marcarNiveles(niveles) {
+  const algunos = Array.isArray(niveles) && niveles.length > 0;
+  $('todosLosNiveles').checked = !algunos;
+  $('niveles').hidden = !algunos;
+  for (const c of document.querySelectorAll('.nivel__casilla')) {
+    c.checked = algunos && niveles.includes(c.value);
+  }
 }
 
 function pintarSedes(sedes) {
@@ -76,7 +101,7 @@ function datosDelFormulario() {
     duracion: Number(marcado ? marcado.value : 60),
     sede: $('sede').value,
     sedeLibre: $('sedeLibre').value.trim(),
-    comentario: $('comentario').value.trim()
+    niveles: nivelesMarcados()
   };
 }
 
@@ -88,6 +113,12 @@ function problemaDeCliente(datos) {
     return `Ese partido ya ha empezado o empieza en nada: pon al menos ${MARGEN_MINUTOS} minutos de margen.`;
   }
   if (datos.sede === 'otro' && datos.sedeLibre.length < 2) return 'Escribe dónde se juega.';
+  // Destildar «todos» y no marcar ninguno no es «ningún nivel»: es no haber
+  // terminado de elegir. Se dice, en vez de guardar un partido al que no
+  // puede venir nadie.
+  if (!$('todosLosNiveles').checked && !datos.niveles.length) {
+    return 'Marca qué niveles pueden venir, o deja «Todos los niveles».';
+  }
   return null;
 }
 
@@ -118,7 +149,7 @@ function rellenarCon(partido) {
   document.querySelector(`input[name=duracion][value="${partido.duracion}"]`).checked = true;
   $('sede').value = partido.sede;
   $('sedeLibre').value = partido.sede === 'otro' ? partido.sedeNombre : '';
-  $('comentario').value = partido.comentario;
+  marcarNiveles(partido.niveles);
 }
 
 function modoEdicion() {
@@ -133,13 +164,13 @@ async function cargar() {
   const r = await window.vtPartido.llamar(editando ? `uno&id=${editando}` : 'mios');
   if (!r.ok) { mostrarError(r.mensaje); return; }
   pintarSedes(r.datos.sedes);
+  pintarNiveles(r.datos.niveles);
   pintarHoras(null);
   if (editando && r.datos.partido) {
     modoEdicion();
     rellenarCon(r.datos.partido);
   }
   repintarAvisoReserva();
-  $('contador').textContent = `${$('comentario').value.length}/140`;
 }
 
 $('sede').addEventListener('change', () => {
@@ -147,8 +178,8 @@ $('sede').addEventListener('change', () => {
 });
 $('fecha').addEventListener('change', repintarAvisoReserva);
 $('hora').addEventListener('change', repintarAvisoReserva);
-$('comentario').addEventListener('input', () => {
-  $('contador').textContent = `${$('comentario').value.length}/140`;
+$('todosLosNiveles').addEventListener('change', () => {
+  $('niveles').hidden = $('todosLosNiveles').checked;
 });
 $('atras').addEventListener('click', () => { window.location = volver(); });
 $('form').addEventListener('submit', guardar);
