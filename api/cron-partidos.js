@@ -41,8 +41,8 @@ export default async function handler(req, res) {
     // Red de seguridad del rating guardado: lo normal es que se recalcule al
     // meter o editar un resultado, pero si una de esas veces fallo, la tabla
     // se queda vieja y callada. Aqui se vuelve a intentar.
-    await recalcularSinRuido('pasada del cron');
-    res.status(200).json({ ok: true, ...hecho });
+    const rating = await recalcularSinRuido('pasada del cron');
+    res.status(200).json({ ok: true, ...hecho, rating });
   } catch (err) {
     console.error('cron-partidos error', err);
     if (!res.headersSent) res.status(500).json({ ok: false, error: 'server_error' });

@@ -72,8 +72,13 @@ export async function recalcularSinRuido(motivo) {
   try {
     const n = await recalcularRatings();
     console.log(`rating: recalculados ${n} jugadores (${motivo})`);
+    return { ok: true, jugadores: n };
   } catch (err) {
     console.error(`rating: no se pudo recalcular (${motivo})`, err);
+    // Devuelve el motivo ademas de registrarlo. El cron lo pone en su
+    // respuesta, que esta detras del secreto: sin esto, la unica senal de
+    // que el rating lleva semanas sin moverse es que nadie la mira.
+    return { ok: false, error: String(err && err.message || err) };
   }
 }
 
