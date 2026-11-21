@@ -179,11 +179,15 @@ function problemaDelPartido(m) {
 
 // Los dos avisos de un partido recien insertado: «compruébalo» (igual que una
 // edicion posterior) y el push de valorar a los companeros.
+// Devuelve el id del partido insertado: /submit-result lo usa para enlazar
+// el partido previsto que acaba de cerrar con el resultado que lo cerro
+// (partidos_previstos.match_id).
 async function avisarAltaDePartido(user, m) {
   const nuevo = await insertMatch(m);
   const jugadores = [m.p1a_id, m.p1b_id, m.p2a_id, m.p2b_id];
   await avisarResultadoNuevo(user, jugadores, m.date);
   await avisarPartidoNuevo(user, jugadores, m.date, nuevo);
+  return nuevo;
 }
 
 async function submitResult(req, res, user) {
@@ -239,8 +243,8 @@ async function submitResult(req, res, user) {
       return;
     }
 
-    await avisarAltaDePartido(user, m);
-    res.status(200).json({ ok: true });
+    const matchId = await avisarAltaDePartido(user, m);
+    res.status(200).json({ ok: true, matchId });
   } catch (err) {
     console.error('write:submitResult error', err);
     res.status(500).json({ ok: false, error: 'server_error' });

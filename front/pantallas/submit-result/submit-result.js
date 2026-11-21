@@ -21,6 +21,59 @@ function isoToday(){
 // set native date input to today (ISO format) so browsers show calendar picker
 document.getElementById('date').value = isoToday();
 
+// Lo que trae el enlace de «Meter resultado» de /partidos: la fecha, los
+// cuatro jugadores por nombre y el id del partido previsto, para cerrarlo al
+// guardar. Sin esos parametros la pagina se comporta exactamente como antes.
+//
+// Nota: aqui NO se prohiben las fechas pasadas, y no es un olvido. Esta
+// pantalla registra partidos ya jugados; la que no deja convocar en el
+// pasado es /partido-nuevo. Detalle: ai_context/partidos_previstos.md
+const parametrosDeLaUrl = new URLSearchParams(location.search)
+const partidoPrevisto = Number(parametrosDeLaUrl.get('previsto')) || null
+
+// La fecha llega en DD/MM/YYYY y el <input type=date> la quiere en ISO. Si no
+// cuadra se queda la de hoy, que es lo que habia.
+function precargarFecha(){
+  const pedida = parametrosDeLaUrl.get('fecha') || ''
+  if(!isValidDateDDMMYYYY(pedida)) return
+  const [d,m,y] = pedida.split('/')
+  document.getElementById('date').value = `${y}-${m}-${d}`
+}
+
+// Pone cada jugador en su hueco, pero SOLO si ese nombre esta en la lista que
+// vino de la base: un nombre que no exista se deja en blanco en vez de
+// inventarse una ficha.
+//
+// El `change` es obligatorio, no una costumbre: el <select> esta oculto
+// detras del buscador de vt-combo.js, que se entera por ese evento
+// (front/comun/vt-combo.js). Sin el, el valor estaria puesto y el campo
+// visible aparecria vacio. Es lo mismo que hace vtPreseleccionarJugador.
+function precargarJugadores(names){
+  let puestos = 0
+  for(const id of ['p1a','p1b','p2a','p2b']){
+    const nombre = parametrosDeLaUrl.get(id) || ''
+    const sel = document.getElementById(id)
+    if(!sel || !nombre || !names.includes(nombre)) continue
+    sel.value = nombre
+    sel.dispatchEvent(new Event('change', { bubbles:true }))
+    puestos += 1
+  }
+  return puestos
+}
+
+// Marca el partido previsto como cerrado. El resultado ya esta guardado, asi
+// que un fallo aqui no puede tirar nada ni ensenar un error: lo unico que
+// pasaria es que el partido siguiera saliendo en /partidos.
+async function cerrarPrevisto(matchId){
+  if(!partidoPrevisto) return
+  try{
+    await fetch('/api/partidos?action=cerrar',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id: partidoPrevisto, matchId: matchId || null })
+    })
+  }catch(e){ console.error('No se pudo cerrar el partido previsto', e) }
+}
+
 // normalize value from date input (YYYY-MM-DD) to DD/MM/YYYY for validation/payload
 function normalizeDateInput(val){
   if(/^\d{4}-\d{2}-\d{2}$/.test(val)){
@@ -141,6 +194,7 @@ async function submitResult(){
     if(json && json.error === 'invalid_score'){ mostrarAviso(json.message || 'El partido no está terminado.'); return }
     if(json && json.error === 'bad_match'){ mostrarAviso(json.message); return }
     if(!res.ok || !json.ok){ throw new Error('save_failed') }
+    await cerrarPrevisto(json && json.matchId)
     window.vtToast('Resultado guardado')
     // El toast vive en la pagina que se abandona: 1200 ms es lo que tarda en
     // leerse (180 ms de entrada incluidos) antes de que el navegador cambie.
@@ -169,8 +223,14 @@ async function loadNamesIntoSelects(){
     // Con sesion abierta, el primer hueco ya viene con tu nombre. Va aqui y no
     // en auth-client.js porque los <select> acaban de rellenarse.
     // auth-client.js lleva defer: si el fetch volvio antes que el, se espera.
+    precargarFecha()
+    // Si el enlace trajo jugadores, manda el enlace: preseleccionar al de la
+    // sesion encima machacaria el primero de los cuatro que vienen dados.
+    const puestos = precargarJugadores(names)
     const poner = () => window.vtPreseleccionarJugador && window.vtPreseleccionarJugador('p1a')
-    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poner); else poner()
+    if(puestos === 0){
+      if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poner); else poner()
+    }
   }catch(e){ console.error('Could not load names',e) }
 }
 vtCargando.arranque(loadNamesIntoSelects, 'Cargando los jugadores')
