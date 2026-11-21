@@ -15,6 +15,10 @@ import {
 } from './_partidos.js';
 import { misPartidos, partidosAbiertos, unPartido } from './_partidos-lista.js';
 import { avisarApuntado, avisarBaja, avisarCancelado } from './_partidos-avisos.js';
+import {
+  editarPartido, recalcularAvisos, olvidarSegundaFranja, avisarCambio,
+  entrarEnEspera, salirDeEspera, avisarPlazaLibre
+} from './_partidos-editar.js';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -132,10 +136,67 @@ async function borrarme(req, res, user) {
   const data = await readBody(req);
   const partido = await partidoVivo(toInt(data?.id));
   if (!partido) return error(res, 'too_late', 409, 'Ese partido ya ha empezado o no existe.');
+  const estaba = await jugadoresDe(partido.id);
   if (!await soltarPlaza(partido.id, user.player_id)) {
     return error(res, 'not_joined', 409, 'No estabas apuntado a ese partido.');
   }
-  await avisarBaja(partido, quienEs(user), await jugadoresDe(partido.id));
+  const quedan = await jugadoresDe(partido.id);
+  await avisarBaja(partido, quienEs(user), quedan);
+  // Solo si el partido estaba lleno: si ya tenia huecos, los que esperan no
+  // esperaban nada y un aviso de «ha quedado una plaza» seria mentira.
+  if (estaba.length === 4) await avisarPlazaLibre(partido, await enEsperaDe(partido.id));
+  res.status(200).json({ ok: true });
+}
+
+// Editar no toca las plazas. El solape se mira para los cuatro apuntados y
+// basta uno para rechazar el cambio: mover el partido no puede meter a nadie
+// en dos sitios a la vez.
+async function editar(req, res, user) {
+  if (!exigirFicha(res, user)) return;
+  const data = await readBody(req);
+  const partido = await partidoVivo(toInt(data?.id));
+  if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no se puede cambiar.');
+  if (partido.creador_player_id !== user.player_id && user.role !== 'admin') {
+    return error(res, 'forbidden', 403, 'Solo puede cambiarlo quien lo convocó.');
+  }
+  const datos = await leerFormulario(req, res);
+  if (!datos) return;
+  const empieza = await leerInstante(res, datos.fecha, datos.hora);
+  if (!empieza) return;
+  const jugadores = await jugadoresDe(partido.id);
+  for (const jugador of jugadores) {
+    if (await partidoQueSePisa(jugador, empieza, datos.duracion, partido.id)) {
+      return error(res, 'overlap', 409, 'A esa hora alguno de vosotros ya tiene otro partido.');
+    }
+  }
+  const antes = await editarPartido(partido.id, { ...datos, empieza });
+  if (!antes) return error(res, 'not_found', 404, 'Ese partido ya no se puede cambiar.');
+  await recalcularAvisos(partido.id);
+  if (datos.duracion < 120) await olvidarSegundaFranja(partido.id);
+  const ahora = { id: partido.id, empieza_at: empieza, duracion_min: datos.duracion, sede: datos.sede, sede_libre: datos.sedeLibre };
+  await avisarCambio(antes, ahora, quienEs(user), jugadores);
+  res.status(200).json({ ok: true });
+}
+
+// Entrar en la lista de espera de un partido completo. No es apuntarse: al
+// liberarse una plaza se avisa a todos los que esperan, a la vez.
+async function esperarme(req, res, user) {
+  if (!exigirFicha(res, user)) return;
+  const data = await readBody(req);
+  const partido = await partidoVivo(toInt(data?.id));
+  if (!partido) return error(res, 'too_late', 409, 'Ese partido ya no admite gente.');
+  if ((await jugadoresDe(partido.id)).includes(user.player_id)) {
+    return error(res, 'already_in', 409, 'Ya tienes plaza en ese partido.');
+  }
+  await entrarEnEspera(partido.id, user.player_id);
+  res.status(200).json({ ok: true });
+}
+
+async function noEsperarme(req, res, user) {
+  if (!exigirFicha(res, user)) return;
+  const data = await readBody(req);
+  const id = toInt(data?.id);
+  if (id > 0) await salirDeEspera(id, user.player_id);
   res.status(200).json({ ok: true });
 }
 
@@ -175,6 +236,9 @@ const ACCIONES = {
   crear: ['POST', crear],
   apuntarme: ['POST', apuntarme],
   borrarme: ['POST', borrarme],
+  editar: ['POST', editar],
+  esperarme: ['POST', esperarme],
+  'no-esperarme': ['POST', noEsperarme],
   cancelar: ['POST', cancelar],
   cerrar: ['POST', cerrar]
 };
