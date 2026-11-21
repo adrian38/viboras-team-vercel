@@ -11,9 +11,10 @@ import {
   ensurePartidosSchema, sedesParaLaPagina, sedeValida, nombreDeSede,
   DURACIONES, COMENTARIO_MAXIMO, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
   instanteDe, partidoQueSePisa, creadosHoy, crearPartido, tomarPlaza, soltarPlaza,
-  partidoVivo, cancelarPartido, cerrarPartido
+  partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe
 } from './_partidos.js';
 import { misPartidos, partidosAbiertos, unPartido } from './_partidos-lista.js';
+import { avisarApuntado, avisarBaja, avisarCancelado } from './_partidos-avisos.js';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -21,6 +22,13 @@ const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 function error(res, codigo, estado, mensaje) {
   res.status(estado).json({ ok: false, error: codigo, message: mensaje });
   return null;
+}
+
+// Quien provoca el movimiento, como lo nombran los avisos. El nombre sale de
+// la ficha y no del correo: un aviso al grupo con un correo dentro seria
+// repartir el correo de alguien.
+function quienEs(user) {
+  return { id: user.player_id, nombre: user.player_name || 'Alguien' };
 }
 
 // Nadie se apunta ni convoca sin ficha: la plaza se guarda contra players.
@@ -115,6 +123,7 @@ async function apuntarme(req, res, user) {
   const puesto = await tomarPlaza(partido.id, user.player_id);
   if (puesto === 'full') return error(res, 'full', 409, 'Se ha ocupado la última plaza.');
   if (puesto === 'already_in') return error(res, 'already_in', 409, 'Ya estabas apuntado.');
+  await avisarApuntado(partido, quienEs(user), await jugadoresDe(partido.id));
   res.status(200).json({ ok: true, puesto });
 }
 
@@ -126,6 +135,7 @@ async function borrarme(req, res, user) {
   if (!await soltarPlaza(partido.id, user.player_id)) {
     return error(res, 'not_joined', 409, 'No estabas apuntado a ese partido.');
   }
+  await avisarBaja(partido, quienEs(user), await jugadoresDe(partido.id));
   res.status(200).json({ ok: true });
 }
 
@@ -139,7 +149,11 @@ async function cancelar(req, res, user) {
   if (partido.creador_player_id !== user.player_id && user.role !== 'admin') {
     return error(res, 'forbidden', 403, 'Solo puede cancelarlo quien lo convocó.');
   }
-  await cancelarPartido(partido.id);
+  const jugadores = await jugadoresDe(partido.id);
+  const esperando = await enEsperaDe(partido.id);
+  if (await cancelarPartido(partido.id)) {
+    await avisarCancelado(partido, quienEs(user), jugadores, esperando);
+  }
   res.status(200).json({ ok: true });
 }
 
