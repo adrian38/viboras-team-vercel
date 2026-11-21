@@ -66,10 +66,36 @@ su sección:
 | Pestaña | Lleva a | Se enciende en |
 | --- | --- | --- |
 | Inicio | `/` | `/` |
-| Partidos | `/history` | `/history`, `/results`, `/submit-result`, `/tournaments`, `/day` |
 | Avisos | `/tablon` | `/tablon` |
+| **Partidos** (destacada) | `/partidos` | `/partidos`, `/partido`, `/partido-nuevo`, `/partidos-abiertos` |
 | Comunidad | `/comunidad` | `/comunidad`, `/valorar` |
 | Perfil | `/cuenta` | `/cuenta` |
+
+**Cambió el 2026-11-21.** Hasta entonces «Partidos» era la segunda pestaña y
+llevaba a `/history`, el historial de resultados; «Avisos» iba la tercera. Hoy
+«Partidos» es la del medio, va destacada y lleva a convocar y apuntarse
+(`ai_context/partidos_previstos.md`). El historial, `/submit-result`,
+`/tournaments`, `/day` y `/pozo` **dejaron de encender ninguna pestaña**: se
+alcanzan desde la tarjeta «Consulta resultados» de la portada, que ya los
+enlazaba, igual que las once páginas que nunca tuvieron pestaña.
+
+### Por qué la del medio va elevada
+
+Es la única que no lleva sólo a una pantalla, sino a algo que se **hace**:
+convocar un partido y apuntarse. El círculo sale de la barra hacia arriba con
+un **margen negativo**, no con `position:absolute`: así sigue ocupando su
+columna, las otras cuatro se reparten el resto como siempre y no hay nada que
+centrar a mano.
+
+Eso sube la barra de 60 a 64 px, y `--vt-nav-alto` con ella: el círculo aporta
+30 a la altura de la fila donde los demás iconos aportan 26. **Medido en el
+navegador, no calculado.** Si alguien cambia el tamaño del círculo hay que
+volver a medirlo: con el número corto, el pie de la página se mete debajo de
+la barra y no falla nada, simplemente no se ve.
+
+Y la guarda buscaba `class="vt-nav__item"` **exacto**. La central lleva además
+`vt-nav__item--destacado`, así que decía que no había ninguna encendida en las
+cuatro pantallas de partidos. Su patrón admite ahora clases de más.
 
 Esa tabla está dos veces: en el `aria-current` de cada página y en
 `SECCIONES`, dentro de la guarda, que es quien comprueba que coinciden. Al
@@ -106,7 +132,24 @@ la pestaña llevaba a un tablón que no enseñaba esos avisos.
   avisos o si la petición falla, no se pinta nada. Un número inventado sería
   peor que ninguno.
 - Una sola petición rellena las dos cosas (`cargarAvisos`): la tarjeta donde
-  haya un `#vtAvisos` y el número en las veinte.
+  haya un `#vtAvisos` y el número en todas las páginas.
+
+**Desde el 2026-11-21 hay dos números**: el de «Avisos» y el de «Partidos»,
+que cuenta los partidos en los que tienes plaza de ahora al domingo. Dos
+consecuencias que costaron verse:
+
+- `pintarNumero` buscaba `document.querySelector('.vt-nav__num')`, **el
+  primero del documento**. Con dos, el de «Partidos» acababa pintado en
+  «Avisos». Ahora se busca por el `href` de la pestaña.
+- El número de partidos viaja en la respuesta de
+  `GET /api/auth?action=notifications`, que ya se pedía una vez por página, y
+  no en una llamada propia: con Neon en Frankfurt y arranques en frío, una
+  segunda pregunta en cada carga se nota. La compone `resumenDeCampana` en
+  `api/_campana.js`, porque `api/auth.js` está a seis líneas de su techo.
+- **El badge del icono de la app no cambió**: sigue contando sólo avisos, que
+  es el mismo dato que enseña `/tablon`. Un contador paralelo ahí sería un
+  número que no se puede contrastar contra nada
+  (`ai_context/avisos_push.md`).
 - El `aria-label` de la pestaña pasa a «Avisos, N sin leer» cuando hay número:
   un «3» suelto no lo lee un lector de pantalla.
 

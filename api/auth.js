@@ -25,7 +25,7 @@ import { googleClientId, verificarCredencial, ErrorDeGoogle } from './_google.js
 import { crearEnlace, correoDeVerificacion, correoDeAprobacion, correoDeRechazo, problemaDeCorreo } from './_correo.js';
 import { validarInscripcion, telefonoLibre, mensajeDeSolicitud, fijarRatingDePartida } from './_inscripcion.js';
 import { avisarAltaPendiente } from './_avisos.js';
-import { avisosDeCampana, limpiarCampana } from './_campana.js';
+import { resumenDeCampana, limpiarCampana } from './_campana.js';
 
 const CREDENCIALES_MAL = {
   ok: false,
@@ -270,7 +270,7 @@ async function changePassword(req, res) {
 // 401: la campanita no es motivo para que una pagina falle.
 async function notifications(req, res) {
   const user = await usuarioDeLaPeticion(req);
-  res.status(200).json({ ok: true, items: user ? await avisosDeCampana(user) : [] });
+  res.status(200).json({ ok: true, ...(user ? await resumenDeCampana(user) : { items: [] }) });
 }
 
 // «Limpiar todas» de la campanita: descarta lo que hay ahora, no lo que venga.

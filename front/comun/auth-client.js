@@ -126,16 +126,33 @@
   // paginas, y el badge del icono de la app. Cuentan lo mismo que la lista de
   // /tablon, que es a donde lleva esa pestana: el numero y su destino son la
   // misma cosa.
-  function pintarNumero(items) {
-    pintarBadgeDelIcono(items.length);
-    var num = document.querySelector('.vt-nav__num');
+  // El numero de una pestana de la barra. Se busca POR SU `href` y no con
+  // `querySelector('.vt-nav__num')` a secas, que cogia el primero del
+  // documento: desde que hay dos pestanas con numero, el de «Partidos»
+  // habria ido a parar a «Avisos».
+  function pintarNumeroDe(ruta, cuantos, etiqueta) {
+    var num = document.querySelector('.vt-nav__item[href="' + ruta + '"] .vt-nav__num');
     if (!num) return;
-    num.textContent = items.length > 9 ? '9+' : String(items.length);
-    num.hidden = items.length === 0;
+    num.textContent = cuantos > 9 ? '9+' : String(cuantos);
+    num.hidden = cuantos === 0;
     // El «1» suelto no lo lee un lector de pantalla: la pestana lo dice.
     var item = num.parentNode.parentNode;
-    if (items.length) item.setAttribute('aria-label', 'Avisos, ' + items.length + ' sin leer');
+    if (cuantos) item.setAttribute('aria-label', etiqueta(cuantos));
     else item.removeAttribute('aria-label');
+  }
+
+  // El badge del icono de la app sigue contando SOLO avisos: es el mismo dato
+  // que ensena /tablon, y un contador paralelo seria un numero que no se
+  // puede contrastar contra nada.
+  function pintarNumero(items, partidosSemana) {
+    pintarBadgeDelIcono(items.length);
+    pintarNumeroDe('/tablon', items.length, function (n) { return 'Avisos, ' + n + ' sin leer'; });
+    // Lo que cuenta la pestana «Partidos»: partidos en los que tienes plaza,
+    // aun no jugados, de ahora al domingo. Lo calcula el servidor
+    // (api/_partidos-lista.js); aqui no se cuenta nada.
+    pintarNumeroDe('/partidos', partidosSemana || 0, function (n) {
+      return 'Partidos, ' + n + ' esta semana';
+    });
   }
 
   // Descarta lo que hay ahora; lo que llegue despues vuelve a salir
@@ -149,7 +166,7 @@
     b.addEventListener('click', function () {
       b.disabled = true;
       fetch('/api/auth?action=clearNotifications', { method: 'POST', headers: { accept: 'application/json' } })
-        .then(function (r) { if (r.ok) { pintarAvisos(caja, []); pintarNumero([]); } else b.disabled = false; })
+        .then(function (r) { if (r.ok) { pintarAvisos(caja, []); pintarNumeroDe('/tablon', 0, String); pintarBadgeDelIcono(0); } else b.disabled = false; })
         .catch(function () { b.disabled = false; });
     });
     return b;
@@ -174,11 +191,12 @@
     var caja = document.getElementById('vtAvisos');
     fetch('/api/auth?action=notifications', { headers: { accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { return (j && j.items) || []; })
-      .catch(function () { return []; })
-      .then(function (items) {
+      .then(function (j) { return j || {}; })
+      .catch(function () { return {}; })
+      .then(function (j) {
+        var items = j.items || [];
         if (caja) pintarAvisos(caja, items);
-        pintarNumero(items);
+        pintarNumero(items, j.partidosSemana);
       });
   }
 

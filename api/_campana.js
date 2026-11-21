@@ -7,6 +7,7 @@ import { sql } from '@vercel/postgres';
 import { ensureAuthSchema } from './_auth.js';
 import { avisosDeJugador } from './_avisos.js';
 import { avisosDelBuzon } from './_buzon.js';
+import { partidosDeMiSemana } from './_partidos-lista.js';
 
 let listo = null;
 
@@ -55,6 +56,21 @@ export async function avisosDeCampana(user) {
   const { rows } = await sql`SELECT clave FROM campana_descartes WHERE user_id = ${user.id}`;
   const descartados = new Set(rows.map((r) => r.clave));
   return (await todos(user)).filter((it) => !descartados.has(it.clave));
+}
+
+// Lo que la barra de abajo necesita para pintarse, en una sola peticion.
+//
+// El numero de la pestana «Partidos» viaja con los avisos y no en una
+// llamada propia porque `auth-client.js` ya pide esta en las 26 paginas, y
+// con Neon en Frankfurt y arranques en frio una segunda pregunta por pagina
+// se nota. Y cae a 0 si falla, como el buzon: un fallo contando partidos no
+// puede dejar sin campanita.
+export async function resumenDeCampana(user) {
+  const items = await avisosDeCampana(user);
+  const partidosSemana = user.player_id
+    ? await partidosDeMiSemana(user.player_id).catch((err) => { console.error('campana: partidos', err); return 0; })
+    : 0;
+  return { items, partidosSemana };
 }
 
 // Los avisos caducan a los 30 dias y los partidos se valoran 14: un descarte
