@@ -30,8 +30,8 @@ const BASE = 'front/pantallas';
 // encienden. La portada es `index`, que es la carpeta `portada`.
 const SECCIONES = {
   '/': ['portada'],
-  '/history': ['history', 'submit-result', 'tournaments', 'day', 'pozo'],
   '/tablon': ['tablon'],
+  '/partidos': ['partidos', 'partido', 'partido-nuevo', 'partidos-abiertos'],
   '/comunidad': ['comunidad', 'valorar'],
   '/cuenta': ['cuenta']
 };
@@ -40,9 +40,12 @@ const pestanaDe = (pagina) => {
   for (const [ruta, paginas] of Object.entries(SECCIONES)) {
     if (paginas.includes(pagina)) return ruta;
   }
-  // rating y sus seis hermanas, buzon, group-normativa, inscripcion y las dos
-  // satelites del pozo (pozo-info y pozo-nuevo): se llega a ellas desde las
-  // tarjetas de la portada o desde /pozo, no desde la barra.
+  // rating y sus seis hermanas, buzon, group-normativa, inscripcion, las dos
+  // satelites del pozo (pozo-info y pozo-nuevo) y, desde el 2026-11-21, el
+  // historial y sus cuatro companeras (results se borro, y history,
+  // submit-result, tournaments, day y pozo perdieron su pestana cuando
+  // «Partidos» paso a ser la pantalla de convocar): se llega a ellas desde
+  // las tarjetas de la portada o desde /pozo, no desde la barra.
   return null;
 };
 
@@ -57,7 +60,10 @@ for (const pagina of paginas) {
 
   const marcado = trozo[0];
   const esperada = pestanaDe(pagina);
-  const encendidas = [...marcado.matchAll(/<a class="vt-nav__item" href="([^"]+)" aria-current="page"/g)].map((m) => m[1]);
+  // `[^"]*` en la clase y no `vt-nav__item` a secas: la pestana central
+  // lleva ademas `vt-nav__item--destacado`, y con el patron exacto la guarda
+  // decia que no habia ninguna encendida en las cuatro paginas de partidos.
+  const encendidas = [...marcado.matchAll(/<a class="vt-nav__item[^"]*" href="([^"]+)" aria-current="page"/g)].map((m) => m[1]);
 
   if (encendidas.length > 1) {
     problemas.push(`${pagina}: ${encendidas.length} pestanas encendidas (${encendidas.join(', ')})`);

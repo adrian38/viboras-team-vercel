@@ -114,8 +114,15 @@
 
   /* Alto de la barra de pestanas inferior. Lo usan la barra, el hueco que le
    * deja el body y el toast, que si no queda detras de ella. Medido, no
-   * elegido: es lo que ocupa `.vt-nav` con sus cinco pestanas. */
-  --vt-nav-alto:60px;
+   * elegido: es lo que ocupa `.vt-nav` con sus cinco pestanas.
+   *
+   * Eran 60 hasta el 2026-11-21. La pestana central elevada mide 54 y sube
+   * 24 con un margen negativo, asi que aporta 30 a la altura de la fila
+   * donde las otras aportan 26: cuatro mas. Medido en el navegador, no
+   * calculado; si alguien cambia el tamano del circulo hay que volver a
+   * medirlo, porque con el numero corto el pie de la pagina se mete debajo
+   * de la barra y nadie avisa. */
+  --vt-nav-alto:64px;
 
   /* Profundidad. */
   --vt-shadow-card:0 8px 30px rgba(0,0,0,0.45);
@@ -958,6 +965,38 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 }
 
 .vt-nav__texto{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* La pestana central, «Partidos», elevada en un circulo de oro que rompe la
+ * linea de arriba de la barra.
+ *
+ * Es la unica pestana que no solo lleva a una pantalla sino a algo que se
+ * hace —convocar y apuntarse—, y por eso se distingue. El circulo sale de la
+ * barra hacia arriba con un margen negativo y no con `position:absolute`:
+ * asi sigue ocupando su columna, las otras cuatro se reparten el resto como
+ * siempre y no hay nada que centrar a mano.
+ *
+ * `--vt-nav-alto` no cambia: lo que sobresale lo hace por encima del hueco
+ * que `body::after` le deja a la barra, no dentro, asi que el contenido de
+ * la pagina sigue acabando donde acababa. */
+.vt-nav__item--destacado .vt-nav__icono{
+  width:54px;height:54px;
+  margin-top:-24px;
+  border-radius:var(--vt-r-full);
+  background:linear-gradient(135deg,var(--vt-gold-light),var(--vt-gold),var(--vt-gold-dark));
+  color:var(--vt-bg);
+  border:4px solid var(--vt-bg);
+  box-shadow:0 6px 24px rgba(245,158,11,0.35);
+}
+.vt-nav__item--destacado .vt-nav__icono .ms{font-size:28px}
+/* El icono ya es oro; encenderlo de oro sobre oro no se veria. Lo que marca
+ * que estas en ella es el texto y el punto de debajo. */
+.vt-nav__item--destacado[aria-current="page"] .vt-nav__icono{
+  border-color:var(--vt-gold-light);
+  box-shadow:0 6px 28px rgba(245,158,11,0.55);
+}
+.vt-nav__item--destacado[aria-current="page"] .vt-nav__icono::after{display:none}
+/* El numero vuelve al borde del circulo, que es mas grande que un icono. */
+.vt-nav__item--destacado .vt-nav__num{top:-2px;right:-2px;border-color:var(--vt-bg)}
 
 /* "Rendimiento" es la palabra larga y a 320 px no entra: medido, pide 60 px y
    le quedaban 57, asi que salia con puntos suspensivos. A 9 px pide 54 y
