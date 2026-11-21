@@ -116,6 +116,10 @@
       "destination": "/front/pantallas/partidos"
     },
     {
+      "source": "/partidos-abiertos",
+      "destination": "/front/pantallas/partidos-abiertos"
+    },
+    {
       "source": "/tablon",
       "destination": "/front/pantallas/tablon"
     },
