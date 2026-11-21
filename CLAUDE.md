@@ -55,6 +55,43 @@ Ese `case` no es adorno: `main` es `ep-divine-river-b2sgrlig` y `viboras_dev`
 es `ep-snowy-bird-b22ap65c`. Comprobar el host antes de escribir es lo único
 que separa una prueba de un estropicio en producción.
 
+## Clonar `viboras_dev` en la base local
+
+La base local es un volcado y envejece: el 2026-11-22 tenía 25 partidos
+cuando `dev` ya iba por 52, y una cuenta sin nivel BK que no existía en
+ninguno de los dos entornos reales. Mirar ahí y hablar del grupo da datos
+falsos.
+
+Para refrescarla con `viboras_dev`. **`pg_dump` no sirve**: el del contenedor
+es 17 y Neon va en Postgres 18, y se niega. `psql` sí habla con él, así que se
+copian los datos tabla a tabla y el esquema lo crea la app al arrancar.
+
+```bash
+DEV=$(npx -y neon@latest connection-string viboras_dev --project-id empty-poetry-42127048 --pooled false | grep -oE 'postgresql://[^ ]+')
+case "$DEV" in *ep-snowy-bird-b22ap65c*) : ;; *) echo 'HOST INESPERADO'; exit 1;; esac
+for t in availability avisos buzon buzon_leidos campana_descartes email_tokens events identities leagues match_feedback matches players push_delivery_tests push_subscriptions sessions tablon users; do
+  docker compose exec -T -e DEV="$DEV" postgres sh -c "psql \"\$DEV\" -q -c \"\copy $t TO '/tmp/vt_$t.csv' WITH CSV\""
+done
+```
+
+Y al cargar, tres cosas que hay que hacer o la copia sale mal:
+
+1. **Nombrar las columnas** en cada `\copy ... (col,col,...) FROM`. Los dos
+   esquemas no son idénticos: la base local arrastra `matches.tie_winner`, que
+   el código de hoy ya no crea, y sin la lista el COPY falla.
+2. **`SET session_replication_role = replica`** y un `TRUNCATE ... CASCADE` de
+   todas, en la misma sesión de `psql`, para que el orden de las claves ajenas
+   dé igual.
+3. **Resincronizar las secuencias** al terminar (`setval` sobre
+   `pg_get_serial_sequence`): no viajan con los datos, y sin eso el primer
+   INSERT nuevo choca con una clave que ya existe.
+
+Y después, **vaciar `push_subscriptions`**: con filas restauradas, el entorno
+local manda push a móviles reales (`ai_context/avisos_push.md`).
+
+Ojo: el clon trae de `dev` que sólo los administradores están activos, así que
+en local tampoco se podrá entrar con una cuenta de miembro.
+
 ## `codebase-memory-mcp` en este equipo
 
 `.mcp.json` fija `CBM_CACHE_DIR` y `CBM_RUNTIME_DIR` en `C:\cbm`, igual que los
