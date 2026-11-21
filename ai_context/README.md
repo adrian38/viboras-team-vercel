@@ -186,6 +186,11 @@ que hay.
 - `borrado_de_partidos.md`: por qué pueden eliminar un partido sus cuatro
   participantes y los administradores, y cómo la API comprueba la sesión y la
   identidad exacta de la fila antes de borrarla.
+- `partidos_previstos.md`: convocar un partido antes de jugarlo; por qué va en
+  tabla propia y no en `matches` a 0-0, por qué la fecha es `TIMESTAMPTZ`, por
+  qué aquí no se puede crear en el pasado y en el resto de la app sí, de dónde
+  salen las tres sedes de Bilbao Kirolak, y por qué la carrera de las plazas la
+  arbitra el índice y no el código.
 
 ## Lo que lee el grupo
 
