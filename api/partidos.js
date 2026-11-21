@@ -8,13 +8,14 @@
 import { readBody, toInt } from './_db.js';
 import { exigirSesion, sinCache } from './_auth.js';
 import {
-  ensurePartidosSchema, sedesParaLaPagina, nivelesParaLaPagina, sedeValida, nivelesParaGuardar,
+  ensurePartidosSchema, sedesParaLaPagina, nivelesParaLaPagina, sedeValida, nivelesParaGuardar, NIVELES,
   DURACIONES, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
   instanteDe, partidoQueSePisa, creadosHoy, crearPartido, tomarPlaza, soltarPlaza,
   partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe
 } from './_partidos.js';
 import { misPartidos, partidosAbiertos, unPartido } from './_partidos-lista.js';
 import { avisarApuntado, avisarBaja, avisarCancelado } from './_partidos-avisos.js';
+import { categoriaDe } from './_rating.js';
 import {
   editarPartido, recalcularAvisos, olvidarSegundaFranja, avisarCambio,
   entrarEnEspera, salirDeEspera, avisarPlazaLibre
@@ -30,6 +31,26 @@ const HORA = /^([01]\d|2[0-3]):00$/;
 function error(res, codigo, estado, mensaje) {
   res.status(estado).json({ ok: false, error: codigo, message: mensaje });
   return null;
+}
+
+// El filtro de nivel. Devuelve el mensaje que impide entrar, o null.
+//
+// Se compara contra la CATEGORIA GUARDADA, que sale del mismo motor que
+// /rating (api/_rating.js). Decisión de Adrián: no se salta nadie, ni quien
+// convoca ni los administradores. Lo único que no hace es echar a quien ya
+// está dentro: el filtro actúa al entrar, y un rating que se mueva luego no
+// saca a nadie de un partido al que ya le dijeron que sí.
+//
+// Sin categoría calculada se deja pasar. Es lo honrado: significa que el
+// recálculo nunca ha corrido, no que el jugador no dé el nivel, y dejar
+// fuera a alguien por una tabla vacía sería inventarse un motivo.
+async function nivelQueFalta(partido, playerId) {
+  if (!Array.isArray(partido.niveles) || !partido.niveles.length) return null;
+  const categoria = await categoriaDe(playerId);
+  if (!categoria) return null;
+  const permitidos = partido.niveles.map((n) => NIVELES[n]).filter(Boolean);
+  if (permitidos.includes(categoria)) return null;
+  return `Este partido es para ${permitidos.join(', ')} y tu nivel ahora es ${categoria}.`;
 }
 
 // Quien provoca el movimiento, como lo nombran los avisos. El nombre sale de
@@ -115,6 +136,11 @@ async function crear(req, res, user) {
   }
   const choque = await partidoQueSePisa(user.player_id, empieza, datos.duracion, null);
   if (choque) return error(res, 'overlap', 409, 'Ya estás en otro partido a esa hora.');
+  // Convocar te apunta en la plaza 1, asi que el filtro te alcanza a ti el
+  // primero: poner unos niveles en los que no estas te dejaria fuera de tu
+  // propio partido. Se dice aqui, antes de crearlo.
+  const yoNoEntro = await nivelQueFalta({ niveles: datos.niveles }, user.player_id);
+  if (yoNoEntro) return error(res, 'bad_level', 400, `${yoNoEntro} Quítate o cambia los niveles.`);
   const id = await crearPartido({ ...datos, playerId: user.player_id, empieza });
   await sellarVencidos(id);
   res.status(200).json({ ok: true, id });
@@ -127,6 +153,8 @@ async function apuntarme(req, res, user) {
   if (!partido) return error(res, 'too_late', 409, 'Ese partido ya no admite gente.');
   const choque = await partidoQueSePisa(user.player_id, partido.empieza_at, partido.duracion_min, partido.id);
   if (choque) return error(res, 'overlap', 409, 'Ya estás en otro partido a esa hora.');
+  const falta = await nivelQueFalta(partido, user.player_id);
+  if (falta) return error(res, 'bad_level', 403, falta);
   const puesto = await tomarPlaza(partido.id, user.player_id);
   if (puesto === 'full') return error(res, 'full', 409, 'Se ha ocupado la última plaza.');
   if (puesto === 'already_in') return error(res, 'already_in', 409, 'Ya estabas apuntado.');

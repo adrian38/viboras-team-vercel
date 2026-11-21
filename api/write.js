@@ -4,6 +4,7 @@ import { validateBo3Score } from './_score.js';
 import { exigirSesion, cerrarSesionesDe } from './_auth.js';
 import { validarInscripcion, telefonoLibre } from './_inscripcion.js';
 import { avisarEdicion, avisarPartidoNuevo, avisarResultadoNuevo } from './_avisos.js';
+import { recalcularSinRuido } from './_rating.js';
 import { createPozo, editPozoPlayers, submitPozoResult } from './_pozo-api.js';
 
 // Dar de alta jugadores es de administradores desde el 2026-10-17: la pagina
@@ -137,6 +138,7 @@ async function editado(resultado, user, jugadores, m) {
   const cambioElResultado = sets.some(([antes, ahora]) => String(antes ?? '') !== String(ahora ?? ''));
   const juegaEl = Boolean(user.player_id) && jugadores.slice(0, 4).includes(user.player_id);
   if (cambioElResultado && juegaEl) await avisarEdicion(user, jugadores, m.date);
+  if (cambioElResultado) await recalcularSinRuido('resultado editado');
   return a.id;
 }
 
@@ -190,6 +192,24 @@ async function avisarAltaDePartido(user, m) {
   return nuevo;
 }
 
+// El cuerpo de la peticion convertido en la fila que se va a guardar. Los
+// nombres se cambian por ids aqui y no mas adelante: un nombre que no esta
+// en `players` sale como null y lo caza `problemaDelPartido`, que es quien
+// decide si el partido vale.
+async function partidoDelCuerpo(data) {
+  return {
+    date: String(data.date || '').trim(),
+    format: (String(data.format || '').trim() === 'bo3_stb') ? 'bo3_stb' : 'bo3_regular',
+    p1a_id: await getPlayerId(data.p1a),
+    p1b_id: await getPlayerId(data.p1b),
+    p2a_id: await getPlayerId(data.p2a),
+    p2b_id: await getPlayerId(data.p2b),
+    s11: toInt(data.s11), s21: toInt(data.s21),
+    s12: toInt(data.s12), s22: toInt(data.s22),
+    s13: toInt(data.s13), s23: toInt(data.s23)
+  };
+}
+
 async function submitResult(req, res, user) {
   try {
     await ensureSchema();
@@ -207,17 +227,7 @@ async function submitResult(req, res, user) {
       return;
     }
 
-    const m = {
-      date: String(data.date || '').trim(),
-      format: (String(data.format || '').trim() === 'bo3_stb') ? 'bo3_stb' : 'bo3_regular',
-      p1a_id: await getPlayerId(data.p1a),
-      p1b_id: await getPlayerId(data.p1b),
-      p2a_id: await getPlayerId(data.p2a),
-      p2b_id: await getPlayerId(data.p2b),
-      s11: toInt(data.s11), s21: toInt(data.s21),
-      s12: toInt(data.s12), s22: toInt(data.s22),
-      s13: toInt(data.s13), s23: toInt(data.s23)
-    };
+    const m = await partidoDelCuerpo(data);
     const problema = problemaDelPartido(m);
     if (problema) {
       res.status(400).json({ ok: false, error: 'bad_match', message: problema });
@@ -244,6 +254,7 @@ async function submitResult(req, res, user) {
     }
 
     const matchId = await avisarAltaDePartido(user, m);
+    await recalcularSinRuido('resultado nuevo');
     res.status(200).json({ ok: true, matchId });
   } catch (err) {
     console.error('write:submitResult error', err);
@@ -282,6 +293,7 @@ async function deleteResult(req, res, user) {
       res.status(409).json({ ok: false, error: 'conflict', message: 'Ese partido ha cambiado o ya no existe. Recarga y vuelve a intentarlo.' });
       return;
     }
+    await recalcularSinRuido('resultado borrado');
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error('write:deleteResult error', err);

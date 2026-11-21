@@ -1,5 +1,11 @@
 {
   "cleanUrls": true,
+  "_comentario_functions": "El motor de rating corre tambien en el servidor (api/_motor.js) leyendo los MISMOS ficheros que cargan las pantallas. Sin este includeFiles, el despliegue no los empaqueta con la funcion y el recalculo revienta con ENOENT: en local funciona y en Vercel no, que es el peor sitio donde enterarse.",
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "front/comun/{vt-glicko,vt-categorias,rating-inicial,nivel-votos}.js"
+    }
+  },
   "rewrites": [
     {
       "source": "/site.webmanifest",

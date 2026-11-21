@@ -71,6 +71,11 @@ que hay.
   puntos), por qué el filtro está en `calcularRatings` y no al pedir los
   partidos, por qué `/players` tiene el suyo, y qué sigue sin estar arreglado
   en los votos de nivel.
+- `rating_en_el_servidor.md`: el rating, que sólo existía mientras una
+  pantalla lo calculaba, ahora también se guarda; cómo el servidor corre el
+  MISMO motor en un `vm` sin que haya un segundo motor, las tres cosas que
+  hacen que el número coincida con el de `/rating` y es fácil romper, y el
+  filtro de nivel de los partidos.
 - `rating_de_partida.md`: las altas nuevas arrancan en el rating de su nivel BK
   (Entreno en 2000,01, no 2000), sólo si no tenían partidos, y por qué un alta
   sin partidos no sale en `/rating` por defecto.

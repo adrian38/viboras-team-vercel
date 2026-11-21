@@ -11,6 +11,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { sinCache } from './_auth.js';
 import { ensurePartidosSchema } from './_partidos.js';
 import { pasada } from './_partidos-cron.js';
+import { recalcularSinRuido } from './_rating.js';
 
 // Comparacion en tiempo constante, como las contrasenas: un `===` filtra el
 // secreto por el tiempo que tarda en fallar.
@@ -36,7 +37,12 @@ export default async function handler(req, res) {
   }
   try {
     await ensurePartidosSchema();
-    res.status(200).json({ ok: true, ...await pasada() });
+    const hecho = await pasada();
+    // Red de seguridad del rating guardado: lo normal es que se recalcule al
+    // meter o editar un resultado, pero si una de esas veces fallo, la tabla
+    // se queda vieja y callada. Aqui se vuelve a intentar.
+    await recalcularSinRuido('pasada del cron');
+    res.status(200).json({ ok: true, ...hecho });
   } catch (err) {
     console.error('cron-partidos error', err);
     if (!res.headersSent) res.status(500).json({ ok: false, error: 'server_error' });
