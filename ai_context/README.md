@@ -66,6 +66,11 @@ que hay.
   vale un punto y no sus partidos, por qué el periodo está escrito a mano y
   nadie lo reinicia, y por qué la columna «Ligas» del sistema anterior siempre
   fue cero.
+- `los_torneos_no_puntuan_para_el_rating.md`: un partido de torneo no da rating
+  ni mueve la fiabilidad; qué movía antes (24 de 42 jugadores, hasta 125
+  puntos), por qué el filtro está en `calcularRatings` y no al pedir los
+  partidos, por qué `/players` tiene el suyo, y qué sigue sin estar arreglado
+  en los votos de nivel.
 - `rating_de_partida.md`: las altas nuevas arrancan en el rating de su nivel BK
   (Entreno en 2000,01, no 2000), sólo si no tenían partidos, y por qué un alta
   sin partidos no sale en `/rating` por defecto.

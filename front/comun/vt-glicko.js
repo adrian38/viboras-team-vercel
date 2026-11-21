@@ -14,6 +14,16 @@
 // linea que corre mientras se parsea.
 window.vtGlicko = (function () {
 
+// Los partidos de torneo no puntuan para el rating. Regla de Adrian
+// (2026-11-21): un pozo da su punto de Actividad en /ranking y nada mas, ni
+// rating ni fiabilidad. Es la misma lista que api/_db.js (EVENTOS_DE_TORNEO),
+// escrita aqui aparte porque el front no importa del API.
+const TORNEOS = ['pozo', 'compas', 'doble_ko'];
+
+function esDeTorneo(m) {
+  return !!m && TORNEOS.includes(String(m.event_type || '').toLowerCase());
+}
+
 // La ficha con la que nace un jugador que aparece por primera vez. Por
 // defecto, la del rating de partida segun su nivel BK (rating-inicial.js),
 // que es lo que hacen /rating y /players. /rating-test la cambia por un
@@ -280,23 +290,29 @@ function correrDias(playerMap, byDate, desdeIso, hastaIso) {
   }
 }
 
+// Los torneos se filtran aqui y no en leerPartidos porque /ranking necesita
+// verlos para contar cada uno como una unidad de Actividad
+// (ai_context/ranking_tres_categorias.md). Un dia que solo tuvo torneo deja
+// de existir para el motor, y con el se va tambien su ajuste por votos de
+// nivel: la fiabilidad tampoco se mueve.
 function calcularRatings(names, matches, cutoffDateIso, extraDecayDays = 0) {
   const playerMap = new Map();
   names.forEach(n => {
     if (n && n.trim()) playerMap.set(n.trim(), nuevoJugador(n));
   });
 
-  if (!matches || matches.length === 0) return salida(playerMap);
+  const puntuables = (matches || []).filter(m => !esDeTorneo(m));
+  if (puntuables.length === 0) return salida(playerMap);
 
-  matches.forEach(m => {
+  puntuables.forEach(m => {
     m.team1.concat(m.team2).forEach(pName => {
       getPlayerOrCreate(playerMap, pName);
     });
   });
 
-  const byDate = porDia(matches);
-  const baseEndIso = (cutoffDateIso && typeof cutoffDateIso === 'string') ? cutoffDateIso : matches[matches.length - 1].date;
-  correrDias(playerMap, byDate, matches[0].date, addDaysToIso(baseEndIso, extraDecayDays));
+  const byDate = porDia(puntuables);
+  const baseEndIso = (cutoffDateIso && typeof cutoffDateIso === 'string') ? cutoffDateIso : puntuables[puntuables.length - 1].date;
+  correrDias(playerMap, byDate, puntuables[0].date, addDaysToIso(baseEndIso, extraDecayDays));
   return salida(playerMap);
 }
 
@@ -460,7 +476,7 @@ return {
   GlickoPlayer, g, expected, decayAllPlayersOneDay, getPlayerOrCreate,
   getTeamState, getEffectiveObservationR, getEffectiveObservationRd, clamp,
   getReliabilityWeight, updatePeriod, calcularRatings, leerPartidos,
-  usarJugadorNuevo, usarAjustePorNivel, hoyIso
+  usarJugadorNuevo, usarAjustePorNivel, hoyIso, TORNEOS, esDeTorneo
 };
 
 })();

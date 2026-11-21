@@ -136,7 +136,7 @@
       });
 
       const byDate = new Map();
-      allMatches.forEach((m) => {
+      allMatches.filter((m) => !window.vtGlicko.esDeTorneo(m)).forEach((m) => { // los torneos no puntuan; la lista del dia si los ensena
         const day = toIsoDate(m.date) || toIsoDate(m.start_date);
         if (!day || day < MIN_DATE) return;
         const rec = {

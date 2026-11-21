@@ -270,8 +270,10 @@ Los partidos entran con `format = 'timed_games'` y los juegos en
   5-5 lo es. Ya no se pueden guardar, así que solo afecta a los pozos de antes
   del 2026-11-12. Es la misma limitación que describía
   `contar_partidos_de_un_jugador.md`, no una nueva.
-- **El pozo no toca el rating Glicko**: `/rating` y `/history` piden
-  `eventType=ranked,legacy` y no ven estos partidos.
+- **El pozo no toca el rating Glicko.** Dejó de ser verdad sin que nadie lo
+  decidiera cuando el motor se unificó, y volvió a serlo el 2026-11-21 con un
+  filtro explícito en `calcularRatings()`: [[los_torneos_no_puntuan_para_el_rating]].
+  `/history` sigue sin verlos porque pide `eventType=ranked,legacy`.
 - **No hay avisos push** cuando se cierra una ronda. Se podría colgar de
   `api/_avisos.js`, pero no se ha hecho.
 
