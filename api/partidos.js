@@ -22,7 +22,10 @@ import {
 import { sellarVencidos } from './_partidos-cron.js';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
-const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+// Hora EN PUNTO. Las pistas se reservan por franja horaria, asi que las y
+// veinte no existen: no son una hora rara, son una hora que no se puede
+// reservar. Y los recordatorios de la reserva cuentan franjas enteras.
+const HORA = /^([01]\d|2[0-3]):00$/;
 
 function error(res, codigo, estado, mensaje) {
   res.status(estado).json({ ok: false, error: codigo, message: mensaje });
@@ -56,7 +59,7 @@ async function leerFormulario(req, res) {
   const sedeLibre = String(data?.sedeLibre || '').trim();
   const comentario = String(data?.comentario || '').trim();
   if (!FECHA.test(fecha) || !HORA.test(hora)) {
-    return error(res, 'bad_date', 400, 'Pon una fecha y una hora.');
+    return error(res, 'bad_date', 400, 'Pon una fecha y una hora en punto.');
   }
   if (!DURACIONES.includes(duracion)) {
     return error(res, 'bad_duration', 400, 'El partido dura una hora o dos.');

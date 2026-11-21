@@ -82,7 +82,12 @@
 
       <div class="vt-field">
         <label for="hora">Hora de inicio</label>
-        <input class="vt-input" type="time" id="hora" step="300" required>
+        <!-- Una lista y no <input type="time">: las pistas se reservan por
+             hora en punto, asi que las y veinte no existen. De paso se evita
+             el reloj del sistema, que en Android se abre como un dialogo
+             propio que la pagina no puede maquetar y al que se le salia el
+             boton de «Establecer». Las opciones las pone partido-nuevo.js. -->
+        <select class="vt-select" id="hora" required></select>
       </div>
 
       <!-- Sale solo cuando el partido es dentro de menos de 48 h 30 min, que

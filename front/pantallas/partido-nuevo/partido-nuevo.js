@@ -19,6 +19,29 @@ const volver = () => {
   return /^\/(?!\/)/.test(pedido) ? pedido : '/partidos';
 };
 
+// Las pistas se reservan por hora en punto, asi que la hora de inicio es una
+// lista cerrada y no un reloj. De 7:00 a 23:00: no es una franja inventada
+// por horario de nadie, es sencillamente el dia, y lo que no cabe fuera de
+// ahi tampoco se juega.
+//
+// El servidor exige lo mismo (`:00`), asi que esta lista no es una comodidad
+// de la pagina: es la regla, escrita dos veces porque la pagina es estatica.
+const PRIMERA_HORA = 7;
+const ULTIMA_HORA = 23;
+
+const comoHora = (n) => `${String(n).padStart(2, '0')}:00`;
+
+function pintarHoras(actual) {
+  const horas = [];
+  for (let h = PRIMERA_HORA; h <= ULTIMA_HORA; h += 1) horas.push(comoHora(h));
+  // Un partido viejo a una hora que ya no esta en la lista conserva la suya:
+  // editar el comentario no puede moverle la hora por la espalda.
+  if (actual && !horas.includes(actual)) horas.push(actual);
+  horas.sort();
+  $('hora').innerHTML = horas.map((h) => `<option value="${h}">${h}</option>`).join('');
+  $('hora').value = actual && horas.includes(actual) ? actual : comoHora(19);
+}
+
 function pintarSedes(sedes) {
   $('sede').innerHTML = sedes.lista
     .map((s) => `<option value="${s.clave}">${s.pistas ? `${s.nombre} — ${s.pistas}` : s.nombre}</option>`)
@@ -91,7 +114,7 @@ function rellenarCon(partido) {
   // en-CA da la fecha como YYYY-MM-DD y en-GB la hora como HH:MM en 24 h,
   // que es justo lo que piden <input type=date> y <input type=time>.
   $('fecha').value = d.toLocaleDateString('en-CA', opciones);
-  $('hora').value = d.toLocaleTimeString('en-GB', { ...opciones, hour: '2-digit', minute: '2-digit', hour12: false });
+  pintarHoras(d.toLocaleTimeString('en-GB', { ...opciones, hour: '2-digit', minute: '2-digit', hour12: false }));
   document.querySelector(`input[name=duracion][value="${partido.duracion}"]`).checked = true;
   $('sede').value = partido.sede;
   $('sedeLibre').value = partido.sede === 'otro' ? partido.sedeNombre : '';
@@ -110,6 +133,7 @@ async function cargar() {
   const r = await window.vtPartido.llamar(editando ? `uno&id=${editando}` : 'mios');
   if (!r.ok) { mostrarError(r.mensaje); return; }
   pintarSedes(r.datos.sedes);
+  pintarHoras(null);
   if (editando && r.datos.partido) {
     modoEdicion();
     rellenarCon(r.datos.partido);

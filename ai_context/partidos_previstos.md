@@ -51,6 +51,23 @@ peninsular al insertar:
 y el puente a `matches` al cerrar vuelve a `DD/MM/YYYY` con
 `to_char(empieza_at AT TIME ZONE 'Europe/Madrid', 'DD/MM/YYYY')`.
 
+## La hora es en punto, y por eso es una lista
+
+Las pistas se reservan **por franja horaria**, así que las y veinte no son una
+hora rara: son una hora que no se puede reservar. El servidor lo exige
+(`/^([01]\d|2[0-3]):00$/`) y la página ofrece un `<select>` de 07:00 a 23:00,
+con 19:00 por defecto.
+
+Era un `<input type="time">` y dio dos problemas a la vez. El primero es que
+dejaba poner las 19:20. El segundo lo vio Adrián en su móvil: en Android ese
+campo abre **el reloj del sistema**, un diálogo que la página no puede
+maquetar, y ahí el botón «Establecer» salía cortado por el borde. No hay CSS
+que arregle eso; lo que lo arregla es no abrir ese diálogo.
+
+Al editar, una hora que no esté en la lista **se añade a la lista** en vez de
+perderse: tocar el comentario de un partido viejo no puede moverle la hora
+por la espalda.
+
 ## La asimetría de las fechas, que no es un error
 
 **En esta pantalla no se puede crear un partido en el pasado**: el servidor
