@@ -9,9 +9,16 @@
 // hacia un numero de telefono (wa.me/<numero>?text=); los grupos no tienen
 // URL a la que escribir, solo enlaces de invitacion para unirse. Lo mas cerca
 // que se llega es navigator.share(), que abre la hoja de compartir del movil
-// con los chats recientes dentro —el grupo suele estar ahi, a un toque—. En
-// escritorio no existe, y ahi se cae a wa.me, que abre WhatsApp con el texto
-// puesto y pide elegir el chat.
+// con los chats recientes dentro —el grupo suele estar ahi, a un toque—.
+//
+// En escritorio navigator.share SI existe (Edge y Chrome en Windows 11 lo
+// anuncian), pero lo que abre es la hoja del sistema, donde WhatsApp no
+// aparece aunque este instalado: comparte a Correo, a un dispositivo cercano
+// o a nada. Y como la promesa se resuelve bien, el boton que dice «Compartir
+// por WhatsApp» se daba por cumplido sin haber pasado por WhatsApp. Por eso
+// la hoja del sistema solo se usa en movil; en escritorio se va derecho a
+// wa.me, que abre WhatsApp —la app instalada o la web— con el texto puesto y
+// pide elegir el chat.
 //
 // El partido que se le pasa es SIEMPRE el que acaba de devolver el servidor,
 // nunca el que esta pintado: el mensaje dice quien va, y decir que vas cuando
@@ -51,12 +58,22 @@
     return lineas.join('\n');
   }
 
+  // En movil la hoja del sistema lleva a WhatsApp; en escritorio no. El dato
+  // fiable es userAgentData.mobile, que Chrome y Edge dan; Safari y Firefox
+  // no lo traen, y ahi se mira el userAgent.
+  function esMovil() {
+    if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+      return navigator.userAgentData.mobile;
+    }
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
   // navigator.share puede fallar porque el usuario cierre la hoja, y eso no
   // es un error que ensenar: se distingue por el nombre AbortError. Cualquier
   // otro fallo (un navegador que lo anuncia y no lo hace) cae a wa.me.
   async function compartir(partido) {
     const mensaje = texto(partido);
-    if (navigator.share) {
+    if (navigator.share && esMovil()) {
       try {
         await navigator.share({ text: mensaje });
         return true;
