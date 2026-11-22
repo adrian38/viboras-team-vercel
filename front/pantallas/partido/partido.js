@@ -50,6 +50,42 @@ const boton = (clase, accion, icono, texto) =>
 const menor = (accion, texto) =>
   `<button type="button" class="vt-enlace-accion" data-accion="${accion}">${texto}</button>`;
 
+// El organizador puede meter a quien ya ha quedado con el. La lista la da el
+// servidor y solo a el: activos, con cuenta y que no esten ya dentro.
+//
+// Una lista en la pantalla y no un `prompt`: el navegador de una PWA
+// instalada puede no ensenarlo, y pedir «escribe el numero» en un movil es
+// una forma rara de elegir a una persona.
+async function abrirIncorporar() {
+  const r = await window.vtPartido.llamar(`a-quien-apuntar&id=${idPartido}`);
+  if (!r.ok) { nota(r.mensaje, true); return; }
+  if (!r.datos.jugadores.length) { nota('No queda nadie a quien apuntar.', true); return; }
+  const escapar = window.vtPartido.escapar;
+  const opciones = r.datos.jugadores
+    .map((j) => `<option value="${j.id}">${escapar(j.nombre)}</option>`).join('');
+  $('incorporar').innerHTML = `
+    <label class="vt-field">
+      <span>¿A quién apuntas?</span>
+      <select class="vt-select" id="aQuien">${opciones}</select>
+    </label>
+    <div class="vt-partido__acciones">
+      <button type="button" class="vt-btn" data-accion="confirmar-incorporar">Apuntar y avisarle</button>
+      <button type="button" class="vt-btn vt-btn--ghost" data-accion="cerrar-incorporar">Cancelar</button>
+    </div>`;
+  $('incorporar').hidden = false;
+}
+
+async function confirmarIncorporar() {
+  const sel = $('aQuien');
+  if (!sel) return;
+  const nombre = sel.options[sel.selectedIndex].textContent;
+  const r = await window.vtPartido.llamar('apuntar-a', { id: idPartido, playerId: Number(sel.value) });
+  $('incorporar').hidden = true;
+  await recargar();
+  if (!r.ok) { nota(r.mensaje, true); return; }
+  window.vtToast(`${nombre} apuntado. Se lo decimos.`);
+}
+
 function pintarAcciones() {
   const propuesto = puestoPropuesto();
   if (partido.cancelado) {
@@ -64,6 +100,9 @@ function pintarAcciones() {
   }
   if (partido.estoyDentro) {
     $('acciones').innerHTML = boton('vt-btn--whatsapp', 'compartir', 'share', 'Compartir por WhatsApp')
+      + (partido.soyElCreador && partido.libres > 0
+        ? boton('vt-btn--ghost', 'incorporar', 'person_add', 'Apuntar a alguien')
+        : '')
       + boton('vt-btn--ghost', 'borrarme-avisar', '', 'Borrarme y avisar al grupo');
     $('menores').innerHTML = menor('borrarme', 'Borrarme sin avisar');
     return;
@@ -131,6 +170,9 @@ async function compartirLoQueHay() {
 
 const ACCIONES = {
   compartir: compartirLoQueHay,
+  incorporar: abrirIncorporar,
+  'confirmar-incorporar': confirmarIncorporar,
+  'cerrar-incorporar': () => { document.getElementById('incorporar').hidden = true; },
   'guardar-compartir': async () => {
     if (!await apuntar()) return;
     await recargar();

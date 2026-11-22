@@ -249,7 +249,10 @@ async function tienePlaza(partidoId, playerId) {
   return rows.length > 0;
 }
 
-// 'full' si no queda sitio, 'already_in' si ya estabas, o el puesto tomado.
+// 'full' si no queda sitio, 'already_in' si ya estaba, o el puesto tomado.
+// Recibe el playerId porque desde el 2026-11-22 el organizador tambien puede
+// incorporar a otro; quien decide a quien es el handler, que comprueba que
+// quien lo pide sea el organizador.
 //
 // Dos caminos llevan a 'already_in' y hacen falta los dos. Si el partido tiene
 // hueco, el INSERT choca con la restriccion (partido_id, player_id) y el 23505
@@ -272,6 +275,31 @@ export async function tomarPlaza(partidoId, playerId) {
     }
   }
   return 'full';
+}
+
+// El jugador al que el organizador quiere incorporar: tiene que existir,
+// estar activo y tener cuenta activa. Sin cuenta no hay a quien avisar, y
+// apuntar a alguien que no se va a enterar es peor que no apuntarlo.
+export async function jugadorIncorporable(playerId) {
+  const { rows } = await sql`
+    SELECT p.id, p.name
+    FROM players p
+    WHERE p.id = ${playerId} AND p.active = TRUE
+      AND EXISTS (SELECT 1 FROM users u WHERE u.player_id = p.id AND u.status = 'active')`;
+  return rows.length ? rows[0] : null;
+}
+
+// Los que el organizador puede incorporar a ESTE partido: activos, con
+// cuenta, y que no estan ya dentro.
+export async function incorporables(partidoId) {
+  const { rows } = await sql`
+    SELECT p.id, p.name AS nombre
+    FROM players p
+    WHERE p.active = TRUE
+      AND EXISTS (SELECT 1 FROM users u WHERE u.player_id = p.id AND u.status = 'active')
+      AND NOT EXISTS (SELECT 1 FROM partido_plazas pl WHERE pl.partido_id = ${partidoId} AND pl.player_id = p.id)
+    ORDER BY LOWER(p.name)`;
+  return rows;
 }
 
 export async function soltarPlaza(partidoId, playerId) {

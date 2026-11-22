@@ -51,6 +51,20 @@ export async function avisarApuntado(fila, quien, jugadores) {
   await crearAviso(otros, texto, enlaceDe(fila.id));
 }
 
+// El organizador incorpora a alguien. Dos avisos distintos a proposito: al
+// incorporado se le dice que le han apuntado —que es lo que le ha pasado, y
+// no se ha enterado por su cuenta— y a los demas, quien ha entrado. Uno solo
+// con el texto de «se ha apuntado» seria falso para el incorporado, que no
+// se apunto.
+export async function avisarIncorporado(fila, quien, aQuien, jugadores) {
+  const libres = 4 - jugadores.length;
+  const cierre = libres <= 0 ? 'El partido está completo.' : plazasDice(libres);
+  await crearAviso([aQuien.id], `${quien.nombre} te ha apuntado al partido del ${partidoDice(fila)}. ${cierre}`, enlaceDe(fila.id));
+  const otros = jugadores.filter((id) => id !== quien.id && id !== aQuien.id);
+  const texto = `${quien.nombre} ha apuntado a ${aQuien.nombre} al partido del ${partidoDice(fila)}. ${cierre}`;
+  await crearAviso(otros, texto, enlaceDe(fila.id));
+}
+
 // Alguien suelta su plaza: lo saben los que quedan. Si no queda nadie no hay
 // a quien avisar, y crearAviso con la lista vacia no hace nada.
 export async function avisarBaja(fila, quien, jugadores) {

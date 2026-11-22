@@ -11,10 +11,11 @@ import {
   ensurePartidosSchema, sedesParaLaPagina, nivelesParaLaPagina, sedeValida, nivelesParaGuardar, NIVELES,
   DURACIONES, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
   instanteDe, partidoQueSePisa, creadosHoy, crearPartido, tomarPlaza, soltarPlaza,
-  partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe
+  partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe,
+  jugadorIncorporable, incorporables
 } from './_partidos.js';
 import { misPartidos, partidosAbiertos, unPartido } from './_partidos-lista.js';
-import { avisarApuntado, avisarBaja, avisarCancelado } from './_partidos-avisos.js';
+import { avisarApuntado, avisarBaja, avisarCancelado, avisarIncorporado } from './_partidos-avisos.js';
 import { categoriaDe } from './_rating.js';
 import {
   editarPartido, recalcularAvisos, olvidarSegundaFranja, avisarCambio,
@@ -179,6 +180,52 @@ async function borrarme(req, res, user) {
   res.status(200).json({ ok: true });
 }
 
+// El organizador incorpora a alguien con quien ya ha quedado. Es la UNICA
+// via por la que una plaza la ocupa alguien que no la pidio, y por eso es
+// una accion aparte en vez de un parametro de `apuntarme`: asi nadie puede
+// apuntar a otro por descuido ni anadiendole un campo al cuerpo.
+//
+// Solo el organizador. No los administradores: lo que esto hace es decir
+// «he quedado con este», y eso solo lo sabe quien convoco.
+//
+// Al incorporado se le aplican las mismas reglas que si se apuntara el: el
+// solape con otro partido suyo y el nivel. No es burocracia —el organizador
+// no sabe si el otro tiene ya partido a esa hora, y el filtro de nivel no se
+// lo salta nadie—.
+async function apuntarA(req, res, user) {
+  if (!exigirFicha(res, user)) return;
+  const data = await readBody(req);
+  const partido = await partidoVivo(toInt(data?.id));
+  if (!partido) return error(res, 'too_late', 409, 'Ese partido ya no admite gente.');
+  if (partido.creador_player_id !== user.player_id) {
+    return error(res, 'forbidden', 403, 'Solo quien convocó el partido puede apuntar a otros.');
+  }
+  const jugador = await jugadorIncorporable(toInt(data?.playerId));
+  if (!jugador) return error(res, 'not_found', 404, 'Ese jugador no está disponible.');
+  if (await partidoQueSePisa(jugador.id, partido.empieza_at, partido.duracion_min, partido.id)) {
+    return error(res, 'overlap', 409, `${jugador.name} ya tiene otro partido a esa hora.`);
+  }
+  const falta = await nivelQueFalta(partido, jugador.id);
+  if (falta) return error(res, 'bad_level', 403, falta.replace('tu nivel ahora es', `el nivel de ${jugador.name} es`));
+  const puesto = await tomarPlaza(partido.id, jugador.id);
+  if (puesto === 'full') return error(res, 'full', 409, 'Ya no quedan plazas.');
+  if (puesto === 'already_in') return error(res, 'already_in', 409, `${jugador.name} ya estaba apuntado.`);
+  await avisarIncorporado(partido, quienEs(user), { id: jugador.id, nombre: jugador.name }, await jugadoresDe(partido.id));
+  res.status(200).json({ ok: true, puesto });
+}
+
+// A quien puede incorporar el organizador: activos, con cuenta y que no
+// esten ya dentro. Solo se la damos a el, que es el unico que puede usarla.
+async function aQuienApuntar(req, res, user) {
+  if (!exigirFicha(res, user)) return;
+  const partido = await partidoVivo(toInt(req.query?.id));
+  if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no existe.');
+  if (partido.creador_player_id !== user.player_id) {
+    return error(res, 'forbidden', 403, 'Solo quien convocó el partido puede apuntar a otros.');
+  }
+  res.status(200).json({ ok: true, jugadores: await incorporables(partido.id) });
+}
+
 // Editar no toca las plazas. El solape se mira para los cuatro apuntados y
 // basta uno para rechazar el cambio: mover el partido no puede meter a nadie
 // en dos sitios a la vez.
@@ -267,6 +314,8 @@ const ACCIONES = {
   uno: ['GET', uno],
   crear: ['POST', crear],
   apuntarme: ['POST', apuntarme],
+  'apuntar-a': ['POST', apuntarA],
+  'a-quien-apuntar': ['GET', aQuienApuntar],
   borrarme: ['POST', borrarme],
   editar: ['POST', editar],
   esperarme: ['POST', esperarme],

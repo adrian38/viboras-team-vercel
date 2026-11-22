@@ -178,7 +178,31 @@ reintenta una vez y, si vuelve a chocar, es que ya no hay sitio.
 Es la misma lectura de `err.code === '23505'` que ya hacen
 `api/league-admin.js` y `api/_pozo-api.js`.
 
-**Apuntar a otro es imposible por construcción**: la acción no acepta ningún
+## El organizador sí puede apuntar a otros (2026-11-22)
+
+Quien convoca suele haber quedado ya con alguien. `apuntar-a` le deja meterlo
+sin esperar a que entre por el enlace, y al incorporado le llega un aviso
+diciéndole que le han apuntado.
+
+Es **una acción aparte** y no un parámetro de `apuntarme`, a propósito: así
+sigue siendo imposible apuntar a otro por descuido o añadiendo un campo al
+cuerpo de la petición. Sólo el organizador, **ni siquiera los
+administradores**: lo que esta acción dice es «he quedado con éste», y eso
+sólo lo sabe quien convocó.
+
+Al incorporado se le aplican **las mismas reglas** que si se apuntara él: el
+solape con otro partido suyo y el filtro de nivel. No es burocracia — el
+organizador no sabe si el otro ya tiene partido a esa hora, y el filtro no se
+lo salta nadie.
+
+Y salen **dos avisos distintos**: al incorporado, «te ha apuntado»; a los
+demás, «ha apuntado a Marta». Uno solo con el texto de «se ha apuntado»
+sería falso para el incorporado, que no se apuntó.
+
+Se ofrece sólo a quien tiene cuenta activa: sin cuenta no hay a quién avisar,
+y apuntar a alguien que no se va a enterar es peor que no apuntarlo.
+
+**Fuera de ahí, apuntar a otro sigue siendo imposible por construcción**: la acción no acepta ningún
 parámetro de jugador, el `player_id` sale siempre de la sesión. No añadir ese
 parámetro «por comodidad».
 
