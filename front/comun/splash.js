@@ -1,6 +1,11 @@
-// Pantalla de bienvenida: el video del grupo (splash.mp4). Las palas, la
-// vibora que entra y se levanta entre ellas, «VIBORAS TEAM» y las chispas.
-// Los estilos estan en theme.css (.vt-splash*).
+// Pantalla de bienvenida: el video del grupo. Los estilos estan en theme.css
+// (.vt-splash*).
+//
+// Desde el 2026-11-22 es `splash_navidad.mp4` (1024x576, 5,00 s). El anterior,
+// `splash.mp4` (1000x620, 4,21 s) —las palas, la vibora que entra y se levanta
+// entre ellas, «VIBORAS TEAM» y las chispas—, se queda en el repositorio: para
+// volver a el hay que cambiar estas dos rutas y, en theme.css, el
+// `aspect-ratio` y el ancho de `.vt-splash__escena`, que son los del video.
 //
 // Una vez por sesion: al abrir la app instalada (cada arranque es una sesion
 // nueva) o la web en una pestana nueva, no en cada cambio de pagina ni en una
@@ -33,14 +38,14 @@
     el.className = 'vt-splash__escena';
     if (reducido) {
       el.alt = '';
-      el.src = '/splash-final.jpg';
+      el.src = '/splash_navidad-final.jpg';
       return el;
     }
     el.muted = true;
     el.setAttribute('muted', '');
     el.setAttribute('playsinline', '');
     el.preload = 'auto';
-    el.src = '/splash.mp4';
+    el.src = '/splash_navidad.mp4';
     return el;
   }
 
@@ -77,7 +82,7 @@
     }
   }
 
-  // El video dura 4,2 s. Si no ha empezado en 1,5 s (red lenta, sin
+  // El video dura 5,00 s. Si no ha empezado en 1,5 s (red lenta, sin
   // conexion, o iOS en ahorro de energia, que no deja reproducir solo) no se
   // espera mas: mejor sin bienvenida que mirando el negro.
   function reproducir(video, mostrar, cerrar) {
@@ -86,7 +91,9 @@
       if (empezado) return;
       empezado = true;
       mostrar();
-      setTimeout(cerrar, 5000); // por si nunca llega el 'ended'
+      // Por si nunca llega el 'ended'. Tiene que quedar POR ENCIMA de la
+      // duracion del video (5,00 s) o cortaria el final en cada arranque.
+      setTimeout(cerrar, 6500);
     });
     // Un respiro sobre el ultimo fotograma y se funde (0,4 s mas).
     video.addEventListener('ended', function () { setTimeout(cerrar, 300); });

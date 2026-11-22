@@ -264,7 +264,7 @@ sepia. De ahí salía el color de los ejes de la gráfica.
 ### Las dos excepciones, y por qué
 
 - **El negro del splash** (`#000`, tres veces en `theme.css`): iguala el negro
-  de `splash.mp4`. Con `--vt-surface-deep` se vería el borde del vídeo.
+  del vídeo del splash. Con `--vt-surface-deep` se vería el borde del vídeo.
 - **El verde de WhatsApp** ya no es una excepción. Lo fue mientras el único
   botón que llevaba al grupo vivía suelto en `results.html`; desde el
   2026-11-21 son `--vt-whatsapp`, `--vt-whatsapp-dark` y `--vt-whatsapp-text`
@@ -444,7 +444,48 @@ a `viboras-v2`): sin él la portada abre sin estilos cuando no hay cobertura.
 
 ## La pantalla de bienvenida
 
-`splash.js` + las reglas `.vt-splash*` de `theme.css`. Desde el 2026-10-18 es
+`splash.js` + las reglas `.vt-splash*` de `theme.css`.
+
+### Desde el 2026-11-22: la versión de Navidad
+
+El vídeo que se sirve es **`splash_navidad.mp4`** (1024×576, 5,00 s, 1,04 MB):
+la misma víbora entre las dos palas, con gorro de Papá Noel, sobre un bosque
+nevado con un muñeco de nieve. Lo trajo Adrián ya montado; no se ha recortado
+ni recomprimido aquí.
+
+Cambiar de vídeo son **cuatro sitios**, y olvidar uno no da error:
+
+| Qué | Dónde |
+| --- | --- |
+| La ruta del vídeo | `front/comun/splash.js`, `crearEscena()` |
+| La ruta del fotograma quieto | `front/comun/splash.js`, rama `reducido` |
+| `aspect-ratio` y ancho máximo | `.vt-splash__escena` en `theme.css` |
+| El plazo de seguridad | `setTimeout(cerrar, …)` tras `playing` |
+
+El `aspect-ratio` es el del vídeo (16/9 ahora, 50/31 antes): si se queda el
+del anterior, el vídeo sale deformado o con bandas y nadie avisa. Y el plazo
+de seguridad tiene que quedar **por encima** de la duración (6,5 s para un
+vídeo de 5,00 s); con el 5000 que había para el vídeo de 4,2 s, el nuevo se
+cortaría en cada arranque.
+
+`splash_navidad-final.jpg` (79 KB) es su último fotograma, lo que se ve con
+«reducir movimiento». Se sacó con el `ffmpeg` del contenedor local, que no
+viene en la imagen y hay que instalar a mano para esto:
+
+```bash
+docker compose exec -T app sh -c "apk add --no-cache ffmpeg && cd /app && \
+  ffmpeg -y -sseof -0.1 -i splash_navidad.mp4 -frames:v 1 -q:v 3 /tmp/final.jpg"
+docker compose cp app:/tmp/final.jpg ./splash_navidad-final.jpg
+```
+
+El vídeo y el JPG viven en la raíz y **no están montados como volumen**: tras
+cambiarlos hay que `docker compose up -d --build` o el contenedor sigue
+sirviendo la copia vieja sin dar ningún error.
+
+### El vídeo anterior, que sigue en el repositorio
+
+`splash.mp4` y `splash-final.jpg` no se han borrado: para volver a ellos basta
+con deshacer los cuatro cambios de la tabla. Desde el 2026-10-18 era
 **el vídeo del grupo** (`splash.mp4`): dos palas, la víbora entra desde la
 izquierda y se levanta entre ellas, cae «VÍBORAS TEAM» en dorado y estalla en
 chispas. Lo pidió Adrián con el vídeo de WhatsApp de 5 s; sustituyó a la

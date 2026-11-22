@@ -406,7 +406,7 @@ small,.vt-small{font-size:13px;line-height:18px;color:var(--vt-muted)}
 /* Pantalla de bienvenida (splash.js). Hasta que la capa esta montada, el body
    no se pinta: si no, la pagina asomaria un instante antes del negro.
    Los tres #000 de aqui son el unico color literal que queda en la hoja, y a
-   proposito: igualan el negro de splash.mp4. Con --vt-surface-deep (#0d0e11)
+   proposito: igualan el negro del video del splash. Con --vt-surface-deep (#0d0e11)
    se veria el borde del video contra el fondo de la capa. */
 html.vt-splash{background:#000}
 html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
@@ -416,13 +416,14 @@ html.vt-splash:not(.vt-splash--lista) body{visibility:hidden}
   background:#000;cursor:pointer;transition:opacity .4s ease;
 }
 .vt-splash__capa--fuera{opacity:0}
-/* splash.mp4 (1000x620, recortado del video del grupo) o, con «reducir
-   movimiento», su ultimo fotograma. Cabe entero en cualquier pantalla y no se
-   estira por encima de su tamano. Espera transparente hasta que de verdad se
-   reproduce: arranca con las palas ya puestas y sin el fundido apareceria de
-   golpe. */
+/* splash_navidad.mp4 (1024x576) o, con «reducir movimiento», su ultimo
+   fotograma. Cabe entero en cualquier pantalla y no se estira por encima de
+   su tamano. Espera transparente hasta que de verdad se reproduce: arranca
+   con la escena ya puesta y sin el fundido apareceria de golpe.
+   El ancho y el `aspect-ratio` son los del video: al cambiarlo hay que
+   cambiarlos aqui, o saldria con bandas o deformado. */
 .vt-splash__escena{
-  display:block;width:min(100%,1000px);max-height:100%;aspect-ratio:50/31;
+  display:block;width:min(100%,1024px);max-height:100%;aspect-ratio:16/9;
   object-fit:contain;background:#000;opacity:0;transition:opacity .3s ease;
 }
 .vt-splash__capa--animando .vt-splash__escena{opacity:1}

@@ -50,7 +50,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
-  // Los videos (splash.mp4) se piden por trozos: la respuesta es un 206 y la
+  // Los videos (el splash) se piden por trozos: la respuesta es un 206 y la
   // cache no admite respuestas parciales. Directos a la red.
   if (req.headers.has('range')) return;
 
