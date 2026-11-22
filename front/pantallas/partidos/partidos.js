@@ -44,7 +44,7 @@ function accionesDe(partido) {
   }
   return `<div class="vt-partido__acciones">
       <button type="button" class="vt-btn vt-btn--whatsapp" data-accion="compartir" data-id="${partido.id}">
-        <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">share</span>Compartir por WhatsApp
+        <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">share</span>${window.vtCompartirPartido.etiqueta()}
       </button>
       ${mia}
     </div>

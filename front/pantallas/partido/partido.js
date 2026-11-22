@@ -94,12 +94,12 @@ function pintarAcciones() {
     return;
   }
   if (propuesto) {
-    $('acciones').innerHTML = boton('vt-btn--whatsapp', 'guardar-compartir', 'share', 'Guardar y compartir en WhatsApp');
+    $('acciones').innerHTML = boton('vt-btn--whatsapp', 'guardar-compartir', 'share', window.vtCompartirPartido.etiqueta('Guardar'));
     $('menores').innerHTML = menor('apuntarme', 'Apuntarme sin compartir');
     return;
   }
   if (partido.estoyDentro) {
-    $('acciones').innerHTML = boton('vt-btn--whatsapp', 'compartir', 'share', 'Compartir por WhatsApp')
+    $('acciones').innerHTML = boton('vt-btn--whatsapp', 'compartir', 'share', window.vtCompartirPartido.etiqueta())
       + (partido.soyElCreador && partido.libres > 0
         ? boton('vt-btn--ghost', 'incorporar', 'person_add', 'Apuntar a alguien')
         : '')
@@ -108,7 +108,7 @@ function pintarAcciones() {
     return;
   }
   // Completo y fuera: lo unico que queda es esperar o pasar el mensaje.
-  $('acciones').innerHTML = boton('vt-btn--whatsapp', 'compartir', 'share', 'Compartir por WhatsApp');
+  $('acciones').innerHTML = boton('vt-btn--whatsapp', 'compartir', 'share', window.vtCompartirPartido.etiqueta());
   $('menores').innerHTML = partido.enEspera
     ? menor('no-esperarme', 'Salir de la lista de espera')
     : menor('esperarme', 'Avísame si queda plaza');

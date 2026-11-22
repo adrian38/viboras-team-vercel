@@ -11,14 +11,12 @@
 // que se llega es navigator.share(), que abre la hoja de compartir del movil
 // con los chats recientes dentro —el grupo suele estar ahi, a un toque—.
 //
-// En escritorio navigator.share SI existe (Edge y Chrome en Windows 11 lo
-// anuncian), pero lo que abre es la hoja del sistema, donde WhatsApp no
-// aparece aunque este instalado: comparte a Correo, a un dispositivo cercano
-// o a nada. Y como la promesa se resuelve bien, el boton que dice «Compartir
-// por WhatsApp» se daba por cumplido sin haber pasado por WhatsApp. Por eso
-// la hoja del sistema solo se usa en movil; en escritorio se va derecho a
-// wa.me, que abre WhatsApp —la app instalada o la web— con el texto puesto y
-// pide elegir el chat.
+// En escritorio no hay via automatica que valga, y por dos motivos distintos:
+// navigator.share existe en Edge y Chrome de Windows pero abre la hoja del
+// sistema, donde WhatsApp no aparece aunque este instalado; y `wa.me/?text=`
+// si llega a WhatsApp, pero por el camino los emojis se convierten en rombos.
+// Asi que en escritorio el mensaje se copia al portapapeles y lo pega la
+// persona. Detalle en `enEscritorio`.
 //
 // El partido que se le pasa es SIEMPRE el que acaba de devolver el servidor,
 // nunca el que esta pintado: el mensaje dice quien va, y decir que vas cuando
@@ -92,12 +90,59 @@
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   }
 
+  // En escritorio el mensaje se copia y lo pega la persona. No es un capricho:
+  // desde Windows los emojis NO llegan a WhatsApp por ninguna de las dos vias
+  // automaticas. Comprobado el 2026-11-22 con el mismo chat abierto en el
+  // mismo WhatsApp: el mensaje mandado desde el movil pinta los seis emojis y
+  // el mandado desde el PC los pinta como rombos, y la propia pagina de
+  // `api.whatsapp.com` ya los ensena rotos antes de entregar nada. Pasa con la
+  // hoja de compartir de Windows y pasa con `wa.me/?text=`.
+  //
+  // Pegado va por el camino de cualquier mensaje escrito y se ve bien. Es un
+  // paso mas, y es el unico que no entrega un mensaje roto al grupo.
+  //
+  // Si el portapapeles falla —el navegador lo niega fuera de HTTPS, o sin el
+  // permiso— se cae a `wa.me`: con los emojis rotos, pero con algo.
+  // El de siempre: un <textarea> fuera de la vista y `execCommand('copy')`.
+  // Esta obsoleto y hace falta igual, porque `navigator.clipboard` se niega
+  // en cuanto el documento no tiene el foco —pasa en un panel embebido, y
+  // pasa con la pestana en segundo plano— y entonces este si funciona.
+  function copiarALaVieja(mensaje) {
+    const caja = document.createElement('textarea');
+    caja.value = mensaje;
+    caja.setAttribute('readonly', '');
+    caja.style.cssText = 'position:fixed;top:-1000px;left:-1000px;opacity:0';
+    document.body.appendChild(caja);
+    caja.select();
+    let bien = false;
+    try { bien = document.execCommand('copy'); } catch (err) { bien = false; }
+    caja.remove();
+    return bien;
+  }
+
+  async function enEscritorio(mensaje) {
+    let copiado = false;
+    try {
+      await navigator.clipboard.writeText(mensaje);
+      copiado = true;
+    } catch (err) {
+      copiado = copiarALaVieja(mensaje);
+    }
+    if (copiado) {
+      if (window.vtToast) window.vtToast('Mensaje copiado. Pégalo en el grupo de WhatsApp.', 5000);
+      return true;
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener');
+    return true;
+  }
+
   // navigator.share puede fallar porque el usuario cierre la hoja, y eso no
   // es un error que ensenar: se distingue por el nombre AbortError. Cualquier
   // otro fallo (un navegador que lo anuncia y no lo hace) cae a wa.me.
   async function compartir(partido, aviso) {
     const mensaje = texto(partido, aviso);
-    if (navigator.share && esMovil()) {
+    if (!esMovil()) return enEscritorio(mensaje);
+    if (navigator.share) {
       try {
         await navigator.share({ text: mensaje });
         return true;
@@ -109,5 +154,11 @@
     return true;
   }
 
-  window.vtCompartirPartido = { texto, compartir };
+  // `etiqueta` la usan las pantallas para el boton: en escritorio no abre
+  // WhatsApp, copia, y decir lo contrario seria prometer lo que no hace.
+  const etiqueta = (prefijo) => (esMovil()
+    ? (prefijo ? prefijo + ' y compartir en WhatsApp' : 'Compartir por WhatsApp')
+    : (prefijo ? prefijo + ' y copiar para WhatsApp' : 'Copiar para WhatsApp'));
+
+  window.vtCompartirPartido = { texto, compartir, esMovil, etiqueta };
 })();

@@ -256,3 +256,34 @@ pegaría texto, pasaría una cadena como valor y rompería la consulta. Para
 componer hay que bajar a `sql.query(texto, valores)`, que sólo se usa en
 `api/_partidos-cron.js` y por un motivo que su nota explica
 (`ai_context/recordatorios_y_cron.md`).
+
+## Desde el PC el mensaje se copia, no se manda (2026-11-22)
+
+Los emojis **no llegan a WhatsApp desde Windows por ninguna vía automática**.
+Comprobado con el mismo chat abierto en el mismo WhatsApp: el mensaje mandado
+desde el móvil pinta los seis emojis y el mandado desde el PC los pinta como
+rombos. Y no es el traspaso a la aplicación: la propia página de
+`api.whatsapp.com` a la que redirige `wa.me` ya los enseña rotos, antes de
+entregar nada.
+
+Así que `compartir` se bifurca por dispositivo:
+
+| Dónde | Qué hace | Por qué |
+| --- | --- | --- |
+| Móvil | `navigator.share` | La hoja del sistema lleva al grupo, y los emojis llegan |
+| Escritorio | Copia al portapapeles y avisa | Pegado va por el camino de un mensaje escrito y se ve bien |
+
+Dos detalles que cuestan de encontrar:
+
+- **`navigator.clipboard.writeText` no basta.** Se niega en cuanto el
+  documento no tiene el foco, y entonces hace falta el `<textarea>` oculto
+  con `document.execCommand('copy')`, que está obsoleto y es el que funciona.
+  Con los dos puestos, el respaldo final sigue siendo `wa.me`: con los emojis
+  rotos, pero con algo.
+- **El botón cambia de texto**, no sólo de comportamiento: en escritorio dice
+  «Copiar para WhatsApp». Un botón que dice «Compartir por WhatsApp» y lo que
+  hace es copiar promete lo que no hace.
+
+`navigator.share` existe también en Edge y Chrome de Windows, pero lo que abre
+es la hoja del sistema, donde WhatsApp no aparece aunque esté instalado. Y
+como la promesa se resuelve bien, el respaldo no llegaba a correr nunca.
