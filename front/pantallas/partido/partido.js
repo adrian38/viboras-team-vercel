@@ -162,10 +162,14 @@ async function soltar() {
 
 // Siempre se comparte el partido que acaba de devolver el servidor, nunca el
 // que esta pintado: entre pintar y pulsar pueden haber entrado dos personas.
-async function compartirLoQueHay() {
+//
+// `aviso` es la primera linea del mensaje —«Se ha apuntado X, ya sois 3»— y
+// solo la ponen las dos acciones que acaban de cambiar algo. Compartir a
+// secas no la lleva: ahi no se ha movido nadie y decirlo seria mentir.
+async function compartirLoQueHay(aviso) {
   const r = await window.vtPartido.llamar(`uno&id=${idPartido}`);
   if (!r.ok) { nota(r.mensaje, true); return; }
-  await window.vtCompartirPartido.compartir(r.datos.partido);
+  await window.vtCompartirPartido.compartir(r.datos.partido, aviso);
 }
 
 const ACCIONES = {
@@ -176,15 +180,16 @@ const ACCIONES = {
   'guardar-compartir': async () => {
     if (!await apuntar()) return;
     await recargar();
-    await compartirLoQueHay();
+    await compartirLoQueHay({ tipo: 'alta', nombre: yo.nombre });
   },
   apuntarme: async () => {
     if (await apuntar()) { await recargar(); window.vtToast('Apuntado.'); }
   },
   'borrarme-avisar': async () => {
+    const quien = yo.nombre;
     if (!await soltar()) return;
     await recargar();
-    await compartirLoQueHay();
+    await compartirLoQueHay({ tipo: 'baja', nombre: quien });
   },
   borrarme: async () => {
     if (await soltar()) { await recargar(); window.vtToast('Te has borrado.'); }

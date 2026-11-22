@@ -24,7 +24,10 @@
 // nunca el que esta pintado: el mensaje dice quien va, y decir que vas cuando
 // el servidor no te ha metido seria mandarle una mentira al grupo.
 (function () {
-  const EMOJI = { fecha: '\u{1F4C5}', sitio: '\u{1F3DF}\u{FE0F}', hora: '\u{23F0}', nivel: '\u{1F4CA}', jugador: '\u{1F3BE}', libre: '\u{26AA}' };
+  // `jugador` es la vibora y no una pelota: el grupo es Viboras Team y el
+  // mensaje se lee de un vistazo por los iconos. `libre` sigue siendo el
+  // circulo vacio, que marca un hueco, no a alguien.
+  const EMOJI = { fecha: '\u{1F4C5}', sitio: '\u{1F3DF}\u{FE0F}', hora: '\u{23F0}', nivel: '\u{1F4CA}', jugador: '\u{1F40D}', libre: '\u{26AA}' };
 
   function enHoraLocal(iso, opciones) {
     return new Date(iso).toLocaleString('es-ES', { timeZone: 'Europe/Madrid', ...opciones });
@@ -42,7 +45,27 @@
     return enHoraLocal(iso, { hour: '2-digit', minute: '2-digit' });
   }
 
-  function texto(partido) {
+  // La primera linea, cuando el mensaje sale de apuntarse o de borrarse.
+  // Sin ella el mensaje se repite entero en el grupo y no dice QUIEN se ha
+  // movido: hay que comparar con el mensaje anterior para enterarse, y nadie
+  // lo hace. Lo pidio el grupo con estas palabras: «se ha apuntado Oti, ya
+  // sois 4».
+  //
+  // La cuenta sale de `libres`, que viene del servidor con el partido ya
+  // cambiado. No se compone con lo que esta pintado ni se suma aqui.
+  function avisoTexto(partido, aviso) {
+    if (!aviso || !aviso.nombre) return '';
+    if (aviso.tipo === 'alta') {
+      return `Se ha apuntado ${aviso.nombre}, ya sois ${4 - partido.libres}.`;
+    }
+    if (aviso.tipo === 'baja') {
+      const hueco = partido.libres === 1 ? 'queda 1 plaza' : `quedan ${partido.libres} plazas`;
+      return `Se ha borrado ${aviso.nombre}, ${hueco}.`;
+    }
+    return '';
+  }
+
+  function texto(partido, aviso) {
     const fin = new Date(new Date(partido.empieza).getTime() + partido.duracion * 60000).toISOString();
     const sitio = partido.sedePistas ? `${partido.sedeNombre} (${partido.sedePistas})` : partido.sedeNombre;
     const lineas = [
@@ -55,7 +78,8 @@
       lineas.push(plaza.nombre ? `${EMOJI.jugador}${plaza.nombre}` : `${EMOJI.libre}Libre`);
     }
     lineas.push('', `${location.origin}/partido?id=${partido.id}`);
-    return lineas.join('\n');
+    const cabecera = avisoTexto(partido, aviso);
+    return (cabecera ? [cabecera, ''] : []).concat(lineas).join('\n');
   }
 
   // En movil la hoja del sistema lleva a WhatsApp; en escritorio no. El dato
@@ -71,8 +95,8 @@
   // navigator.share puede fallar porque el usuario cierre la hoja, y eso no
   // es un error que ensenar: se distingue por el nombre AbortError. Cualquier
   // otro fallo (un navegador que lo anuncia y no lo hace) cae a wa.me.
-  async function compartir(partido) {
-    const mensaje = texto(partido);
+  async function compartir(partido, aviso) {
+    const mensaje = texto(partido, aviso);
     if (navigator.share && esMovil()) {
       try {
         await navigator.share({ text: mensaje });
