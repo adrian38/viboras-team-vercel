@@ -13,13 +13,20 @@
 // Detalle: ai_context/partidos_previstos.md
 import { sql } from '@vercel/postgres';
 import { ensurePartidosSchema, nombreDeSede, pistasDeSede, nivelesDice } from './_partidos.js';
+import { ensureRatingSchema } from './_rating.js';
 
 // Las cuatro plazas de un partido, siempre las cuatro: las libres salen con
 // `playerId` nulo para que la pagina no tenga que inventarse los huecos.
+//
+// `categoria` es la que guardo el ultimo recalculo en `players` (ver
+// api/_rating.js). Puede venir nula —quien no tiene partidos no tiene
+// rating— y entonces la tarjeta no ensena nivel: no hay nivel que ensenar.
 function plazasDe(filas, partidoId) {
   return [1, 2, 3, 4].map((puesto) => {
     const f = filas.find((p) => p.partido_id === partidoId && p.puesto === puesto);
-    return f ? { puesto, playerId: f.player_id, nombre: f.nombre } : { puesto, playerId: null, nombre: null };
+    return f
+      ? { puesto, playerId: f.player_id, nombre: f.nombre, categoria: f.categoria || null }
+      : { puesto, playerId: null, nombre: null, categoria: null };
   });
 }
 
@@ -49,11 +56,16 @@ function aPartido(fila, plazas, playerId) {
   };
 }
 
+// `ensureRatingSchema` porque la consulta lee `players.categoria` y
+// `players.rating_at`, que crea api/_rating.js y no `ensureSchema`. Esta
+// memoizado y api/partidos.js ya importa ese modulo, asi que no cuesta.
 async function conPlazas(filas, playerId) {
   if (!filas.length) return [];
+  await ensureRatingSchema();
   const ids = filas.map((f) => f.id);
   const { rows } = await sql`
-    SELECT pl.partido_id, pl.puesto, pl.player_id, j.name AS nombre
+    SELECT pl.partido_id, pl.puesto, pl.player_id, j.name AS nombre,
+      CASE WHEN j.rating_at IS NULL THEN NULL ELSE j.categoria END AS categoria
     FROM partido_plazas pl JOIN players j ON j.id = pl.player_id
     WHERE pl.partido_id = ANY(${ids}::int[])
     ORDER BY pl.puesto`;

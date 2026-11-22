@@ -32,10 +32,26 @@
     return trozos[0].slice(0, 2).toUpperCase();
   }
 
+  // El lado de pista de cada puesto, SOLO en la rejilla 2x2. Es una etiqueta
+  // de la posicion en el dibujo, no un dato del jugador: nadie elige lado al
+  // apuntarse y el servidor da el hueco mas bajo que quede. Por eso dice
+  // «Drive» y no «juega al drive», y por eso no sale en la lista estrecha,
+  // donde sin la rejilla delante no se entenderia como una posicion.
+  const LADOS = { 1: 'Drive', 2: 'Revés', 3: 'Drive', 4: 'Revés' };
+
+  const ladoHtml = (plaza, o) => (o.rejilla
+    ? `<span class="vt-plaza__lado">${LADOS[plaza.puesto] || ''}</span>` : '');
+
+  // El nivel del apuntado: la categoria que guardo el ultimo recalculo. Si no
+  // viene, no se pinta nada; no hay valor de relleno para «no se sabe».
+  const nivelHtml = (plaza, o) => (o.rejilla && plaza.categoria
+    ? `<span class="vt-plaza__nivel">${escapar(plaza.categoria)}</span>` : '');
+
   function plazaHtml(plaza, partido, opciones) {
     const propuesta = opciones.propuestaEn === plaza.puesto && !plaza.playerId;
+    const lado = ladoHtml(plaza, opciones);
     if (propuesta) {
-      return `<div class="vt-plaza vt-plaza--propuesta">
+      return `<div class="vt-plaza vt-plaza--propuesta">${lado}
         <span class="vt-plaza__ficha">${escapar(iniciales(opciones.yoSoy))}</span>
         <span class="vt-plaza__nombre">${escapar(opciones.yoSoy)}</span>
         <span class="vt-plaza__pie">Sin guardar</span></div>`;
@@ -44,7 +60,7 @@
     // impone la fuente del titular, que le ganaria a la de los iconos y
     // pintaria la palabra «add» dentro del circulo.
     if (!plaza.playerId) {
-      return `<div class="vt-plaza vt-plaza--libre">
+      return `<div class="vt-plaza vt-plaza--libre">${lado}
         <span class="vt-plaza__ficha"><span class="ms notranslate" translate="no" aria-hidden="true">add</span></span>
         <span class="vt-plaza__nombre">Libre</span>
         <span class="vt-plaza__pie">&nbsp;</span></div>`;
@@ -53,9 +69,10 @@
     const yo = opciones.miId && plaza.playerId === opciones.miId;
     const clases = ['vt-plaza', organiza ? 'vt-plaza--organiza' : '', yo ? 'vt-plaza--yo' : ''].filter(Boolean).join(' ');
     const pie = organiza ? 'Organiza' : (yo ? 'Tú' : '&nbsp;');
-    return `<div class="${clases}">
+    return `<div class="${clases}">${lado}
       <span class="vt-plaza__ficha">${escapar(iniciales(plaza.nombre))}</span>
       <span class="vt-plaza__nombre">${escapar(plaza.nombre)}</span>
+      ${nivelHtml(plaza, opciones)}
       <span class="vt-plaza__pie">${pie}</span></div>`;
   }
 
@@ -66,14 +83,40 @@
     return `<span class="vt-chip vt-chip--gold">${4 - partido.libres}/4</span>`;
   }
 
+  // En la rejilla las cuatro plazas se pintan como dos parejas, con su
+  // rotulo. «Equipo 1» son los puestos 1 y 2 y «Equipo 2» los 3 y 4, que es
+  // el orden en el que el servidor llena los huecos. Es la lectura del
+  // dibujo, no un emparejamiento decidido: el partido no guarda parejas y
+  // apuntarse no las elige. En la lista estrecha siguen siendo cuatro
+  // columnas seguidas, sin rotulos.
+  const EQUIPOS = [{ titulo: 'Equipo 1', puestos: [1, 2] }, { titulo: 'Equipo 2', puestos: [3, 4] }];
+
+  function plazasHtml(partido, o) {
+    if (!o.rejilla) {
+      return `<div class="vt-partido__plazas">`
+        + partido.plazas.map((p) => plazaHtml(p, partido, o)).join('') + '</div>';
+    }
+    return '<div class="vt-partido__equipos">' + EQUIPOS.map((equipo) => {
+      const dentro = equipo.puestos
+        .map((n) => partido.plazas.find((p) => p.puesto === n))
+        .filter(Boolean)
+        .map((p) => plazaHtml(p, partido, o)).join('');
+      return `<div class="vt-equipo">
+        <p class="vt-equipo__titulo">${equipo.titulo}</p>
+        <div class="vt-partido__plazas vt-partido__plazas--rejilla">${dentro}</div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
   // El cuerpo de la tarjeta sin las acciones: cada pantalla pone las suyas.
-  // `opciones.rejilla` lo pinta en 2x2, que es como lo ensena /partido.
+  // `opciones.rejilla` lo pinta en dos parejas de 2, que es como lo ensena
+  // /partido.
   function cuerpo(partido, opciones) {
     const o = opciones || {};
     const donde = partido.sedePistas
       ? `${escapar(partido.sedeNombre)} <span class="vt-partido__pistas">· ${escapar(partido.sedePistas)}</span>`
       : escapar(partido.sedeNombre);
-    const plazas = partido.plazas.map((p) => plazaHtml(p, partido, o)).join('');
+    const plazas = plazasHtml(partido, o);
     // El nivel se ensena SIEMPRE, tambien cuando es «todos»: es una
     // condicion del partido, y un hueco donde a veces hay algo y a veces no
     // se lee como que ese partido no tiene nivel, no como que admite a todos.
@@ -87,7 +130,7 @@
         </div>
         ${chipHtml(partido)}
       </div>
-      <div class="vt-partido__plazas${o.rejilla ? ' vt-partido__plazas--rejilla' : ''}">${plazas}</div>
+      ${plazas}
       ${nota}`;
   }
 

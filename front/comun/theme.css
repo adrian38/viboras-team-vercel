@@ -1111,6 +1111,31 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
+/* Las dos parejas, una debajo de otra, con su rotulo. El rotulo es del
+ * dibujo: dice que esa fila son dos de los cuatro, no que el partido guarde
+ * parejas. */
+.vt-partido__equipos{display:flex;flex-direction:column;gap:var(--vt-sm)}
+.vt-equipo__titulo{
+  margin:0 0 4px;
+  font-family:var(--vt-font-head);font-size:11px;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--vt-muted);
+}
+
+/* El lado de pista: arriba de la plaza y en el tono mas apagado que hay, para
+ * que se lea como el rotulo de la posicion y no como un dato de la persona. */
+.vt-plaza__lado{
+  font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--vt-faint);
+  width:100%;min-width:0;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* El nivel del apuntado. Pegado al nombre, que es de quien habla. */
+.vt-plaza__nivel{
+  font-size:10px;font-weight:600;color:var(--vt-gold-light);
+  width:100%;min-width:0;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
 /* Quien convoco. Un punto de oro sobre su ficha, no una corona de otro
  * tamano: sale de creador_player_id y no es un rango. */
 .vt-plaza--organiza .vt-plaza__ficha{background:var(--vt-gold);color:var(--vt-bg)}
