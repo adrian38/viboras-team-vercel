@@ -116,7 +116,10 @@ function pintarAcciones() {
 
 function pintar() {
   $('tarjeta').innerHTML = window.vtPartido.cuerpo(partido, {
-    miId: yo.id, rejilla: true, propuestaEn: puestoPropuesto(), yoSoy: yo.nombre
+    miId: yo.id, rejilla: true, propuestaEn: puestoPropuesto(), yoSoy: yo.nombre,
+    // Los huecos se pueden pulsar solo si ya estoy dentro: moverse es cambiar
+    // de sitio, no entrar. Si no estoy, el boton de apuntarme es el camino.
+    puedoMoverme: partido.estoyDentro && !partido.cancelado && !partido.jugado
   });
   pintarAcciones();
   if (partido.cancelado) nota('Este partido se canceló.');
@@ -202,6 +205,15 @@ const ACCIONES = {
   'no-esperarme': async () => {
     await window.vtPartido.llamar('no-esperarme', { id: idPartido });
     await recargar();
+  },
+  // Cambiarme de hueco. No avisa al grupo ni abre WhatsApp: no cambia quien
+  // juega. Si otro ha pillado ese sitio entre pintar y pulsar, el servidor
+  // dice que no y la recarga enseña la tarjeta como esta de verdad.
+  moverme: async (boton) => {
+    const puesto = Number(boton.dataset.puesto);
+    const r = await window.vtPartido.llamar('moverme', { id: idPartido, puesto });
+    await recargar();
+    if (!r.ok) nota(r.mensaje, true);
   }
 };
 
@@ -209,7 +221,7 @@ document.body.addEventListener('click', (ev) => {
   const b = ev.target.closest('[data-accion]');
   if (!b) return;
   const fn = ACCIONES[b.dataset.accion];
-  if (fn) fn();
+  if (fn) fn(b);
 });
 
 // A esta pantalla se entra desde WhatsApp o desde un push, sin historia, asi

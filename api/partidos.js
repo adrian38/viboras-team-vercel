@@ -12,7 +12,7 @@ import {
   DURACIONES, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
   instanteDe, partidoQueSePisa, creadosHoy, crearPartido, tomarPlaza, soltarPlaza,
   partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe,
-  jugadorIncorporable, incorporables
+  jugadorIncorporable, incorporables, cambiarDePlaza
 } from './_partidos.js';
 import { misPartidos, partidosAbiertos, unPartido } from './_partidos-lista.js';
 import { avisarApuntado, avisarBaja, avisarCancelado, avisarIncorporado } from './_partidos-avisos.js';
@@ -180,6 +180,24 @@ async function borrarme(req, res, user) {
   res.status(200).json({ ok: true });
 }
 
+// Me cambio a otra plaza libre del mismo partido. Mueve solo al que lo pide
+// y solo dentro de su partido: no saca a nadie ni mete a nadie.
+//
+// No avisa al grupo. Apuntarse y borrarse cambian quien juega, que es lo que
+// el grupo necesita saber; cambiarse de hueco no cambia nada de eso, y un
+// push por cada baile de sitio seria ruido.
+async function moverme(req, res, user) {
+  if (!exigirFicha(res, user)) return;
+  const data = await readBody(req);
+  const partido = await partidoVivo(toInt(data?.id));
+  if (!partido) return error(res, 'too_late', 409, 'Ese partido ya ha empezado o no existe.');
+  const puesto = toInt(data?.puesto);
+  if (!(puesto >= 1 && puesto <= 4)) return error(res, 'bad_request', 400, 'Esa plaza no existe.');
+  const r = await cambiarDePlaza(partido.id, user.player_id, puesto);
+  if (r === 'ocupada') return error(res, 'taken', 409, 'Esa plaza ya está ocupada.');
+  res.status(200).json({ ok: true, puesto });
+}
+
 // El organizador incorpora a alguien con quien ya ha quedado. Es la UNICA
 // via por la que una plaza la ocupa alguien que no la pidio, y por eso es
 // una accion aparte en vez de un parametro de `apuntarme`: asi nadie puede
@@ -317,6 +335,7 @@ const ACCIONES = {
   'apuntar-a': ['POST', apuntarA],
   'a-quien-apuntar': ['GET', aQuienApuntar],
   borrarme: ['POST', borrarme],
+  moverme: ['POST', moverme],
   editar: ['POST', editar],
   esperarme: ['POST', esperarme],
   'no-esperarme': ['POST', noEsperarme],

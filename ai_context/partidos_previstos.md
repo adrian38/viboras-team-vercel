@@ -178,6 +178,47 @@ reintenta una vez y, si vuelve a chocar, es que ya no hay sitio.
 Es la misma lectura de `err.code === '23505'` que ya hacen
 `api/league-admin.js` y `api/_pozo-api.js`.
 
+## Los cuatro puestos son dos parejas y dos lados (2026-11-22)
+
+Los puestos **1 y 2 son el Equipo 1**, y el **3 y 4 el Equipo 2**. Dentro de
+cada pareja, el impar es el **drive** y el par el **revés**. Eso es lo que
+rotula la tarjeta (`front/comun/vt-partido-tarjeta.js`, `LADOS` y `EQUIPOS`)
+y lo que mira el servidor al dar una plaza.
+
+**Hasta el 2026-11-22 el puesto no significaba nada**: era el hueco libre más
+bajo, y el convocante caía siempre en el 1. Ahora:
+
+- **Al entrar, se busca primero una plaza del lado del jugador.** El lado es
+  `players.court_side`, el que eligió en `/cuenta`. Es la misma columna que
+  hasta ahora sólo leían `/comunidad` y `/pozo-nuevo`.
+- **Es una preferencia, no una regla.** Si no queda ninguna de su lado, entra
+  en la libre más baja: el lado no puede dejar a nadie fuera de un partido
+  con hueco. Con `ambos` —o NULL, o cualquier otro valor— todas empatan y
+  gana la más baja, que es lo de siempre.
+- **El convocante tampoco va fijo al 1.** `crearPartido` llama a
+  `intentarPlaza`, así que quien juega al revés empieza en el 2 de su propio
+  partido.
+- **Y cualquiera puede moverse** a un hueco libre del mismo partido, con la
+  acción `moverme`. Un partido se monta entre cuatro conocidos: el que quiera
+  cambiar de lado o de pareja tiene que poder hacerlo sin borrarse y volver a
+  apuntarse, que además le haría perder la plaza si entra alguien.
+
+`moverme` es un `UPDATE` sobre la fila que ya es tuya, con el destino libre
+comprobado en la misma sentencia; la misma clave primaria arbitra la carrera.
+Pero aquí **no se reintenta**: en `tomarPlaza` el destino es «cualquier
+hueco» y otro intento encuentra otro, mientras que aquí el destino lo ha
+elegido una persona, y moverla a un sitio distinto del que tocó sería peor
+que contestarle `taken`.
+
+`moverme` **no avisa al grupo**. Apuntarse y borrarse cambian quién juega;
+cambiarse de hueco no, y un push por cada baile de sitio sería ruido.
+
+Dos cosas que el rótulo **no** dice, y conviene no leer de más: las plazas de
+los que ya estaban apuntados antes de este cambio siguen donde las dejó el
+orden de llegada, y a quien tiene `ambos` el rótulo le sale igual aunque no
+haya elegido nada. La pareja tampoco se guarda en ninguna parte: son dos
+filas con puestos contiguos, no una entidad.
+
 ## El organizador sí puede apuntar a otros (2026-11-22)
 
 Quien convoca suele haber quedado ya con alguien. `apuntar-a` le deja meterlo

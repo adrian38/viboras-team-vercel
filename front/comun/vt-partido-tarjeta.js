@@ -59,7 +59,18 @@
     // El icono va DENTRO de la ficha y no en la misma etiqueta: la ficha
     // impone la fuente del titular, que le ganaria a la de los iconos y
     // pintaria la palabra «add» dentro del circulo.
+    // Un hueco al que puedo moverme es un boton, no un div: se pulsa, y con
+    // el teclado tambien. Solo lo pide /partido y solo cuando ya estoy
+    // dentro —moverse es cambiar de sitio, no entrar—, asi que las otras
+    // pantallas siguen pintando el hueco quieto de siempre.
     if (!plaza.playerId) {
+      if (opciones.puedoMoverme) {
+        return `<button type="button" class="vt-plaza vt-plaza--libre vt-plaza--mover"
+          data-accion="moverme" data-puesto="${plaza.puesto}">${lado}
+          <span class="vt-plaza__ficha"><span class="ms notranslate" translate="no" aria-hidden="true">sync_alt</span></span>
+          <span class="vt-plaza__nombre">Libre</span>
+          <span class="vt-plaza__pie">Ponerme aquí</span></button>`;
+      }
       return `<div class="vt-plaza vt-plaza--libre">${lado}
         <span class="vt-plaza__ficha"><span class="ms notranslate" translate="no" aria-hidden="true">add</span></span>
         <span class="vt-plaza__nombre">Libre</span>

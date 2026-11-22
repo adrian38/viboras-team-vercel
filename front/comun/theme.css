@@ -1144,6 +1144,18 @@ input[type=checkbox],input[type=radio]{accent-color:var(--vt-gold);width:16px;he
 
 /* Plaza libre: el hueco se ve como hueco. */
 .vt-plaza--libre .vt-plaza__ficha{background:transparent;border:1px dashed var(--vt-border-strong);color:var(--vt-faint)}
+
+/* El hueco al que puedo moverme es un <button>, y hay que devolverle lo que
+   el navegador le quita: la fuente, el color y el ancho de la rejilla. Sin
+   `font:inherit` saldria con la del sistema y a 13 px. */
+.vt-plaza--mover{
+  font:inherit;color:inherit;text-align:center;width:100%;
+  cursor:pointer;transition:border-color .15s ease,background .15s ease;
+}
+.vt-plaza--mover:hover,.vt-plaza--mover:focus-visible{
+  border-color:var(--vt-border-gold);background:var(--vt-surface-3);
+}
+.vt-plaza--mover:hover .vt-plaza__pie,.vt-plaza--mover:focus-visible .vt-plaza__pie{color:var(--vt-gold-light)}
 .vt-plaza__ficha .ms{font-size:22px}
 .vt-plaza--libre .vt-plaza__nombre{color:var(--vt-muted)}
 

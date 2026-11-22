@@ -212,10 +212,15 @@ export async function creadosHoy(playerId) {
   return rows[0].n;
 }
 
-// Crea el partido y mete al creador en la plaza 1. No es atomico y no hace
-// falta que lo sea: si la segunda sentencia fallara, quedaria un partido con
-// cuatro plazas libres, que es un estado valido y del que su autor puede
-// borrarse o al que puede volver a apuntarse.
+// Crea el partido y mete dentro al creador. No es atomico y no hace falta que
+// lo sea: si la segunda sentencia fallara, quedaria un partido con cuatro
+// plazas libres, que es un estado valido y del que su autor puede borrarse o
+// al que puede volver a apuntarse.
+//
+// La plaza no es siempre la 1: sale de `intentarPlaza`, que mira el lado del
+// creador. Con las cuatro libres eso es la 1 para drive o 'ambos' y la 2 para
+// reves. Antes era la 1 fija y quien juega al reves empezaba siempre en el
+// drive de su propio partido.
 export async function crearPartido(datos) {
   const { playerId, empieza, duracion, sede, sedeLibre, niveles } = datos;
   const { rows } = await sql`
@@ -224,21 +229,43 @@ export async function crearPartido(datos) {
     VALUES (${empieza}, ${duracion}, ${sede}, ${sedeLibre}, ${niveles}, ${playerId})
     RETURNING id`;
   const id = rows[0].id;
-  await sql`INSERT INTO partido_plazas (partido_id, puesto, player_id) VALUES (${id}, 1, ${playerId})`;
+  await intentarPlaza(id, playerId, await ladoDe(playerId));
   return id;
 }
 
-// Toma la plaza libre mas baja en una sola sentencia: quien arbitra la carrera
-// es la clave primaria (partido_id, puesto), no este codigo. Cero filas
-// significa que no quedaba hueco.
-async function intentarPlaza(partidoId, playerId) {
+// El lado de pista que el jugador eligio en /cuenta (`players.court_side`).
+// Lo crea `ensureAuthSchema`, no `ensureSchema`, y el handler de partidos lo
+// asegura al exigir la sesion. Cualquier cosa que no sea drive o reves —NULL,
+// 'ambos', un valor viejo— vale como 'ambos': sin preferencia.
+async function ladoDe(playerId) {
+  const { rows } = await sql`SELECT court_side FROM players WHERE id = ${playerId}`;
+  const lado = rows.length ? rows[0].court_side : null;
+  return lado === 'drive' || lado === 'reves' ? lado : 'ambos';
+}
+
+// Toma una plaza libre en una sola sentencia: quien arbitra la carrera es la
+// clave primaria (partido_id, puesto), no este codigo. Cero filas significa
+// que no quedaba hueco.
+//
+// Cual de las libres depende del lado del jugador. Los puestos impares (1 y
+// 3) son el drive de su pareja y los pares (2 y 4) el reves, que es como los
+// pinta la tarjeta: Equipo 1 son el 1 y el 2, Equipo 2 el 3 y el 4. Se busca
+// primero una del lado suyo y, si no queda ninguna, la libre mas baja: el
+// lado es una preferencia y no puede dejar a nadie fuera de un partido con
+// hueco. Con 'ambos' todas empatan y gana la mas baja, que es lo que se hacia
+// antes de esto.
+async function intentarPlaza(partidoId, playerId, lado) {
   const { rows } = await sql`
     INSERT INTO partido_plazas (partido_id, puesto, player_id)
-    SELECT ${partidoId}, MIN(h.n), ${playerId}
+    SELECT ${partidoId}, h.n, ${playerId}
       FROM generate_series(1, 4) AS h(n)
      WHERE NOT EXISTS (
        SELECT 1 FROM partido_plazas q WHERE q.partido_id = ${partidoId} AND q.puesto = h.n)
-    HAVING MIN(h.n) IS NOT NULL
+     ORDER BY CASE
+       WHEN ${lado} = 'drive' AND h.n % 2 = 1 THEN 0
+       WHEN ${lado} = 'reves' AND h.n % 2 = 0 THEN 0
+       ELSE 1 END, h.n
+     LIMIT 1
     RETURNING puesto`;
   return rows.length ? rows[0].puesto : null;
 }
@@ -263,9 +290,10 @@ async function tienePlaza(partidoId, playerId) {
 // El otro 23505, el de la clave primaria, es la carrera de dos que se apuntan
 // a la vez a la misma plaza: ese se reintenta una vez.
 export async function tomarPlaza(partidoId, playerId) {
+  const lado = await ladoDe(playerId);
   for (let intento = 0; intento < 2; intento += 1) {
     try {
-      const puesto = await intentarPlaza(partidoId, playerId);
+      const puesto = await intentarPlaza(partidoId, playerId, lado);
       if (puesto === null) return await tienePlaza(partidoId, playerId) ? 'already_in' : 'full';
       await sql`DELETE FROM partido_espera WHERE partido_id = ${partidoId} AND player_id = ${playerId}`;
       return puesto;
@@ -307,6 +335,37 @@ export async function soltarPlaza(partidoId, playerId) {
     DELETE FROM partido_plazas WHERE partido_id = ${partidoId} AND player_id = ${playerId}
     RETURNING puesto`;
   return rows.length > 0;
+}
+
+// Me cambio a otra plaza del mismo partido. El lado de /cuenta decide donde
+// entra uno, pero no manda: un partido se monta entre cuatro conocidos y el
+// que quiera cambiarse de lado o de pareja tiene que poder, sin borrarse y
+// volver a apuntarse, que ademas le haria perder la plaza si entra alguien.
+//
+// Es un UPDATE sobre la fila que ya es mia y con el puesto destino libre, en
+// una sola sentencia: si dos se mueven a la vez al mismo hueco, el segundo
+// choca con la clave primaria (partido_id, puesto) y se queda donde estaba.
+// Cero filas es «ese hueco ya no esta libre o tu no estas en el partido», que
+// para quien lo pide es lo mismo: no te has movido.
+//
+// 'ocupada' y no un reintento como en `tomarPlaza`: alli el destino era
+// cualquier hueco y reintentar encuentra otro; aqui el destino es el que ha
+// elegido la persona, y moverla a uno distinto del que toco seria peor que
+// decirle que no.
+export async function cambiarDePlaza(partidoId, playerId, puesto) {
+  try {
+    const { rows } = await sql`
+      UPDATE partido_plazas SET puesto = ${puesto}
+       WHERE partido_id = ${partidoId} AND player_id = ${playerId}
+         AND NOT EXISTS (
+           SELECT 1 FROM partido_plazas q
+            WHERE q.partido_id = ${partidoId} AND q.puesto = ${puesto})
+      RETURNING puesto`;
+    return rows.length ? 'ok' : 'ocupada';
+  } catch (err) {
+    if (err && err.code === '23505') return 'ocupada';
+    throw err;
+  }
 }
 
 // La fila cruda de un partido que todavia admite cambios. Null si no existe,
