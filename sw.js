@@ -20,6 +20,7 @@ const PRECACHE = [
   '/index.html',
   '/front/comun/theme.css',
   '/image.png',
+  '/logo_navidad.jpg',
   '/icon-192.png',
   '/apple-touch-icon.png'
 ];

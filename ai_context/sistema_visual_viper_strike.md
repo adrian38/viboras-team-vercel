@@ -451,9 +451,32 @@ dorado (diez páginas y `/valorar`) y `.vt-header__logo` con un marco degradado
 (`/cuenta`, `/pozo*`, `/rating-info`, `/ranking-info`, `/group-normativa`,
 `/inscripcion`). `/comunidad` lleva el suyo en la barra de arriba, a 32 px.
 
-`image.png` es opaco con fondo `#010101`: el cuadrado negro es del PNG. Lo
-quita `mix-blend-mode:screen`, que funde ese negro con lo que haya detrás, sea
-la página o una tarjeta. Por eso:
+### Desde el 2026-11-27: el logo de Navidad
+
+Las 21 páginas (y la portada) pintan **`logo_navidad.jpg`**: el mismo logo
+con gorro de Papá Noel, a 512×512 y 94 KB. Sale de `brand_christmas.jpeg`
+(1254×1254, 405 KB), que trajo Adrián. Se reduce porque el original pesa
+cuatro veces más y nada lo enseña a más de 200 px. Se rehace así:
+
+```bash
+python -c "from PIL import Image; Image.open('brand_christmas.jpeg').convert('RGB').resize((512,512),Image.LANCZOS).save('logo_navidad.jpg',quality=85,optimize=True,progressive=True)"
+```
+
+Está en el `PRECACHE` de `sw.js` para que la portada lo enseñe sin cobertura.
+Vive en la raíz y no está montado como volumen: tras cambiarlo, `--build`.
+
+Lo que **no** cambió, a propósito: el favicon, los iconos de la PWA instalada
+(`icon-*.png`, `apple-touch-icon.png`, el manifest) y el logo de los correos
+(`api/_logo.js`, generado desde `image.png`). Siguen con el logo de siempre.
+Para volver al logo normal en las pantallas, el `src` de los 21 `<img>` vuelve
+a `/image.png` (la portada, a `/icon-512.png`); `rg -l logo_navidad front/`
+da la lista.
+
+### Por qué no lleva recuadro
+
+La imagen es opaca con fondo negro (`#010101` en `image.png`, `#000` en la de
+Navidad). Ese cuadrado lo quita `mix-blend-mode:screen`, que funde el negro
+con lo que haya detrás, sea la página o una tarjeta. Por eso:
 
 - Sólo funciona sobre fondo oscuro. Sobre uno claro el cuadrado vuelve.
 - Nada de `drop-shadow` ni `box-shadow` en el logo: dibujan el cuadrado en luz.

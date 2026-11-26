@@ -352,7 +352,7 @@ small,.vt-small{font-size:13px;line-height:18px;color:var(--vt-muted)}
 }
 
 /* El logo va suelto en todas las paginas, como en la portada: sin marco,
-   sin esquinas redondas y sin sombra. El PNG es opaco con fondo #010101, y
+   sin esquinas redondas y sin sombra. La imagen es opaca con fondo negro, y
    con mix-blend-mode:screen ese negro se funde en el fondo de la pagina o de
    la tarjeta. Solo vale sobre fondo oscuro; sobre uno claro el cuadrado
    reaparece. Un drop-shadow encima volveria a dibujar el cuadrado en luz.
