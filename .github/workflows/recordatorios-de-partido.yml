@@ -41,6 +41,9 @@ concurrency:
 #
 # Un job por entorno que tenga /api/cron-partidos. Produccion entra en la
 # lista el dia que `partidos` llegue a `viboras`: antes contesta 404.
+#
+# Cada entorno tiene su secreto, igual al CRON_SECRET de ese entorno en
+# Vercel: CRON_SECRET para Production y CRON_SECRET_DEV para Preview (dev).
 jobs:
   avisar:
     runs-on: ubuntu-latest
@@ -51,14 +54,15 @@ jobs:
         include:
           - entorno: dev
             url: https://viboras-team-vercel-git-dev-adrian38s-projects.vercel.app
+            secreto: CRON_SECRET_DEV
     steps:
       - name: Llamar al endpoint (${{ matrix.entorno }})
         env:
           APP_URL: ${{ matrix.url }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_SECRET: ${{ secrets[matrix.secreto] }}
         run: |
           if [ -z "$CRON_SECRET" ]; then
-            echo "Falta el secreto CRON_SECRET en el repositorio." >&2
+            echo "Falta el secreto ${{ matrix.secreto }} en el repositorio." >&2
             exit 1
           fi
           # --fail-with-body: que un 401 o un 500 pongan el job en rojo, pero
