@@ -351,15 +351,19 @@ small,.vt-small{font-size:13px;line-height:18px;color:var(--vt-muted)}
   border-bottom:1px solid var(--vt-border);
 }
 
+/* El logo va suelto en todas las paginas, como en la portada: sin marco,
+   sin esquinas redondas y sin sombra. El PNG es opaco con fondo #010101, y
+   con mix-blend-mode:screen ese negro se funde en el fondo de la pagina o de
+   la tarjeta. Solo vale sobre fondo oscuro; sobre uno claro el cuadrado
+   reaparece. Un drop-shadow encima volveria a dibujar el cuadrado en luz.
+   Detalle en ai_context/sistema_visual_viper_strike.md. */
+.vt-logo{mix-blend-mode:screen}
+
 .vt-header__logo{
   flex:0 0 auto;
   width:96px;height:96px;
-  border-radius:var(--vt-r-lg);
-  padding:2px;
-  background:linear-gradient(135deg,var(--vt-gold),var(--vt-gold-dark),var(--vt-surface-deep));
-  box-shadow:var(--vt-shadow-float);
 }
-.vt-header__logo img{width:100%;height:100%;object-fit:cover;border-radius:calc(var(--vt-r-lg) - 2px);display:block}
+.vt-header__logo img{width:100%;height:100%;object-fit:contain;display:block;mix-blend-mode:screen}
 
 .vt-header__text{flex:1;min-width:0}
 

@@ -442,6 +442,31 @@ grep -l 'content="#000000"' *.html          # tiene que estar vacio
 `theme.css` también entró en el `PRECACHE` de `sw.js` (y con él, `CACHE` subió
 a `viboras-v2`): sin él la portada abre sin estilos cuando no hay cobertura.
 
+## El logo va suelto, sin recuadro, en todas las páginas
+
+Desde el 2026-11-27 todas las páginas pintan el logo como la portada: sin
+marco dorado, sin esquinas redondas y sin `drop-shadow`. Antes convivían tres
+versiones: la suelta de la portada, una imagen con esquinas redondas y halo
+dorado (diez páginas y `/valorar`) y `.vt-header__logo` con un marco degradado
+(`/cuenta`, `/pozo*`, `/rating-info`, `/ranking-info`, `/group-normativa`,
+`/inscripcion`). `/comunidad` lleva el suyo en la barra de arriba, a 32 px.
+
+`image.png` es opaco con fondo `#010101`: el cuadrado negro es del PNG. Lo
+quita `mix-blend-mode:screen`, que funde ese negro con lo que haya detrás, sea
+la página o una tarjeta. Por eso:
+
+- Sólo funciona sobre fondo oscuro. Sobre uno claro el cuadrado vuelve.
+- Nada de `drop-shadow` ni `box-shadow` en el logo: dibujan el cuadrado en luz.
+- Ni marco ni fondo en el contenedor: el logo se fundiría con el marco.
+
+Las piezas son `.vt-logo` (para un `<img>` suelto) y `.vt-header__logo img`,
+las dos en `theme.css`, y `.barra__logo` en `/comunidad`. Los tamaños no se
+tocaron: 200 en la portada, 88 en las páginas con el logo centrado, 96 en
+`/valorar` (lo fija su CSS, no el `width` del `<img>`), 80 en las cabeceras
+`.vt-header` en móvil y 64 en las cabeceras en fila. `/valorar` llevaba
+además un borde dorado y un halo en su propio `<style>`, que tampoco se veían
+desde `theme.css`: al buscar restos, mirar el CSS de cada página.
+
 ## La pantalla de bienvenida
 
 `splash.js` + las reglas `.vt-splash*` de `theme.css`.
