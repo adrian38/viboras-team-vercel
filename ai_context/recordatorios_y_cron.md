@@ -137,7 +137,10 @@ El workflow llama a una lista de entornos (`matrix`), no a uno solo: mientras
 los partidos previstos vivan sólo en `dev`, la lista es `dev`, porque
 producción contesta 404 en `/api/cron-partidos`. **Al llevar `partidos` a
 `viboras`, añadir producción a la lista**, o el grupo real se quedará sin
-recordatorios igual que se quedó `dev`. El endpoint de `dev` no está detrás de
+recordatorios igual que se quedó `dev`. Es deuda aceptada para ese merge, y
+con ella otra: nadie ha comprobado que el `CRON_SECRET` de GitHub coincida con
+el de Production. Tras desplegar, una pasada a mano tiene que dar
+`{"ok":true}` en el job de producción. El endpoint de `dev` no está detrás de
 la protección de Vercel: sin cabecera contesta el 401 de la propia función.
 
 Dos cosas que no se pueden arreglar desde el repositorio:
