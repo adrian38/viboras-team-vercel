@@ -23,22 +23,10 @@
 <meta name="theme-color" content="#121316">
 
 <style>
-body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
-.barra{
-  /* El alto crece con la barra de estado: el padding de abajo ya reservaba su
-     hueco, pero con 64px fijos se lo comia a la fila en vez de anadirselo.
-     Hasta el `viewport-fit=cover` del 2026-11-02 el env() valia 0 y no se
-     notaba. */
-  position:fixed;inset:0 0 auto;z-index:var(--vt-z-flotante);height:calc(64px + env(safe-area-inset-top,0px));
-  padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
-  display:flex;align-items:center;gap:var(--vt-sm);
-  background:rgba(18,19,22,.92);backdrop-filter:blur(14px);box-shadow:0 4px 20px rgba(0,0,0,.6);
-}
-.barra__volver{width:40px;height:40px;display:grid;place-items:center;color:var(--vt-text);text-decoration:none}
-.barra__logo{width:32px;height:32px;mix-blend-mode:screen}
-.barra__texto{display:flex;flex-direction:column;min-width:0}
-.barra__marca{font-family:var(--vt-font-head);font-size:12px;line-height:14px;font-weight:700;letter-spacing:.1em;color:var(--vt-gold-soft)}
-.barra__titulo{font-family:var(--vt-font-head);font-size:18px;line-height:20px;font-weight:700;text-transform:uppercase;color:var(--vt-text)}
+/* Sin barra de arriba desde el 2026-11-27: Comunidad es una pestana de la
+   barra de abajo, y la flecha de volver y el rotulo repetian lo que ella ya
+   dice. Arriba queda el mismo margen que el resto de pantallas. */
+body{padding:var(--vt-md) 0 var(--vt-lg);background:var(--vt-bg)}
 .comunidad{max-width:760px;gap:0;padding:var(--vt-sm) 16px 0}
 .presentacion{position:relative;margin-bottom:var(--vt-sm)}
 .presentacion::before{content:'';position:absolute;inset:-30px 20% auto;height:80px;background:rgba(245,158,11,.08);filter:blur(32px);pointer-events:none}
@@ -145,15 +133,6 @@ body{padding:64px 0 var(--vt-lg);background:var(--vt-bg)}
 <a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
 </div>
 </nav>
-<header class="barra">
-  <a class="barra__volver" id="volver" href="/" aria-label="Volver"><span class="ms notranslate" translate="no" aria-hidden="true">arrow_back</span></a>
-  <img class="barra__logo" src="/logo_navidad.jpg" alt="">
-  <div class="barra__texto">
-    <span class="barra__marca">VÍBORAS TEAM</span>
-    <span class="barra__titulo">Comunidad</span>
-  </div>
-</header>
-
 <main class="vt-page comunidad">
   <section class="presentacion" aria-labelledby="titulo-comunidad">
     <div class="cabeza">

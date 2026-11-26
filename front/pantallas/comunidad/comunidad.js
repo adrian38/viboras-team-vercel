@@ -13,15 +13,6 @@ const LADOS = { drive: 'Drive', reves: 'Revés', ambos: 'Ambos' };
 let jugadores = [];
 let filtro = 'todos';
 
-// A donde lleva la flecha de la barra: lo dice quien trajo aquí, con ?volver=
-// (lo pone /cuenta, que enlaza a esta página desde dos sitios). Sólo rutas de
-// este sitio —una que empiece por // o por http sería un redirect abierto—,
-// la misma regla que `goBack()` en day.html. Sin ese parámetro, a la portada.
-(function volverA() {
-  const v = new URLSearchParams(location.search).get('volver') || '/';
-  document.getElementById('volver').href = (v.startsWith('/') && !v.startsWith('//')) ? v : '/';
-})();
-
 function el(tag, clase, texto) {
   const n = document.createElement(tag);
   if (clase) n.className = clase;

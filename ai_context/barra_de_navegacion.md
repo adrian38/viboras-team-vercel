@@ -336,10 +336,10 @@ hace que la página llegue también al borde de arriba, `theme.css` añade
 que el de abajo: la consulta de 720 px y tres páginas reescriben el `padding`
 del `body` con la forma corta y se lo llevarían por delante.
 
-Hay una excepción que hay que mirar al tocar esto: `comunidad` tiene su propia
-barra **fija arriba**, que no se entera del `::before`. Su `height` pasó a
-`calc(64px + env(safe-area-inset-top,0px))`; con 64 px fijos el recorte se lo
-quitaba a la fila en vez de sumárselo.
+Hasta el 2026-11-27 `comunidad` tenía su propia barra **fija arriba**, que no
+se enteraba del `::before` y necesitaba su propio `env()`. Ya no existe: las
+cinco pantallas con pestaña no llevan barra ni cabecera con «Volver» arriba,
+porque la barra de abajo ya hace ese trabajo.
 
 ## El alto de la barra es un número medido
 

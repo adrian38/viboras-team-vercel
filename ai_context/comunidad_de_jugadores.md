@@ -88,11 +88,17 @@ un partido jugado. Para ganados y perdidos valen los cinco formatos
 
 ## La composición visual sí sigue la maqueta
 
-Desde el 2026-11-01 la página usa el esqueleto visual de Stitch: barra superior
-compacta, bloque «Directorio oficial», buscador, filtros horizontales y una
+Desde el 2026-11-01 la página usa el esqueleto visual de Stitch: bloque «Directorio oficial», buscador, filtros horizontales y una
 tarjeta independiente por jugador. Antes conservaba la cabecera antigua con el
 logo grande y envolvía todo el directorio en una sola `vt-card`, por eso no se
 parecía a la referencia aunque colores y datos fueran correctos.
+
+La maqueta traía además una barra superior fija con flecha de volver, logo y
+«VÍBORAS TEAM / COMUNIDAD». **Se quitó el 2026-11-27** a petición de Adrián,
+igual que la cabecera de `/cuenta`: las dos son pestañas de la barra de abajo
+([[barra_de_navegacion]]), que ya dice dónde estás y lleva a cualquier otra
+sección. Con ella se fue el `?volver=` que `/cuenta` ponía en su enlace a esta
+página, que sólo servía a esa flecha.
 
 Dentro de la ficha, la categoría va como subtítulo del nombre, el número del
 motor a la derecha con la etiqueta `FIABILIDAD` y la matriz queda en

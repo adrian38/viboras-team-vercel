@@ -337,19 +337,9 @@ body{padding-inline:0}
 
 <div class="vt-page vt-page--narrow">
 
-  <header class="vt-between" style="padding-bottom:var(--vt-md);border-bottom:1px solid var(--vt-border)">
-    <div class="vt-row" style="gap:var(--vt-md)">
-      <div class="vt-header__logo" style="width:64px;height:64px"><img src="/logo_navidad.jpg" alt="Víboras Team"></div>
-      <div>
-        <span class="vt-label vt-gold">Tu cuenta</span>
-        <h3 style="margin-top:2px">Víboras <span class="vt-gold-grad">Team</span></h3>
-      </div>
-    </div>
-    <button class="vt-btn vt-btn--quiet vt-btn--sm" onclick="window.location.href='/'">
-      <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Volver
-    </button>
-  </header>
-
+  <!-- Sin cabecera desde el 2026-11-27: Perfil es una pestana de la barra de
+       abajo, y el logo, el «Tu cuenta» y el «Volver» repetian lo que ella ya
+       dice. -->
   <p id="cargando" class="vt-small vt-muted">Cargando…</p>
 
   <div id="aviso" class="aviso" role="alert" aria-live="assertive">
@@ -366,8 +356,8 @@ body{padding-inline:0}
       <div class="identidad">
         <div class="inicial" id="pInicial"></div>
         <div class="vt-grow">
-          <!-- Sin rotulo encima del nombre: la cabecera ya dice «Tu cuenta» y
-               la pagina entera es la de quien ha entrado. -->
+          <!-- Sin rotulo encima del nombre: la pestana «Perfil» ya esta
+               encendida y la pagina entera es la de quien ha entrado. -->
           <h4 id="sesionJugador"></h4>
           <p class="vt-small vt-muted" id="sesionCorreo" style="margin:2px 0 0">
           </p>
@@ -413,7 +403,7 @@ body{padding-inline:0}
            mirarlo, asi que la frase no promete nada de las parejas del dia a
            dia. -->
       <p class="vt-small vt-muted" style="margin-top:var(--vt-xs)">
-        ¿Dónde juegas mejor? Lo verá el grupo en <a href="/comunidad?volver=%2Fcuenta">Comunidad</a>,
+        ¿Dónde juegas mejor? Lo verá el grupo en <a href="/comunidad">Comunidad</a>,
         y quien monte un pozo lo verá al repartir las parejas.
       </p>
       <div class="lado" role="group" aria-label="Lado de pista">
@@ -563,7 +553,7 @@ body{padding-inline:0}
       <p class="pie-tarjeta">
         <span><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">info</span>
           Tu disponibilidad la ve el grupo en
-          <a href="/comunidad?volver=%2Fcuenta">Comunidad</a>; tu categoría actual sale del
+          <a href="/comunidad">Comunidad</a>; tu categoría actual sale del
           rating. Los datos de esta ficha sólo los ven los
           administradores. Estos datos los cambia un administrador: escríbele
           por <a href="/buzon?volver=%2Fcuenta">el buzón</a> si hay algo mal.</span>
