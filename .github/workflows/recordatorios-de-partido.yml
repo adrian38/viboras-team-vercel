@@ -35,14 +35,26 @@ concurrency:
   group: recordatorios-de-partido
   cancel-in-progress: false
 
+# Este fichero tiene que estar en `viboras`, la rama por defecto: GitHub solo
+# dispara los `schedule` desde ella. Mientras vivio solo en `dev` no corrio ni
+# una vez y no salio ningun recordatorio, sin un solo aviso en rojo.
+#
+# Un job por entorno que tenga /api/cron-partidos. Produccion entra en la
+# lista el dia que `partidos` llegue a `viboras`: antes contesta 404.
 jobs:
   avisar:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - entorno: dev
+            url: https://viboras-team-vercel-git-dev-adrian38s-projects.vercel.app
     steps:
-      - name: Llamar al endpoint
+      - name: Llamar al endpoint (${{ matrix.entorno }})
         env:
-          APP_URL: ${{ vars.APP_URL || 'https://viboras-team-vercel.vercel.app' }}
+          APP_URL: ${{ matrix.url }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           if [ -z "$CRON_SECRET" ]; then

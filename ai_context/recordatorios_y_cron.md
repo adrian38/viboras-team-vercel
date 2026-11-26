@@ -124,6 +124,22 @@ El repositorio es **público**, así que los minutos de GitHub Actions son
 gratis e ilimitados; en uno privado, 288 pasadas al día se comerían de sobra
 los 2.000 minutos mensuales del plan gratuito y habría que espaciarlas o pagar.
 
+**El workflow tiene que estar en `viboras`.** GitHub sólo dispara un
+`schedule` desde la rama por defecto; en cualquier otra rama el fichero existe
+pero no corre, y no sale nada en rojo. Pasó del 2026-11-21 al 2026-11-27: el
+workflow vivía sólo en `dev`, `gh run list` contestaba «not found on the
+default branch» y en `viboras_dev` la tabla `partido_avisos` no tenía ni un
+aviso mandado, sólo los que nacieron vencidos (`omitido`). Adrián lo notó
+porque no le llegó ni el de 30 min antes de reservar ni el del día del
+partido. Comprobarlo: `gh run list --workflow recordatorios-de-partido.yml`.
+
+El workflow llama a una lista de entornos (`matrix`), no a uno solo: mientras
+los partidos previstos vivan sólo en `dev`, la lista es `dev`, porque
+producción contesta 404 en `/api/cron-partidos`. **Al llevar `partidos` a
+`viboras`, añadir producción a la lista**, o el grupo real se quedará sin
+recordatorios igual que se quedó `dev`. El endpoint de `dev` no está detrás de
+la protección de Vercel: sin cabecera contesta el 401 de la propia función.
+
 Dos cosas que no se pueden arreglar desde el repositorio:
 
 - **El `schedule` de Actions no es puntual.** En horas punta se retrasa, a
