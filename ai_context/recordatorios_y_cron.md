@@ -158,14 +158,20 @@ no cambia.
 
 ### Lo que hay que crear a mano
 
-`CRON_SECRET`, con **el mismo valor** en los dos sitios, o el endpoint
-contestará 401 cada cinco minutos:
+Un secreto por entorno, con **el mismo valor** en Vercel y en GitHub, o el
+endpoint contestará 401 cada cinco minutos:
 
-1. En Vercel, variable de entorno de **Production** (y el override de Preview
-   `dev` si se quiere probar allí; `dev` tiene su propio par VAPID, así que
-   desde Preview no se alcanza a los móviles del grupo).
-2. En GitHub, **Settings → Secrets and variables → Actions**, secreto
-   `CRON_SECRET`.
+| Entorno | Vercel | GitHub (Settings → Secrets and variables → Actions) |
+| --- | --- | --- |
+| Producción | `CRON_SECRET` en **Production** | `CRON_SECRET` |
+| `dev` | `CRON_SECRET` en **Preview (dev)** | `CRON_SECRET_DEV` |
+
+Cada job de la `matrix` dice cuál usa. Hasta el 2026-11-27 había un solo
+secreto en GitHub y no coincidía con el de Preview (dev): la primera pasada
+dio 401. Los dos de `dev` se regeneraron ese día y se redesplegó el Preview.
+Ninguno se puede volver a leer: si se duda de que coincidan, se genera uno
+nuevo, se pone en los dos sitios y se redespliega (cambiar una variable de
+Vercel no afecta al despliegue que ya está sirviendo).
 
 Hasta que existan, el workflow falla en rojo cada pasada y el endpoint
 responde 503. Es ruidoso a propósito: un recordatorio que no llega no se nota,
