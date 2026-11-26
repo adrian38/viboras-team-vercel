@@ -465,12 +465,15 @@ python -c "from PIL import Image; Image.open('brand_christmas.jpeg').convert('RG
 Está en el `PRECACHE` de `sw.js` para que la portada lo enseñe sin cobertura.
 Vive en la raíz y no está montado como volumen: tras cambiarlo, `--build`.
 
-Lo que **no** cambió, a propósito: el favicon, los iconos de la PWA instalada
-(`icon-*.png`, `apple-touch-icon.png`, el manifest) y el logo de los correos
-(`api/_logo.js`, generado desde `image.png`). Siguen con el logo de siempre.
-Para volver al logo normal en las pantallas, el `src` de los 21 `<img>` vuelve
-a `/image.png` (la portada, a `/icon-512.png`); `rg -l logo_navidad front/`
-da la lista.
+El favicon y los iconos de la app instalada también son de Navidad, pero eso se
+hizo sobrescribiendo los ficheros: está en `iconos_pwa.md`. El logo de los
+correos (`api/_logo.js`) sigue siendo el de siempre.
+
+Para volver al logo normal en las pantallas, primero hay que devolver
+`image.png` e `icon-512.png` a su versión anterior (`iconos_pwa.md` dice
+cómo), porque hoy también son de Navidad. Después, el `src` de los 21 `<img>`
+vuelve a `/image.png` (el de la portada, a `/icon-512.png`); la lista sale de
+`rg -l logo_navidad front/`.
 
 ### Por qué no lleva recuadro
 

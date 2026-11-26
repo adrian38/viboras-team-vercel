@@ -8,7 +8,8 @@ eso: hacen falta un **web manifest** y un **apple-touch-icon**.
 
 | Fichero | Para qué |
 | --- | --- |
-| `image.png` (256×256) | El logo. Es la **única fuente** que existe en el repo. |
+| `image.png` (256×256) | El logo, y el favicon de las páginas (`<link rel="icon">`). |
+| `favicon.ico` | El favicon de quien pide `/favicon.ico` a pelo. 16 a 256 px. |
 | `icon-192.png`, `icon-512.png` | Android, `purpose: any`. |
 | `icon-maskable-512.png` | Android, `purpose: maskable`: logo al **72 %** sobre fondo negro. |
 | `front/iconos/site.webmanifest` | `display: standalone`, nombre corto «Viboras». |
@@ -118,11 +119,40 @@ Lo de abajo vale también para esto: el móvil que ya tuviera instalada la app d
 `dev` seguirá viendo el icono negro hasta que se desinstale y se vuelva a
 instalar.
 
-## Limitación conocida
+## Desde el 2026-11-27: los iconos de Navidad
 
-`icon-512.png` está **reescalado desde 256 px**, que es lo más grande que hay en
-el repo (el `favicon.ico` tampoco pasa de 256). Si aparece el logo original en
-mayor resolución, regenerar los tres tamaños sin interpolar.
+Todos los ficheros de la tabla de arriba, los de `front/iconos-dev/`
+incluidos, son hoy el logo con gorro de Papá Noel. Salen de
+`brand_christmas.jpeg` (1254×1254), que trajo Adrián y **no está en git**.
+Con un original más grande que 512 el `icon-512.png` ya no está reescalado
+hacia arriba, como pasaba con el logo de 256.
+
+Se hicieron **sobrescribiendo los ficheros**, sin tocar las páginas ni los
+manifiestos. Así, volver al logo de siempre es deshacer el commit
+«iconos: los de Navidad», o sacar esos ficheros del commit anterior a él:
+
+```bash
+git checkout <commit>^ -- image.png favicon.ico icon-192.png icon-512.png icon-maskable-512.png front/iconos/apple-touch-icon.png front/iconos-dev/
+```
+
+Cómo se generaron: cada tamaño reducido con Lanczos desde el original; el
+maskable, al 72 % sobre negro opaco como el anterior; el `.ico` con 16, 32,
+48, 64, 128 y 256; `image.png` en paleta de 256 colores, como estaba el
+anterior (44 KB; en color real pesaba 122 KB, y lo pide cada página como
+favicon). La paleta le apaga el morado de la lengua: vale para favicon, no
+para enseñarlo grande, que para eso está `logo_navidad.jpg`. Los de `dev` con `tools/iconos-dev.py`, al que hubo que
+bajarle `FONDO` de 36 a 8: el razonamiento está en el propio script.
+
+Lo que **sigue con el logo de siempre**:
+
+- **Los correos.** `api/_logo.js` está generado desde `image.png` pero es una
+  copia en base64: no cambia sola. Ojo al revés: si se regenera ahora, saldrá
+  el de Navidad.
+- **Los iconos ya instalados.** Ver abajo: hay que desinstalar y volver a
+  instalar.
+
+Y lo que cambia sin que se note a primera vista: el icono de los **avisos
+push**, que `sw.js` nombra a pelo como `/icon-192.png`.
 
 ## Los iconos ya instalados no se refrescan
 

@@ -30,7 +30,12 @@ DESTINO = RAIZ / 'front' / 'iconos-dev'
 # El violeta de las ramas de pruebas. No sale de theme.css a proposito: no es
 # un color de la aplicacion, es la senal de que esto NO es produccion.
 COLOR = (124, 58, 237)   # #7C3AED
-FONDO = 36               # pixel pegado al borde y mas oscuro que esto: fondo
+# Pixel pegado al borde y mas oscuro que esto: fondo. Era 36 hasta el logo de
+# Navidad (2026-11-27): ese tiene el fondo a negro puro, pero el cuerpo de la
+# serpiente casi negro y unido al fondo, y a 512 px el relleno se colaba por
+# los anillos (45 % pintado en vez de 30). Con 8 se queda en el fondo: 29,7 %
+# a 512, como a 192, y 63,4 % en el maskable, que es lo que da el 72 %.
+FONDO = 8
 BORDE = 110              # el anillo de antialias se mezcla segun lo oscuro que sea
 
 ICONOS = [
