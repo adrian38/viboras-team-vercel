@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Jugador · Viboras Team</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/front/comun/theme.css">
+<link rel="icon" href="/image.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials">
+<script src="/front/comun/splash.js"></script>
+<script src="/front/comun/pwa.js" defer></script>
+<script src="/front/comun/auth-client.js" defer></script>
+<script src="/front/comun/vt-cargando.js"></script>
+<meta name="apple-mobile-web-app-title" content="Viboras">
+<meta name="theme-color" content="#121316">
+<style>
+/* El perfil publico de otro jugador, el que se abre tocando su tarjeta en
+   /comunidad. Las tarjetas son las de /cuenta y las pintan sus mismos
+   ficheros (cuenta-perfil.js y cuenta-rating.js), asi que los id y estas
+   reglas son copia de las de cuenta/index.html: si alli cambia una tarjeta,
+   aqui hay que mirarla. Detalle: ai_context/perfil_publico_de_jugador.md */
+body{padding-inline:0}
+.vt-page{padding:0 var(--vt-md) var(--vt-lg);gap:var(--vt-md)}
+.volver{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;min-height:36px;color:var(--vt-muted);font-family:var(--vt-font-head);font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;text-decoration:none}
+@media (hover:hover){.volver:hover{color:var(--vt-gold-light)}}
+.volver:active{color:var(--vt-gold-light);transition-duration:0s}
+.perfil{display:flex;flex-direction:column;gap:var(--vt-md)}
+.identidad{display:flex;align-items:center;gap:var(--vt-md)}
+.identidad h4{margin:0;overflow-wrap:anywhere}
+.inicial{
+  flex:0 0 auto;width:56px;height:56px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--vt-gold);border-radius:var(--vt-r-full);
+  background:var(--vt-surface-3);
+  font-family:var(--vt-font-head);font-size:24px;font-weight:800;color:var(--vt-gold);
+}
+.inicial--sm{width:28px;height:28px;font-size:12px;border-width:1px}
+.inicial--gris{border-color:var(--vt-border-strong);color:var(--vt-muted)}
+.chips{display:flex;flex-wrap:wrap;gap:var(--vt-sm);margin-top:var(--vt-sm)}
+.chips .vt-chip{font-family:var(--vt-font-head);font-size:12px;letter-spacing:0.06em}
+.pie-tarjeta{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:var(--vt-sm);margin:var(--vt-md) 0 0;padding-top:var(--vt-sm);
+  border-top:1px solid var(--vt-border);font-size:12px;color:var(--vt-muted);
+}
+.pie-tarjeta .ms{font-size:14px;color:var(--vt-gold-dark)}
+.rating-cifra{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--vt-sm);margin-top:var(--vt-xs)}
+.rating-cifra .vt-score{font-size:48px;line-height:48px}
+.trio{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  margin:var(--vt-md) 0;padding:var(--vt-sm) 0;
+  border-top:1px solid var(--vt-border);border-bottom:1px solid var(--vt-border);
+  text-align:center;
+}
+.trio > div + div{border-left:1px solid var(--vt-border)}
+.trio b{display:block;font-family:var(--vt-font-head);font-size:16px;font-weight:700;letter-spacing:0.03em}
+.spark{display:block;width:100%;height:48px;overflow:visible}
+.cifras{display:grid;grid-template-columns:1fr 1fr;gap:var(--vt-sm)}
+.cifras .vt-well{padding:var(--vt-sm) var(--vt-md)}
+.cifras b{display:block;font-family:var(--vt-font-head);font-size:26px;line-height:30px;font-weight:800;color:var(--vt-text-strong)}
+.barra{height:8px;border-radius:var(--vt-r-full);background:var(--vt-surface-4);overflow:hidden}
+.barra--fina{height:6px;background:var(--vt-surface-2)}
+.barra > span{display:block;height:100%;border-radius:var(--vt-r-full);background:var(--vt-gold)}
+.persona{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-sm);padding:6px 0}
+.persona__id{display:flex;align-items:center;gap:var(--vt-sm);min-width:0}
+.persona__id .vt-label,.persona__id b{display:block}
+.persona__id b{font-size:13px}
+.persona .vt-label{font-family:var(--vt-font-head);letter-spacing:0.04em}
+.persona > b{font-family:var(--vt-font-head);font-size:15px}
+.nota{display:flex;align-items:center;justify-content:space-between;gap:var(--vt-md)}
+.estrellas{display:flex;gap:2px;color:var(--vt-gold-light)}
+.estrellas svg{width:28px;height:28px;flex:0 0 auto}
+.nota__cifra{text-align:right;line-height:1}
+.nota__cifra b{font-family:var(--vt-font-head);font-size:38px;font-weight:800;color:var(--vt-text-strong)}
+.medidor{display:flex;align-items:center;gap:var(--vt-sm);font-size:13px}
+.medidor__nombre{display:flex;align-items:center;gap:var(--vt-xs);flex:0 0 auto}
+.medidor__nombre span:last-child{font-family:var(--vt-font-head);font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--vt-text-strong)}
+.medidor .barra{flex:1;min-width:0}
+.medidor__valor{min-width:28px;text-align:right;font-family:var(--vt-font-head);font-size:15px;font-weight:700;color:var(--vt-gold-light)}
+.estado{font-size:14px;color:var(--vt-muted)}
+@media(max-width:356px){
+  .medidor__nombre{width:92px}
+  .estrellas svg{width:24px;height:24px}
+}
+.oculto{display:none}
+</style>
+</head>
+
+<body>
+<nav class="vt-nav" aria-label="Navegación principal">
+<div class="vt-nav__lista">
+<a class="vt-nav__item" href="/"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">home</span></span><span class="vt-nav__texto">Inicio</span></a>
+<a class="vt-nav__item" href="/tablon"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">notifications</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Avisos</span></a>
+<a class="vt-nav__item vt-nav__item--destacado" href="/partidos"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">sports_tennis</span><span class="vt-nav__num" hidden></span></span><span class="vt-nav__texto">Partidos</span></a>
+<a class="vt-nav__item" href="/comunidad" aria-current="page"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">group</span></span><span class="vt-nav__texto">Comunidad</span></a>
+<a class="vt-nav__item" href="/cuenta"><span class="vt-nav__icono"><span class="ms notranslate" translate="no" aria-hidden="true">person</span></span><span class="vt-nav__texto">Perfil</span></a>
+</div>
+</nav>
+
+<!-- Las mismas estrellas que /cuenta: la fuente de iconos viene con FILL 0. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <linearGradient id="mediaEstrella">
+      <stop offset="50%" stop-color="currentColor"></stop>
+      <stop offset="50%" stop-color="transparent"></stop>
+    </linearGradient>
+    <symbol id="estrella" viewBox="0 0 24 24">
+      <path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.5L12 17.5 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"></path>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="vt-page vt-page--narrow">
+  <a class="volver" id="volver" href="/comunidad"><span class="ms ms--sm notranslate" translate="no" aria-hidden="true">arrow_back</span>Comunidad</a>
+
+  <p class="estado" id="estado">Cargando…</p>
+
+  <!-- Sin correo, telefono ni ficha de inscripcion: este perfil lo ve
+       cualquiera del grupo. Lo que se ensena lo decide api/perfil.js
+       (jugadorPublico), no esta pagina. -->
+  <div id="perfil" class="perfil oculto">
+
+    <section class="vt-card vt-card--accent">
+      <div class="identidad">
+        <div class="inicial" id="pInicial"></div>
+        <div class="vt-grow">
+          <h4 id="pNombre"></h4>
+          <div class="chips">
+            <span class="vt-chip vt-chip--gold" id="pLado"></span>
+            <span class="vt-chip oculto" id="pHorarios"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="vt-card oculto" id="pTarjetaRating">
+      <div class="vt-between">
+        <span class="vt-label">Rating</span>
+        <span class="vt-badge" id="pRatingCategoria"></span>
+      </div>
+      <div class="rating-cifra">
+        <span class="vt-score" id="pRating"></span>
+        <span class="vt-chip vt-chip--gold oculto" id="pRatingMes">
+          <span class="ms ms--sm notranslate" translate="no" aria-hidden="true">trending_up</span><span id="pRatingMesTexto"></span>
+        </span>
+      </div>
+      <div class="trio">
+        <div><span class="vt-label">Posición</span><b id="pPuesto"></b></div>
+        <div><span class="vt-label">Fiabilidad</span><b class="vt-gold" id="pRd"></b></div>
+        <div><span class="vt-label">Salida</span><b id="pSalida2"></b></div>
+      </div>
+      <div class="vt-between" style="margin-bottom:var(--vt-xs)">
+        <span class="vt-label">Evolución últimos 30 días</span>
+        <span class="vt-label vt-gold" id="pRatingMax"></span>
+      </div>
+      <svg class="spark" id="pSpark" viewBox="0 0 320 60" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <p class="pie-tarjeta">
+        <span>Día a día, en <a id="pEvolucion" href="/players">su evolución</a>.</span>
+      </p>
+    </section>
+
+    <section class="vt-card">
+      <span class="vt-label">Partidos y rendimiento</span>
+      <div class="cifras" style="margin-top:var(--vt-sm)">
+        <div class="vt-well"><span class="vt-label">Partidos</span><b id="pJugados"></b></div>
+        <div class="vt-well"><span class="vt-label">Victorias</span><b class="vt-gold" id="pGanados"></b></div>
+        <div class="vt-well"><span class="vt-label">% victorias</span><b id="pPct"></b></div>
+        <div class="vt-well"><span class="vt-label">Racha</span><b id="pRacha"></b></div>
+      </div>
+      <div class="vt-between" style="margin:var(--vt-md) 0 var(--vt-xs)">
+        <small><b class="vt-gold" id="pSetsFav"></b> sets ganados</small>
+        <small><span id="pSetsCon"></span> perdidos</small>
+      </div>
+      <div class="barra"><span id="pBarraSets"></span></div>
+      <small style="display:block;margin-top:var(--vt-xs)">Último partido: <span id="pUltimo"></span></small>
+      <div style="margin-top:var(--vt-sm);padding-top:var(--vt-sm);border-top:1px solid var(--vt-border)">
+        <div class="persona oculto" id="pCompa">
+          <span class="persona__id">
+            <span class="inicial inicial--sm" id="pCompaIni"></span>
+            <span><b id="pCompaNombre"></b><span class="vt-label">Con quien más juega</span></span>
+          </span>
+          <b class="vt-gold" id="pCompaDato"></b>
+        </div>
+        <div class="persona oculto" id="pRival">
+          <span class="persona__id">
+            <span class="inicial inicial--sm inicial--gris" id="pRivalIni"></span>
+            <span><b id="pRivalNombre"></b><span class="vt-label">Rival más frecuente</span></span>
+          </span>
+          <b class="vt-muted" id="pRivalDato"></b>
+        </div>
+      </div>
+    </section>
+
+    <section class="vt-card">
+      <span class="vt-label vt-gold">Valoración del jugador</span>
+      <p class="vt-small vt-muted" style="margin-top:var(--vt-xs)">
+        Depende de la fiabilidad de su rating y de las opiniones de buen rollo
+        o mal rollo de sus compañeros.
+      </p>
+      <p class="vt-small vt-muted oculto" id="pSinVotos">Todavía no le ha dado su opinión nadie.</p>
+      <div class="vt-well oculto" id="pConVotos">
+        <div class="nota" style="padding-bottom:var(--vt-sm);border-bottom:1px solid var(--vt-border)">
+          <span class="estrellas" id="pEstrellas" role="img"></span>
+          <span class="nota__cifra"><b id="pNota"></b><br><span class="vt-label" id="pVotos"></span></span>
+        </div>
+        <div class="medidor" style="margin-top:var(--vt-sm)">
+          <span class="medidor__nombre">
+            <span class="ms ms--sm vt-gold notranslate" translate="no" aria-hidden="true">verified_user</span>
+            <span>Fiabilidad del rating</span>
+          </span>
+          <span class="barra barra--fina"><span id="pBarraFiab"></span></span>
+          <span class="medidor__valor" id="pValorFiab"></span>
+        </div>
+      </div>
+      <div class="vt-between" style="margin-top:var(--vt-sm);padding-top:var(--vt-sm);border-top:1px solid var(--vt-border)">
+        <span><span class="vt-label">Nivel</span> <b class="vt-gold" id="pNivel"></b></span>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- El motor de rating y sus dos tablas, los mismos que /rating y /cuenta. -->
+<script src="/front/comun/nivel-votos.js"></script>
+<script src="/front/comun/rating-inicial.js"></script>
+<script src="/front/comun/vt-glicko.js"></script>
+<script src="/front/comun/vt-calificacion.js"></script>
+<script src="/front/comun/vt-categorias.js"></script>
+<script src="/front/pantallas/cuenta/cuenta-perfil.js"></script>
+<script src="/front/pantallas/cuenta/cuenta-rating.js"></script>
+<script src="/front/pantallas/jugador/jugador.js"></script>
+
+</body>
+</html>

@@ -212,6 +212,10 @@ que hay.
 - `comunidad_de_jugadores.md`: el directorio de `/comunidad`; de dónde sale
   cada casilla de la tarjeta, qué tres datos de admin se abrieron al grupo y
   qué no (las horas de `/day`), y por qué no enseña rating ni estrellas.
+- `perfil_publico_de_jugador.md`: `/jugador`, el perfil de solo lectura que
+  abre la tarjeta de `/comunidad`; qué sale y qué no (contactos y ficha fuera),
+  por qué el clic de la tarjeta es JavaScript y no un `::after`, y por qué sus
+  `id` tienen que seguir siendo los de `/cuenta`.
 
 ---
 

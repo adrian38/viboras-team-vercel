@@ -41,6 +41,10 @@
       "destination": "/front/pantallas/comunidad"
     },
     {
+      "source": "/jugador",
+      "destination": "/front/pantallas/jugador"
+    },
+    {
       "source": "/cuenta",
       "destination": "/front/pantallas/cuenta"
     },

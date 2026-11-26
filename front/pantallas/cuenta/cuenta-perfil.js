@@ -474,5 +474,10 @@ async function pintarPerfil(){
 
 window.pintarPerfil = pintarPerfil
 window.pintarCalificacion = pintarCalificacion
+// El perfil publico de otro jugador (/jugador) pinta las mismas tarjetas de
+// partidos y valoracion con estas dos, en vez de una copia. Lo que alli no
+// existe (pendientes, el boton de valorar) lo saltan ver() y texto(), que no
+// fallan si el nodo no esta.
+window.vtPerfil = {pintarPartidos, pintarValoracion}
 
 })()

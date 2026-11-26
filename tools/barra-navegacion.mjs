@@ -32,7 +32,7 @@ const SECCIONES = {
   '/': ['portada'],
   '/tablon': ['tablon'],
   '/partidos': ['partidos', 'partido', 'partido-nuevo', 'partidos-abiertos'],
-  '/comunidad': ['comunidad', 'valorar'],
+  '/comunidad': ['comunidad', 'valorar', 'jugador'],
   '/cuenta': ['cuenta']
 };
 

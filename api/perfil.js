@@ -3,8 +3,10 @@
 // votado y sus dispositivos.
 //
 // Todo de uno mismo: ninguna consulta recibe un id de jugador de fuera, el de
-// la sesion y ya. De escritura hay una sola accion, el lado de pista, y
-// tambien sobre la ficha propia.
+// la sesion y ya. La excepcion es action=jugador, el perfil publico de otro
+// jugador, que solo lee y deja fuera todo lo personal (ver jugadorPublico).
+// De escritura hay una sola accion, el lado de pista, y tambien sobre la
+// ficha propia.
 //
 // Lo que la pagina ensena y aqui no esta es el rating, que lo calcula el
 // navegador a partir del historico. El motor ya esta triplicado
@@ -157,9 +159,11 @@ async function partidos(playerId) {
 // Asi que de aqui salen las opiniones en crudo y la cuenta la echa
 // cuenta-perfil.js cuando cuenta-rating.js le pasa el RD.
 
-// Lo que le han votado a uno. Mismo filtro que read.js (getNivelVotos): solo
-// cuentan los votos entre jugadores que siguen en el partido.
-async function valoraciones(playerId) {
+// Lo que le han votado a uno, agregado: nunca dice quien voto que. Lo
+// comparten /cuenta y el perfil publico (/jugador). Mismo filtro que read.js
+// (getNivelVotos): solo cuentan los votos entre jugadores que siguen en el
+// partido.
+async function opiniones(playerId) {
   const { rows } = await sql`
     SELECT
       count(*) FILTER (WHERE f.actitud = 'buen_rollo')::int AS buen_rollo,
@@ -171,12 +175,6 @@ async function valoraciones(playerId) {
     FROM match_feedback_por_dia f
     WHERE f.rated_player_id = ${playerId}`;
   const v = rows[0];
-  // El filtro no sobra: partidosParaValorar() devuelve TODOS los partidos
-  // recientes con lo que falta de cada uno, no solo los que tienen algo
-  // pendiente. Sin el, un jugador al dia veia «te faltan 8 valoraciones»
-  // teniendo las ocho hechas. Mismo filtro que la campanita (_avisos.js:132).
-  const pendientes = (await partidosParaValorar(playerId))
-    .filter((p) => p.faltanActitud > 0 || p.faltanNivel > 0);
   const votos = v.buen_rollo + v.neutro + v.mejorable;
   return {
     votos,
@@ -184,9 +182,19 @@ async function valoraciones(playerId) {
     // todavia no le ha votado nadie, que no es lo mismo que un cero.
     buenRollo: votos ? v.buen_rollo / votos : null,
     nivelVotos: v.nivel_votos,
-    nivelNeto: v.nivel_neto,
-    pendientes: pendientes.length
+    nivelNeto: v.nivel_neto
   };
+}
+
+async function valoraciones(playerId) {
+  const v = await opiniones(playerId);
+  // El filtro no sobra: partidosParaValorar() devuelve TODOS los partidos
+  // recientes con lo que falta de cada uno, no solo los que tienen algo
+  // pendiente. Sin el, un jugador al dia veia «te faltan 8 valoraciones»
+  // teniendo las ocho hechas. Mismo filtro que la campanita (_avisos.js:132).
+  const pendientes = (await partidosParaValorar(playerId))
+    .filter((p) => p.faltanActitud > 0 || p.faltanNivel > 0);
+  return { ...v, pendientes: pendientes.length };
 }
 
 // Las franjas votadas que quedan por delante. Las pasadas no estan: getSlots
@@ -279,6 +287,46 @@ async function todo(req, res, user) {
   res.status(200).json(datos);
 }
 
+// El perfil de OTRO jugador, el que se abre tocando su tarjeta en /comunidad
+// (/jugador?id=N). Solo lectura y solo lo que el grupo ya ve o puede ver:
+// nombre, lado, horarios generales (los mismos de /comunidad), salida del
+// rating, partidos y las opiniones agregadas. Fuera, a proposito: correo,
+// telefono, nombre y apellidos y el resto de la ficha de inscripcion (son de
+// los administradores), las horas votadas en /day (privadas,
+// ai_context/disponibilidad_quien_la_ve.md), dispositivos y pendientes.
+// Los de baja no salen, igual que en /comunidad.
+async function jugadorPublico(req, res) {
+  const id = Number(req.query?.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ ok: false, error: 'bad_id' });
+    return;
+  }
+  const { rows } = await sql`
+    SELECT p.id, p.name, p.court_side, p.initial_rating,
+      (SELECT u.signup_form->>'availability' FROM users u
+        WHERE u.player_id = p.id AND u.status = 'active' ORDER BY u.id LIMIT 1) AS horarios
+    FROM players p WHERE p.id = ${id} AND p.active = TRUE`;
+  if (!rows.length) {
+    res.status(404).json({ ok: false, error: 'not_found', message: 'Ese jugador no está en el grupo.' });
+    return;
+  }
+  const p = rows[0];
+  const textos = Object.fromEntries(describirInscripcion().flatMap((c) => c.opciones || []));
+  await ensureAvisosSchema();
+  res.status(200).json({
+    ok: true,
+    jugador: {
+      id: p.id,
+      nombre: p.name,
+      lado: LADOS.includes(p.court_side) ? p.court_side : 'ambos',
+      horarios: textos[p.horarios] || null,
+      salida: p.initial_rating === null ? null : Number(p.initial_rating)
+    },
+    partidos: await partidos(p.id),
+    valoraciones: await opiniones(p.id)
+  });
+}
+
 // Lo unico que se escribe desde aqui, y solo sobre la ficha de uno mismo.
 // Sin ficha de jugador no hay donde guardarlo: la cuenta todavia no esta
 // enlazada con ningun jugador.
@@ -342,6 +390,7 @@ export default async function handler(req, res) {
     await ensureSchema();
     if (accion === 'lado' && escribe) await guardarLado(req, res, user);
     else if (escribe) await guardarFicha(req, res, user);
+    else if (accion === 'jugador') await jugadorPublico(req, res);
     else await todo(req, res, user);
   } catch (err) {
     console.error('perfil error', err);

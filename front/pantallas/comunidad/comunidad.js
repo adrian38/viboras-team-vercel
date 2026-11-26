@@ -86,10 +86,25 @@ function pintarJugador(j) {
   caja.appendChild(datos);
   const pie = el('div', 'jugador__pie');
   pie.appendChild(el('span', 'jugador__resumen', j.partidos ? `${j.ganados} ganados de ${j.partidos}` : 'Aún sin partidos'));
-  const perfil = el('a', 'vt-btn jugador__accion', 'Ver evolución');
-  perfil.href = `/players?player=${encodeURIComponent(j.nombre)}`;
+  // Al perfil publico del jugador (/jugador). Desde el 2026-11-27 la tarjeta
+  // entera lleva alli, no solo el boton: el boton queda para el teclado y
+  // como pista de que se puede tocar. «Ver evolución» (/players) se fue
+  // dentro de ese perfil. ai_context/perfil_publico_de_jugador.md
+  const perfil = el('a', 'vt-btn jugador__accion', 'Ver perfil');
+  perfil.href = `/jugador?id=${encodeURIComponent(j.id)}`;
+  const flecha = el('span', 'ms ms--sm notranslate', 'chevron_right');
+  flecha.setAttribute('translate', 'no');
+  flecha.setAttribute('aria-hidden', 'true');
+  perfil.appendChild(flecha);
   pie.appendChild(perfil);
   caja.appendChild(pie);
+  // Un clic en la tarjeta y no una capa ::after sobre el enlace: el :active
+  // de .vt-btn lleva transform, que encoge esa capa al boton en mitad del
+  // toque y el clic se pierde.
+  caja.addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;
+    window.location.href = perfil.href;
+  });
   return caja;
 }
 
