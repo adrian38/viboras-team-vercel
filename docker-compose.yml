@@ -109,7 +109,9 @@ services:
     ports:
       - "3001:3000"
     volumes:
-      # Codigo montado en caliente: editas un .html o un api/*.js y se recarga.
+      # Codigo montado: un .html o lo de front/ se sirve al momento, pero un
+      # api/*.js NO: docker/server.js lo carga con import(), que lo guarda en
+      # cache. Tras tocar api/ hay que `docker compose restart app`.
       - ./api:/app/api
       - ./docker:/app/docker
       - ./data:/app/data
