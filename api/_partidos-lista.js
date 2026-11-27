@@ -75,6 +75,11 @@ async function conPlazas(filas, playerId) {
 // Mis partidos pendientes: los que he creado, en los que tengo plaza o en cuya
 // lista de espera estoy. No cancelados y sin cerrar. Los ya terminados y sin
 // cerrar siguen saliendo: son los que esperan a que alguien meta el resultado.
+//
+// Menos los que se quedaron sin los cuatro: esos no tienen resultado que
+// meter, y a las 24 h de terminar dejan de salir solos. Hasta entonces el
+// creador, un admin o cualquiera de los apuntados puede quitarlos a mano.
+// Solo se ocultan: la fila no se toca. Las 24 h son a ojo, de 2026-11-27.
 export async function misPartidos(playerId) {
   await ensurePartidosSchema();
   const { rows } = await sql`
@@ -88,6 +93,8 @@ export async function misPartidos(playerId) {
       AND (p.creador_player_id = ${playerId}
         OR EXISTS (SELECT 1 FROM partido_plazas pl WHERE pl.partido_id = p.id AND pl.player_id = ${playerId})
         OR EXISTS (SELECT 1 FROM partido_espera e2 WHERE e2.partido_id = p.id AND e2.player_id = ${playerId}))
+      AND NOT (p.empieza_at + (p.duracion_min * interval '1 minute') < now() - interval '24 hours'
+        AND (SELECT count(*) FROM partido_plazas pl3 WHERE pl3.partido_id = p.id) < 4)
     ORDER BY p.empieza_at ASC
     LIMIT 50`;
   return conPlazas(rows, playerId);

@@ -276,6 +276,25 @@ hace un administrador.
 - La pantalla pregunta al servidor si puede (`puedoQuitar` en `uno`), con la
   misma regla que aplica `sacar`, y elige a quién entre las plazas pintadas.
 
+## El que pasó sin los cuatro: a mano o solo (2026-11-27)
+
+Un partido que ya terminó con menos de cuatro no se jugó y no tiene
+resultado que meter. En «Mis partidos» sale con «Se quedó sin los cuatro» y
+dos salidas:
+
+- **A mano**, «Quitarlo de aquí»: es `cancelar`. Para uno así, además de
+  quien lo creó y los administradores, lo puede quitar **cualquiera de los
+  apuntados** (decisión de Adrián); a uno futuro, no. `mios` manda
+  `soyAdmin` para que la pantalla aplique la misma regla. `cancelar` lo
+  acepta con `partidoPasadoIncompleto`, porque `partidoVivo` rechaza todo lo
+  que ya empezó. **Hasta el 7ae4f17 el botón siempre
+  contestaba «Ese partido ya no existe»** por eso. No manda aviso.
+- **Solo**: a las 24 h de terminar, `misPartidos` deja de devolverlo. Sólo
+  se oculta, la fila sigue sin `cancelado_at`. Las 24 h son a ojo.
+
+Un completo ya jugado no entra en ninguna de las dos: se cierra metiendo el
+resultado.
+
 ## El `sql` no compone fragmentos
 
 En `_partidos-lista.js` la lista de columnas está repetida en las tres

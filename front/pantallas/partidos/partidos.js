@@ -21,8 +21,9 @@ function accionesDe(partido) {
   if (partido.jugado) {
     const faltan = partido.libres > 0;
     if (faltan) {
-      // Quitarlo es cancelarlo para todos: solo quien lo creo o un admin.
-      const quitar = partido.soyElCreador || soyAdmin
+      // Quitarlo es cancelarlo para todos: quien lo creo, un admin o
+      // cualquiera de los apuntados, la misma regla que aplica `cancelar`.
+      const quitar = partido.soyElCreador || soyAdmin || partido.estoyDentro
         ? `<button type="button" class="vt-enlace-accion" data-accion="cancelar" data-id="${partido.id}">Quitarlo de aquí</button>`
         : '';
       return `<div class="vt-partido__menores">

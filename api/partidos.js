@@ -350,18 +350,21 @@ async function noEsperarme(req, res, user) {
 // cosa y la hace `borrarme`.
 //
 // Tambien quita uno que ya paso sin llegar a cuatro («Quitarlo de aqui» en
-// /partidos). Ese no avisa a nadie: no se iba a jugar nada, y «ha cancelado
-// el partido del lunes» un jueves no le dice nada util a nadie.
+// /partidos). Ese lo puede quitar ademas cualquiera de los apuntados,
+// decision de Adrian: no se jugo y no se le quita nada a nadie. No avisa: no
+// se iba a jugar nada, y «ha cancelado el partido del lunes» un jueves no le
+// dice nada util a nadie.
 async function cancelar(req, res, user) {
   if (!exigirFicha(res, user)) return;
   const data = await readBody(req);
   const vivo = await partidoVivo(toInt(data?.id));
   const partido = vivo || await partidoPasadoIncompleto(toInt(data?.id));
   if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no existe.');
-  if (partido.creador_player_id !== user.player_id && user.role !== 'admin') {
+  const jugadores = await jugadoresDe(partido.id);
+  const apuntadoEnUnoPasado = !vivo && jugadores.includes(user.player_id);
+  if (partido.creador_player_id !== user.player_id && user.role !== 'admin' && !apuntadoEnUnoPasado) {
     return error(res, 'forbidden', 403, 'Solo puede cancelarlo quien lo creó.');
   }
-  const jugadores = await jugadoresDe(partido.id);
   const esperando = await enEsperaDe(partido.id);
   if (await cancelarPartido(partido.id) && vivo) {
     await avisarCancelado(partido, quienEs(user), jugadores, esperando);
