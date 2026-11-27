@@ -11,7 +11,7 @@ import {
   ensurePartidosSchema, sedesParaLaPagina, nivelesParaLaPagina, sedeValida, nivelesParaGuardar, NIVELES,
   DURACIONES, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
   instanteDe, partidoQueSePisa, creadosHoy, crearPartido, tomarPlaza, soltarPlaza,
-  partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe,
+  partidoVivo, partidoPasadoIncompleto, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe,
   jugadorIncorporable, incorporables, cambiarDePlaza, ladoDe, puestoQueTomaria, apuntadoEn
 } from './_partidos.js';
 import { misPartidos, partidosAbiertos, unPartido } from './_partidos-lista.js';
@@ -111,7 +111,9 @@ async function leerInstante(res, fecha, hora) {
 
 async function mios(req, res, user) {
   if (!exigirFicha(res, user)) return;
-  res.status(200).json({ ok: true, yo: user.player_id, partidos: await misPartidos(user.player_id), sedes: sedesParaLaPagina(), niveles: nivelesParaLaPagina() });
+  // `soyAdmin` para que la pantalla solo ofrezca cancelar a quien `cancelar`
+  // se lo va a aceptar.
+  res.status(200).json({ ok: true, yo: user.player_id, soyAdmin: user.role === 'admin', partidos: await misPartidos(user.player_id), sedes: sedesParaLaPagina(), niveles: nivelesParaLaPagina() });
 }
 
 async function abiertos(req, res, user) {
@@ -346,17 +348,22 @@ async function noEsperarme(req, res, user) {
 
 // Cancelar es del creador o de un administrador. Borrarse uno mismo es otra
 // cosa y la hace `borrarme`.
+//
+// Tambien quita uno que ya paso sin llegar a cuatro («Quitarlo de aqui» en
+// /partidos). Ese no avisa a nadie: no se iba a jugar nada, y «ha cancelado
+// el partido del lunes» un jueves no le dice nada util a nadie.
 async function cancelar(req, res, user) {
   if (!exigirFicha(res, user)) return;
   const data = await readBody(req);
-  const partido = await partidoVivo(toInt(data?.id));
+  const vivo = await partidoVivo(toInt(data?.id));
+  const partido = vivo || await partidoPasadoIncompleto(toInt(data?.id));
   if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no existe.');
   if (partido.creador_player_id !== user.player_id && user.role !== 'admin') {
     return error(res, 'forbidden', 403, 'Solo puede cancelarlo quien lo creó.');
   }
   const jugadores = await jugadoresDe(partido.id);
   const esperando = await enEsperaDe(partido.id);
-  if (await cancelarPartido(partido.id)) {
+  if (await cancelarPartido(partido.id) && vivo) {
     await avisarCancelado(partido, quienEs(user), jugadores, esperando);
   }
   res.status(200).json({ ok: true });

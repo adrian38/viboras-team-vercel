@@ -388,6 +388,18 @@ export async function partidoVivo(id) {
   return rows.length ? rows[0] : null;
 }
 
+// Uno que ya empezo, sigue sin cerrar y no llego a cuatro: no se jugo ni
+// puede tener resultado, y lo unico que cabe es quitarlo. Lo pide «Quitarlo
+// de aqui» en /partidos, que `partidoVivo` rechazaba por haber empezado.
+export async function partidoPasadoIncompleto(id) {
+  const { rows } = await sql`
+    SELECT p.id, p.empieza_at, p.duracion_min, p.sede, p.sede_libre, p.niveles, p.creador_player_id
+    FROM partidos_previstos p
+    WHERE p.id = ${id} AND p.cancelado_at IS NULL AND p.cerrado_at IS NULL AND p.empieza_at <= now()
+      AND (SELECT count(*) FROM partido_plazas pl WHERE pl.partido_id = p.id) < 4`;
+  return rows.length ? rows[0] : null;
+}
+
 export async function jugadoresDe(partidoId) {
   const { rows } = await sql`
     SELECT player_id FROM partido_plazas WHERE partido_id = ${partidoId} ORDER BY puesto`;

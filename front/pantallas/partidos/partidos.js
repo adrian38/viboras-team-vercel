@@ -6,6 +6,7 @@
 // del grupo: esta pantalla responde «que tengo yo».
 const lista = document.getElementById('lista');
 let miId = null;
+let soyAdmin = false;
 let partidos = [];
 
 function accionesDe(partido) {
@@ -20,9 +21,13 @@ function accionesDe(partido) {
   if (partido.jugado) {
     const faltan = partido.libres > 0;
     if (faltan) {
+      // Quitarlo es cancelarlo para todos: solo quien lo creo o un admin.
+      const quitar = partido.soyElCreador || soyAdmin
+        ? `<button type="button" class="vt-enlace-accion" data-accion="cancelar" data-id="${partido.id}">Quitarlo de aquí</button>`
+        : '';
       return `<div class="vt-partido__menores">
         <span style="font-size:13px;color:var(--vt-muted)">Se quedó sin los cuatro.</span>
-        <button type="button" class="vt-enlace-accion" data-accion="cancelar" data-id="${partido.id}">Quitarlo de aquí</button>
+        ${quitar}
       </div>`;
     }
     return `<div class="vt-partido__acciones">
@@ -74,6 +79,7 @@ async function cargar() {
     return;
   }
   miId = r.datos.yo || miId;
+  soyAdmin = Boolean(r.datos.soyAdmin);
   partidos = r.datos.partidos;
   pintar();
 }
@@ -98,12 +104,13 @@ async function borrarme(id) {
 async function cancelar(id) {
   const partido = buscar(id);
   if (!partido) return;
-  const aviso = partido.libres < 3
+  let aviso = partido.libres < 3
     ? '¿Cancelas el partido? Se lo diremos a los que estaban apuntados.'
     : '¿Cancelas el partido?';
+  if (partido.jugado) aviso = '¿Lo quitas? Desaparece también para los demás apuntados.';
   if (!confirm(aviso)) return;
   const r = await window.vtPartido.llamar('cancelar', { id: partido.id });
-  window.vtToast(r.ok ? 'Partido cancelado.' : r.mensaje);
+  window.vtToast(r.ok ? (partido.jugado ? 'Quitado.' : 'Partido cancelado.') : r.mensaje);
   await cargar();
 }
 
