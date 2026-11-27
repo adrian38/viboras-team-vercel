@@ -19,7 +19,7 @@
 // de romper la consulta.
 import { sql } from '@vercel/postgres';
 import { exigirSesion, sinCache } from './_auth.js';
-import { ensureSchema, readBody } from './_db.js';
+import { ensureSchema, readBody, EVENTOS_DE_TORNEO } from './_db.js';
 import { ensureAvisosSchema, partidosParaValorar } from './_avisos.js';
 import { describirInscripcion, validarInscripcion, telefonoLibre } from './_inscripcion.js';
 import { ensurePushSchema } from './_push.js';
@@ -31,6 +31,10 @@ const LADOS = ['drive', 'reves', 'ambos'];
 
 // Los partidos del jugador con el equipo en el que jugo y los sets de cada
 // pareja ya contados. La base de casi todo lo que sigue.
+//
+// Sin los de torneo: regla de Adrian (2026-11-27), igual que no dan rating
+// (ai_context/los_torneos_no_puntuan_para_el_rating.md). Una derrota en el
+// pozo cortaba la racha sin salir en el historico de partidos.
 function partidosDe(playerId) {
   return sql`
     WITH mios AS (
@@ -42,6 +46,10 @@ function partidosDe(playerId) {
         END AS dia
       FROM matches m
       WHERE ${playerId} IN (m.player1a_id, m.player1b_id, m.player2a_id, m.player2b_id)
+        AND NOT EXISTS (
+          SELECT 1 FROM events e
+          WHERE e.id = m.event_id AND e.type = ANY(${EVENTOS_DE_TORNEO})
+        )
     )
     SELECT id, dia, equipo,
       player1a_id, player1b_id, player2a_id, player2b_id,

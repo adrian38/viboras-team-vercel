@@ -45,6 +45,15 @@ La comprobación que sí sirve: **un partido cuenta si alguna de las dos parejas
 ganó algo**, es decir, si la suma de sets (o juegos) ganados por las dos es
 mayor que cero. Es lo que hace `decidido()` en `api/perfil.js`.
 
+## 3. Los torneos no cuentan en el perfil
+
+Regla de Adrián del 2026-11-27: las cifras de «Partidos y rendimiento» de
+`/cuenta` y `/jugador` dejan fuera los partidos de eventos de torneo
+(`EVENTOS_DE_TORNEO`: `pozo`, `compas`, `doble_ko`), igual que el rating
+([[los_torneos_no_puntuan_para_el_rating]]). Antes contaban: a Dani una
+derrota del pozo del 14/11 le dejaba la racha en 2 cuando en el histórico
+de partidos llevaba 7 victorias seguidas.
+
 ## Qué hacer
 
 Antes de contar nada sobre `matches`:

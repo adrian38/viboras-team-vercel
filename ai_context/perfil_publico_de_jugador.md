@@ -34,7 +34,7 @@ la página: lo que no está en la respuesta no se puede filtrar desde fuera.
 | Horarios generales | `signup_form->>'availability'` (ya público en `/comunidad`) |
 | Rating, categoría, puesto, fiabilidad, curva de 30 días | el motor compartido, con `cuenta-rating.js` |
 | Salida | `players.initial_rating` |
-| Partidos, victorias, racha, sets, compañero y rival más frecuentes | `partidos()` de `api/perfil.js`, la misma de `/cuenta` |
+| Partidos, victorias, racha, sets, compañero y rival más frecuentes, sin torneos | `partidos()` de `api/perfil.js`, la misma de `/cuenta` |
 | Estrellas, nº de opiniones, «Nivel» votado | `opiniones()`, sólo agregados |
 
 | No sale | Por qué |
