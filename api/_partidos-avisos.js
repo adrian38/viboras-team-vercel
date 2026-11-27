@@ -37,14 +37,20 @@ function plazasDice(libres) {
 
 const enlaceDe = (id) => `/partido?id=${id}`;
 
-// Alguien ocupa una plaza. Si con ella se llena, sale el aviso de completo a
-// los cuatro y no ademas el de «se ha apuntado»: un solo push por hecho.
+// Alguien ocupa una plaza. Si con ella se llena, sale el aviso de completo y
+// no ademas el de «se ha apuntado»: un solo push por hecho.
+//
+// El de completo dice quien ha entrado, que es lo que pidio el grupo: sin el
+// nombre habia que abrir el partido para saber quien era el cuarto. A quien
+// acaba de entrar no se le cuenta que se ha apuntado el, que ya lo sabe: le
+// llega el mismo aviso sin esa frase.
 export async function avisarApuntado(fila, quien, jugadores) {
   const libres = 4 - jugadores.length;
   const otros = jugadores.filter((id) => id !== quien.id);
   if (libres <= 0) {
-    const texto = `¡Partido completo! ${partidoDice(fila)}. Ya sois cuatro.`;
-    await crearAviso(jugadores, texto, enlaceDe(fila.id));
+    const cabeza = `¡Partido completo! ${partidoDice(fila)}.`;
+    await crearAviso(otros, `${cabeza} Se ha apuntado ${quien.nombre}, ya sois cuatro.`, enlaceDe(fila.id));
+    await crearAviso([quien.id], `${cabeza} Ya sois cuatro.`, enlaceDe(fila.id));
     return;
   }
   const texto = `${quien.nombre} se ha apuntado al partido del ${partidoDice(fila)}. ${plazasDice(libres)}`;
