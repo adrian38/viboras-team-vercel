@@ -64,6 +64,12 @@ function cabezaDeJugador(j) {
   cuentas.appendChild(el('span', 'jugador__numero', Number.isFinite(j.rating) ? Math.round(j.rating).toLocaleString('en-US') : '—'));
   cuentas.appendChild(el('span', 'jugador__nota', 'Fiabilidad'));
   cabeza.appendChild(cuentas);
+  // La flecha de las filas que llevan a otra pantalla: dice que la tarjeta
+  // entera se toca, no solo el boton del pie.
+  const ir = el('span', 'ms notranslate jugador__ir', 'chevron_right');
+  ir.setAttribute('translate', 'no');
+  ir.setAttribute('aria-hidden', 'true');
+  cabeza.appendChild(ir);
   return cabeza;
 }
 

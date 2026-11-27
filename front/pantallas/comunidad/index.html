@@ -61,9 +61,15 @@ body{padding:var(--vt-md) 0 var(--vt-lg);background:var(--vt-bg)}
   padding:16px;
   display:flex;flex-direction:column;gap:14px;box-shadow:var(--vt-shadow-card);
 }
-.jugador{cursor:pointer;transition:background .15s ease}
+/* La tarjeta entera lleva al perfil (/jugador). Al tocarla se aclara y se
+   hunde un poco, como los botones de theme.css: con 0s para que se vea en un
+   toque de 80 ms (el porque esta en el :active de .vt-btn). */
+.jugador{cursor:pointer;transition:background .15s ease,transform .1s ease}
 @media (hover:hover){.jugador:hover{background:var(--vt-surface-2)}}
-.jugador:active{background:var(--vt-surface-2);transition-duration:0s}
+.jugador:active{background:var(--vt-surface-2);transform:scale(0.98);transition-duration:0s}
+.jugador__ir{flex:0 0 auto;margin-right:-6px;color:var(--vt-gold-dark)}
+@media (hover:hover){.jugador:hover .jugador__ir{color:var(--vt-gold-light)}}
+.jugador:active .jugador__ir{color:var(--vt-gold-light);transition-duration:0s}
 .jugador[hidden]{display:none}
 .jugador__cabeza{display:flex;align-items:center;gap:var(--vt-sm);min-width:0}
 /* La columna del medio: nombre arriba y, debajo, la categoria actual,

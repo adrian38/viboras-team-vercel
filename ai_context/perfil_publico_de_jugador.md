@@ -6,8 +6,11 @@ simplificada: nada de sus contactos personales, pero lo demás sí».
 
 ## Cómo se llega
 
-Desde `/comunidad`: **la tarjeta entera** es pulsable (y se aclara al
-tocarla), y su botón dorado dice «Ver perfil ›». Va a `/jugador?id=<players.id>`.
+Desde `/comunidad`: **la tarjeta entera** es pulsable, y tres pistas lo dicen
+a la vista: una flecha `›` a la derecha de la cabecera (la de las filas que
+llevan a otra pantalla), el fondo que se aclara y se hunde al 98 % al tocarla
+(como los botones, con `transition-duration:0s` para que se vea en un toque),
+y el botón dorado «Ver perfil ›». Va a `/jugador?id=<players.id>`.
 El botón «Ver evolución» que había ahí (a `/players`) no se perdió: está
 dentro del perfil, en el pie de la tarjeta de rating, con `?volver=` de vuelta
 al perfil. `/players` aprendió a leer `?volver=` ese mismo día; antes su
