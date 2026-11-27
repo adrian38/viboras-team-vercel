@@ -23,6 +23,9 @@
 (function () {
   'use strict';
 
+  var F = window.vtViboritaCuerpo;
+  var suavizar = F.suavizar;
+
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   var SEGMENTOS = 32;
@@ -98,14 +101,6 @@
 
   // ------------------------------------------------------------ rutinas --
 
-  // Cabeza en (x, y) y el cuerpo estirado detras, en la direccion (dx, dy).
-  function colocar(x, y, dx, dy) {
-    cuerpo.forEach(function (s, n) {
-      s.x = x + dx * n * LARGO;
-      s.y = y + dy * n * LARGO;
-    });
-  }
-
   function empezar(rutina, velocidad, amplitud, frecuencia) {
     v.activa = true;
     v.rutina = rutina;
@@ -170,7 +165,7 @@
     v.puntos = puntosEntreTarjetas(Math.random() < COLGAR_PROB);
     v.punto = 0;
     v.scroll = scrollY;
-    colocar(ancho + 60, v.puntos[0].y - 7, 1, 0);
+    F.colocar(cuerpo, LARGO, ancho + 60, v.puntos[0].y - 7, 1, 0);
     empezar('tarjetas', 5.2, 14, 0.22);
   }
 
@@ -184,16 +179,11 @@
     v.asomoAbajo = techo + 70;
     v.fase = 'sube';
     v.mirando = 0;
-    colocar(v.asomoX, v.asomoAbajo, 0, 1);
+    F.colocar(cuerpo, LARGO, v.asomoX, v.asomoAbajo, 0, 1);
     empezar('asomo', 3.6, 8, 0.16);
   }
 
   // ---------------------------------------------------------- movimiento --
-
-  // Acercamiento exponencial independiente de los fotogramas.
-  function suavizar(desde, hasta, factor, k) {
-    return desde + (hasta - desde) * (1 - Math.pow(1 - factor, k));
-  }
 
   function moverEntreTarjetas(k, onda) {
     var cabeza = cuerpo[0];
@@ -241,7 +231,7 @@
     var cabeza = cuerpo[0];
     cabeza.x = suavizar(cabeza.x, ancla.x + Math.sin(angulo) * radio, 0.15, k);
     cabeza.y = suavizar(cabeza.y, ancla.y + Math.cos(angulo) * radio, 0.15, k);
-    tensar(v.fijo);
+    F.tensar(cuerpo, v.fijo, LARGO);
   }
 
   // Sube por un lado de su propio cuerpo y se va por la derecha, por encima
@@ -285,36 +275,6 @@
     }
   }
 
-  // Pone `s` a LARGO de `guia`, en la direccion en que ya estaba.
-  function acercar(s, guia) {
-    var a = Math.atan2(guia.y - s.y, guia.x - s.x);
-    s.x = guia.x - Math.cos(a) * LARGO;
-    s.y = guia.y - Math.sin(a) * LARGO;
-  }
-
-  function arrastrarCuerpo() {
-    for (var n = 1; n < SEGMENTOS; n++) acercar(cuerpo[n], cuerpo[n - 1]);
-  }
-
-  // Con dos puntos sujetos, la cabeza y el segmento `fijo`: una pasada desde
-  // la cabeza y otra de vuelta desde el enganche (FABRIK). De `fijo` a la cola
-  // no se toca: es lo que queda tendido sobre el borde.
-  function tensar(fijo) {
-    var ancla = { x: cuerpo[fijo].x, y: cuerpo[fijo].y };
-    for (var n = 1; n <= fijo; n++) acercar(cuerpo[n], cuerpo[n - 1]);
-    cuerpo[fijo].x = ancla.x;
-    cuerpo[fijo].y = ancla.y;
-    for (n = fijo - 1; n >= 0; n--) acercar(cuerpo[n], cuerpo[n + 1]);
-  }
-
-  // Entera fuera, cola incluida: acabar con la cabeza fuera la cortaba a
-  // medio cuerpo.
-  function fueraDePantalla() {
-    return cuerpo.every(function (s) {
-      return s.x < -30 || s.x > ancho + 30 || s.y < -30 || s.y > alto + 30;
-    });
-  }
-
   function gestos(k) {
     v.parpadeo = Math.random() < 0.015 * k ? 0.1 : suavizar(v.parpadeo, 1, 0.25, k);
     v.faseLengua += 0.22 * k;
@@ -352,16 +312,16 @@
     v.ola += v.olaFreq * k;
     if (v.rutina === 'asomo') {
       moverAsomo(k);
-      arrastrarCuerpo();
+      F.arrastrar(cuerpo, LARGO);
     } else {
       seguirElScroll();
       if (v.fase === 'colgada') moverColgada(k, dt);
       else {
         moverEntreTarjetas(k, Math.sin(v.ola) * v.olaAmp);
-        arrastrarCuerpo();
+        F.arrastrar(cuerpo, LARGO);
       }
     }
-    var fuera = fueraDePantalla();
+    var fuera = F.fuera(cuerpo, ancho, alto);
     if (!fuera) v.entro = true;
     if ((fuera && v.entro) || v.ms > MAX_MS) v.activa = false;
   }
