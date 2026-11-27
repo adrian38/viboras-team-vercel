@@ -40,6 +40,9 @@ function nota(texto, esError) {
 // quien juega al reves en un sitio y el servidor le metia en otro.
 // Null si no hay hueco o si ya estoy dentro.
 let propuesto = null;
+// Si puedo quitar a otros: lo dice el servidor con la misma regla que aplica
+// al hacerlo (quien lo creo o un administrador).
+let puedoQuitar = false;
 
 function puestoPropuesto() {
   if (!partido || partido.estoyDentro || partido.cancelado || partido.jugado) return null;
@@ -90,7 +93,51 @@ async function confirmarIncorporar() {
   window.vtToast(`${nombre} apuntado. Se lo decimos.`);
 }
 
+// Quien creo el partido y los administradores pueden quitar a alguien. A
+// quien: los apuntados menos yo, que para salir tengo «Borrarme». La lista
+// sale de las plazas que ya estan pintadas; si entre tanto se ha ido, el
+// servidor lo dice y la recarga lo ensena. Va en el mismo panel que
+// «Apuntar a alguien»: nunca estan abiertos los dos a la vez.
+function aQuienQuitar() {
+  if (!puedoQuitar || partido.cancelado || partido.jugado) return [];
+  return partido.plazas.filter((p) => p.playerId && p.playerId !== yo.id);
+}
+
+function abrirQuitar() {
+  const escapar = window.vtPartido.escapar;
+  const opciones = aQuienQuitar()
+    .map((p) => `<option value="${p.playerId}">${escapar(p.nombre)}</option>`).join('');
+  $('incorporar').innerHTML = `
+    <label class="vt-field">
+      <span>¿A quién quitas del partido?</span>
+      <select class="vt-select" id="aQuitar">${opciones}</select>
+    </label>
+    <div class="vt-partido__acciones">
+      <button type="button" class="vt-btn" data-accion="confirmar-quitar">Quitar y avisarle</button>
+      <button type="button" class="vt-btn vt-btn--ghost" data-accion="cerrar-incorporar">Cancelar</button>
+    </div>`;
+  $('incorporar').hidden = false;
+}
+
+async function confirmarQuitar() {
+  const sel = $('aQuitar');
+  if (!sel) return;
+  const nombre = sel.options[sel.selectedIndex].textContent;
+  const r = await window.vtPartido.llamar('sacar', { id: idPartido, playerId: Number(sel.value) });
+  $('incorporar').hidden = true;
+  await recargar();
+  if (!r.ok) { nota(r.mensaje, true); return; }
+  window.vtToast(`${nombre} ya no está en el partido. Se lo decimos.`);
+}
+
+const enlaceQuitar = () => (aQuienQuitar().length ? menor('quitar', 'Quitar a alguien') : '');
+
 function pintarAcciones() {
+  pintarBotones();
+  $('menores').insertAdjacentHTML('beforeend', enlaceQuitar());
+}
+
+function pintarBotones() {
   const propuesto = puestoPropuesto();
   if (partido.cancelado) {
     $('acciones').innerHTML = '';
@@ -141,6 +188,7 @@ async function recargar() {
   }
   partido = r.datos.partido;
   propuesto = r.datos.propuesto || null;
+  puedoQuitar = Boolean(r.datos.puedoQuitar);
   yo = { id: r.datos.yo, nombre: r.datos.yoSoy || 'Tú' };
   pintar();
   return true;
@@ -185,6 +233,8 @@ const ACCIONES = {
   incorporar: abrirIncorporar,
   'confirmar-incorporar': confirmarIncorporar,
   'cerrar-incorporar': () => { document.getElementById('incorporar').hidden = true; },
+  quitar: abrirQuitar,
+  'confirmar-quitar': confirmarQuitar,
   'guardar-compartir': async () => {
     if (!await apuntar()) return;
     await recargar();

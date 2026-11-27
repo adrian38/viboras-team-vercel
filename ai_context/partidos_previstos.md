@@ -254,6 +254,25 @@ y apuntar a alguien que no se va a enterar es peor que no apuntarlo.
 parámetro de jugador, el `player_id` sale siempre de la sesión. No añadir ese
 parámetro «por comodidad».
 
+## Quitar a alguien: quien lo creó y los administradores (2026-11-27)
+
+Hasta aquí nadie podía sacar a otro: si alguien se apuntaba por error, o no
+iba a venir y no se borraba, la plaza quedaba ocupada hasta que él quisiera.
+La acción `sacar` lo deja hacer a **quien creó el partido y a los
+administradores**. Decisión de Adrián.
+
+La asimetría con `apuntar-a` es a propósito: incorporar dice «he quedado con
+éste», y eso sólo lo sabe quien convocó; quitar es poner orden, que es lo que
+hace un administrador.
+
+- **Uno mismo no se quita con esto**: para eso está `borrarme`, con su aviso.
+- **La plaza queda libre**, y si el partido estaba lleno se avisa a la lista
+  de espera igual que en una baja.
+- **Dos avisos**: al quitado, «te ha quitado del partido»; a los que quedan,
+  «ha quitado a Marta». A quien lo hace, ninguno.
+- La pantalla pregunta al servidor si puede (`puedoQuitar` en `uno`), con la
+  misma regla que aplica `sacar`, y elige a quién entre las plazas pintadas.
+
 ## El `sql` no compone fragmentos
 
 En `_partidos-lista.js` la lista de columnas está repetida en las tres

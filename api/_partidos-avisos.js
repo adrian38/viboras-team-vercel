@@ -79,6 +79,18 @@ export async function avisarBaja(fila, quien, jugadores) {
   await crearAviso(jugadores, texto, enlaceDe(fila.id));
 }
 
+// Quien creo el partido, o un administrador, quita a alguien. Dos avisos
+// distintos, como al incorporar: al quitado se le dice que le han quitado
+// —no se ha borrado el, y tiene que enterarse de que ya no juega— y a los que
+// quedan, a quien. Menos a quien lo ha hecho, que ya lo sabe.
+export async function avisarQuitado(fila, quien, aQuien, quedan) {
+  const libres = 4 - quedan.length;
+  await crearAviso([aQuien.id], `${quien.nombre} te ha quitado del partido del ${partidoDice(fila)}.`, enlaceDe(fila.id));
+  const otros = quedan.filter((id) => id !== quien.id);
+  const texto = `${quien.nombre} ha quitado a ${aQuien.nombre} del partido del ${partidoDice(fila)}. ${plazasDice(libres)}`;
+  await crearAviso(otros, texto, enlaceDe(fila.id));
+}
+
 // Se cancela el partido entero. Lo saben los apuntados que quedan y tambien
 // quienes esperaban una plaza, que si no se quedarian esperando algo que ya
 // no va a pasar. Menos quien lo cancela.

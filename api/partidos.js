@@ -12,10 +12,10 @@ import {
   DURACIONES, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
   instanteDe, partidoQueSePisa, creadosHoy, crearPartido, tomarPlaza, soltarPlaza,
   partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe,
-  jugadorIncorporable, incorporables, cambiarDePlaza, ladoDe, puestoQueTomaria
+  jugadorIncorporable, incorporables, cambiarDePlaza, ladoDe, puestoQueTomaria, apuntadoEn
 } from './_partidos.js';
 import { misPartidos, partidosAbiertos, unPartido } from './_partidos-lista.js';
-import { avisarApuntado, avisarBaja, avisarCancelado, avisarIncorporado } from './_partidos-avisos.js';
+import { avisarApuntado, avisarBaja, avisarCancelado, avisarIncorporado, avisarQuitado } from './_partidos-avisos.js';
 import { categoriaDe } from './_rating.js';
 import {
   editarPartido, recalcularAvisos, olvidarSegundaFranja, avisarCambio,
@@ -127,7 +127,10 @@ async function uno(req, res, user) {
   // la pantalla le pinta ahi su nombre «sin guardar», y tiene que ser el
   // mismo sitio en el que luego le pone el servidor.
   const propuesto = partido.estoyDentro ? null : puestoQueTomaria(partido.plazas, await ladoDe(user.player_id));
-  res.status(200).json({ ok: true, yo: user.player_id, yoSoy: user.player_name, partido, propuesto, sedes: sedesParaLaPagina(), niveles: nivelesParaLaPagina() });
+  // `puedoQuitar` es la misma regla que comprueba `sacar`: la pantalla solo
+  // ofrece lo que el servidor va a aceptar.
+  const puedoQuitar = partido.soyElCreador || user.role === 'admin';
+  res.status(200).json({ ok: true, yo: user.player_id, yoSoy: user.player_name, partido, propuesto, puedoQuitar, sedes: sedesParaLaPagina(), niveles: nivelesParaLaPagina() });
 }
 
 async function crear(req, res, user) {
@@ -180,6 +183,39 @@ async function borrarme(req, res, user) {
   await avisarBaja(partido, quienEs(user), quedan);
   // Solo si el partido estaba lleno: si ya tenia huecos, los que esperan no
   // esperaban nada y un aviso de «ha quedado una plaza» seria mentira.
+  if (estaba.length === 4) await avisarPlazaLibre(partido, await enEsperaDe(partido.id));
+  res.status(200).json({ ok: true });
+}
+
+// Quitar a alguien del partido. Lo pueden hacer quien lo creo y los
+// administradores, decision de Adrian: el que se apunta por error, o el que
+// no va a venir y no se borra, dejaba el partido atascado hasta que el
+// quisiera.
+//
+// A diferencia de `apuntar-a`, aqui SI valen los administradores: incorporar
+// dice «he quedado con este», que solo lo sabe quien convoco; quitar es
+// poner orden, que es lo que hace un administrador.
+//
+// Uno mismo no se quita con esto: para eso esta `borrarme`, con su propio
+// aviso. Y quien lo hace no ocupa la plaza: queda libre, y si el partido
+// estaba lleno se avisa a la lista de espera igual que en una baja.
+async function sacar(req, res, user) {
+  if (!exigirFicha(res, user)) return;
+  const data = await readBody(req);
+  const partido = await partidoVivo(toInt(data?.id));
+  if (!partido) return error(res, 'too_late', 409, 'Ese partido ya ha empezado o no existe.');
+  if (partido.creador_player_id !== user.player_id && user.role !== 'admin') {
+    return error(res, 'forbidden', 403, 'Solo pueden quitar a alguien quien creó el partido y los administradores.');
+  }
+  const playerId = toInt(data?.playerId);
+  if (playerId === user.player_id) return error(res, 'bad_request', 400, 'Para salir tú, bórrate del partido.');
+  const jugador = await apuntadoEn(partido.id, playerId);
+  if (!jugador) return error(res, 'not_joined', 409, 'Esa persona ya no está en el partido.');
+  const estaba = await jugadoresDe(partido.id);
+  if (!await soltarPlaza(partido.id, jugador.id)) {
+    return error(res, 'not_joined', 409, `${jugador.name} ya no está en el partido.`);
+  }
+  await avisarQuitado(partido, quienEs(user), { id: jugador.id, nombre: jugador.name }, await jugadoresDe(partido.id));
   if (estaba.length === 4) await avisarPlazaLibre(partido, await enEsperaDe(partido.id));
   res.status(200).json({ ok: true });
 }
@@ -339,6 +375,7 @@ const ACCIONES = {
   'apuntar-a': ['POST', apuntarA],
   'a-quien-apuntar': ['GET', aQuienApuntar],
   borrarme: ['POST', borrarme],
+  sacar: ['POST', sacar],
   moverme: ['POST', moverme],
   editar: ['POST', editar],
   esperarme: ['POST', esperarme],

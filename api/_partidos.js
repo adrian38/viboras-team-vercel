@@ -400,6 +400,15 @@ export async function enEsperaDe(partidoId) {
   return rows.map((r) => r.player_id);
 }
 
+// Un apuntado de ESTE partido, con su nombre para los avisos. Null si no
+// tiene plaza en el: a quien no esta no se le puede quitar.
+export async function apuntadoEn(partidoId, playerId) {
+  const { rows } = await sql`
+    SELECT p.id, p.name FROM partido_plazas pl JOIN players p ON p.id = pl.player_id
+    WHERE pl.partido_id = ${partidoId} AND pl.player_id = ${playerId}`;
+  return rows.length ? rows[0] : null;
+}
+
 export async function cancelarPartido(id) {
   const { rows } = await sql`
     UPDATE partidos_previstos SET cancelado_at = now()
