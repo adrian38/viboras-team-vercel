@@ -105,7 +105,7 @@ async function leerInstante(res, fecha, hora) {
   if (fila.pronto) {
     return error(res, 'bad_date', 400, `Ese partido ya ha empezado o empieza en nada: pon al menos ${MARGEN_MINUTOS} minutos de margen.`);
   }
-  if (fila.lejos) return error(res, 'bad_date', 400, `No se puede convocar con más de ${DIAS_MAXIMOS} días.`);
+  if (fila.lejos) return error(res, 'bad_date', 400, `No se puede crear con más de ${DIAS_MAXIMOS} días.`);
   return fila.t;
 }
 
@@ -133,7 +133,7 @@ async function crear(req, res, user) {
   const empieza = await leerInstante(res, datos.fecha, datos.hora);
   if (!empieza) return;
   if (await creadosHoy(user.player_id) >= POR_DIA) {
-    return error(res, 'too_many', 429, 'Has convocado varios partidos seguidos. Prueba mañana.');
+    return error(res, 'too_many', 429, 'Has creado varios partidos seguidos. Prueba mañana.');
   }
   const choque = await partidoQueSePisa(user.player_id, empieza, datos.duracion, null);
   if (choque) return error(res, 'overlap', 409, 'Ya estás en otro partido a esa hora.');
@@ -216,7 +216,7 @@ async function apuntarA(req, res, user) {
   const partido = await partidoVivo(toInt(data?.id));
   if (!partido) return error(res, 'too_late', 409, 'Ese partido ya no admite gente.');
   if (partido.creador_player_id !== user.player_id) {
-    return error(res, 'forbidden', 403, 'Solo quien convocó el partido puede apuntar a otros.');
+    return error(res, 'forbidden', 403, 'Solo quien creó el partido puede apuntar a otros.');
   }
   const jugador = await jugadorIncorporable(toInt(data?.playerId));
   if (!jugador) return error(res, 'not_found', 404, 'Ese jugador no está disponible.');
@@ -239,7 +239,7 @@ async function aQuienApuntar(req, res, user) {
   const partido = await partidoVivo(toInt(req.query?.id));
   if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no existe.');
   if (partido.creador_player_id !== user.player_id) {
-    return error(res, 'forbidden', 403, 'Solo quien convocó el partido puede apuntar a otros.');
+    return error(res, 'forbidden', 403, 'Solo quien creó el partido puede apuntar a otros.');
   }
   res.status(200).json({ ok: true, jugadores: await incorporables(partido.id) });
 }
@@ -253,7 +253,7 @@ async function editar(req, res, user) {
   const partido = await partidoVivo(toInt(data?.id));
   if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no se puede cambiar.');
   if (partido.creador_player_id !== user.player_id && user.role !== 'admin') {
-    return error(res, 'forbidden', 403, 'Solo puede cambiarlo quien lo convocó.');
+    return error(res, 'forbidden', 403, 'Solo puede cambiarlo quien lo creó.');
   }
   const datos = await leerFormulario(req, res);
   if (!datos) return;
@@ -305,7 +305,7 @@ async function cancelar(req, res, user) {
   const partido = await partidoVivo(toInt(data?.id));
   if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no existe.');
   if (partido.creador_player_id !== user.player_id && user.role !== 'admin') {
-    return error(res, 'forbidden', 403, 'Solo puede cancelarlo quien lo convocó.');
+    return error(res, 'forbidden', 403, 'Solo puede cancelarlo quien lo creó.');
   }
   const jugadores = await jugadoresDe(partido.id);
   const esperando = await enEsperaDe(partido.id);

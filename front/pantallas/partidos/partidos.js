@@ -53,7 +53,7 @@ function accionesDe(partido) {
 
 function pintar() {
   if (!partidos.length) {
-    lista.innerHTML = '<p class="vacio">No tienes ningún partido pendiente. Convoca uno o mira los que hay abiertos.</p>';
+    lista.innerHTML = '<p class="vacio">No tienes ningún partido pendiente. Crea uno o mira los que hay abiertos.</p>';
     return;
   }
   lista.innerHTML = partidos.map((p) => `
