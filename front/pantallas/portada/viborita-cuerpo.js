@@ -51,7 +51,23 @@
     });
   }
 
+  // Punto a distancia d de (anclaX, p.B), por el contorno del rectangulo p
+  // ({L, T, R, B}) hacia el lado contrario a dir. El contorno se recorre en
+  // el sentido de las agujas del reloj desde la esquina de arriba a la
+  // izquierda, asi que avanzar hacia la izquierda por abajo es sumar.
+  function contorno(p, anclaX, dir, d) {
+    var w = p.R - p.L;
+    var h = p.B - p.T;
+    var per = 2 * (w + h);
+    var t = ((w + h + (p.R - anclaX) + dir * d) % per + per) % per;
+    if (t < w) return { x: p.L + t, y: p.T };
+    if (t < w + h) return { x: p.R, y: p.T + t - w };
+    if (t < 2 * w + h) return { x: p.R - (t - w - h), y: p.B };
+    return { x: p.L, y: p.B - (t - 2 * w - h) };
+  }
+
   window.vtViboritaCuerpo = {
+    contorno: contorno,
     suavizar: suavizar,
     colocar: colocar,
     arrastrar: arrastrar,

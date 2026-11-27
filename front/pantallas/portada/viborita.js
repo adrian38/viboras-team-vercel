@@ -1,24 +1,34 @@
-// Viborita: una serpiente dorada que cruza la portada de vez en cuando.
+// Viborita: una serpiente dorada que anda por la portada mientras nadie toca.
 //
 // Es adorno y nada mas. No lleva texto, no responde al toque, y el lienzo va
 // con pointer-events:none, asi que nunca se come un toque a las tarjetas.
 // Sale de una maqueta de Stitch, a la que se le quitaron los bocadillos, la
 // pelota, el boton de invocarla y la huida al tocarla.
 //
-// Como se mueve: solo se gobierna la cabeza. Los segmentos del cuerpo la
-// siguen a distancia fija (cada uno se pone a LARGO del anterior, en la
-// direccion en que ya estaba), y la ondulacion es un seno que empuja la
-// cabeza en perpendicular a su rumbo y que el cuerpo va heredando.
+// Va encadenando cosas, y cada una espera a QUIETO_MS sin tocar la pantalla
+// (tocar, desplazar o teclear reinicia la cuenta). La primera vez sigue un
+// guion: entra y se cuelga del logo, cae a la primera tarjeta y se va.
+// Despues varia: colgarse de una tarjeta, de un icono o del logo, caer a lo
+// que tenga debajo, cambiarse de sitio, cruzar en zigzag, asomarse por
+// detras de la barra o irse.
+//
+// Como se mueve: andando, solo se gobierna la cabeza y los segmentos la
+// siguen a distancia fija (cada uno a LARGO del anterior, en la direccion en
+// que ya estaba); la ondulacion es un seno que empuja la cabeza en
+// perpendicular a su rumbo. Colgada, la cabeza hace de pendulo y el cuerpo
+// tiene dos puntos sujetos (FABRIK); la cola se acomoda al contorno de lo que
+// la sujeta.
 //
 // Lo que cuida para no gastar:
 // - La velocidad va por tiempo y no por fotogramas: a 120 Hz no va al doble.
 //   Las constantes de velocidad estan expresadas por fotograma de 60 Hz.
-// - El bucle solo corre mientras hay serpiente o chispas en pantalla; entre
-//   una aparicion y la siguiente no hay requestAnimationFrame.
+// - El bucle solo corre mientras hay serpiente o chispas en pantalla; fuera
+//   de ella no hay requestAnimationFrame.
 // - Con la pestana oculta se para y no programa nada.
 // - Con «reducir movimiento» no aparece.
 //
 // Los colores se leen de theme.css al arrancar; aqui no hay ninguno escrito.
+// El pintado esta en viborita-dibujo.js.
 // Detalle: ai_context/viborita_de_la_portada.md
 (function () {
   'use strict';
@@ -32,18 +42,20 @@
   var LARGO = 6.2;
   var FOTOGRAMA_MS = 1000 / 60;
   var PRIMERA_MS = 2500;
-  var ENTRE_MIN_MS = 10000;
-  var ENTRE_MAX_MS = 15000;
-  // Tope de un recorrido, por si alguno no llegara a salir de la pantalla.
-  // Cabe uno con parada colgada: unos 5 s de zigzag, hasta 11 colgada y 3
-  // de salida.
-  var MAX_MS = 30000;
-  // Colgarse del borde de una tarjeta: cuantas veces, cuanto rato, y cuantos
-  // segmentos quedan colgando (el resto se queda tendido sobre el borde).
-  var COLGAR_PROB = 0.4;
-  var COLGADA_MIN_MS = 7000;
-  var COLGADA_MAX_MS = 11000;
+  // Sin tocar la pantalla durante esto, hace lo siguiente.
+  var QUIETO_MS = 2000;
+  // Colgada mas de esto, se mueve aunque se siga tocando: si no, el bucle no
+  // pararia nunca mientras alguien usa la portada.
+  var COLGADA_MAX_MS = 20000;
+  // Colgadas seguidas antes de irse por fuerza.
+  var SEGUIDAS_MAX = 4;
+  // Tope de un tramo andando o cayendo, por si alguno no llegara.
+  var MAX_MS = 15000;
+  // Segmentos que quedan colgando; el resto se acomoda sobre la percha.
   var COLGANDO = 20;
+  var PERCHAS = '.site .block, .site .block-icon, .site .block-marca, .hero img';
+  var LOGO = '.hero img';
+  var TARJETA = '.site .block';
 
   var lienzo = null;
   var ctx = null;
@@ -55,8 +67,11 @@
   var raf = 0;
   var ultimo = 0;
   var espera = 0;
+  var ultimaAccion = 0;
+  // La primera vez: del logo, a la primera tarjeta, y fuera.
+  var guion = ['logo', 'primera', 'irse'];
   var v = {
-    activa: false, rutina: '', ms: 0, entro: false,
+    activa: false, rutina: '', fase: '', ms: 0, entro: false, seguidas: 0,
     velocidad: 0, ola: 0, olaFreq: 0, olaAmp: 0,
     lengua: 0, faseLengua: 0, parpadeo: 1
   };
@@ -99,7 +114,79 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  // ------------------------------------------------------------ rutinas --
+  function alTocar() {
+    ultimaAccion = performance.now();
+  }
+
+  function quieto() {
+    return performance.now() - ultimaAccion >= QUIETO_MS;
+  }
+
+  // ------------------------------------------------------------- perchas --
+
+  function techoDeLaBarra() {
+    var barra = document.querySelector('.vt-nav');
+    return barra ? barra.getBoundingClientRect().top : alto;
+  }
+
+  function alAzar(lista) {
+    return lista[Math.floor(Math.random() * lista.length)];
+  }
+
+  // Se ve de ancho entero, con el borde de abajo a la vista y sitio debajo
+  // para el cuerpo antes de la barra.
+  function cabe(r, techo) {
+    return r.width > 0 && r.left >= 0 && r.right <= ancho &&
+      r.bottom > 40 && r.bottom + COLGANDO * LARGO + 70 < techo;
+  }
+
+  // Donde puede colgarse: tarjetas, sus dos iconos y el logo.
+  function perchas(techo) {
+    return [].slice.call(document.querySelectorAll(PERCHAS))
+      .map(function (e) { return e.getBoundingClientRect(); })
+      .filter(function (r) { return cabe(r, techo); });
+  }
+
+  function perchaDe(selector) {
+    var e = document.querySelector(selector);
+    var r = e && e.getBoundingClientRect();
+    return r && cabe(r, techoDeLaBarra()) ? r : null;
+  }
+
+  // dir: hacia donde avanza por el borde al llegar (1, derecha); la cola
+  // queda del otro lado. El enganche, 4 px por encima del borde: asi el
+  // cuerpo queda apoyado sobre el, no pegado por debajo (medido).
+  function fijarPercha(r, x, dir) {
+    v.dir = dir;
+    v.anclaX = x;
+    v.borde = r.bottom - 4;
+    v.percha = { L: r.left - 1, T: r.top - 1, R: r.right + 1, B: r.bottom - 1 };
+  }
+
+  function puntoDelBorde(r, margen) {
+    return r.left + margen + Math.random() * (r.width - 2 * margen);
+  }
+
+  // Por el borde de abajo de la percha, en un sentido u otro, hasta un punto
+  // al azar, y de ahi abajo.
+  function puntosParaColgarse(r, dir) {
+    var x = puntoDelBorde(r, r.width * (r.width > 80 ? 0.25 : 0.4));
+    fijarPercha(r, x, dir || (Math.random() < 0.5 ? 1 : -1));
+    return [
+      { x: x - v.dir * 70, y: v.borde },
+      { x: x, y: v.borde },
+      { x: x + v.dir * 8, y: v.borde + COLGANDO * LARGO + 35, colgarse: true }
+    ];
+  }
+
+  // Donde va el segmento a distancia d del enganche: hacia la cola, por el
+  // contorno de la percha. En una tarjeta cae a lo largo del borde de abajo;
+  // en un icono da la vuelta a la esquina y lo rodea.
+  function enLaPercha(d) {
+    return F.contorno(v.percha, v.anclaX, v.dir, d);
+  }
+
+  // -------------------------------------------------------------- entrar --
 
   function empezar(rutina, velocidad, amplitud, frecuencia) {
     v.activa = true;
@@ -111,61 +198,58 @@
     v.olaFreq = frecuencia;
   }
 
-  function techoDeLaBarra() {
-    var barra = document.querySelector('.vt-nav');
-    return barra ? barra.getBoundingClientRect().top : alto;
+  function nuevaVuelta() {
+    v.fase = '';
+    v.cola = null;
+    v.punto = 0;
+    v.scroll = scrollY;
+    v.seguidas = 0;
   }
 
   function tarjetasVisibles(techo) {
-    return [].slice.call(document.querySelectorAll('.site .block'))
+    return [].slice.call(document.querySelectorAll(TARJETA))
       .map(function (b) { return b.getBoundingClientRect(); })
       .filter(function (r) { return r.bottom > 0 && r.top < techo; })
       .slice(0, 2);
   }
 
-  // El borde de abajo de una tarjeta del recorrido con sitio debajo para el
-  // cuerpo antes de la barra. La ultima que valga, o ninguna.
-  function bordeParaColgarse(tarjetas, techo) {
-    var validas = tarjetas.filter(function (r) {
-      return r.bottom > 40 && r.bottom + COLGANDO * LARGO + 70 < techo;
-    });
-    return validas.length ? validas[validas.length - 1] : null;
+  function enTarjeta(r, f) {
+    return r.left + r.width * (v.espejo ? 1 - f : f);
   }
 
-  // Zigzag por los bordes de las dos primeras tarjetas que se vean. Sin
-  // tarjetas a la vista, un zigzag por la pantalla. Al final, o sale por la
-  // izquierda, o recorre el borde de abajo de una tarjeta y se descuelga.
-  function puntosEntreTarjetas(colgar) {
+  // Zigzag por los bordes de las dos primeras tarjetas que se vean, a veces
+  // en espejo, y sale por el lado contrario al que entro. Sin tarjetas a la
+  // vista, un zigzag por la pantalla.
+  function puntosEntreTarjetas() {
     var techo = techoDeLaBarra();
-    var tarjetas = tarjetasVisibles(techo);
-    var borde = colgar && bordeParaColgarse(tarjetas, techo);
+    var e = v.espejo;
     var puntos = [];
-    tarjetas.forEach(function (r, n) {
-      puntos.push({ x: r.left + r.width * (n ? 0.75 : 0.7), y: r.top + (n ? 30 : -8) });
-      puntos.push({ x: r.left + r.width * (n ? 0.15 : 0.25), y: r.bottom + (n ? 25 : 12) });
+    tarjetasVisibles(techo).forEach(function (r, n) {
+      puntos.push({ x: enTarjeta(r, n ? 0.75 : 0.7), y: r.top + (n ? 30 : -8) });
+      puntos.push({ x: enTarjeta(r, n ? 0.15 : 0.25), y: r.bottom + (n ? 25 : 12) });
     });
-    if (!puntos.length) puntos = [{ x: ancho * 0.7, y: alto * 0.3 }, { x: ancho * 0.25, y: alto * 0.5 }];
-    puntos.forEach(function (p) { p.y = Math.max(30, Math.min(techo - 30, p.y)); });
-    if (!borde) {
-      puntos.push({ x: -120, y: puntos[puntos.length - 1].y + 25 });
-      return puntos;
+    if (!puntos.length) {
+      puntos = [{ x: ancho * (e ? 0.3 : 0.7), y: alto * 0.3 }, { x: ancho * (e ? 0.75 : 0.25), y: alto * 0.5 }];
     }
-    // 4 px por encima del borde: asi el cuerpo queda apoyado sobre el, no
-    // pegado por debajo (medido: con el borde exacto quedaba 4 px bajo).
-    var x = borde.left + borde.width * 0.55;
-    v.borde = borde.bottom - 4;
-    puntos.push({ x: borde.left + borde.width * 0.1, y: v.borde });
-    puntos.push({ x: x, y: v.borde });
-    puntos.push({ x: x, y: v.borde + COLGANDO * LARGO + 35, colgarse: true });
+    puntos.forEach(function (p) { p.y = Math.max(30, Math.min(techo - 30, p.y)); });
+    puntos.push({ x: e ? ancho + 120 : -120, y: puntos[puntos.length - 1].y + 25 });
     return puntos;
   }
 
   function empezarEntreTarjetas() {
-    v.fase = '';
-    v.puntos = puntosEntreTarjetas(Math.random() < COLGAR_PROB);
-    v.punto = 0;
-    v.scroll = scrollY;
-    F.colocar(cuerpo, LARGO, ancho + 60, v.puntos[0].y - 7, 1, 0);
+    nuevaVuelta();
+    v.espejo = Math.random() < 0.5;
+    v.puntos = puntosEntreTarjetas();
+    F.colocar(cuerpo, LARGO, v.espejo ? -60 : ancho + 60, v.puntos[0].y - 7, v.espejo ? -1 : 1, 0);
+    empezar('tarjetas', 5.2, 14, 0.22);
+  }
+
+  // Entra por un lado a la altura del borde de la percha y se cuelga.
+  function entrarYColgarse(r) {
+    var dir = Math.random() < 0.5 ? 1 : -1;
+    nuevaVuelta();
+    v.puntos = puntosParaColgarse(r, dir);
+    F.colocar(cuerpo, LARGO, dir > 0 ? -60 : ancho + 60, v.borde, -dir, 0);
     empezar('tarjetas', 5.2, 14, 0.22);
   }
 
@@ -174,6 +258,7 @@
   function empezarAsomo() {
     var techo = techoDeLaBarra();
     if (techo >= alto) return empezarEntreTarjetas();
+    nuevaVuelta();
     v.asomoX = ancho * (Math.random() < 0.5 ? 0.3 : 0.7) + (Math.random() * 40 - 20);
     v.asomoArriba = techo - 46;
     v.asomoAbajo = techo + 70;
@@ -183,13 +268,27 @@
     empezar('asomo', 3.6, 8, 0.16);
   }
 
+  // La primera vez, al logo (si se ve y cabe debajo); despues, al azar.
+  function entrar() {
+    if (guion[0] === 'logo') {
+      guion.shift();
+      var logo = perchaDe(LOGO);
+      if (logo) return entrarYColgarse(logo);
+      guion = [];
+    }
+    var donde = perchas(techoDeLaBarra());
+    var azar = Math.random();
+    if (donde.length && azar < 0.5) return entrarYColgarse(alAzar(donde));
+    if (azar < 0.75) return empezarEntreTarjetas();
+    empezarAsomo();
+  }
+
   // ---------------------------------------------------------- movimiento --
 
-  function moverEntreTarjetas(k, onda) {
+  function moverAndando(k, onda) {
     var cabeza = cuerpo[0];
     var p = v.puntos[v.punto];
-    // Sin mas puntos, sigue recta por donde iba hasta salir entera: la
-    // salida puede ser por la izquierda o, tras colgarse, por la derecha.
+    // Sin mas puntos, sigue recta por donde iba hasta salir entera.
     if (!p) {
       cabeza.x += Math.cos(v.rumbo) * v.velocidad * k;
       cabeza.y += Math.sin(v.rumbo) * v.velocidad * k;
@@ -206,45 +305,119 @@
     if (p.colgarse) colgarse();
   }
 
-  // Se engancha por el primer segmento (desde la cabeza) que aun esta sobre
-  // el borde: de ahi hacia la cola queda tendida, de ahi hacia la cabeza
-  // cuelga.
+  // Llegando andando: se engancha por el primer segmento (desde la cabeza)
+  // que aun esta sobre el borde.
   function colgarse() {
     var fijo = COLGANDO;
     for (var n = 1; n < SEGMENTOS; n++) {
       if (cuerpo[n].y <= v.borde + 4) { fijo = n; break; }
     }
-    v.fijo = Math.max(8, Math.min(SEGMENTOS - 4, fijo));
+    engancharse(Math.max(8, Math.min(SEGMENTOS - 4, fijo)), 0);
+  }
+
+  // De `fijo` hacia la cabeza cuelga; de `fijo` a la cola se acomoda al
+  // contorno de la percha. `golpe` balancea de mas al principio (al caer).
+  function engancharse(fijo, golpe) {
+    v.fijo = fijo;
+    v.cola = [];
+    for (var n = fijo; n < SEGMENTOS; n++) v.cola.push(enLaPercha((n - fijo) * LARGO));
     v.fase = 'colgada';
     v.colgadaMs = 0;
-    v.colgadaHasta = COLGADA_MIN_MS + Math.random() * (COLGADA_MAX_MS - COLGADA_MIN_MS);
+    v.ms = 0;
+    v.seguidas++;
+    v.calma = 0.2 + Math.random() * 0.25;
+    v.amplitud = v.calma + golpe;
+    v.ritmo = 1.8 + Math.random();
+    v.desfase = Math.random() * Math.PI * 2;
+  }
+
+  function acomodarCola(k) {
+    for (var n = v.fijo; n < SEGMENTOS; n++) {
+      var o = v.cola[n - v.fijo];
+      cuerpo[n].x = suavizar(cuerpo[n].x, o.x, 0.12, k);
+      cuerpo[n].y = suavizar(cuerpo[n].y, o.y, 0.12, k);
+    }
   }
 
   // Pendulo: la cabeza va hacia un punto que oscila bajo el enganche, a algo
-  // menos que el largo de lo que cuelga para que el cuerpo haga curva.
+  // menos que el largo de lo que cuelga para que el cuerpo haga curva. Dos
+  // senos de ritmo distinto para que no parezca un metronomo.
   function moverColgada(k, dt) {
     v.colgadaMs += dt;
-    if (v.colgadaMs > v.colgadaHasta) return soltarse();
+    if (v.colgadaMs > QUIETO_MS && (quieto() || v.colgadaMs > COLGADA_MAX_MS)) return siguiente();
+    acomodarCola(k);
+    v.amplitud = suavizar(v.amplitud, v.calma, 0.02, k);
     var ancla = cuerpo[v.fijo];
     var radio = v.fijo * LARGO * 0.92;
-    var angulo = Math.sin(v.colgadaMs / 1000 * 2.4) * 0.35;
+    var s = v.colgadaMs / 1000;
+    var angulo = v.amplitud * Math.sin(s * v.ritmo + v.desfase) + 0.12 * Math.sin(s * 0.7 + v.desfase * 2);
     var cabeza = cuerpo[0];
     cabeza.x = suavizar(cabeza.x, ancla.x + Math.sin(angulo) * radio, 0.15, k);
     cabeza.y = suavizar(cabeza.y, ancla.y + Math.cos(angulo) * radio, 0.15, k);
     F.tensar(cuerpo, v.fijo, LARGO);
   }
 
-  // Sube por un lado de su propio cuerpo y se va por la derecha, por encima
-  // del borde. La cola tendida se arrastra detras.
-  function soltarse() {
+  // Lo siguiente estando colgada. Primero el guion (del logo cae a la
+  // primera tarjeta, y de ahi se va); despues, al azar entre caer a lo que
+  // tenga debajo, cambiarse a otra percha o irse.
+  function siguiente() {
+    var paso = guion.shift();
+    var p = v.percha;
+    var todas = perchas(techoDeLaBarra());
+    var debajo = todas.filter(function (r) { return r.bottom > p.B + 30; });
+    var otras = todas.filter(function (r) { return Math.abs(r.bottom - 1 - p.B) > 2 || Math.abs(r.left - 1 - p.L) > 2; });
+    if (paso === 'primera') {
+      var t = perchaDe(TARJETA);
+      if (t && t.bottom > p.B + 30) return caer(t);
+    }
+    var azar = Math.random();
+    if (paso === 'irse' || v.seguidas >= SEGUIDAS_MAX) return soltarse();
+    if (debajo.length && azar < 0.4) return caer(alAzar(debajo));
+    if (otras.length && azar < 0.75) return mudarse(alAzar(otras));
+    soltarse();
+  }
+
+  // Se suelta y cae a plomo hasta el borde de una percha de mas abajo. Si la
+  // percha es estrecha, se va corriendo hacia ella mientras cae.
+  function caer(r) {
+    var margen = r.width * (r.width > 80 ? 0.15 : 0.4);
+    var x = Math.max(r.left + margen, Math.min(r.right - margen, cuerpo[v.fijo].x));
+    fijarPercha(r, x, Math.random() < 0.5 ? 1 : -1);
+    v.fase = 'cae';
+    v.cola = null;
+    v.vy = 0;
+    v.ms = 0;
+  }
+
+  function moverCayendo(k) {
+    var ancla = cuerpo[v.fijo];
+    v.vy += 0.5 * k;
+    var dy = Math.min(v.vy * k, v.percha.B - ancla.y);
+    var dx = (v.anclaX - ancla.x) * (1 - Math.pow(0.85, k));
+    cuerpo.forEach(function (s) { s.x += dx; s.y += dy; });
+    if (ancla.y >= v.percha.B - 0.5) engancharse(v.fijo, 0.25);
+  }
+
+  // Trepa por el lado libre (el contrario a la cola) hasta encima del borde.
+  function trepar() {
     var a = cuerpo[v.fijo];
+    var d = v.dir;
     v.fase = '';
+    v.cola = null;
     v.punto = 0;
-    v.puntos = [
-      { x: a.x + 28, y: a.y + 20 },
-      { x: a.x + 40, y: a.y - 14 },
-      { x: ancho + 120, y: a.y - 14 }
-    ];
+    v.ms = 0;
+    return [{ x: a.x + d * 28, y: a.y + 20 }, { x: a.x + d * 40, y: a.y - 14 }];
+  }
+
+  // Trepa y se va por ese mismo lado.
+  function soltarse() {
+    var puntos = trepar();
+    v.puntos = puntos.concat({ x: v.dir > 0 ? ancho + 120 : -120, y: puntos[1].y });
+  }
+
+  // Trepa y se va andando a colgarse de otra percha.
+  function mudarse(r) {
+    v.puntos = trepar().concat(puntosParaColgarse(r));
   }
 
   // Si se desplaza la pagina, la serpiente se mueve con las tarjetas: el
@@ -253,8 +426,11 @@
     var d = scrollY - v.scroll;
     v.scroll = scrollY;
     if (!d) return;
-    cuerpo.forEach(function (s) { s.y -= d; });
-    v.puntos.forEach(function (p) { p.y -= d; });
+    function bajar(p) { p.y -= d; }
+    cuerpo.forEach(bajar);
+    v.puntos.forEach(bajar);
+    if (v.cola) v.cola.forEach(bajar);
+    if (v.percha) { v.percha.T -= d; v.percha.B -= d; }
     v.borde -= d;
   }
 
@@ -302,6 +478,21 @@
     }
   }
 
+  function moverSerpiente(k, dt) {
+    if (v.rutina === 'asomo') {
+      moverAsomo(k);
+      F.arrastrar(cuerpo, LARGO);
+      return;
+    }
+    seguirElScroll();
+    if (v.fase === 'colgada') moverColgada(k, dt);
+    else if (v.fase === 'cae') moverCayendo(k);
+    else {
+      moverAndando(k, Math.sin(v.ola) * v.olaAmp);
+      F.arrastrar(cuerpo, LARGO);
+    }
+  }
+
   // k: cuantos fotogramas de 60 Hz han pasado. dt: milisegundos.
   function actualizar(k, dt) {
     gestos(k);
@@ -310,20 +501,10 @@
     if (!v.activa) return;
     v.ms += dt;
     v.ola += v.olaFreq * k;
-    if (v.rutina === 'asomo') {
-      moverAsomo(k);
-      F.arrastrar(cuerpo, LARGO);
-    } else {
-      seguirElScroll();
-      if (v.fase === 'colgada') moverColgada(k, dt);
-      else {
-        moverEntreTarjetas(k, Math.sin(v.ola) * v.olaAmp);
-        F.arrastrar(cuerpo, LARGO);
-      }
-    }
+    moverSerpiente(k, dt);
     var fuera = F.fuera(cuerpo, ancho, alto);
     if (!fuera) v.entro = true;
-    if ((fuera && v.entro) || v.ms > MAX_MS) v.activa = false;
+    if ((fuera && v.entro) || (v.fase !== 'colgada' && v.ms > MAX_MS)) v.activa = false;
   }
 
   // ------------------------------------------------------------- dibujo --
@@ -346,14 +527,16 @@
       return;
     }
     raf = 0;
-    programar(ENTRE_MIN_MS + Math.random() * (ENTRE_MAX_MS - ENTRE_MIN_MS));
+    programar(QUIETO_MS);
   }
 
+  // Solo si lleva QUIETO_MS sin tocar; si no, espera lo que falte.
   function aparecer() {
     espera = 0;
     if (document.hidden || raf) return;
-    if (Math.random() < 0.7) empezarEntreTarjetas();
-    else empezarAsomo();
+    var falta = QUIETO_MS - (performance.now() - ultimaAccion);
+    if (falta > 0) return programar(falta + 50);
+    entrar();
     ultimo = performance.now();
     raf = requestAnimationFrame(fotograma);
   }
@@ -394,6 +577,9 @@
     leerColores();
     crearLienzo();
     document.addEventListener('visibilitychange', alCambiarVisibilidad);
+    ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'].forEach(function (e) {
+      addEventListener(e, alTocar, { passive: true, capture: true });
+    });
     programar(PRIMERA_MS);
   }
 

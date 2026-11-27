@@ -26,9 +26,10 @@ que hay.
   sin maqueta; y la pantalla de bienvenida: el vídeo del grupo recortado, por
   qué se cierra si no arranca en 1,5 s y por qué `sw.js` deja pasar los
   `Range`.
-- `viborita_de_la_portada.md`: la serpiente animada de la portada; qué se le
-  quitó a la maqueta, por qué el lienzo no recibe toques, en qué capa va, y
-  cómo evita gastar (velocidad por tiempo, bucle que se para, sin blur).
+- `viborita_de_la_portada.md`: la serpiente animada de la portada, en tres
+  ficheros; el guion (logo, primera tarjeta, fuera) y lo que varía después,
+  cada 2 s sin tocar la pantalla; de qué se cuelga, cómo cae, por qué el
+  lienzo no recibe toques, y cómo medirla.
 - `barra_de_navegacion.md`: la barra de pestañas inferior de las veinte
   páginas; por qué el marcado vive en `vt-nav.js` y el hueco en el `body` de
   `theme.css`, a dónde lleva cada pestaña y en qué páginas se enciende, por qué
