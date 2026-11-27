@@ -32,7 +32,15 @@
   var ENTRE_MIN_MS = 10000;
   var ENTRE_MAX_MS = 15000;
   // Tope de un recorrido, por si alguno no llegara a salir de la pantalla.
-  var MAX_MS = 15000;
+  // Cabe uno con parada colgada: unos 5 s de zigzag, hasta 11 colgada y 3
+  // de salida.
+  var MAX_MS = 30000;
+  // Colgarse del borde de una tarjeta: cuantas veces, cuanto rato, y cuantos
+  // segmentos quedan colgando (el resto se queda tendido sobre el borde).
+  var COLGAR_PROB = 0.4;
+  var COLGADA_MIN_MS = 7000;
+  var COLGADA_MAX_MS = 11000;
+  var COLGANDO = 20;
 
   var lienzo = null;
   var ctx = null;
@@ -119,28 +127,55 @@
     return barra ? barra.getBoundingClientRect().top : alto;
   }
 
-  // Zigzag por los bordes de las dos primeras tarjetas que se vean, y salida
-  // por la izquierda. Sin tarjetas a la vista, un zigzag por la pantalla.
-  function puntosEntreTarjetas() {
-    var techo = techoDeLaBarra();
-    var puntos = [];
-    [].slice.call(document.querySelectorAll('.site .block'))
+  function tarjetasVisibles(techo) {
+    return [].slice.call(document.querySelectorAll('.site .block'))
       .map(function (b) { return b.getBoundingClientRect(); })
       .filter(function (r) { return r.bottom > 0 && r.top < techo; })
-      .slice(0, 2)
-      .forEach(function (r, n) {
-        puntos.push({ x: r.left + r.width * (n ? 0.75 : 0.7), y: r.top + (n ? 30 : -8) });
-        puntos.push({ x: r.left + r.width * (n ? 0.15 : 0.25), y: r.bottom + (n ? 25 : 12) });
-      });
+      .slice(0, 2);
+  }
+
+  // El borde de abajo de una tarjeta del recorrido con sitio debajo para el
+  // cuerpo antes de la barra. La ultima que valga, o ninguna.
+  function bordeParaColgarse(tarjetas, techo) {
+    var validas = tarjetas.filter(function (r) {
+      return r.bottom > 40 && r.bottom + COLGANDO * LARGO + 70 < techo;
+    });
+    return validas.length ? validas[validas.length - 1] : null;
+  }
+
+  // Zigzag por los bordes de las dos primeras tarjetas que se vean. Sin
+  // tarjetas a la vista, un zigzag por la pantalla. Al final, o sale por la
+  // izquierda, o recorre el borde de abajo de una tarjeta y se descuelga.
+  function puntosEntreTarjetas(colgar) {
+    var techo = techoDeLaBarra();
+    var tarjetas = tarjetasVisibles(techo);
+    var borde = colgar && bordeParaColgarse(tarjetas, techo);
+    var puntos = [];
+    tarjetas.forEach(function (r, n) {
+      puntos.push({ x: r.left + r.width * (n ? 0.75 : 0.7), y: r.top + (n ? 30 : -8) });
+      puntos.push({ x: r.left + r.width * (n ? 0.15 : 0.25), y: r.bottom + (n ? 25 : 12) });
+    });
     if (!puntos.length) puntos = [{ x: ancho * 0.7, y: alto * 0.3 }, { x: ancho * 0.25, y: alto * 0.5 }];
-    puntos.push({ x: -120, y: puntos[puntos.length - 1].y + 25 });
     puntos.forEach(function (p) { p.y = Math.max(30, Math.min(techo - 30, p.y)); });
+    if (!borde) {
+      puntos.push({ x: -120, y: puntos[puntos.length - 1].y + 25 });
+      return puntos;
+    }
+    // 4 px por encima del borde: asi el cuerpo queda apoyado sobre el, no
+    // pegado por debajo (medido: con el borde exacto quedaba 4 px bajo).
+    var x = borde.left + borde.width * 0.55;
+    v.borde = borde.bottom - 4;
+    puntos.push({ x: borde.left + borde.width * 0.1, y: v.borde });
+    puntos.push({ x: x, y: v.borde });
+    puntos.push({ x: x, y: v.borde + COLGANDO * LARGO + 35, colgarse: true });
     return puntos;
   }
 
   function empezarEntreTarjetas() {
-    v.puntos = puntosEntreTarjetas();
+    v.fase = '';
+    v.puntos = puntosEntreTarjetas(Math.random() < COLGAR_PROB);
     v.punto = 0;
+    v.scroll = scrollY;
     colocar(ancho + 60, v.puntos[0].y - 7, 1, 0);
     empezar('tarjetas', 5.2, 14, 0.22);
   }
@@ -169,14 +204,74 @@
   function moverEntreTarjetas(k, onda) {
     var cabeza = cuerpo[0];
     var p = v.puntos[v.punto];
-    if (!p) { cabeza.x -= v.velocidad * k; return; }
+    // Sin mas puntos, sigue recta por donde iba hasta salir entera: la
+    // salida puede ser por la izquierda o, tras colgarse, por la derecha.
+    if (!p) {
+      cabeza.x += Math.cos(v.rumbo) * v.velocidad * k;
+      cabeza.y += Math.sin(v.rumbo) * v.velocidad * k;
+      return;
+    }
     var dx = p.x - cabeza.x;
     var dy = p.y - cabeza.y;
-    var a = Math.atan2(dy, dx);
+    var a = v.rumbo = Math.atan2(dy, dx);
     var perp = a + Math.PI / 2;
     cabeza.x += (Math.cos(a) * v.velocidad + Math.cos(perp) * onda * 0.35) * k;
     cabeza.y += (Math.sin(a) * v.velocidad + Math.sin(perp) * onda * 0.35) * k;
-    if (Math.hypot(dx, dy) < 35) v.punto++;
+    if (Math.hypot(dx, dy) >= 35) return;
+    v.punto++;
+    if (p.colgarse) colgarse();
+  }
+
+  // Se engancha por el primer segmento (desde la cabeza) que aun esta sobre
+  // el borde: de ahi hacia la cola queda tendida, de ahi hacia la cabeza
+  // cuelga.
+  function colgarse() {
+    var fijo = COLGANDO;
+    for (var n = 1; n < SEGMENTOS; n++) {
+      if (cuerpo[n].y <= v.borde + 4) { fijo = n; break; }
+    }
+    v.fijo = Math.max(8, Math.min(SEGMENTOS - 4, fijo));
+    v.fase = 'colgada';
+    v.colgadaMs = 0;
+    v.colgadaHasta = COLGADA_MIN_MS + Math.random() * (COLGADA_MAX_MS - COLGADA_MIN_MS);
+  }
+
+  // Pendulo: la cabeza va hacia un punto que oscila bajo el enganche, a algo
+  // menos que el largo de lo que cuelga para que el cuerpo haga curva.
+  function moverColgada(k, dt) {
+    v.colgadaMs += dt;
+    if (v.colgadaMs > v.colgadaHasta) return soltarse();
+    var ancla = cuerpo[v.fijo];
+    var radio = v.fijo * LARGO * 0.92;
+    var angulo = Math.sin(v.colgadaMs / 1000 * 2.4) * 0.35;
+    var cabeza = cuerpo[0];
+    cabeza.x = suavizar(cabeza.x, ancla.x + Math.sin(angulo) * radio, 0.15, k);
+    cabeza.y = suavizar(cabeza.y, ancla.y + Math.cos(angulo) * radio, 0.15, k);
+    tensar(v.fijo);
+  }
+
+  // Sube por un lado de su propio cuerpo y se va por la derecha, por encima
+  // del borde. La cola tendida se arrastra detras.
+  function soltarse() {
+    var a = cuerpo[v.fijo];
+    v.fase = '';
+    v.punto = 0;
+    v.puntos = [
+      { x: a.x + 28, y: a.y + 20 },
+      { x: a.x + 40, y: a.y - 14 },
+      { x: ancho + 120, y: a.y - 14 }
+    ];
+  }
+
+  // Si se desplaza la pagina, la serpiente se mueve con las tarjetas: el
+  // lienzo es fijo y, sin esto, se quedaria colgando del aire.
+  function seguirElScroll() {
+    var d = scrollY - v.scroll;
+    v.scroll = scrollY;
+    if (!d) return;
+    cuerpo.forEach(function (s) { s.y -= d; });
+    v.puntos.forEach(function (p) { p.y -= d; });
+    v.borde -= d;
   }
 
   function moverAsomo(k) {
@@ -196,14 +291,26 @@
     }
   }
 
+  // Pone `s` a LARGO de `guia`, en la direccion en que ya estaba.
+  function acercar(s, guia) {
+    var a = Math.atan2(guia.y - s.y, guia.x - s.x);
+    s.x = guia.x - Math.cos(a) * LARGO;
+    s.y = guia.y - Math.sin(a) * LARGO;
+  }
+
   function arrastrarCuerpo() {
-    for (var n = 1; n < SEGMENTOS; n++) {
-      var antes = cuerpo[n - 1];
-      var s = cuerpo[n];
-      var a = Math.atan2(antes.y - s.y, antes.x - s.x);
-      s.x = antes.x - Math.cos(a) * LARGO;
-      s.y = antes.y - Math.sin(a) * LARGO;
-    }
+    for (var n = 1; n < SEGMENTOS; n++) acercar(cuerpo[n], cuerpo[n - 1]);
+  }
+
+  // Con dos puntos sujetos, la cabeza y el segmento `fijo`: una pasada desde
+  // la cabeza y otra de vuelta desde el enganche (FABRIK). De `fijo` a la cola
+  // no se toca: es lo que queda tendido sobre el borde.
+  function tensar(fijo) {
+    var ancla = { x: cuerpo[fijo].x, y: cuerpo[fijo].y };
+    for (var n = 1; n <= fijo; n++) acercar(cuerpo[n], cuerpo[n - 1]);
+    cuerpo[fijo].x = ancla.x;
+    cuerpo[fijo].y = ancla.y;
+    for (n = fijo - 1; n >= 0; n--) acercar(cuerpo[n], cuerpo[n + 1]);
   }
 
   // Entera fuera, cola incluida: acabar con la cabeza fuera la cortaba a
@@ -222,7 +329,7 @@
   }
 
   function soltarChispa(k) {
-    if (!v.activa || Math.random() > 0.45 * k) return;
+    if (!v.activa || v.fase === 'colgada' || Math.random() > 0.45 * k) return;
     var s = cuerpo[Math.floor(SEGMENTOS * 0.4)];
     chispas.push({
       x: s.x + (Math.random() - 0.5) * 8, y: s.y + (Math.random() - 0.5) * 8,
@@ -249,9 +356,17 @@
     if (!v.activa) return;
     v.ms += dt;
     v.ola += v.olaFreq * k;
-    if (v.rutina === 'tarjetas') moverEntreTarjetas(k, Math.sin(v.ola) * v.olaAmp);
-    else moverAsomo(k);
-    arrastrarCuerpo();
+    if (v.rutina === 'asomo') {
+      moverAsomo(k);
+      arrastrarCuerpo();
+    } else {
+      seguirElScroll();
+      if (v.fase === 'colgada') moverColgada(k, dt);
+      else {
+        moverEntreTarjetas(k, Math.sin(v.ola) * v.olaAmp);
+        arrastrarCuerpo();
+      }
+    }
     var fuera = fueraDePantalla();
     if (!fuera) v.entro = true;
     if ((fuera && v.entro) || v.ms > MAX_MS) v.activa = false;

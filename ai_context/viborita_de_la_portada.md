@@ -15,6 +15,11 @@ Dos recorridos, elegidos al azar (70/30):
 - **Entre tarjetas**: entra por la derecha y hace zigzag por los bordes de las
   dos primeras `.site .block` que se vean, y sale por la izquierda. Si no hay
   ninguna a la vista, un zigzag por la pantalla.
+  En 4 de cada 10, en vez de salir, recorre el borde de abajo de una de esas
+  tarjetas y **se descuelga**: la cola queda tendida sobre el borde, el resto
+  cuelga y se balancea 7–11 s, y luego trepa por su lado y sale por la
+  derecha. Solo si hay sitio para el cuerpo antes de la barra; si no, sale
+  normal.
 - **Asomo**: sube desde detrás de `.vt-nav`, a un lado del centro (en el centro
   está la pestaña elevada), mira un momento y se vuelve a esconder.
 
@@ -46,5 +51,17 @@ contados desde que termina el anterior. Constantes a ojo, arriba del fichero.
   de la lengua tiene su token, `--vt-lengua`, para no tomar prestado el de
   error ni el de partido perdido. Los `rgba()` se construyen desde el token
   con `conAlfa()`.
+- **Colgada, el cuerpo tiene dos puntos sujetos**: la cabeza, que hace de
+  péndulo, y el segmento enganchado al borde. Se resuelve con FABRIK (una
+  pasada desde la cabeza y otra de vuelta desde el enganche); de ahí a la cola
+  no se toca. Fuera de ese rato solo se gobierna la cabeza, como siempre.
+- **Sigue al desplazamiento.** El lienzo es fijo y las tarjetas no: en el
+  recorrido entre tarjetas se resta el `scrollY` a cuerpo y puntos. Sin eso, al
+  desplazar se quedaba colgando del aire.
+- **El borde va 4 px por encima del de la tarjeta.** Con el exacto, el cuerpo
+  quedaba pegado por debajo y no apoyado encima (medido en el lienzo).
+- **Sin puntos, sigue recta por su último rumbo.** Antes seguía siempre hacia
+  la izquierda, y tras colgarse y salir por la derecha volvía a cruzar la
+  pantalla.
 - **Espera a que acabe la bienvenida**, con el mismo `MutationObserver` sobre
   `vt-splash` que `avisos-push.js`.
