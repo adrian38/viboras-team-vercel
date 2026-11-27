@@ -66,6 +66,10 @@
   --vt-error:#ffb4ab;
   --vt-error-bg:rgba(147,0,10,0.18);
   --vt-success:#eec200;
+  /* Lengua y coloretes de la viborita de la portada (portada/viborita.js).
+   * Rojo de adorno: no es un error ni un partido perdido, por eso no
+   * reutiliza --vt-error ni --vt-loss. */
+  --vt-lengua:#ef4444;
   --vt-silver:#94a3b8;
   --vt-bronze:#d97706;
 
