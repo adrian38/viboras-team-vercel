@@ -265,7 +265,10 @@ La asimetría con `apuntar-a` es a propósito: incorporar dice «he quedado con
 éste», y eso sólo lo sabe quien convocó; quitar es poner orden, que es lo que
 hace un administrador.
 
-- **Uno mismo no se quita con esto**: para eso está `borrarme`, con su aviso.
+- **Uno mismo siempre puede quitarse**, también desde aquí y sin ser quien lo
+  creó ni administrador: `sacar` con tu propio `playerId` es una baja, con el
+  aviso de «se ha borrado» y no el de «te ha quitado». La lista de la
+  pantalla te incluye, marcado «(tú)».
 - **La plaza queda libre**, y si el partido estaba lleno se avisa a la lista
   de espera igual que en una baja.
 - **Dos avisos**: al quitado, «te ha quitado del partido»; a los que quedan,

@@ -175,6 +175,12 @@ async function borrarme(req, res, user) {
   const data = await readBody(req);
   const partido = await partidoVivo(toInt(data?.id));
   if (!partido) return error(res, 'too_late', 409, 'Ese partido ya ha empezado o no existe.');
+  await darmeDeBaja(res, partido, user);
+}
+
+// La baja de uno mismo, con su aviso. La usan `borrarme` y `sacar` cuando
+// quien quita y quien sale son el mismo: uno siempre puede quitarse.
+async function darmeDeBaja(res, partido, user) {
   const estaba = await jugadoresDe(partido.id);
   if (!await soltarPlaza(partido.id, user.player_id)) {
     return error(res, 'not_joined', 409, 'No estabas apuntado a ese partido.');
@@ -196,19 +202,20 @@ async function borrarme(req, res, user) {
 // dice «he quedado con este», que solo lo sabe quien convoco; quitar es
 // poner orden, que es lo que hace un administrador.
 //
-// Uno mismo no se quita con esto: para eso esta `borrarme`, con su propio
-// aviso. Y quien lo hace no ocupa la plaza: queda libre, y si el partido
-// estaba lleno se avisa a la lista de espera igual que en una baja.
+// Quitarse a uno mismo siempre se puede, aqui tambien: es una baja, con el
+// aviso de «se ha borrado» y no el de «te ha quitado». Y quien lo hace no
+// ocupa la plaza: queda libre, y si el partido estaba lleno se avisa a la
+// lista de espera igual que en una baja.
 async function sacar(req, res, user) {
   if (!exigirFicha(res, user)) return;
   const data = await readBody(req);
   const partido = await partidoVivo(toInt(data?.id));
   if (!partido) return error(res, 'too_late', 409, 'Ese partido ya ha empezado o no existe.');
+  const playerId = toInt(data?.playerId);
+  if (playerId === user.player_id) return darmeDeBaja(res, partido, user);
   if (partido.creador_player_id !== user.player_id && user.role !== 'admin') {
     return error(res, 'forbidden', 403, 'Solo pueden quitar a alguien quien creó el partido y los administradores.');
   }
-  const playerId = toInt(data?.playerId);
-  if (playerId === user.player_id) return error(res, 'bad_request', 400, 'Para salir tú, bórrate del partido.');
   const jugador = await apuntadoEn(partido.id, playerId);
   if (!jugador) return error(res, 'not_joined', 409, 'Esa persona ya no está en el partido.');
   const estaba = await jugadoresDe(partido.id);

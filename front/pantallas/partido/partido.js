@@ -94,19 +94,20 @@ async function confirmarIncorporar() {
 }
 
 // Quien creo el partido y los administradores pueden quitar a alguien. A
-// quien: los apuntados menos yo, que para salir tengo «Borrarme». La lista
-// sale de las plazas que ya estan pintadas; si entre tanto se ha ido, el
-// servidor lo dice y la recarga lo ensena. Va en el mismo panel que
-// «Apuntar a alguien»: nunca estan abiertos los dos a la vez.
+// quien: a cualquiera de los apuntados, yo incluido, que quitarse uno mismo
+// siempre se puede y el servidor lo trata como una baja. La lista sale de
+// las plazas que ya estan pintadas; si entre tanto se ha ido, el servidor lo
+// dice y la recarga lo ensena. Va en el mismo panel que «Apuntar a
+// alguien»: nunca estan abiertos los dos a la vez.
 function aQuienQuitar() {
   if (!puedoQuitar || partido.cancelado || partido.jugado) return [];
-  return partido.plazas.filter((p) => p.playerId && p.playerId !== yo.id);
+  return partido.plazas.filter((p) => p.playerId);
 }
 
 function abrirQuitar() {
   const escapar = window.vtPartido.escapar;
   const opciones = aQuienQuitar()
-    .map((p) => `<option value="${p.playerId}">${escapar(p.nombre)}</option>`).join('');
+    .map((p) => `<option value="${p.playerId}">${escapar(p.playerId === yo.id ? `${p.nombre} (tú)` : p.nombre)}</option>`).join('');
   $('incorporar').innerHTML = `
     <label class="vt-field">
       <span>¿A quién quitas del partido?</span>
@@ -123,11 +124,12 @@ async function confirmarQuitar() {
   const sel = $('aQuitar');
   if (!sel) return;
   const nombre = sel.options[sel.selectedIndex].textContent;
+  const soyYo = Number(sel.value) === yo.id;
   const r = await window.vtPartido.llamar('sacar', { id: idPartido, playerId: Number(sel.value) });
   $('incorporar').hidden = true;
   await recargar();
   if (!r.ok) { nota(r.mensaje, true); return; }
-  window.vtToast(`${nombre} ya no está en el partido. Se lo decimos.`);
+  window.vtToast(soyYo ? 'Te has borrado.' : `${nombre} ya no está en el partido. Se lo decimos.`);
 }
 
 const enlaceQuitar = () => (aQuienQuitar().length ? menor('quitar', 'Quitar a alguien') : '');
