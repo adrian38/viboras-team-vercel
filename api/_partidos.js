@@ -237,10 +237,20 @@ export async function crearPartido(datos) {
 // Lo crea `ensureAuthSchema`, no `ensureSchema`, y el handler de partidos lo
 // asegura al exigir la sesion. Cualquier cosa que no sea drive o reves —NULL,
 // 'ambos', un valor viejo— vale como 'ambos': sin preferencia.
-async function ladoDe(playerId) {
+export async function ladoDe(playerId) {
   const { rows } = await sql`SELECT court_side FROM players WHERE id = ${playerId}`;
   const lado = rows.length ? rows[0].court_side : null;
   return lado === 'drive' || lado === 'reves' ? lado : 'ambos';
+}
+
+// El puesto que tomaria `intentarPlaza` si el jugador se apuntara ahora, para
+// que /partido le proponga ESE hueco y no otro. Es la misma regla que el
+// ORDER BY de abajo, escrita dos veces porque una es SQL y la otra no: si se
+// cambia una, se cambia la otra. Null si no queda hueco.
+export function puestoQueTomaria(plazas, lado) {
+  const libres = plazas.filter((p) => !p.playerId).map((p) => p.puesto).sort((a, b) => a - b);
+  const suyo = (n) => (lado === 'drive' && n % 2 === 1) || (lado === 'reves' && n % 2 === 0);
+  return libres.find(suyo) || libres[0] || null;
 }
 
 // Toma una plaza libre en una sola sentencia: quien arbitra la carrera es la
@@ -253,7 +263,7 @@ async function ladoDe(playerId) {
 // primero una del lado suyo y, si no queda ninguna, la libre mas baja: el
 // lado es una preferencia y no puede dejar a nadie fuera de un partido con
 // hueco. Con 'ambos' todas empatan y gana la mas baja, que es lo que se hacia
-// antes de esto.
+// antes de esto. `puestoQueTomaria` repite esta regla para la pantalla.
 async function intentarPlaza(partidoId, playerId, lado) {
   const { rows } = await sql`
     INSERT INTO partido_plazas (partido_id, puesto, player_id)

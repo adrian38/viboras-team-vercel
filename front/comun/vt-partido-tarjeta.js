@@ -33,8 +33,8 @@
   }
 
   // El lado de pista de cada puesto, SOLO en la rejilla 2x2. Es una etiqueta
-  // de la posicion en el dibujo, no un dato del jugador: nadie elige lado al
-  // apuntarse y el servidor da el hueco mas bajo que quede. Por eso dice
+  // de la posicion en el dibujo, no un dato del jugador: el servidor da al
+  // que entra un hueco de su lado si queda, y si no el mas bajo. Por eso dice
   // «Drive» y no «juega al drive», y por eso no sale en la lista estrecha,
   // donde sin la rejilla delante no se entenderia como una posicion.
   const LADOS = { 1: 'Drive', 2: 'Revés', 3: 'Drive', 4: 'Revés' };

@@ -34,12 +34,16 @@ function nota(texto, esError) {
   $('nota').classList.toggle('vt-nota-aviso--error', Boolean(esError));
 }
 
-// El puesto en el que se propone meterme: el hueco mas bajo, que es el mismo
-// que tomaria el servidor. Null si no hay hueco o si ya estoy dentro.
+// El puesto en el que se propone meterme. Lo calcula el servidor con mi lado
+// de pista (`propuesto` en la respuesta de `uno`), que es la misma regla con
+// la que luego me da la plaza: elegirlo aqui, el hueco mas bajo, ponia a
+// quien juega al reves en un sitio y el servidor le metia en otro.
+// Null si no hay hueco o si ya estoy dentro.
+let propuesto = null;
+
 function puestoPropuesto() {
   if (!partido || partido.estoyDentro || partido.cancelado || partido.jugado) return null;
-  const libre = partido.plazas.find((p) => !p.playerId);
-  return libre ? libre.puesto : null;
+  return propuesto;
 }
 
 const boton = (clase, accion, icono, texto) =>
@@ -136,6 +140,7 @@ async function recargar() {
     return false;
   }
   partido = r.datos.partido;
+  propuesto = r.datos.propuesto || null;
   yo = { id: r.datos.yo, nombre: r.datos.yoSoy || 'Tú' };
   pintar();
   return true;

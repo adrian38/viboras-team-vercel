@@ -213,6 +213,13 @@ que contestarle `taken`.
 `moverme` **no avisa al grupo**. Apuntarse y borrarse cambian quién juega;
 cambiarse de hueco no, y un push por cada baile de sitio sería ruido.
 
+**La regla del lado está escrita dos veces.** Una en el `ORDER BY` de
+`intentarPlaza`, que es la que da la plaza, y otra en `puestoQueTomaria`, que
+la acción `uno` devuelve como `propuesto` para que `/partido` pinte el nombre
+«sin guardar» en ese hueco. Hasta el 2026-11-27 la pantalla elegía ella el
+hueco más bajo, y a quien juega al revés le enseñaba un sitio y el servidor le
+metía en otro. Si se toca una de las dos, se toca la otra.
+
 Dos cosas que el rótulo **no** dice, y conviene no leer de más: las plazas de
 los que ya estaban apuntados antes de este cambio siguen donde las dejó el
 orden de llegada, y a quien tiene `ambos` el rótulo le sale igual aunque no

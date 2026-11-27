@@ -12,7 +12,7 @@ import {
   DURACIONES, SEDE_LIBRE_MAXIMA, MARGEN_MINUTOS, DIAS_MAXIMOS, POR_DIA,
   instanteDe, partidoQueSePisa, creadosHoy, crearPartido, tomarPlaza, soltarPlaza,
   partidoVivo, cancelarPartido, cerrarPartido, jugadoresDe, enEsperaDe,
-  jugadorIncorporable, incorporables, cambiarDePlaza
+  jugadorIncorporable, incorporables, cambiarDePlaza, ladoDe, puestoQueTomaria
 } from './_partidos.js';
 import { misPartidos, partidosAbiertos, unPartido } from './_partidos-lista.js';
 import { avisarApuntado, avisarBaja, avisarCancelado, avisarIncorporado } from './_partidos-avisos.js';
@@ -123,7 +123,11 @@ async function uno(req, res, user) {
   if (!exigirFicha(res, user)) return;
   const partido = await unPartido(toInt(req.query?.id), user.player_id);
   if (!partido) return error(res, 'not_found', 404, 'Ese partido ya no existe.');
-  res.status(200).json({ ok: true, yo: user.player_id, yoSoy: user.player_name, partido, sedes: sedesParaLaPagina(), niveles: nivelesParaLaPagina() });
+  // El hueco en el que entraria si se apuntara ahora, con su lado de pista:
+  // la pantalla le pinta ahi su nombre «sin guardar», y tiene que ser el
+  // mismo sitio en el que luego le pone el servidor.
+  const propuesto = partido.estoyDentro ? null : puestoQueTomaria(partido.plazas, await ladoDe(user.player_id));
+  res.status(200).json({ ok: true, yo: user.player_id, yoSoy: user.player_name, partido, propuesto, sedes: sedesParaLaPagina(), niveles: nivelesParaLaPagina() });
 }
 
 async function crear(req, res, user) {
